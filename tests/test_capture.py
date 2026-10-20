@@ -34,12 +34,21 @@ def test_item_kinds():
     assert Item.parse("region:menus/bag") == Item("menus/bag", "region")
 
 
-def test_reference_names_skip_numbered_and_old_copies(tmp_path):
-    from darbit.capture.common import reference_names
+def test_list_file(tmp_path):
+    from darbit.capture.common import Item, add_to_list, captured, read_list
 
-    for name in ("Gui.Play", "Gui.Play(Old)", "Gui.Play(Old1)", "1792273740344", "SR.Char.Goku(MUI)"):
-        (tmp_path / f"{name}.png").write_bytes(b"")
-    assert [i.name for i in reference_names(tmp_path)] == ["Gui.Play", "SR.Char.Goku(MUI)"]
+    path = tmp_path / "capture.txt"
+    path.write_text("# what the bot needs\n\nGui.Play   # lobby: Play button\nlocation: afk/spot\n"
+                    "region: menus/bag  # the bag\n", encoding="utf-8")
+    items = read_list(path)
+    assert items == [Item("Gui.Play"), Item("afk/spot", "location"), Item("menus/bag", "region")]
+    assert items[0].note == "lobby: Play button"
+    add_to_list(path, Item("Gui.Bag", "image", "lobby: Bag button"))
+    assert read_list(path)[-1].note == "lobby: Bag button"
+    (tmp_path / "images").mkdir()
+    (tmp_path / "images" / "Gui.Play.png").write_bytes(b"")
+    assert captured(items[0], tmp_path / "images")
+    assert not captured(items[1], tmp_path / "images")
 
 
 def test_undo_restores_what_was_there(tmp_path):
