@@ -32,3 +32,29 @@ def test_item_kinds():
     assert Item.parse("Gui.Play") == Item("Gui.Play", "image")
     assert Item.parse("location:afk/spot") == Item("afk/spot", "location")
     assert Item.parse("region:menus/bag") == Item("menus/bag", "region")
+
+
+def test_reference_names_skip_numbered_and_old_copies(tmp_path):
+    from darbit.capture.common import reference_names
+
+    for name in ("Gui.Play", "Gui.Play(Old)", "Gui.Play(Old1)", "1792273740344", "SR.Char.Goku(MUI)"):
+        (tmp_path / f"{name}.png").write_bytes(b"")
+    assert [i.name for i in reference_names(tmp_path)] == ["Gui.Play", "SR.Char.Goku(MUI)"]
+
+
+def test_undo_restores_what_was_there(tmp_path):
+    from darbit.capture.common import Item, Result
+    from darbit.capture.store import save_result, undo
+    from darbit.core.geometry import Region
+
+    shot = np.random.default_rng(1).integers(0, 255, (200, 300, 3), dtype=np.uint8)
+    (tmp_path / "Old.png").write_bytes(b"before")
+    first = save_result(tmp_path, Item("New"), Result(image=Region(10, 10, 30, 20)), shot, Region(0, 0, 300, 200), None)
+    second = save_result(tmp_path, Item("Old"), Result(image=Region(50, 50, 30, 20)), shot, Region(0, 0, 300, 200),
+                         None)
+    assert (tmp_path / "New.png").is_file()
+    undo(second)
+    undo(first)
+    assert not (tmp_path / "New.png").exists()
+    assert (tmp_path / "Old.png").read_bytes() == b"before"
+    assert not (tmp_path / "Old.json").exists()
