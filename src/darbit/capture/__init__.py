@@ -7,6 +7,7 @@ One target:
 
 A session, guided by a card at the top centre of the screen:
     python -m darbit.capture --list capture.txt       # every target in the list not captured yet
+    python -m darbit.capture --list capture.txt --harvest "Speed Raid characters"   # a scrolling grid
     python -m darbit.capture --from bot.py            # every image bot.py uses that isn't captured yet
     python -m darbit.capture Gui.Play Gui.Bag location:afk/spot region:menus/bag
 
@@ -68,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m darbit.capture", description="Capture targets from the screen.")
     parser.add_argument("names", nargs="*", help="target names, e.g. Gui.Play, location:afk/spot, region:menus/bag")
     parser.add_argument("--list", dest="list_file", help="a list file of targets to capture")
+    parser.add_argument("--harvest", metavar="GROUP", help="harvest a scrolling grid into the list's [GROUP] targets")
     parser.add_argument("--from", dest="script", help="capture every image this script uses that isn't saved yet")
     parser.add_argument("--folder", help="where to save (default: images next to the list or script)")
     parser.add_argument("--all", action="store_true", help="session: include targets already captured")
@@ -95,6 +97,14 @@ def main(argv: list[str] | None = None) -> int:
     seen: set[tuple[str, str]] = set()
     items = [i for i in items if (i.name, i.kind) not in seen and not seen.add((i.name, i.kind))]
 
+    if args.harvest:
+        group = [i for i in items if i.screen == args.harvest]
+        if not group:
+            print(f"no targets left in [{args.harvest}]")
+            return 0
+        from .harvest import run
+        print(f"{len(group)} names in [{args.harvest}]; saving into {folder}")
+        return run(group, folder, args.delay)
     if not home:
         if not items:
             print("give a target name, --list capture.txt or --from script.py")
