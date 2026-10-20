@@ -58,7 +58,7 @@ EVENT_DELAY = 0.010  # after every press and release, like SikuliX
 DRAG_DELAY = 0.3  # before pressing, after pressing, and before letting go in a drag, like SikuliX
 
 _lock = threading.RLock()
-_held_keys: set[Key] = set()
+_held_keys: dict[Key, None] = {}  # in the order they were pressed
 _held_buttons: set[str] = set()
 
 
@@ -188,7 +188,7 @@ def key_down(what: Key | str) -> None:
     with _lock:
         if chosen not in _held_keys:
             _send(_key_event(chosen, up=False))
-            _held_keys.add(chosen)
+            _held_keys[chosen] = None
     time.sleep(EVENT_DELAY)
 
 
@@ -197,7 +197,7 @@ def key_up(what: Key | str) -> None:
     with _lock:
         if chosen in _held_keys:
             _send(_key_event(chosen, up=True))
-            _held_keys.discard(chosen)
+            _held_keys.pop(chosen, None)
     time.sleep(EVENT_DELAY)
 
 
@@ -223,9 +223,9 @@ def write(text: str) -> None:
 
 
 def release_all() -> None:
-    """Let go of every key and mouse button darbit is holding."""
+    """Let go of every key and mouse button darbit is holding, last pressed first."""
     with _lock:
-        for held in list(_held_keys):
+        for held in reversed(list(_held_keys)):
             _send(_key_event(held, up=True))
         _held_keys.clear()
         for button in list(_held_buttons):
