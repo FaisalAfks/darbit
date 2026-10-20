@@ -18,6 +18,7 @@ from .keys import key
 _stopped = threading.Event()
 _on_stop: list[Callable[[], None]] = []
 _watching: str | None = None
+_armed = False
 
 
 def on_stop(callback: Callable[[], None]) -> None:
@@ -34,14 +35,29 @@ def stop() -> None:
         callback()
 
 
+def arm() -> None:
+    """Start the stop hotkey and keep the PC awake, once. Called by the first darbit call that can be stopped,
+    so importing darbit (e.g. for the capture tool) starts no thread."""
+    global _armed
+    if _armed:
+        return
+    _armed = True
+    from ..settings import settings
+
+    watch(settings.stop_key)
+    keep_awake()
+
+
 def check() -> None:
     """Raise Stopped if the stop hotkey was pressed."""
+    arm()
     if _stopped.is_set():
         raise Stopped("stopped by the stop hotkey")
 
 
 def sleep(seconds: float) -> None:
     """Wait, but stop at once when the stop hotkey is pressed."""
+    arm()
     if seconds > 0 and _stopped.wait(seconds):
         check()
     check()

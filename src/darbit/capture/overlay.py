@@ -257,6 +257,8 @@ class Overlay:
 
     def _close(self, action: str, result: Result | None) -> None:
         self.window.destroy()
+        # let go of the screen-sized images here, on Tk's own thread
+        self.dim_photo = self.bright_photo = self.zoom_photo = None
         self.done(action, result)
 
     # ------------------------------------------------------------------ draw

@@ -27,6 +27,7 @@ Targets are saved in the `images` folder next to the list or script, or in
 from __future__ import annotations
 
 import argparse
+import gc
 import time
 import tkinter as tk
 from pathlib import Path
@@ -66,6 +67,16 @@ def _single(item: Item, folder: Path, delay: float) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Tk objects must be freed on Tk's own thread. With automatic collection off,
+    # garbage is only collected here, on the main thread, between steps and at the end.
+    gc.disable()
+    try:
+        return _main(argv)
+    finally:
+        gc.collect()
+
+
+def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m darbit.capture", description="Capture targets from the screen.")
     parser.add_argument("names", nargs="*", help="target names, e.g. Gui.Play, location:afk/spot, region:menus/bag")
     parser.add_argument("--list", dest="list_file", help="a list file of targets to capture")

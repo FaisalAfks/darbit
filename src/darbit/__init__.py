@@ -44,11 +44,10 @@ __version__ = "0.1.0.dev0"
 def stop_key(combo: str) -> None:
     """Change the stop hotkey, e.g. stop_key("ctrl+alt+q")."""
     settings.stop_key = combo
+    _safety.arm()
     _safety.watch(combo)
 
 
-_safety.watch(settings.stop_key)
-_safety.keep_awake()
 _atexit.register(_input.release_all)
 
 __all__ = [
