@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Waiting for several targets takes one screen capture per look, covering all their regions
+- `d.State(name)`: saved values, counters, daily and weekly resets, timers; kept in `settings.state`
 - Observers: `d.observe(image or condition)` watches in the background; the next darbit call raises `Interrupted` and held keys are let go; `d.no_interrupts()` for quiet blocks
 
 ## 0.1.0 - 2026-10-21
