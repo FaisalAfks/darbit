@@ -7,6 +7,7 @@ mouse comes near. F8 captures the current target; Ctrl+Alt+Q asks to finish.
 from __future__ import annotations
 
 import ctypes
+import gc
 import time
 import tkinter as tk
 from collections.abc import Callable
@@ -401,6 +402,7 @@ class Session:
         return self.index < len(self.items) and self.items[self.index].screen == screen_name
 
     def _overlay_done(self, action: str, result: Result | None) -> None:
+        gc.collect()  # free the closed frozen screen now, on Tk's thread
         item = self.items[self.index]
         if action == "cancel":
             self._back_to_card(("", Theme.MUTED))
