@@ -67,3 +67,41 @@ def test_undo_restores_what_was_there(tmp_path):
     assert not (tmp_path / "New.png").exists()
     assert (tmp_path / "Old.png").read_bytes() == b"before"
     assert not (tmp_path / "Old.json").exists()
+
+
+def _panel():
+    import cv2
+
+    shot = np.full((300, 400, 3), 30, np.uint8)
+    cv2.rectangle(shot, (100, 80), (220, 140), (200, 180, 40), -1)  # a button
+    cv2.putText(shot, "OK", (140, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+    return shot
+
+
+def test_click_boxes_the_shape_under_it():
+    from darbit.capture.overlay import box_at
+
+    box = box_at(_panel(), 120, 90)
+    assert box is not None
+    assert abs(box.x - 100) <= 2 and abs(box.y - 80) <= 2
+    assert abs(box.right - 221) <= 3 and abs(box.bottom - 141) <= 3
+
+
+def test_snap_pulls_to_a_nearby_edge():
+    from darbit.capture.overlay import edges_of, snap
+
+    edges = edges_of(_panel())
+    x, y = snap(edges, 97, 77)
+    assert abs(x - 100) <= 1 and abs(y - 80) <= 1
+    assert snap(edges, 300, 250) == (300, 250)  # nothing near: unchanged
+
+
+def test_list_screens(tmp_path):
+    from darbit.capture.common import Item, add_to_list, read_list
+
+    path = tmp_path / "capture.txt"
+    path.write_text("[Lobby]\nGui.Play\n\n[Play menu]\nPlay.Raid  # Raid tile\n", encoding="utf-8")
+    items = read_list(path)
+    assert [(i.name, i.screen) for i in items] == [("Gui.Play", "Lobby"), ("Play.Raid", "Play menu")]
+    add_to_list(path, Item("Gui.Bag", "image", "", "Lobby"))
+    assert [i.name for i in read_list(path)] == ["Gui.Play", "Gui.Bag", "Play.Raid"]

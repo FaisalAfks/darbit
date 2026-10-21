@@ -16,6 +16,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from ..core import matching
+from ..core.targets import Target
 from ..platform import screen
 from .common import Item, Result, Theme, add_to_list, gradient, photo, rounded
 from .overlay import Overlay
@@ -59,6 +61,8 @@ class Session:
         self._near_at = time.monotonic()
         self._pinned_until = time.monotonic() + 3
         self._images: list[tk.PhotoImage] = []
+        self.shot: np.ndarray | None = None
+        self.origin = None
 
         monitors = screen.monitors()
         desk = monitors[0] if monitors else screen.desktop()
@@ -164,7 +168,8 @@ class Session:
         c, u = self.canvas, self.u
         item = self.items[self.index]
         color = Theme.KIND_COLOR[item.kind]
-        self._header(f"CAPTURE  ·  {self.index + 1} OF {len(self.items)}  ·  {item.kind.upper()}", Theme.MUTED)
+        where = f"{item.screen.upper()}  ·  " if item.screen else "CAPTURE  ·  "
+        self._header(f"{where}{self.index + 1} OF {len(self.items)}  ·  {item.kind.upper()}", Theme.MUTED)
 
         # the last capture on the right
         last = self.saved[-1] if self.saved else None
@@ -367,30 +372,85 @@ class Session:
 
     # --------------------------------------------------------------- capture
 
-    def _capture(self) -> None:
-        self.capturing = True
+    def _grab(self) -> None:
+        """A fresh shot of the screen, with the card and any overlay out of the way."""
         self.root.withdraw()
         self.root.update()
-        time.sleep(0.15)  # let the card disappear before the shot
-        shot, origin = screen.grab()
-        item = self.items[self.index]
+        time.sleep(0.15)  # let the windows disappear before the shot
+        self.shot, self.origin = screen.grab()
 
-        def done(result: Result | None) -> None:
-            self.capturing = False
-            self.root.deiconify()
-            self.root.attributes("-topmost", True)
-            if result is None:
-                self._show(("cancelled", Theme.MUTED))
+    def _capture(self) -> None:
+        self.capturing = True
+        self._grab()
+        self._open(self.toast[0] if self.toast else "")
+
+    def _open(self, message: str = "") -> None:
+        """The frozen screen for the current target."""
+        item = self.items[self.index]
+        counter = f"{self.index + 1}/{len(self.items)}" + (f"  {item.screen}" if item.screen else "")
+        self.overlay = Overlay(self.root, self.shot, self.origin, item.kind, item.name, self._overlay_done, counter,
+                               message)
+
+    def _back_to_card(self, toast: tuple[str, str] | None) -> None:
+        self.capturing = False
+        self.root.deiconify()
+        self.root.attributes("-topmost", True)
+        self._show(toast)
+
+    def _same_screen_next(self, screen_name: str) -> bool:
+        return self.index < len(self.items) and self.items[self.index].screen == screen_name
+
+    def _overlay_done(self, action: str, result: Result | None) -> None:
+        item = self.items[self.index]
+        if action == "cancel":
+            self._back_to_card(("", Theme.MUTED))
+        elif action == "refreeze":
+            self._grab()
+            self._open()
+        elif action == "skip":
+            self.index += 1
+            self._next(item.screen, f"skipped {item.name}", Theme.MUTED)
+        elif action == "undo":
+            if not self.saved:
+                self._open("nothing to undo")
                 return
-            saved = save_result(self.folder, item, result, shot, origin, self._window_size())
+            last = self.saved.pop()
+            undo(last)
+            print(f"undone {last.item.name}", flush=True)
+            if last.item in self.items:
+                self.index = self.items.index(last.item)
+            self._open(f"undone {last.item.name}")
+        elif action == "save" and result is not None:
+            saved = save_result(self.folder, item, result, self.shot, self.origin, self._window_size())
             print(saved.message, flush=True)
             self.saved.append(saved)
             self.index += 1
-            tone = Theme.WARN if saved.risky else Theme.OK
-            text = f"saved {item.name}" + (f"  ·  risky {saved.elsewhere:.2f}" if saved.risky else "")
-            self._show((text, tone))
+            text, tone = self._check(saved)
+            self._next(item.screen, text, tone)
 
-        Overlay(self.root, shot, origin, item.kind, item.name, done)
+    def _check(self, saved: Saved) -> tuple[str, str]:
+        """Look for a new image on the live screen right away; that shot is also used for the next target."""
+        self._grab()
+        name = saved.item.name
+        if saved.thumb is None:
+            return f"saved {name}", Theme.OK
+        target = Target(image=name, _pixels=saved.thumb)
+        found = matching.best(target, self.shot, self.origin, 0.8)
+        if found is None:
+            return f"saved {name}  ·  NOT found on the live screen", Theme.DANGER
+        risky = f"  ·  risky {saved.elsewhere:.2f}" if saved.risky else ""
+        return f"saved {name}  ·  found {found.score:.2f}{risky}", Theme.WARN if saved.risky else Theme.OK
+
+    def _next(self, screen_name: str, text: str, tone: str) -> None:
+        """Carry on with the next target on the same shot if it's on the same screen, else back to the card."""
+        if self._same_screen_next(screen_name):
+            self.toast = (text, tone)
+            self._open(text)
+            return
+        nxt = self.items[self.index] if self.index < len(self.items) else None
+        if nxt is not None and nxt.screen:
+            text += f"  ·  next: open {nxt.screen}"
+        self._back_to_card((text, tone))
 
     def _window_size(self) -> list[int] | None:
         if not self.window_name:

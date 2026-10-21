@@ -51,8 +51,8 @@ def _single(item: Item, folder: Path, delay: float) -> int:
     root.withdraw()
     outcome: list[Result | None] = []
 
-    def done(result: Result | None) -> None:
-        outcome.append(result)
+    def done(action: str, result: Result | None) -> None:
+        outcome.append(result if action == "save" else None)
         root.destroy()
 
     Overlay(root, shot, origin, item.kind, item.name, done)

@@ -25,6 +25,7 @@ class Item:
     name: str
     kind: str = "image"
     note: str = field(default="", compare=False)  # what it is, shown while capturing
+    screen: str = field(default="", compare=False)  # the screen it's on, from a [Screen] line in the list
 
     @staticmethod
     def parse(text: str) -> Item:
@@ -112,30 +113,45 @@ def images_in(script: Path) -> list[str]:
 def read_list(path: Path) -> list[Item]:
     """Targets from a list file: one per line, `name`, `location: name` or `region: name`, a note after `#`.
 
-    Blank lines and lines starting with `#` are skipped.
+    A `[Screen name]` line starts a group of targets on the same screen. Blank lines
+    and lines starting with `#` are skipped.
     """
     items = []
+    screen = ""
     for line in path.read_text(encoding="utf-8").splitlines():
         text, _, note = line.partition("#")
         text = text.strip()
         if not text:
             continue
+        if text.startswith("[") and text.endswith("]"):
+            screen = text[1:-1].strip()
+            continue
         kind, _, name = text.partition(":")
         if name and kind.strip() in KINDS:
-            items.append(Item(name.strip(), kind.strip(), note.strip()))
+            items.append(Item(name.strip(), kind.strip(), note.strip(), screen))
         else:
-            items.append(Item(text, "image", note.strip()))
+            items.append(Item(text, "image", note.strip(), screen))
     return items
 
 
 def add_to_list(path: Path, item: Item) -> None:
-    """Add a target to the end of a list file."""
+    """Add a target to a list file: at the end of its screen's group, or at the end of the file."""
     text = item.name if item.kind == "image" else f"{item.kind}: {item.name}"
     line = f"{text:<40}  # {item.note}" if item.note else text
-    existing = path.read_text(encoding="utf-8") if path.is_file() else ""
-    if existing and not existing.endswith("\n"):
-        existing += "\n"
-    path.write_text(existing + line + "\n", encoding="utf-8")
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    at = len(lines)
+    if item.screen:
+        header = f"[{item.screen}]"
+        starts = [i for i, x in enumerate(lines) if x.strip() == header]
+        if starts:
+            at = starts[0] + 1
+            while at < len(lines) and lines[at].strip() and not lines[at].strip().startswith("["):
+                at += 1
+        else:
+            lines += ["", header]
+            at = len(lines)
+    lines.insert(at, line)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def captured(item: Item, folder: Path) -> bool:
