@@ -1,6 +1,7 @@
 """Looking for targets on screen. Not finding something returns None or False, never an error."""
 from __future__ import annotations
 
+import threading
 import time
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from ..core.targets import Match, Target, find_file, load
 from ..errors import TargetError
 from ..platform import safety, screen
 from ..settings import settings
-from .log import log, screenshot
+from .log import log, record, screenshot
 
 What = str | Path | Target
 
@@ -28,12 +29,14 @@ def _union(areas: list[Region | None]) -> Region | None:
     return Region(left, top, right - left, bottom - top)
 
 
-def _look(chosen: list[Target], region: Region | None) -> Match | None:
-    """One screen capture covering every target's area, then each target searched in its own part of it."""
+def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Match | None]:
+    """One screen capture covering every target's area, then each target searched in its own part of it.
+    Returns what was found, and the closest spot even when nothing scored high enough."""
     areas = [region if region is not None else one.region for one in chosen]
     pixels, origin = screen.grab(_union(areas))
+    closest: Match | None = None
     if pixels.size == 0:
-        return None
+        return None, None
     for one, area in zip(chosen, areas, strict=True):
         part, part_origin = pixels, origin
         if area is not None:
@@ -43,9 +46,12 @@ def _look(chosen: list[Target], region: Region | None) -> Match | None:
             x, y = inside.x - origin.x, inside.y - origin.y
             part, part_origin = pixels[y : y + inside.h, x : x + inside.w], inside
         similarity = one.similarity if one.similarity is not None else settings.similarity
-        if found := matching.best(one, part, part_origin, similarity):
-            return found
-    return None
+        best = matching.best(one, part, part_origin, -1.0)
+        if best is not None and best.score >= similarity:
+            return best, best
+        if best is not None and (closest is None or best.score > closest.score):
+            closest = best
+    return None, closest
 
 
 def _usable(whats: tuple[What, ...]) -> list[Target]:
@@ -60,7 +66,11 @@ def _usable(whats: tuple[What, ...]) -> list[Target]:
     return chosen
 
 
+_closest = threading.local()  # the closest spot of the last search that found nothing, for the report
+
+
 def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> Match | None:
+    _closest.match = None
     chosen = _usable(whats)
     if not chosen:
         safety.sleep(timeout)
@@ -72,8 +82,11 @@ def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> M
     while True:
         safety.check()
         started = time.monotonic()
-        if found := _look(chosen, region):
+        found, closest = _look(chosen, region)
+        if found is not None:
             return found
+        if closest is not None and (_closest.match is None or closest.score > _closest.match.score):
+            _closest.match = closest
         if started >= deadline:
             return None
         pause = 1 / settings.scan_rate - (time.monotonic() - started)
@@ -138,10 +151,19 @@ def _names(whats: tuple[What, ...]) -> str:
 
 
 def _report(kind: str, whats: tuple[What, ...], timeout: float, found: Match | None) -> None:
+    names = _names(whats)
     if found is not None:
-        log(f"{kind} {_names(whats)}: found {found.name} at {found.x},{found.y} score {found.score:.2f}")
+        log(f"{kind} {names}: found {found.name} at {found.x},{found.y} score {found.score:.2f}")
+        record(kind, targets=names, timeout=timeout, found=found.name, score=round(found.score, 3),
+               at=[found.x, found.y])
         return
+    closest = getattr(_closest, "match", None)
+    near = f", closest {closest.name} {closest.score:.2f} at {closest.x},{closest.y}" if closest else ""
     if timeout > 0:
-        log(f"{kind} {_names(whats)}: not found in {timeout}s")
+        log(f"{kind} {names}: not found in {timeout}s{near}")
+    shot = None
     if settings.screenshot_after and timeout >= settings.screenshot_after:
-        screenshot(f"not-found_{_names(whats)}")
+        shot = screenshot(f"not-found_{names}")
+    record(kind, targets=names, timeout=timeout, found=None,
+           closest=round(closest.score, 3) if closest else None, closest_name=closest.name if closest else None,
+           at=[closest.x, closest.y] if closest else None, screenshot=shot)

@@ -1,7 +1,14 @@
-"""One log file per day, and screenshots when a long wait runs out."""
+"""One log file per day, a run report alongside it, and screenshots when a long wait runs out.
+
+The log (logs/<day>.log) is for reading. The run report (logs/report-<day>.jsonl) has
+one JSON line per event (searches, clicks, steps) for tools to summarise:
+python -m darbit.tools.report.
+"""
 from __future__ import annotations
 
+import json
 import logging
+import threading
 import time
 from datetime import datetime
 
@@ -44,10 +51,26 @@ def log(message: str) -> None:
         pass
 
 
-def screenshot(label: str) -> None:
-    """Save the screen into logs/screenshots, keeping the newest few hundred."""
+_report_lock = threading.Lock()
+
+
+def record(event: str, **fields: object) -> None:
+    """Add an event to today's run report."""
     if not settings.log:
         return
+    line = {"time": datetime.now().isoformat(timespec="milliseconds"), "event": event, **fields}
+    try:
+        settings.logs.mkdir(parents=True, exist_ok=True)
+        with _report_lock, (settings.logs / f"report-{datetime.now():%Y-%m-%d}.jsonl").open("a", encoding="utf-8") as f:
+            f.write(json.dumps(line, default=str) + "\n")
+    except OSError:
+        pass
+
+
+def screenshot(label: str) -> str | None:
+    """Save the screen into logs/screenshots, keeping the newest few hundred. Returns the file's name."""
+    if not settings.log:
+        return None
     try:
         folder = settings.logs / "screenshots"
         folder.mkdir(parents=True, exist_ok=True)
@@ -61,8 +84,9 @@ def screenshot(label: str) -> None:
         shots = sorted(folder.glob("*.png"), key=lambda p: p.stat().st_mtime)
         for old in shots[:-_KEEP_SHOTS]:
             old.unlink(missing_ok=True)
+        return path.name if ok else None
     except OSError:
-        pass
+        return None
 
 
 def since(started: float) -> str:
