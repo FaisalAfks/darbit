@@ -1,0 +1,65 @@
+# Every shortcut in darbit: the hub, the capture tool, highlight, the recorder and the run panel.
+#
+# Override any of them in %APPDATA%\darbit\keymap.toml (yours) or in a project's darbit.toml under [keys]
+# (that bot's). Later wins: this file < yours < the project's. A key set to "" turns the shortcut off.
+#
+# Rules the defaults follow:
+# - Global keys work while another app (a game) is in front, so they all use Ctrl+Alt: games rarely do.
+# - Inside darbit windows the keys are the ones editors use: Enter, Esc, Ctrl+Z, Ctrl+S, F5, F9, F10.
+# - One key per idea: a toggle (same key on and off) or a cycle (same key steps through choices).
+# - Every shortcut is also a button. Hover a button to see its key.
+
+[global]                                  # anywhere, even with the game in front
+"capture.freeze"   = "ctrl+alt+c"         # freeze the screen and capture (or retake the current guide item)
+"highlight.toggle" = "ctrl+alt+h"         # show what's found on screen, with scores; again to hide
+"record.toggle"    = "ctrl+alt+r"         # start recording; again to stop
+"record.mark"      = "ctrl+alt+m"         # while recording: mark a checkpoint here
+"run.pause"        = "ctrl+alt+p"         # pause or resume the bot, a recording or a played run
+"run.stop"         = "ctrl+alt+q"         # stop everything (the stop hotkey)
+
+[app]                                     # in every darbit window
+"palette.open"     = "ctrl+k"             # the command palette: every action by name
+"keys.show"        = "f1"                 # the keys for what's on screen
+"edit.undo"        = "ctrl+z"
+"edit.redo"        = "ctrl+y"             # ctrl+shift+z works too
+"file.save"        = "ctrl+s"
+"view.theme"       = "ctrl+alt+t"         # cycle themes
+"view.compact"     = "ctrl+."             # make the window as small as it gets, or back
+
+[capture]                                 # the frozen screen
+"confirm"          = "enter"              # save this target
+"confirm.next"     = "ctrl+enter"         # save and go to the next guide item
+"cancel"           = "esc"                # step back: drop the selection, then close
+"kind.cycle"       = "tab"                # image -> region -> point -> image
+"refreeze"         = "space"              # take a new shot
+"snap.hold_off"    = "alt"                # held: no snapping
+"snap.toggle"      = "s"                  # snapping on or off
+"zoom.toggle"      = "z"                  # pin the magnifier where it is, or let it follow the mouse
+"delete"           = "delete"             # remove the selected box or point
+"nudge"            = "arrows"             # move the selection 1 px
+"nudge.far"        = "shift+arrows"       # 10 px
+"resize"           = "ctrl+arrows"        # grow or shrink from the bottom-right; ctrl+shift for 10 px
+"retake.compare"   = "c"                  # held: show the saved image over the new one
+"next"             = "pagedown"           # next guide item
+"previous"         = "pageup"
+
+[run_panel]
+"continue"         = "f5"                 # run, or continue from a breakpoint
+"stop"             = "shift+f5"
+"step"             = "f10"
+"breakpoint"       = "f9"                 # on the selected step
+"edit"             = "f2"                 # edit the selected step (a wait, a key)
+"insert"           = "insert"             # add a step after the selected one
+
+[hub]
+"run.toggle"       = "f5"                 # run the open bot, or stop it
+"search"           = "ctrl+f"
+"section.next"     = "ctrl+tab"           # cycle Projects, Bot, Library, Runs, Settings
+
+[mouse]                                   # gestures on the frozen screen (documented here, remappable)
+"select"           = "click"              # box what's under the mouse (click again: the next bigger thing)
+"draw"             = "drag"               # draw a box of the current kind
+"draw.region"      = "shift+drag"         # draw a search region whatever the kind
+"point"            = "ctrl+click"         # set the click point
+"zoom.level"       = "wheel"              # magnifier zoom 4x to 16x
+"menu"             = "right-click"        # every action for what's under the mouse
