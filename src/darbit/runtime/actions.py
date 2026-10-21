@@ -8,7 +8,7 @@ from ..platform import safety, windows
 from ..platform.keys import Key
 from ..settings import settings
 from .find import What, _usable, wait
-from .log import log
+from .log import log, record
 
 Spot = What | Match | Location
 
@@ -50,10 +50,12 @@ def _mouse(kind: str, what: Spot, timeout: float | None, region: Region | None, 
     point = _point(what, timeout, region)
     if point is None:
         log(f"{kind} {_label(what)}: not found")
+        record(kind, target=_label(what), done=False)
         return False
     _front()
     device.click(*point, settings.glide, button, times)
     log(f"{kind} {_label(what)} at {point[0]},{point[1]}")
+    record(kind, target=_label(what), done=True, at=list(point))
     return True
 
 
@@ -86,10 +88,12 @@ def drag(what: Spot, to: Spot, timeout: float | None = None, region: Region | No
     end = _point(to, timeout, None) if start is not None else None
     if start is None or end is None:
         log(f"drag {_label(what)} -> {_label(to)}: not found")
+        record("drag", target=_label(what), done=False)
         return False
     _front()
     device.drag(*start, *end, settings.glide)
     log(f"drag {_label(what)} {start} -> {end}")
+    record("drag", target=_label(what), done=True, at=list(start), to=list(end))
     return True
 
 

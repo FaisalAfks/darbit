@@ -36,9 +36,10 @@ from .runtime.actions import (
     write,
 )
 from .runtime.find import check, exists, find_all, vanish, wait
-from .runtime.log import log, screenshot
+from .runtime.log import log, record, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
 from .runtime.state import State, Timer
+from .runtime.steps import step
 from .settings import settings
 
 __version__ = "0.1.0"
@@ -82,12 +83,14 @@ __all__ = [
     "observe",
     "observers",
     "press",
+    "record",
     "release",
     "right_click",
     "screenshot",
     "scroll",
     "settings",
     "sleep",
+    "step",
     "stop_key",
     "stop_observing",
     "vanish",

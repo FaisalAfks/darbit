@@ -124,6 +124,23 @@ if raid.due():
 
 Each day gets a log file in `logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot in `logs/screenshots/`.
 
+## Run report
+
+Next to each day's log, `logs/report-<day>.jsonl` records every search (with the closest score when nothing was found), click and drag, and the script's own steps and events:
+
+```python
+with d.step("Speed Raid"):                          # timed; ends ok, failed (with a screenshot), interrupted or stopped
+    ...
+    d.record("speed raid done", character="Naruto")  # an event of the script's own
+```
+
+```
+python -m darbit.tools.report                       # today's summary
+python -m darbit.tools.report 2026-10-21 --logs ../my-bot/logs
+```
+
+The summary shows each step's runs, failures and times, why steps ended early, the targets most often not found with their closest score, and the script's events counted by name.
+
 ## Checking a library
 
 ```
