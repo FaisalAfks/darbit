@@ -34,7 +34,7 @@ The Python package `darbit`, in layers that only depend on the layers below them
 | `platform` | screen capture, input, windows, display scaling, the stop hotkey; Windows now, others later |
 | `runtime` | find, act and wait; observers and interrupts; the state store; logging; the run report |
 | `project` | `darbit.toml`, settings layers, the bot manifest, the settings schema, the target library |
-| `tools` | capture, record, play (run files), check (library health), harvest |
+| `tools` | capture, highlight, setup guides, record, play (run files), check (library health) |
 | `server` | a local API (FastAPI and WebSocket) for the UI, the IDE extension and later MCP |
 | `ui` | the web front end, a TypeScript package in `ui/`, built into the Python wheel |
 | `cli` | `darbit new`, `capture`, `record`, `play`, `check`, `run`, `install`, `app` |
@@ -82,7 +82,7 @@ my-bot/
   bot.py             entry point
   images/            targets: .png and .json
   runs/              recorded run files: .yaml
-  capture.txt        what to capture, grouped by screen
+  guide.toml         the setup guide: what to capture, screen by screen, in order
   state/  logs/      created when the bot runs; git-ignored
 ```
 
@@ -122,9 +122,9 @@ actions:                             # reusable steps, like functions
 ```
 
 - **`darbit record NAME`** records keys, clicks and camera turns (right-drag and arrow keys) with their timings. While recording:
-  - **F6** marks a checkpoint; click-to-box takes the image it waits for
-  - **F7** starts a goal
-  - **F8** stops
+  - **Ctrl+Alt+M** marks a checkpoint; click to select takes the image it waits for
+  - **Ctrl+Alt+P** pauses and resumes
+  - **Ctrl+Alt+R** stops (it also starts)
 - **`d.play("runs/slime.yaml")`** plays it from a script; `darbit play` plays it on its own. Each checkpoint confirms the app is where it should be before going on.
 - **The live run panel** is docked to the side of the screen and never takes focus from the app. It shows checkpoints, goals and steps, with the current one highlighted. From it:
   - set breakpoints
@@ -137,7 +137,9 @@ actions:                             # reusable steps, like functions
 
 Every window, the hub app and the IDE extension are built from one web UI package.
 
-- **Design tokens** in one file: colours (dark first, light later), type scale (Segoe UI and the system font), spacing, corner radius, motion.
+- **Design tokens** in one file: colours, type scale (Segoe UI and the system font), spacing, corner radius, motion. Themes: glass dark (default), glass light, midnight, high contrast, and custom themes from a file. Details in [ui/design-system.md](ui/design-system.md).
+- **Text slots:** text on any surface is darbit's (`tool`), a bot's (`bot`) or a setup guide author's (`guide`), each styled differently.
+- **Keys:** every shortcut is in one remappable file and every shortcut is also a button ([ui/keymap.md](ui/keymap.md)).
 - **Components:**
   - card
   - pill button
@@ -152,14 +154,15 @@ Every window, the hub app and the IDE extension are built from one web UI packag
 - **Stack:** TypeScript and Svelte 5, with Konva for canvas editors. Desktop windows run in pywebview (WebView2); the IDE extension uses VS Code webviews. Both talk to darbit's local server.
 - **Windows built from it:**
   - the capture overlay
-  - the capture session card, which hides at the top of the screen
+  - highlight, over the screen and click-through
+  - the setup guide card, which hides at the top of the screen
   - the recorder bar
   - the live run panel
   - the library and check report
   - the hub app: projects, a bot's settings form, start and stop, the live view, logs and run history
 - **The freeze overlay** moves to the web UI as well. A short test first checks that a full-screen pywebview window shows a 2560×1600 screenshot smoothly. If it doesn't, that one overlay stays native, styled with the same tokens.
 
-Mockups of the main windows are in [ui/mockups.html](ui/mockups.html).
+Mockups of the main windows are in [ui/mockups.html](ui/mockups.html). Each part has its own task in [tasks/](tasks/README.md).
 
 ## 10. The IDE extension (VS Code)
 

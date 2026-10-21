@@ -1,249 +1,474 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="glass-dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>darbit UI mockups</title>
 <style>
-/* ---------------------------------------------------------------- design tokens
-   One set of values for every darbit window, the hub app and the IDE extension. */
+/* Same tokens and themes as ui/src/lib/tokens (docs/ui/design-system.md). */
 :root {
-  --bg: #0f1014;          /* behind windows, e.g. the dimmed frozen screen */
-  --surface: #17181d;     /* cards, panels */
-  --raised: #22242b;      /* buttons, fields, rows */
-  --raised-hover: #2e313a;
-  --line: #2c2f38;        /* borders */
-  --text: #eef0f4;
-  --muted: #8b8f9a;
-  --accent: #5ac8fa;      /* the one accent: primary actions, current item */
-  --accent-2: #a78bfa;    /* only in gradients with the accent */
-  --ok: #4ade80;
-  --warn: #fbbf24;
-  --danger: #f87171;
-  --kind-image: var(--accent);
-  --kind-location: var(--ok);
-  --kind-region: var(--accent-2);
-  --font: "Segoe UI", system-ui, sans-serif;
-  --font-strong: "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
-  --mono: "Cascadia Mono", Consolas, monospace;
-  --size-xs: 11px; --size-s: 13px; --size-m: 15px; --size-l: 20px; --size-xl: 28px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-strong: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --size-xs: 11px; --size-s: 12px; --size-m: 14px; --size-l: 18px; --size-xl: 24px;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
-  --radius-s: 6px; --radius-m: 12px; --radius-l: 20px; --radius-pill: 999px;
-  --shadow: 0 12px 40px rgba(0, 0, 0, .45);
-  --slide: 220ms cubic-bezier(.2, .8, .2, 1);
+  --radius-s: 6px; --radius-m: 10px; --radius-l: 16px; --radius-pill: 999px;
+  --fast: 120ms; --move: 200ms; --ease: cubic-bezier(.2,.8,.2,1); --spring: cubic-bezier(.34,1.4,.64,1);
+}
+:root, [data-theme="glass-dark"] {
+  --bg: #0b0d12; --glass: rgb(22 25 33 / .72); --glass-strong: rgb(28 31 41 / .92); --raised: rgb(255 255 255 / .06);
+  --raised-hover: rgb(255 255 255 / .11); --line: rgb(255 255 255 / .09); --blur: 18px; --shadow: 0 12px 40px rgb(0 0 0 / .45);
+  --text: #eef1f6; --muted: #9aa1ad; --faint: #626876; --accent: #5ac8fa; --accent-2: #a78bfa;
+  --glow: 0 0 0 1px rgb(90 200 250 / .5), 0 0 18px rgb(90 200 250 / .35); --on-accent: #06121c;
+  --ok: #4ade80; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa;
+  --kind-image: #5ac8fa; --kind-region: #a78bfa; --kind-point: #4ade80;
+  --slot-tool: #9aa1ad; --slot-bot: #f0abfc; --slot-guide: #eef1f6; --dim: rgb(0 0 0 / .58);
+}
+[data-theme="glass-light"] {
+  --bg: #e9edf3; --glass: rgb(255 255 255 / .74); --glass-strong: rgb(255 255 255 / .94); --raised: rgb(15 23 42 / .05);
+  --raised-hover: rgb(15 23 42 / .09); --line: rgb(15 23 42 / .1); --blur: 18px; --shadow: 0 12px 36px rgb(15 23 42 / .16);
+  --text: #111827; --muted: #5b6474; --faint: #9aa1ad; --accent: #0284c7; --accent-2: #7c3aed;
+  --glow: 0 0 0 1px rgb(2 132 199 / .45), 0 0 16px rgb(2 132 199 / .22); --on-accent: #fff;
+  --ok: #16a34a; --warn: #b45309; --danger: #dc2626; --info: #2563eb;
+  --kind-image: #0284c7; --kind-region: #7c3aed; --kind-point: #16a34a;
+  --slot-tool: #5b6474; --slot-bot: #a21caf; --slot-guide: #111827; --dim: rgb(255 255 255 / .5);
+}
+[data-theme="midnight"] {
+  --bg: #000; --glass: #0d0f14; --glass-strong: #12151c; --raised: #171a22; --raised-hover: #20242e; --line: #232733;
+  --blur: 0px; --shadow: 0 8px 24px rgb(0 0 0 / .6); --text: #e7eaf0; --muted: #8a909c; --faint: #555b67;
+  --accent: #38bdf8; --accent-2: #818cf8; --glow: 0 0 0 1px #38bdf8; --on-accent: #001018;
+  --ok: #22c55e; --warn: #eab308; --danger: #ef4444; --info: #3b82f6;
+  --kind-image: #38bdf8; --kind-region: #818cf8; --kind-point: #22c55e;
+  --slot-tool: #8a909c; --slot-bot: #e879f9; --slot-guide: #e7eaf0; --dim: rgb(0 0 0 / .66);
+}
+[data-theme="high-contrast"] {
+  --bg: #000; --glass: #000; --glass-strong: #000; --raised: #1a1a1a; --raised-hover: #333; --line: #fff;
+  --blur: 0px; --shadow: none; --text: #fff; --muted: #e5e5e5; --faint: #bfbfbf;
+  --accent: #ff0; --accent-2: #0ff; --glow: 0 0 0 2px #ff0; --on-accent: #000;
+  --ok: #0f0; --warn: #ffbf00; --danger: #ff4d4d; --info: #00bfff;
+  --kind-image: #0ff; --kind-region: #f0f; --kind-point: #0f0;
+  --slot-tool: #e5e5e5; --slot-bot: #ff80ff; --slot-guide: #fff; --dim: rgb(0 0 0 / .7);
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: var(--size-m)/1.45 var(--font); }
-main { max-width: 1180px; margin: 0 auto; padding: var(--space-6) var(--space-4) 80px; }
-h1 { font: var(--size-xl)/1.2 var(--font-strong); margin: 0 0 var(--space-2); }
-h2 { font: var(--size-l)/1.3 var(--font-strong); margin: var(--space-6) 0 var(--space-3); }
-p.lead, .note { color: var(--muted); margin: 0 0 var(--space-4); max-width: 70ch; }
-.note { font-size: var(--size-s); margin-top: var(--space-2); }
+body { margin: 0; background: var(--bg); color: var(--text); font: var(--size-m)/1.45 var(--font);
+       transition: background var(--move) var(--ease), color var(--move) var(--ease); }
+main { max-width: 1120px; margin: 0 auto; padding: var(--space-6) var(--space-4) 96px; }
+h1 { font: 700 30px/1.15 var(--font-strong); margin: 0; letter-spacing: -.01em; }
+h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h2 { font: 650 var(--size-l)/1.3 var(--font-strong); margin: 56px 0 var(--space-2); }
+.lead { color: var(--muted); max-width: 68ch; margin: var(--space-2) 0 0; }
+.note { color: var(--muted); font-size: var(--size-s); max-width: 72ch; margin: var(--space-3) 0 0; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-/* ---------------------------------------------------------------- components */
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
-        box-shadow: var(--shadow); }
-.eyebrow { font: var(--size-xs)/1 var(--font-strong); letter-spacing: .06em; color: var(--muted);
-           text-transform: uppercase; }
-.btn { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; cursor: pointer;
-       padding: 7px 16px; border-radius: var(--radius-pill); background: var(--raised); color: var(--text);
-       font: var(--size-s)/1.2 var(--font-strong); }
-.btn:hover { background: var(--raised-hover); }
-.btn.primary { background: var(--accent); color: #0b1220; }
-.btn.danger { color: var(--danger); }
-.key { display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-bottom-width: 2px;
-       border-radius: var(--radius-s); background: var(--raised); font: var(--size-xs)/1.5 var(--font-strong);
-       color: var(--text); }
-.badge { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
-         font: 11px/1 var(--font-strong); color: #0b1220; border: 2px solid var(--surface); }
-.badge.ok { background: var(--ok); } .badge.warn { background: var(--warn); }
-.kind { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
-        background: var(--raised); border: 2px solid var(--kind-image); color: var(--kind-image); font-size: 18px; }
-.strip { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.strip > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-.thumb { position: relative; width: 132px; height: 88px; border-radius: var(--radius-m); background: var(--raised);
-         border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); font-size: var(--size-xs); }
-.thumb .badge { position: absolute; top: -8px; right: -8px; }
-.swatches { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.swatch { width: 96px; font-size: var(--size-xs); color: var(--muted); }
-.swatch i { display: block; height: 40px; border-radius: var(--radius-m); border: 1px solid var(--line); margin-bottom: 4px; }
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 10; display: flex; gap: var(--space-2); align-items: center; justify-content: flex-end;
+          padding: var(--space-2) var(--space-4); background: var(--glass); backdrop-filter: blur(var(--blur)); border-bottom: 1px solid var(--line); }
+.topbar b { margin-right: auto; font: 700 var(--size-m) var(--font-strong); display: flex; gap: 8px; align-items: center; }
+.logo { width: 22px; height: 22px; border-radius: 7px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
+.seg { display: inline-flex; padding: 2px; border-radius: var(--radius-pill); background: var(--raised); flex-wrap: wrap; }
+.seg button { border: 0; background: none; color: var(--muted); padding: 4px 10px; border-radius: var(--radius-pill);
+              font: 600 var(--size-xs) var(--font-strong); cursor: pointer; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 
-/* ---------------------------------------------------------------- frames for the mockups */
-.screen { position: relative; border-radius: var(--radius-m); overflow: hidden; border: 1px solid var(--line);
-          background: linear-gradient(135deg, #3b2a63 0%, #1d3557 55%, #0d1b2a 100%); min-height: 360px; }
-.screen.dim::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); }
-.screen > * { position: relative; z-index: 1; }
+/* shared components */
+.glass { background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur));
+         border: 1px solid var(--line); box-shadow: var(--shadow); }
+.btn { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 14px;
+       border-radius: var(--radius-pill); background: var(--raised); color: var(--text); font: 600 var(--size-s)/1.2 var(--font-strong);
+       transition: background var(--fast) var(--ease), transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+.btn:hover { background: var(--raised-hover); } .btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--on-accent); } .btn.primary:hover { box-shadow: var(--glow); }
+.icon { position: relative; width: 30px; height: 30px; display: inline-grid; place-items: center; border: 0; border-radius: var(--radius-pill);
+        background: none; color: var(--muted); cursor: pointer; font-size: 14px; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
+.icon:hover { background: var(--raised-hover); color: var(--text); }
+.icon.on { color: var(--accent); background: var(--raised); }
+[data-tip] .tip, .icon .tip, .btn .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 4px; white-space: nowrap; z-index: 5;
+        display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; border-radius: var(--radius-s); background: var(--glass-strong);
+        border: 1px solid var(--line); color: var(--text); font: 500 var(--size-xs) var(--font); opacity: 0; pointer-events: none;
+        transition: opacity var(--fast) var(--ease), translate var(--fast) var(--ease); }
+.icon:hover .tip, .btn:hover .tip { opacity: 1; translate: -50% 0; }
+kbd { font: 600 10px/1.5 var(--font-strong); padding: 0 5px; min-width: 16px; text-align: center; border: 1px solid var(--line);
+      border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); }
+.chip { --c: var(--muted); display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: var(--radius-pill);
+        font: 600 var(--size-xs)/1.6 var(--font-strong); color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); white-space: nowrap; }
+.chip.image { --c: var(--kind-image); } .chip.region { --c: var(--kind-region); } .chip.point { --c: var(--kind-point); }
+.chip.ok { --c: var(--ok); } .chip.warn { --c: var(--warn); } .chip.danger { --c: var(--danger); }
+.readout { padding: 1px 6px; border-radius: var(--radius-s); font: 600 var(--size-xs) var(--mono); color: var(--on-accent); white-space: nowrap; }
+.badge { padding: 0 6px; border-radius: var(--radius-pill); font: 700 var(--size-xs) var(--mono); color: #071016; }
+.badge.ok { background: var(--ok); } .badge.risky { background: var(--warn); } .badge.missing { background: var(--danger); }
+.slot-tool { color: var(--slot-tool); font-size: var(--size-xs); }
+.slot-guide { color: var(--slot-guide); font-size: var(--size-s); }
+.slot-bot { color: var(--slot-bot); font-size: var(--size-s); display: inline-flex; gap: 6px; align-items: baseline; }
+.slot-bot b { font: 600 var(--size-xs)/1.6 var(--font-strong); padding: 0 6px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--slot-bot) 18%, transparent); }
+.strip { height: 5px; border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
+.strip i { display: block; height: 100%; width: 100%; transform-origin: left; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: transform 600ms var(--ease); }
 
-/* capture session card */
-.session { width: min(720px, 92%); margin: 18px auto 0; padding: var(--space-4) var(--space-5); }
-.session .top { display: flex; justify-content: space-between; align-items: center; }
-.session .body { display: flex; gap: var(--space-4); align-items: center; margin: var(--space-3) 0; }
-.session .name { font: var(--size-xl)/1.1 var(--font-strong); }
-.session .what { color: var(--text); font-size: var(--size-m); margin-top: 2px; }
-.session .hint { color: var(--muted); font-size: var(--size-s); margin-top: var(--space-2); }
-.session .bottom { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); }
-.session .grow { flex: 1; min-width: 0; }
+/* motion */
+@keyframes appear { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes pop { from { opacity: 0; transform: scale(1.06); } }
+@keyframes pulse { 50% { opacity: .3; } }
+@keyframes march { to { stroke-dashoffset: -20; } }
+.reveal { opacity: 0; }
+.reveal.in { animation: appear 420ms var(--spring) both; }
+.reveal.in .pop { animation: pop 300ms var(--spring) both; }
+.reveal.in .pop:nth-child(2) { animation-delay: 80ms; } .reveal.in .pop:nth-child(3) { animation-delay: 160ms; }
+.reveal.in .pop:nth-child(4) { animation-delay: 240ms; } .reveal.in .pop:nth-child(5) { animation-delay: 320ms; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
 
-/* freeze overlay */
-.target-box { position: absolute; left: 42%; top: 46%; width: 180px; height: 70px; border: 2px solid var(--ok);
-              background: rgba(255, 255, 255, .06); z-index: 2; }
-.search-box { position: absolute; left: 30%; top: 30%; width: 44%; height: 50%; border: 2px dashed var(--danger); z-index: 2; }
-.cross { position: absolute; left: calc(42% + 90px - 8px); top: calc(46% + 35px - 8px); width: 16px; height: 16px;
-         border: 2px solid var(--accent); border-radius: 50%; z-index: 3; }
-.magnifier { position: absolute; right: 18%; top: 18%; width: 132px; padding: 6px; z-index: 3; text-align: center;
-             font: var(--size-xs) var(--mono); color: var(--text); }
-.magnifier div { height: 108px; border-radius: var(--radius-s);
-                 background: repeating-conic-gradient(#3a3f55 0 25%, #2a2e40 0 50%) 0 0 / 18px 18px; margin-bottom: 4px; }
-.toolbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; display: flex;
-           gap: var(--space-3); align-items: center; padding: 10px 18px; border-radius: var(--radius-pill);
-           white-space: nowrap; font-size: var(--size-s); color: var(--muted); }
-.toolbar b { color: var(--text); font-family: var(--font-strong); font-weight: normal; }
+/* a fake game screen behind the tools */
+.screen { position: relative; border-radius: var(--radius-l); overflow: hidden; aspect-ratio: 16 / 9; border: 1px solid var(--line);
+          background: radial-gradient(120% 90% at 20% 10%, #3b2a6b 0%, #1b1e3a 45%, #0d1222 100%); isolation: isolate; }
+.screen .sky { position: absolute; inset: 0; background:
+  radial-gradient(40% 30% at 75% 80%, rgb(255 140 60 / .35), transparent 70%),
+  radial-gradient(30% 25% at 30% 70%, rgb(90 200 250 / .18), transparent 70%); }
+.screen .dimmed { position: absolute; inset: 0; background: var(--dim); }
+.gwin { position: absolute; border-radius: 10px; background: linear-gradient(180deg, #2b2f55, #1d2140); border: 2px solid #6b72c9; box-shadow: inset 0 0 0 2px #14183a; }
+.gwin h4 { margin: 0; padding: 6px 10px; font: 700 12px var(--font-strong); color: #ffe7a3; letter-spacing: .04em; background: rgb(0 0 0 / .25); }
+.gcard { position: absolute; width: 11%; aspect-ratio: 1; border-radius: 8px; border: 2px solid #8b93ff; background: linear-gradient(160deg, #ff9a62, #ff5f8f); }
+.gcard.b { background: linear-gradient(160deg, #6ee7ff, #4f7cff); } .gcard.c { background: linear-gradient(160deg, #b8ff8a, #2fbf71); }
+.gcard.d { background: linear-gradient(160deg, #f7d26b, #e08a1e); } .gcard.e { background: linear-gradient(160deg, #d8a6ff, #8a5cff); }
+.gcard.used { filter: grayscale(1) brightness(.45); }
+.gbtn { position: absolute; border-radius: 9px; background: linear-gradient(180deg, #52e38f, #1fa35a); border: 2px solid #0f6a39;
+        color: #fff; font: 800 13px var(--font-strong); display: grid; place-items: center; text-shadow: 0 1px 0 #0b4d29; }
 
-/* recorder bar */
-.recorder { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: var(--space-3);
-            align-items: center; padding: 8px 10px 8px 18px; border-radius: var(--radius-pill); white-space: nowrap; }
-.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 4px rgba(248, 113, 113, .25); }
-.recorder .time { font: var(--size-m) var(--mono); }
-.recorder .sep { width: 1px; height: 20px; background: var(--line); }
+/* capture overlay pieces */
+.box { position: absolute; border: 2px solid var(--kind-image); border-radius: 2px; box-shadow: 0 0 0 9999px transparent; }
+.box.region { border: 0; }
+.box.region svg { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); overflow: visible; }
+.box.region rect { fill: none; stroke: var(--kind-region); stroke-width: 2; stroke-dasharray: 7 5; animation: march 1.2s linear infinite; }
+.box .lbl { position: absolute; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.box .lbl.top { bottom: calc(100% + 6px); left: -2px; } .box .lbl.bottom { top: calc(100% + 6px); left: -2px; }
+.handle { position: absolute; width: 9px; height: 9px; border-radius: 2px; background: #fff; border: 2px solid var(--kind-image); translate: -50% -50%; }
+.bright { position: absolute; inset: 0; backdrop-filter: brightness(1.75) saturate(1.1); }
+.pt { position: absolute; width: 22px; height: 22px; translate: -50% -50%; }
+.pt::before, .pt::after { content: ""; position: absolute; background: var(--kind-point); }
+.pt::before { left: 50%; top: 0; bottom: 0; width: 2px; translate: -50% 0; } .pt::after { top: 50%; left: 0; right: 0; height: 2px; translate: 0 -50%; }
+.pt i { position: absolute; inset: 5px; border: 2px solid var(--kind-point); border-radius: 50%; background: rgb(0 0 0 / .25); }
+.guide-line { position: absolute; background: var(--accent); box-shadow: 0 0 8px var(--accent); opacity: .9; }
+.toolbar { position: absolute; left: 50%; bottom: 4%; translate: -50% 0; display: flex; align-items: center; gap: 2px;
+           padding: 4px 6px 4px 12px; border-radius: var(--radius-pill); max-width: 96%; }
+.toolbar .name { font: 600 var(--size-s) var(--font-strong); white-space: nowrap; margin-right: 6px; }
+.toolbar hr { width: 1px; height: 18px; border: 0; background: var(--line); margin: 0 4px; }
+.kinds button[data-k="image"][aria-pressed="true"] { background: var(--kind-image); }
+.kinds button[data-k="region"][aria-pressed="true"] { background: var(--kind-region); }
+.kinds button[data-k="point"][aria-pressed="true"] { background: var(--kind-point); }
+.mag { position: absolute; padding: 4px; border-radius: var(--radius-m); background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.mag canvas { display: block; width: 132px; height: 132px; border-radius: 6px; image-rendering: pixelated; }
+.mag .num { display: flex; justify-content: space-between; gap: 8px; padding: 3px 2px 0; font-size: 10px; color: var(--muted); }
+.mag .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; vertical-align: -1px; background: #52e38f; }
+.guidecard { position: absolute; top: 3%; left: 50%; translate: -50% 0; width: min(400px, 78%); padding: 10px 12px 8px; border-radius: var(--radius-l); display: grid; gap: 6px; }
+.guidecard header { display: flex; justify-content: space-between; align-items: center; font: 650 var(--size-s) var(--font-strong); }
+.guidecard header span { color: var(--muted); font: 500 var(--size-xs) var(--mono); }
+.guidecard .row { display: flex; gap: 8px; align-items: center; }
+.guidecard .thumbs { display: flex; gap: 4px; }
+.guidecard .thumbs i { width: 18px; height: 18px; border-radius: 4px; background: var(--raised); border: 1px solid var(--line); }
+.guidecard .thumbs i.done { background: linear-gradient(160deg, #6ee7ff, #4f7cff); }
+.guidecard .thumbs i.now { box-shadow: var(--glow); background: linear-gradient(160deg, #f7d26b, #e08a1e); }
+.hint { position: absolute; left: 50%; bottom: calc(4% + 48px); translate: -50% 0; padding: 3px 10px; border-radius: var(--radius-pill); }
 
-/* live run panel */
-.run-panel { position: absolute; right: 12px; top: 12px; bottom: 12px; width: 320px; display: flex; flex-direction: column; }
-.run-panel header { padding: var(--space-4); border-bottom: 1px solid var(--line); }
-.run-panel .controls { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
-.tree { list-style: none; margin: 0; padding: var(--space-2); overflow: auto; flex: 1; font-size: var(--size-s); }
-.tree li { padding: 5px 8px; border-radius: var(--radius-s); display: flex; gap: var(--space-2); align-items: center; }
-.tree .cp { color: var(--muted); font: var(--size-xs)/1 var(--font-strong); text-transform: uppercase; letter-spacing: .05em; margin-top: var(--space-2); }
-.tree .goal { font-family: var(--font-strong); }
-.tree .step { padding-left: 24px; color: var(--muted); }
-.tree .step.done { color: var(--text); opacity: .55; }
-.tree .now { background: var(--raised); color: var(--text); outline: 1px solid var(--accent); }
-.tree .bp::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); margin-left: -14px; }
-.tree .val { margin-left: auto; font-family: var(--mono); color: var(--muted); }
+/* highlight */
+.hl { position: absolute; border: 2px solid var(--c); border-radius: 6px; box-shadow: 0 0 14px color-mix(in srgb, var(--c) 55%, transparent); }
+.hl.ok { --c: var(--ok); } .hl.risky { --c: var(--warn); }
+.hl .lbl { position: absolute; bottom: calc(100% + 4px); left: -2px; display: inline-flex; gap: 4px; align-items: center; white-space: nowrap;
+           padding: 1px 6px; border-radius: var(--radius-s); background: var(--glass-strong); font: 600 10px var(--font-strong); color: var(--text); }
+.missing { position: absolute; right: 2%; top: 4%; padding: 8px 10px; border-radius: var(--radius-m); font-size: var(--size-xs); max-width: 40%; }
+.missing b { color: var(--danger); display: block; font: 650 var(--size-s) var(--font-strong); }
+
+/* recorder and run panel */
+.rec { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: var(--radius-pill); font-size: var(--size-s); }
+.rec .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
+.panel { width: 290px; border-radius: var(--radius-l); overflow: hidden; font-size: var(--size-s); }
+.panel header { display: flex; align-items: center; gap: 2px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--line); }
+.panel header b { flex: 1; font-family: var(--font-strong); }
+.tree { list-style: none; margin: 0; padding: 8px; display: grid; gap: 2px; }
+.tree li { padding: 3px 8px; border-radius: var(--radius-s); display: flex; gap: 8px; align-items: center; }
+.tree .cp { font-weight: 650; margin-top: 4px; } .tree .cp::before { content: "◆"; color: var(--accent); font-size: 10px; }
+.tree .goal { padding-left: 18px; color: var(--muted); } .tree .step { padding-left: 30px; font: 12px var(--mono); }
+.tree .step.done { color: var(--faint); } .tree .step.now { background: var(--raised-hover); box-shadow: var(--glow); }
+.tree .step.bp::before { content: "●"; color: var(--danger); margin-left: -14px; font-size: 10px; }
+.tree .t { margin-left: auto; color: var(--faint); font-size: 10px; }
 
 /* hub */
-.hub { display: grid; grid-template-columns: 220px 1fr; min-height: 460px; overflow: hidden; }
-.hub nav { border-right: 1px solid var(--line); padding: var(--space-4); }
-.hub nav .item { padding: 8px 12px; border-radius: var(--radius-m); color: var(--muted); }
-.hub nav .item.on { background: var(--raised); color: var(--text); }
-.hub section { padding: var(--space-5); }
-.hub .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
-.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
-.field { background: var(--raised); border-radius: var(--radius-m); padding: var(--space-3); }
-.field label { display: block; font-size: var(--size-xs); color: var(--muted); }
-.field .v { font-family: var(--font-strong); margin-top: 2px; }
-.toggle { float: right; width: 34px; height: 20px; border-radius: 10px; background: var(--accent); position: relative; }
-.toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #0b1220; }
-.toggle.off { background: var(--line); } .toggle.off::after { right: auto; left: 3px; background: var(--muted); }
-.log { margin-top: var(--space-4); font: var(--size-xs)/1.6 var(--mono); color: var(--muted); background: var(--bg);
-       border-radius: var(--radius-m); padding: var(--space-3); }
-.log b { color: var(--ok); font-weight: normal; } .log em { color: var(--warn); font-style: normal; }
+.hub { display: grid; grid-template-columns: 76px 1fr; height: 460px; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg); }
+.rail { display: flex; flex-direction: column; gap: 4px; padding: 12px 8px; background: var(--glass); border-right: 1px solid var(--line); }
+.rail .logo { width: 32px; height: 32px; margin: 0 auto 10px; border-radius: 10px; font-size: 15px; }
+.rail button { border: 0; background: none; color: var(--muted); padding: 7px 4px; border-radius: var(--radius-m); font: 600 10px var(--font-strong);
+               cursor: pointer; display: grid; gap: 2px; place-items: center; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
+.rail button span { font-size: 16px; }
+.rail button:hover { background: var(--raised-hover); color: var(--text); }
+.rail button.on { color: var(--accent); background: var(--raised); box-shadow: var(--glow); }
+.hubmain { padding: 18px 20px; overflow: auto; display: grid; gap: 14px; align-content: start; }
+.hubhead { display: flex; align-items: center; gap: 10px; }
+.hubhead h3 { margin: 0; font: 700 var(--size-l) var(--font-strong); }
+.bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.bot { border-radius: var(--radius-l); padding: 12px; display: grid; gap: 8px; transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+.bot:hover { transform: translateY(-2px); box-shadow: var(--glow), var(--shadow); }
+.bot .top { display: flex; align-items: center; gap: 8px; }
+.bot .av { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; color: #1a0b14; background: var(--a); }
+.bot .top b { flex: 1; font-family: var(--font-strong); }
+.status { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.status.run { --c: var(--ok); animation: pulse 2s ease-in-out infinite; } .status.idle { --c: var(--faint); }
+.bot .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--size-xs); }
+.live { border-radius: var(--radius-l); padding: 12px 14px; display: grid; gap: 8px; }
+.live h4 { margin: 0; font: 650 var(--size-s) var(--font-strong); display: flex; gap: 8px; align-items: center; }
+.timeline { display: grid; gap: 4px; }
+.tl { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; font-size: var(--size-xs); }
+.tl .bar { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
+.tl .bar i { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--accent)); width: var(--w); }
+.tl .bar i.ok { --c: var(--ok); } .tl .bar i.fail { --c: var(--danger); } .tl .bar i.now { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.logline { font: 11px/1.6 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logline b { color: var(--text); font-weight: 500; }
+.mini { display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: var(--radius-pill); font-size: var(--size-s); }
 
-@media (max-width: 700px) {
-  .hub { grid-template-columns: 1fr; } .hub nav { display: none; }
-  .run-panel { position: static; width: auto; margin: var(--space-3); }
-  .toolbar { position: static; transform: none; margin: var(--space-3); white-space: normal; flex-wrap: wrap; border-radius: var(--radius-l); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.stack { display: grid; gap: 16px; justify-items: start; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.sw { border-radius: var(--radius-m); padding: 8px; border: 1px solid var(--line); background: var(--raised); font-size: var(--size-xs); }
+.sw i { display: block; height: 26px; border-radius: 6px; margin-bottom: 6px; background: var(--c); border: 1px solid var(--line); }
+.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 16px; font-size: var(--size-s); }
+.keys div { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.keys span:last-child { display: inline-flex; gap: 2px; }
+@media (max-width: 760px) {
+  .grid2 { grid-template-columns: 1fr; }
+  .toolbar .name, .toolbar .hide-s { display: none; }
+  .mag { display: none; }
+  .hub { grid-template-columns: 56px 1fr; height: auto; min-height: 420px; }
+  .rail button { font-size: 0; } .rail button span { font-size: 16px; }
+  .tl { grid-template-columns: 90px 1fr 40px; }
 }
 </style>
 </head>
 <body>
-<main>
-  <h1>darbit UI</h1>
-  <p class="lead">One look for every darbit window, the hub app and the IDE extension. The tokens at the top of this file are the single source of colours, type, spacing, radius and motion.</p>
-
-  <h2>Tokens</h2>
-  <div class="swatches">
-    <div class="swatch"><i style="background:var(--surface)"></i>surface</div>
-    <div class="swatch"><i style="background:var(--raised)"></i>raised</div>
-    <div class="swatch"><i style="background:var(--accent)"></i>accent</div>
-    <div class="swatch"><i style="background:linear-gradient(90deg,var(--accent),var(--accent-2))"></i>progress</div>
-    <div class="swatch"><i style="background:var(--ok)"></i>ok · location</div>
-    <div class="swatch"><i style="background:var(--warn)"></i>warn · risky</div>
-    <div class="swatch"><i style="background:var(--danger)"></i>danger · search area</div>
-    <div class="swatch"><i style="background:var(--accent-2)"></i>region kind</div>
+<div class="topbar">
+  <b><span class="logo">d</span> darbit mockups</b>
+  <div class="seg" role="group" aria-label="Theme" id="themes">
+    <button data-t="glass-dark" aria-pressed="true">glass dark</button>
+    <button data-t="glass-light" aria-pressed="false">glass light</button>
+    <button data-t="midnight" aria-pressed="false">midnight</button>
+    <button data-t="high-contrast" aria-pressed="false">high contrast</button>
   </div>
-  <p class="note">Components: <button class="btn primary">Primary</button> <button class="btn">Plain</button> <button class="btn danger">Danger</button> <span class="key">F8</span> <span class="badge ok">✓</span> <span class="badge warn">!</span></p>
+</div>
+<main>
+  <h1>One look for <span>every darbit tool</span></h1>
+  <p class="lead">The capture tool, highlight, the setup guide, the recorder, the run panel and the hub, built from the same tokens and components. Themes switch everything at once. Only <code>transform</code> and <code>opacity</code> animate, nothing for longer than 240 ms. Specs: <code>docs/ui/design-system.md</code>, keys: <code>docs/ui/keymap.md</code>, tasks: <code>docs/tasks/</code>.</p>
 
-  <h2>Capture session card</h2>
-  <div class="screen">
-    <div class="card session">
-      <div class="top"><span class="eyebrow">Play menu · 3 of 38 · image</span><span class="eyebrow" style="color:var(--ok)">saved Play.Raid · found 1.00</span></div>
-      <div class="body">
-        <div class="kind">▣</div>
-        <div class="grow">
-          <div class="name">Play.BossRush</div>
-          <div class="what">Play menu: Boss Rush</div>
-          <div class="hint">Press <span class="key">F8</span> when it's on screen, click or box the image, Enter</div>
-        </div>
-        <div class="thumb">last saved<span class="badge ok">✓</span></div>
+  <!-- ------------------------------------------------------------ capture -->
+  <h2>Capture: a frozen screen, a guide and the toolbar</h2>
+  <div class="screen reveal" id="capture">
+    <div class="sky"></div>
+    <div class="gwin" style="left:22%;top:14%;width:56%;height:70%"><h4>BAG · CHARACTERS</h4></div>
+    <div class="gcard" style="left:27%;top:28%"></div><div class="gcard b" style="left:40%;top:28%"></div>
+    <div class="gcard c" style="left:53%;top:28%"></div><div class="gcard d" style="left:27%;top:52%"></div>
+    <div class="gcard e" style="left:40%;top:52%"></div>
+    <div class="gbtn" style="left:56%;top:70%;width:16%;height:9%">EQUIP</div>
+    <div class="dimmed"></div>
+
+    <!-- the linked region: the Bag window -->
+    <div class="box region pop" style="left:21.4%;top:13.2%;width:57.2%;height:71.6%">
+      <svg preserveAspectRatio="none"><rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="10"/></svg>
+      <span class="lbl top"><span class="chip region">⬚ Measure.bagMenuRegion</span><span class="readout" style="background:var(--kind-region)">548, 211 · 1465 × 1146</span></span>
+    </div>
+    <!-- the image being taken: the Equip button, bright inside -->
+    <div class="box pop" style="left:55.8%;top:69.6%;width:16.4%;height:9.8%">
+      <div class="bright"></div>
+      <span class="handle" style="left:0;top:0"></span><span class="handle" style="left:100%;top:0"></span>
+      <span class="handle" style="left:0;top:100%"></span><span class="handle" style="left:100%;top:100%"></span>
+      <span class="handle" style="left:50%;top:0"></span><span class="handle" style="left:50%;top:100%"></span>
+      <span class="handle" style="left:0;top:50%"></span><span class="handle" style="left:100%;top:50%"></span>
+      <span class="pt" style="left:62%;top:50%"><i></i></span>
+      <span class="lbl bottom"><span class="readout" style="background:var(--kind-image)">420 × 94</span><span class="chip ok">inside ✓</span><span class="chip point">◎ +20, 0</span></span>
+    </div>
+    <div class="guide-line pop" style="left:55.8%;top:66%;width:2px;height:17%"></div>
+
+    <div class="mag pop" style="left:74%;top:52%">
+      <canvas id="magcanvas" width="22" height="22"></canvas>
+      <div class="num"><span>1430, 1118</span><span><i class="swatch"></i> 52e38f</span></div>
+    </div>
+
+    <div class="guidecard glass pop">
+      <header>Bag, Characters tab <span>7 / 24</span></header>
+      <div class="slot-guide">Open the Bag and go to the Characters tab.</div>
+      <div class="row"><span class="chip image">▣ image</span><b style="font-size:var(--size-s)">Bag.Equip</b>
+        <span class="thumbs" style="margin-left:auto"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i></span></div>
+      <div class="slot-bot"><b>ad-bot</b>The green Equip button, without the shadow under it.</div>
+      <div class="strip"><i style="transform:scaleX(.29)"></i></div>
+    </div>
+
+    <div class="hint glass slot-tool pop">click again for bigger · drag a handle to resize · <kbd>Alt</kbd> no snapping</div>
+
+    <div class="toolbar glass pop">
+      <span class="name">Bag.Equip</span>
+      <div class="seg kinds" role="radiogroup" aria-label="Kind">
+        <button data-k="image" aria-pressed="true">Image</button><button data-k="region" aria-pressed="false">Region</button><button data-k="point" aria-pressed="false">Point</button>
       </div>
-      <div class="bottom"><span class="note" style="margin:0">Ctrl+Alt+Q finish</span>
-        <span><button class="btn">+ Add</button> <button class="btn">Undo</button> <button class="btn">Skip</button> <button class="btn primary">Done</button></span></div>
-      <div class="strip"><i style="width:8%"></i></div>
+      <hr>
+      <button class="icon hide-s">⊟<span class="tip">Smaller <kbd>right-click</kbd></span></button>
+      <button class="icon hide-s">⊞<span class="tip">Bigger <kbd>click</kbd> again</span></button>
+      <button class="icon on">⌗<span class="tip">Snapping <kbd>S</kbd></span></button>
+      <button class="icon">⌕<span class="tip">Pin magnifier <kbd>Z</kbd></span></button>
+      <button class="icon">↶<span class="tip">Undo <kbd>Ctrl</kbd><kbd>Z</kbd></span></button>
+      <button class="icon hide-s">⟳<span class="tip">New shot <kbd>Space</kbd></span></button>
+      <button class="icon">◎<span class="tip">Highlight <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></span></button>
+      <hr>
+      <button class="btn primary">Save<span class="tip"><kbd>⏎</kbd> · next <kbd>Ctrl</kbd><kbd>⏎</kbd></span></button>
     </div>
   </div>
-  <p class="note">Slides out of the top of the screen when the mouse is away, leaving the progress strip; slides back when the mouse comes near.</p>
+  <p class="note">The image (cyan) is linked to an existing region (violet, named), so the readout says whether it's inside. The click point (green) starts at the centre and was dragged right: <code>+20, 0</code>. Every kind shows where and how big it is, and clicking a readout lets you type exact numbers. The snap guide (glow) shows which line the left edge snapped to, and the magnifier draws the box edge too. Kinds switch with the segmented control or <kbd>Tab</kbd>; <kbd>Shift</kbd>+drag always draws a region, <kbd>Ctrl</kbd>+click sets the point. The guide card shows the author's text (white) and the bot's text (pink chip) separately. Hover the toolbar buttons to see their keys.</p>
 
-  <h2>Freeze overlay</h2>
-  <div class="screen dim">
-    <div class="search-box"></div><div class="target-box"></div><div class="cross"></div>
-    <div class="card magnifier"><div></div>1288, 704</div>
-    <div class="card toolbar"><b>Play.BossRush</b><span style="color:var(--kind-image)">image</span>
-      click or drag <span class="key">R</span> region <span class="key">C</span> click point <span class="key">Enter</span> save <span class="key">Space</span> new shot <span class="key">Tab</span> skip <span class="key">Esc</span> card</div>
+  <!-- ------------------------------------------------------------ highlight -->
+  <h2>Highlight: what's found right now, with scores</h2>
+  <div class="screen reveal">
+    <div class="sky"></div>
+    <div class="gwin" style="left:16%;top:10%;width:68%;height:78%"><h4>SPEED RAID</h4></div>
+    <div class="gcard" style="left:21%;top:24%"></div><div class="gcard b" style="left:34%;top:24%"></div>
+    <div class="gcard c" style="left:47%;top:24%"></div><div class="gcard d" style="left:60%;top:24%"></div>
+    <div class="gcard e used" style="left:21%;top:50%"></div><div class="gcard used" style="left:34%;top:50%"></div>
+    <div class="gbtn" style="left:58%;top:74%;width:18%;height:9%">START</div>
+    <div class="hl ok pop" style="left:20.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Naruto <span class="badge ok">0.97</span></span></div>
+    <div class="hl ok pop" style="left:33.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Sakura <span class="badge ok">0.95</span></span></div>
+    <div class="hl risky pop" style="left:46.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Goku <span class="badge risky">0.82</span></span></div>
+    <div class="hl ok pop" style="left:57.6%;top:73.3%;width:18.8%;height:10.4%"><span class="lbl">Start <span class="badge ok">0.99</span></span></div>
+    <div class="missing glass pop"><b>not seen: 2</b><span class="slot-tool">SR.Char.Killua, SR.Char.Itadori (greyed out)</span></div>
   </div>
+  <p class="note"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd> at any time, or <code>d.highlight(...)</code> from a script. The mouse goes through to the game; hold <kbd>Ctrl</kbd> to click a box and retake it. Yellow means a look-alike scores high somewhere else too.</p>
 
-  <h2>Recorder bar</h2>
-  <div class="screen" style="min-height:160px">
-    <div class="card recorder"><span class="rec-dot"></span><span class="time">01:42</span><span class="sep"></span>
-      <span class="eyebrow">Wave 2 · Clear the left side</span><span class="sep"></span>
-      <span class="key">F6</span><span class="note" style="margin:0">checkpoint</span>
-      <span class="key">F7</span><span class="note" style="margin:0">goal</span>
-      <button class="btn">Pause</button><button class="btn danger">Stop</button></div>
-  </div>
-
-  <h2>Live run panel</h2>
-  <div class="screen" style="min-height:440px">
-    <aside class="card run-panel">
-      <header><span class="eyebrow">Running · slime.yaml</span>
-        <div style="font:var(--size-l) var(--font-strong);margin-top:4px">Wave 2 of 4</div>
-        <div class="strip" style="margin-top:var(--space-3)"><i style="width:42%"></i></div>
-        <div class="controls"><button class="btn">Pause</button><button class="btn">Step</button><button class="btn">+ Step</button><button class="btn primary">Save</button></div></header>
-      <ul class="tree">
-        <li class="cp">Checkpoint · Wave 1 <span class="val">✓</span></li>
-        <li class="cp">Checkpoint · Wave 2 <span class="val">Dim.Game.Left</span></li>
-        <li class="goal">Clear the left side</li>
-        <li class="step done">hold w</li>
-        <li class="step done">wait <span class="val">0.5 s</span></li>
-        <li class="step now">press q</li>
-        <li class="step bp">do dodge</li>
-        <li class="step">turn <span class="val">−90°</span></li>
-        <li class="goal">Boss</li>
-        <li class="step">press 1</li>
-        <li class="cp">Checkpoint · Wave 3</li>
-      </ul>
-    </aside>
-  </div>
-  <p class="note">Docked to the side, never takes focus from the game. Click a step to set a breakpoint (red dot); click a value to edit it.</p>
-
-  <h2>Hub app</h2>
-  <div class="card hub">
-    <nav><div class="eyebrow" style="margin-bottom:var(--space-3)">Bots</div>
-      <div class="item on">Anime Dimensions</div><div class="item">Daily rewards</div>
-      <div class="eyebrow" style="margin:var(--space-5) 0 var(--space-3)">Tools</div>
-      <div class="item">Capture</div><div class="item">Record</div><div class="item">Library check</div></nav>
-    <section>
-      <div class="head"><div><span class="eyebrow">ad-bot · v0.2.0</span><div style="font:var(--size-l) var(--font-strong)">Anime Dimensions</div></div>
-        <span><button class="btn">Live view</button> <button class="btn primary">Start</button></span></div>
-      <div class="form">
-        <div class="field"><label>Speed Raid</label><span class="toggle"></span><div class="v">On</div></div>
-        <div class="field"><label>Boss Rush</label><span class="toggle"></span><div class="v">1 a day</div></div>
-        <div class="field"><label>Time Challenge</label><span class="toggle off"></span><div class="v">Off</div></div>
-        <div class="field"><label>Raid</label><div class="v">Limited</div></div>
+  <!-- ------------------------------------------------------------ recorder and run panel -->
+  <h2>Recorder bar and live run panel</h2>
+  <div class="grid2 reveal">
+    <div class="stack">
+      <div class="rec glass pop">
+        <i class="dot"></i><span class="num">01:42</span><b>Slime</b><span class="num slot-tool">◆ 2</span>
+        <button class="icon">◆<span class="tip">Checkpoint <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></span></button>
+        <button class="icon">❚❚<span class="tip">Pause <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>P</kbd></span></button>
+        <button class="icon">■<span class="tip">Stop <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd></span></button>
       </div>
-      <div class="log"><b>21:04:12</b> Speed Raid: Naruto found on slide 15<br><b>21:04:30</b> Speed Raid done: 1 of 133<br><em>21:05:02</em> Boss Rush: no attempts left today</div>
-    </section>
+      <p class="note" style="margin:0">One pill at the top of the screen that never takes focus from the game. <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd> freezes the screen for one click: the thing that proves this part started becomes the checkpoint.</p>
+      <div class="mini glass pop"><span class="status run"></span><b>ad-bot</b><span class="slot-tool">Speed Raid › Sakura</span>
+        <button class="icon">❚❚<span class="tip">Pause</span></button><button class="icon">■<span class="tip">Stop</span></button><button class="icon">⤢<span class="tip">Open the hub <kbd>Ctrl</kbd><kbd>.</kbd></span></button></div>
+      <p class="note" style="margin:0">The hub in compact mode: 300 × 48 px over the game.</p>
+    </div>
+    <div class="panel glass pop">
+      <header><b>Slime</b>
+        <button class="icon">▶<span class="tip">Continue <kbd>F5</kbd></span></button>
+        <button class="icon">⤼<span class="tip">Step <kbd>F10</kbd></span></button>
+        <button class="icon">■<span class="tip">Stop <kbd>Shift</kbd><kbd>F5</kbd></span></button>
+        <button class="icon">⇥<span class="tip">Collapse</span></button></header>
+      <ul class="tree">
+        <li class="cp">Wave 1 <span class="t">Dim.Game.Left</span></li>
+        <li class="goal">Clear the left side</li>
+        <li class="step done">hold w <span class="t">0.0</span></li>
+        <li class="step done">wait 0.5 <span class="t">0.0</span></li>
+        <li class="step now">press q <span class="t">0.5</span></li>
+        <li class="step bp">do dodge <span class="t">0.6</span></li>
+        <li class="step">turn −90° <span class="t">1.2</span></li>
+        <li class="cp">Wave 2 <span class="t">Dim.Game.Next</span></li>
+        <li class="goal">Boss</li>
+      </ul>
+    </div>
   </div>
-  <p class="note">The settings form is generated from the bot's settings.toml.</p>
+
+  <!-- ------------------------------------------------------------ hub -->
+  <h2>The hub</h2>
+  <div class="hub reveal">
+    <nav class="rail">
+      <span class="logo">d</span>
+      <button class="on"><span>▦</span>Bots</button><button><span>▶</span>Bot</button><button><span>▣</span>Library</button>
+      <button><span>☰</span>Runs</button><button><span>⚙</span>Settings</button>
+    </nav>
+    <div class="hubmain">
+      <div class="hubhead"><h3>Bots</h3><span class="chip">2 installed</span><span style="flex:1"></span>
+        <button class="btn">＋ Install<span class="tip">from a git link</span></button></div>
+      <div class="bots">
+        <div class="bot glass pop" style="--a:#ff7ab6"><div class="top"><span class="av">ad</span><b>ad-bot</b><span class="status run"></span></div>
+          <div class="slot-tool">Speed Raid › Sakura · 6 of 133 this week</div>
+          <div class="meta"><span>running 3 h 12 m</span><button class="btn" style="padding:3px 10px">Stop</button></div></div>
+        <div class="bot glass pop" style="--a:#7ad7ff"><div class="top"><span class="av">fs</span><b>fish-bot</b><span class="status idle"></span></div>
+          <div class="slot-tool">idle · last run yesterday, ok</div>
+          <div class="meta"><span>setup 24 / 24</span><button class="btn primary" style="padding:3px 10px">Run</button></div></div>
+      </div>
+      <div class="live glass pop">
+        <h4><span class="status run"></span> ad-bot · live</h4>
+        <div class="timeline">
+          <div class="tl"><span>Raid</span><span class="bar"><i class="ok" style="--w:72%"></i></span><span class="num slot-tool">41 m</span></div>
+          <div class="tl"><span>Speed Raid › Natsu</span><span class="bar"><i class="ok" style="--w:28%"></i></span><span class="num slot-tool">1 m</span></div>
+          <div class="tl"><span>AFK</span><span class="bar"><i class="fail" style="--w:12%"></i></span><span class="num slot-tool">5 m</span></div>
+          <div class="tl"><span>Speed Raid › Sakura</span><span class="bar"><i class="now" style="--w:46%"></i></span><span class="num slot-tool">now</span></div>
+        </div>
+        <div class="logline">11:24:31 <b>Speed Raid done: 6 of 133</b> · 11:24:40 exists Lobby.Play 0.98 · 11:24:41 click Play</div>
+      </div>
+    </div>
+  </div>
+  <p class="note">A rail with five sections (<kbd>Ctrl</kbd><kbd>Tab</kbd> cycles them), cards per bot with their own accent, and a live timeline of steps from the run report. <kbd>Ctrl</kbd><kbd>K</kbd> opens the command palette everywhere.</p>
+
+  <!-- ------------------------------------------------------------ tokens and keys -->
+  <h2>Tokens</h2>
+  <div class="swatches reveal">
+    <div class="sw pop" style="--c:var(--accent)"><i></i>accent</div>
+    <div class="sw pop" style="--c:var(--accent-2)"><i></i>accent-2</div>
+    <div class="sw pop" style="--c:var(--kind-image)"><i></i>kind-image</div>
+    <div class="sw pop" style="--c:var(--kind-region)"><i></i>kind-region</div>
+    <div class="sw pop" style="--c:var(--kind-point)"><i></i>kind-point</div>
+    <div class="sw" style="--c:var(--ok)"><i></i>ok</div>
+    <div class="sw" style="--c:var(--warn)"><i></i>warn</div>
+    <div class="sw" style="--c:var(--danger)"><i></i>danger</div>
+    <div class="sw" style="--c:var(--slot-bot)"><i></i>slot-bot</div>
+    <div class="sw" style="--c:var(--glass)"><i></i>glass</div>
+  </div>
+
+  <h2>Keys</h2>
+  <div class="keys reveal">
+    <div><span>Capture</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd></span></div>
+    <div><span>Highlight</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></span></div>
+    <div><span>Record / stop recording</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd></span></div>
+    <div><span>Checkpoint</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></span></div>
+    <div><span>Pause / resume</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>P</kbd></span></div>
+    <div><span>Stop everything</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Q</kbd></span></div>
+    <div><span>Commands</span><span><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+    <div><span>Next kind</span><span><kbd>Tab</kbd></span></div>
+    <div><span>Save · and next</span><span><kbd>⏎</kbd><kbd>Ctrl</kbd><kbd>⏎</kbd></span></div>
+    <div><span>Back · close</span><span><kbd>Esc</kbd></span></div>
+    <div><span>Undo · redo</span><span><kbd>Ctrl</kbd><kbd>Z</kbd><kbd>Ctrl</kbd><kbd>Y</kbd></span></div>
+    <div><span>Run · step · breakpoint</span><span><kbd>F5</kbd><kbd>F10</kbd><kbd>F9</kbd></span></div>
+  </div>
+  <p class="note">Global keys all use <kbd>Ctrl</kbd><kbd>Alt</kbd> so games don't get them. Everything is in <code>src/darbit/keymap.toml</code> and can be changed per user or per bot.</p>
 </main>
+
+<script>
+// themes
+const themes = document.getElementById("themes");
+themes.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.t;
+  themes.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  paintMag();
+});
+// the kind control in the toolbar
+document.querySelectorAll(".kinds").forEach((seg) => seg.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+}));
+// sections animate in once when they scroll into view
+const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+  if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+}), { threshold: 0.15 });
+document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+// the magnifier: the button's corner, pixel by pixel, with the box edge drawn on top
+function paintMag() {
+  const c = document.getElementById("magcanvas"), g = c.getContext("2d");
+  const css = getComputedStyle(document.documentElement);
+  for (let y = 0; y < 22; y++) for (let x = 0; x < 22; x++) {
+    const inBtn = x >= 7 && y >= 6, edge = inBtn && (x === 7 || y === 6);
+    g.fillStyle = edge ? "#0f6a39" : inBtn ? (y < 10 ? "#52e38f" : "#3cc779") : ((x + y) % 5 ? "#1d2140" : "#232850");
+    g.fillRect(x, y, 1, 1);
+  }
+  g.fillStyle = css.getPropertyValue("--kind-image").trim();
+  g.fillRect(6, 5, 16, 1); g.fillRect(6, 5, 1, 17);
+  g.strokeStyle = "#fff"; g.lineWidth = 0.15; g.strokeRect(10.5, 10.5, 1, 1);
+}
+paintMag();
+</script>
 </body>
 </html>

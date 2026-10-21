@@ -17,6 +17,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
+# the web UI: local server and desktop windows (docs/tasks/T05, T06)
+ui = ["starlette>=0.40", "uvicorn>=0.30", "pywebview>=5.3"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/darbit"]
