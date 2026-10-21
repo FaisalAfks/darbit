@@ -182,14 +182,6 @@ In a session, a card at the top of the screen shows the next target. Open its sc
 - Space takes a new shot, Tab skips, Backspace undoes, Esc goes back to the card
 - On the card: `+ Add` adds a target to the session and the list; Done (or Ctrl+Alt+Q) keeps or deletes the session's captures
 
-A long scrolling list, like a character list, can be taken in one pass:
-
-```
-python -m darbit.capture --list capture.txt --harvest "Speed Raid characters"
-```
-
-Box the first cell, the next cell diagonally, and the list area. The list scrolls by itself, every cell is cut out, and a review screen names them in the order of the list's group.
-
 ## License
 
 MIT or Apache-2.0, at your option.

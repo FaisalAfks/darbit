@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Capture tool: the grid harvest (`--harvest`) and `--from script.py` are removed
 - Run report: `logs/report-<day>.jsonl` with searches (closest score when not found), clicks, `d.step(name)` and `d.record(event)`; `python -m darbit.tools.report` summarises a day
 - A search that finds nothing logs its closest score and spot
 - `python -m darbit.tools.check`: every target scored in its region and everywhere else, against the live screen or saved screenshots, with a verdict and a history

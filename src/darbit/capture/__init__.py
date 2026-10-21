@@ -7,8 +7,6 @@ One target:
 
 A session, guided by a card at the top centre of the screen:
     python -m darbit.capture --list capture.txt       # every target in the list not captured yet
-    python -m darbit.capture --list capture.txt --harvest "Speed Raid characters"   # a scrolling grid
-    python -m darbit.capture --from bot.py            # every image bot.py uses that isn't captured yet
     python -m darbit.capture Gui.Play Gui.Bag location:afk/spot region:menus/bag
 
     A list file has one target per line, a description after "#":
@@ -33,14 +31,14 @@ import tkinter as tk
 from pathlib import Path
 
 from ..platform import screen
-from .common import Item, Result, captured, distinct, images_in, read_list
+from .common import Item, Result, captured, distinct, read_list
 from .overlay import Overlay
 from .session import HOTKEYS, Session
 from .store import save_result
 
 screen.enable_dpi_awareness()
 
-__all__ = ["Item", "distinct", "images_in", "main", "read_list"]
+__all__ = ["Item", "distinct", "main", "read_list"]
 
 
 def _single(item: Item, folder: Path, delay: float) -> int:
@@ -80,9 +78,7 @@ def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m darbit.capture", description="Capture targets from the screen.")
     parser.add_argument("names", nargs="*", help="target names, e.g. Gui.Play, location:afk/spot, region:menus/bag")
     parser.add_argument("--list", dest="list_file", help="a list file of targets to capture")
-    parser.add_argument("--harvest", metavar="GROUP", help="harvest a scrolling grid into the list's [GROUP] targets")
-    parser.add_argument("--from", dest="script", help="capture every image this script uses that isn't saved yet")
-    parser.add_argument("--folder", help="where to save (default: images next to the list or script)")
+    parser.add_argument("--folder", help="where to save (default: images next to the list)")
     parser.add_argument("--all", action="store_true", help="session: include targets already captured")
     parser.add_argument("--location", action="store_true", help="one target: a point instead of an image")
     parser.add_argument("--region", action="store_true", help="one target: a region instead of an image")
@@ -92,8 +88,7 @@ def _main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     list_file = Path(args.list_file).resolve() if args.list_file else None
-    script = Path(args.script).resolve() if args.script else None
-    home = list_file or script
+    home = list_file
     folder = Path(args.folder) if args.folder else (home.parent / "images" if home else Path("images"))
 
     items = [Item.parse(n) for n in args.names]
@@ -101,24 +96,14 @@ def _main(argv: list[str] | None = None) -> int:
         if not list_file.is_file():
             list_file.write_text("", encoding="utf-8")
         items += read_list(list_file)
-    if script:
-        items += [Item(n.removesuffix(".png")) for n in images_in(script)]
     if home and not args.all:
         items = [i for i in items if not captured(i, folder)]
     seen: set[tuple[str, str]] = set()
     items = [i for i in items if (i.name, i.kind) not in seen and not seen.add((i.name, i.kind))]
 
-    if args.harvest:
-        group = [i for i in items if i.screen == args.harvest]
-        if not group:
-            print(f"no targets left in [{args.harvest}]")
-            return 0
-        from .harvest import run
-        print(f"{len(group)} names in [{args.harvest}]; saving into {folder}")
-        return run(group, folder, args.delay)
     if not home:
         if not items:
-            print("give a target name, --list capture.txt or --from script.py")
+            print("give a target name or --list capture.txt")
             return 2
         if len(items) == 1:
             kind = "location" if args.location else "region" if args.region else items[0].kind

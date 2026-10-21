@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import base64
-import re
 import tkinter as tk
-import tokenize
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
@@ -96,18 +94,6 @@ def distinct(image: np.ndarray, shot: np.ndarray, box: Region) -> float:
     h, w = image.shape[:2]
     result[max(0, box.y - h + 1) : box.y + h, max(0, box.x - w + 1) : box.x + w] = -1
     return float(result.max()) if result.size else 0.0
-
-
-def images_in(script: Path) -> list[str]:
-    """Every image name written in a script (strings ending in .png, comments ignored), in order."""
-    names: list[str] = []
-    with script.open(encoding="utf-8") as file:
-        for token in tokenize.generate_tokens(file.readline):
-            if token.type == tokenize.STRING:
-                for name in re.findall(r"[^\"']+\.png", token.string):
-                    if name not in names:
-                        names.append(name)
-    return names
 
 
 def read_list(path: Path) -> list[Item]:
