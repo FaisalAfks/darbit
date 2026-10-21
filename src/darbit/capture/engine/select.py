@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 
 from ...core.geometry import Region
+from .snap import snap_box
 
 if TYPE_CHECKING:
     from . import Prepared
@@ -36,9 +37,9 @@ def fill(shot: np.ndarray, x: int, y: int, diff: int = FILL_DIFF) -> Region:
     """The area of similar colour connected to (x, y)."""
     h, w = shot.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(shot, mask, (x, y), 0, (diff,) * 3, (diff,) * 3, 4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8))
-    ys, xs = np.nonzero(mask[1:-1, 1:-1])
-    return Region(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
+    _, _, _, (bx, by, bw, bh) = cv2.floodFill(shot, mask, (x, y), 0, (diff,) * 3, (diff,) * 3,
+                                              4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8))
+    return Region(int(bx), int(by), int(bw), int(bh))
 
 
 def grow(shot: np.ndarray, inner: Region, x: int, y: int, limit: float = 1.0) -> Region | None:
@@ -107,24 +108,28 @@ def _iou(a: Region, b: Region) -> float:
 
 
 def _distinct(boxes: list[Region]) -> list[Region]:
+    """Near-duplicates dropped, keeping the first one given (callers list exact boxes first), smallest first."""
     kept: list[Region] = []
-    for box in sorted(boxes, key=lambda b: b.w * b.h):
+    for box in boxes:
         if box.w >= 3 and box.h >= 3 and all(_iou(box, k) <= SAME for k in kept):
             kept.append(box)
-    return kept
+    return sorted(kept, key=lambda b: b.w * b.h)
 
 
 def candidates(prep: Prepared, x: int, y: int, kind: Kind) -> list[Region]:
     """Boxes around (x, y), smallest first, ending with the whole screen.
 
-    image:  the colour fill (a button's background gives the button), the areas just outside it, the smallest
-            shape from edges, then the rectangles a region would get
+    image:  the colour fill (a button's background gives the button), the areas just outside it, the rectangles
+            a region would get, and the smallest shape traced from edges
     region: rectangles from the half-size edge map, from 80x60 up to the screen
     Near-duplicates (IoU > 0.9) are dropped."""
     shot = prep.shot
     h, w = shot.shape[:2]
     x, y = min(max(0, x), w - 1), min(max(0, y), h - 1)
-    boxes = rectangles(prep.edges_half, x, y)
+    everywhere = {"left", "top", "right", "bottom"}
+    # half-size outlines are a pixel or two off: put them on the real borders
+    outlines = [snap_box(prep.lines, r, everywhere, reach=3)[0] for r in rectangles(prep.edges_half, x, y)]
+    boxes: list[Region] = list(outlines)  # first: on a tie, the box with its border wins
     if kind == "image":
         first = fill(shot, x, y)
         if first.w * first.h <= 0.2 * w * h:  # a huge fill is the background around an icon, not a thing
@@ -134,13 +139,16 @@ def candidates(prep: Prepared, x: int, y: int, kind: Kind) -> list[Region]:
                 if (step := grow(shot, step, x, y)) is None:
                     break
                 boxes.append(step)
-        if (shape := shape_at(shot, x, y)) is not None:
-            boxes.append(shape)
+    if kind == "image" and (shape := shape_at(shot, x, y)) is not None:
+        boxes.append(shape)  # traced from edge pixels: last, so exact boxes win over it
     screen = Region(0, 0, w, h)
     return [b for b in _distinct(boxes) if _iou(b, screen) <= SAME] + [screen]
 
 
 def pick(boxes: list[Region], start: tuple[int, int] = START) -> int:
-    """Which candidate a click selects first: the smallest at least `start` big (a button rather than a letter
-    on it). Smaller ones stay in the list for "smaller"."""
+    """Which candidate a click selects first: the smallest at least `start` big, a button rather than a letter
+    on it. A small first box is kept when the next is barely bigger (its own outline), so thin things like a
+    scrollbar handle are selected too. Smaller ones stay in the list for "smaller"."""
+    if len(boxes) > 1 and boxes[1].w * boxes[1].h < 4 * boxes[0].w * boxes[0].h:
+        return 0
     return next((i for i, b in enumerate(boxes) if b.w >= start[0] and b.h >= start[1]), 0)

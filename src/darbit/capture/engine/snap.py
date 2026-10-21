@@ -11,6 +11,7 @@ tests/data/capture/snap_cases.json.
 """
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from typing import Literal, TypedDict
 
 import numpy as np
@@ -57,13 +58,29 @@ def _overlap(a0: int, a1: int, b0: int, b1: int) -> int:
     return max(0, min(a1, b1) - max(a0, b0))
 
 
+_index: dict[int, tuple[list[tuple[int, int, int]], list[int], list[tuple[int, int, int]]]] = {}
+
+
+def _around(segments: list[tuple[int, int, int]], low: int, high: int) -> list[tuple[int, int, int]]:
+    """The segments with a position from low to high, from a sorted copy kept per list (a few lists per freeze)."""
+    entry = _index.get(id(segments))
+    if entry is None or entry[0] is not segments:
+        ordered = sorted(segments)
+        if len(_index) > 8:
+            _index.clear()
+        entry = _index[id(segments)] = (segments, [s[0] for s in ordered], ordered)
+    _, positions, ordered = entry
+    return ordered[bisect_left(positions, low) : bisect_right(positions, high)]
+
+
 def _nearest(segments: list[tuple[int, int, int]], at: int, span: tuple[int, int], reach: int,
              side: int) -> tuple[int, int, int] | None:
     """The line nearest to `at` (within reach) that runs along at least OVERLAP of `span`; longer wins ties.
     Lines on `side` of it (-1 lower, +1 higher) within BAND are the same border, so the walk goes to the
     last of them: the border's outer side when snapping outward, its inner side when inward."""
     need = OVERLAP * (span[1] - span[0])
-    usable = [s for s in segments if _overlap(s[1], s[2], *span) >= need]
+    window = _around(segments, at - reach - 4 * BAND, at + reach + 4 * BAND)  # as far as a walk can go
+    usable = [s for s in window if _overlap(s[1], s[2], *span) >= need]
     near = [s for s in usable if abs(s[0] - at) <= reach]
     if not near:
         return None

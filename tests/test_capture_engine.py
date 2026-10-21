@@ -49,8 +49,8 @@ def _near(a: Region, b: Region, tolerance: int = 6) -> bool:
 def test_a_click_on_a_button_selects_the_button_then_bigger_things(screen):
     prep, parts = screen
     boxes = candidates(prep, parts["button"].x + 20, parts["button"].y + 15, "image")
-    assert _near(boxes[0], parts["button"])
-    assert any(_near(b, parts["window"]) for b in boxes[1:])  # clicking again reaches the window
+    assert boxes[pick(boxes)] == parts["button"]  # exactly
+    assert parts["window"] in boxes  # clicking again reaches the window, on its border
     assert boxes[-1] == Region(0, 0, 2560, 1600)  # and ends with the screen
     assert [b.w * b.h for b in boxes] == sorted(b.w * b.h for b in boxes)
 
@@ -60,14 +60,14 @@ def test_a_click_on_a_letter_still_reaches_the_button(screen):
     b = parts["button"]
     boxes = candidates(prep, b.x + 130, b.y + 45, "image")
     assert boxes[0].w < 40  # the letter is there, for "smaller"
-    assert _near(boxes[pick(boxes)], b)  # but a click starts on the button
+    assert boxes[pick(boxes)] == b  # but a click starts on the button
 
 
 def test_region_clicks_select_windows_bigger_than_the_old_limit(screen):
     prep, parts = screen
     boxes = candidates(prep, parts["panel"].x + 50, parts["panel"].y + 50, "region")
-    assert _near(boxes[0], parts["panel"])
-    assert any(_near(b, parts["window"]) for b in boxes[:3])
+    assert boxes[0] == parts["panel"]
+    assert parts["window"] in boxes[:3]
     assert all(b.w >= 80 and b.h >= 60 for b in boxes)
 
 
