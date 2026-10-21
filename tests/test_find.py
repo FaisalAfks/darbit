@@ -71,3 +71,25 @@ def test_missing_images_can_be_skipped(fake, monkeypatch):
 
 def test_check_lists_missing_images(fake):
     assert d.check("Gui.Play.png", "nope.png") == ["nope.png"]
+
+
+def test_several_targets_cost_one_capture_per_look(fake, tmp_path, monkeypatch):
+    save(tmp_path / "A", np.random.default_rng(5).integers(0, 255, (20, 30, 3), dtype=np.uint8), region=[0, 0, 200, 200])
+    save(tmp_path / "B", np.random.default_rng(6).integers(0, 255, (20, 30, 3), dtype=np.uint8), region=[300, 100, 200, 200])
+    real = screen.grab
+    grabs = []
+    monkeypatch.setattr(screen, "grab", lambda region=None: grabs.append(region) or real(region))
+    fake((100, 50))
+    found = d.wait("A", "B", "Gui.Play.png", timeout=0)
+    assert found.name == "Gui.Play.png"
+    assert len(grabs) == 1 and grabs[0] is None  # Gui.Play has no region: one capture of the whole screen
+    grabs.clear()
+    assert d.wait("A", "B", timeout=0) is None
+    assert grabs == [Region(0, 0, 500, 300)]  # one capture covering both regions
+
+
+def test_a_target_is_only_searched_in_its_own_region(fake, tmp_path):
+    save(tmp_path / "Play.Here", np.random.default_rng(2).integers(0, 255, (20, 30, 3), dtype=np.uint8),
+         region=[0, 0, 100, 100])
+    fake((300, 200))  # the same picture, outside Play.Here's region
+    assert d.exists("Play.Here") is None
