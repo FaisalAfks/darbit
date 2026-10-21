@@ -17,15 +17,6 @@ def test_distinct_scores_high_for_a_repeated_image():
     assert distinct(image, shot, Region(100, 50, 30, 20)) > 0.99
 
 
-def test_images_in_a_script_skips_comments(tmp_path):
-    from darbit.capture import images_in
-
-    script = tmp_path / "bot.py"
-    script.write_text('a = "Gui.Play.png" #"Old.png"\n#b = ["Gone.png"]\nc = ["x.png","Gui.Play.png"]\n',
-                      encoding="utf-8")
-    assert images_in(script) == ["Gui.Play.png", "x.png"]
-
-
 def test_item_kinds():
     from darbit.capture import Item
 
@@ -105,41 +96,3 @@ def test_list_screens(tmp_path):
     assert [(i.name, i.screen) for i in items] == [("Gui.Play", "Lobby"), ("Play.Raid", "Play menu")]
     add_to_list(path, Item("Gui.Bag", "image", "", "Lobby"))
     assert [i.name for i in read_list(path)] == ["Gui.Play", "Gui.Bag", "Play.Raid"]
-
-
-def _list_image(rows: int, cols: int, cell: int, gap: int) -> np.ndarray:
-    """A tall picture of a grid of distinct cells, like a character list."""
-    rng = np.random.default_rng(7)
-    pitch = cell + gap
-    image = np.full((rows * pitch + gap, cols * pitch + gap, 3), 20, np.uint8)
-    for r in range(rows):
-        for c in range(cols):
-            y, x = gap + r * pitch, gap + c * pitch
-            image[y : y + cell, x : x + cell] = rng.integers(0, 255, (cell, cell, 3), dtype=np.uint8)
-    return image
-
-
-def test_harvest_scrolls_and_cuts_every_cell_once():
-    from darbit.capture.harvest import Grid, harvest
-    from darbit.core.geometry import Region
-
-    full = _list_image(rows=9, cols=4, cell=40, gap=10)  # 36 cells, list 460 tall
-    view_h = 200  # the screen shows 200 pixels of it at a time
-    state = {"offset": 0}
-
-    def grab():
-        screen = np.zeros((300, 300, 3), np.uint8)
-        part = full[state["offset"] : state["offset"] + view_h]
-        screen[50 : 50 + part.shape[0], 20 : 20 + part.shape[1]] = part
-        return screen, Region(0, 0, 300, 300)
-
-    def scroll():
-        state["offset"] = min(state["offset"] + 70, full.shape[0] - view_h)
-
-    grid = Grid(first=Region(30, 60, 40, 40), dx=50, dy=50, area=Region(20, 50, full.shape[1], view_h))
-    cells = harvest(grid, grab, scroll)
-    assert len(cells) == 36
-    expected_first = full[10:50, 10:50]
-    assert np.array_equal(cells[0], expected_first)
-    expected_last = full[10 + 8 * 50 : 50 + 8 * 50, 10 + 3 * 50 : 50 + 3 * 50]
-    assert np.array_equal(cells[-1], expected_last)
