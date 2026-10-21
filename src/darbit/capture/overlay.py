@@ -1,9 +1,10 @@
 """The frozen screen where a target is boxed or pointed at.
 
-    drag            box the image (green), or the region; edges snap to lines nearby (hold Alt to stop)
-    click           box the element under the mouse, found from its edges
-    R, then drag    the image's search region (red)
-    C, then click   the image's click point (cross)
+    click           box what's under the mouse; click the same spot again for the next bigger thing,
+                    right-click for smaller
+    drag            draw the box; edges snap onto borders nearby (hold Alt to stop)
+    Shift+drag      the image's search region (or R, then drag)
+    Ctrl+click      the image's click point (or C, then click)
     arrows          move the box 1 pixel; Shift+arrows resize it
 
     Enter           save            Tab        skip
@@ -20,53 +21,18 @@ import numpy as np
 
 from ..core.geometry import Location, Region
 from .common import Result, Theme, photo, rounded
-from .engine.select import edges_of, fill, grow, shape_at
+from .engine import Prepared, candidates, pick, prepare, snap_box
 
 ZOOM, ZOOM_SIZE = 8, 21  # magnifier: 21x21 pixels shown 8 times bigger
 DIM = 0.42  # how bright the screen is outside the box
-SNAP = 6  # pixels within which an edge pulls the box edge to it
 CLICK = 4  # a press and release closer than this is a click, not a drag
-ALT = 0x20000  # Tk's Alt modifier on Windows
+ALT, SHIFT, CTRL = 0x20000, 0x1, 0x4  # Tk's modifier bits on Windows
 
 Done = Callable[[str, Result | None], None]  # action: save, cancel, refreeze, skip, undo
 
 
-def snap(edges: np.ndarray, x: int, y: int, reach: int = SNAP) -> tuple[int, int]:
-    """Move a point onto the strongest vertical and horizontal line within `reach` pixels, if there is one."""
-    h, w = edges.shape
-    span = 4 * reach  # how far along a line to look: far enough to see a line that starts at a corner
-    x0, x1 = max(0, x - reach), min(w, x + reach + 1)
-    y0, y1 = max(0, y - reach), min(h, y + reach + 1)
-    columns = (edges[max(0, y - span) : min(h, y + span + 1), x0:x1] > 0).sum(axis=0)
-    rows = (edges[y0:y1, max(0, x - span) : min(w, x + span + 1)] > 0).sum(axis=1)
-    if columns.size and columns.max() >= reach:
-        x = x0 + int(columns.argmax())
-    if rows.size and rows.max() >= reach:
-        y = y0 + int(rows.argmax())
-    return x, y
-
-
-def box_at(shot: np.ndarray, x: int, y: int) -> Region | None:
-    """The button or icon that was clicked.
-
-    Fills outward from the click by colour: clicking a button's background gives the
-    whole button. A small fill (a letter on the button) keeps growing to the area just
-    outside it while that stays button-sized; a huge fill (the background around an
-    icon) falls back to the shape's edges.
-    """
-    h, w = shot.shape[:2]
-    found = fill(shot, x, y)
-    if found.w * found.h > 0.2 * w * h:
-        return shape_at(shot, x, y)
-    if found.w >= 40 and found.h >= 30:
-        return found
-    grown = None
-    for _ in range(4):
-        step = grow(shot, grown or found, x, y, limit=0.06)
-        if step is None:
-            break
-        grown = step
-    return grown or shape_at(shot, x, y) or found
+def _bgr(colour: str) -> tuple[int, int, int]:
+    return int(colour[5:7], 16), int(colour[3:5], 16), int(colour[1:3], 16)
 
 
 class Overlay:
@@ -78,7 +44,11 @@ class Overlay:
         self.mode = {"image": "image", "location": "point", "region": "region"}[kind]
         self._start: tuple[int, int] | None = None
         self._bright_due = False
-        self._edges: np.ndarray | None = None
+        self._prep: Prepared | None = None
+        self._drawing = self.mode  # what a drag draws: the current kind, or a region with Shift
+        self._choices: list[Region] = []  # what a click at the same spot steps through, smallest first
+        self._choice = 0
+        self._clicked_at: tuple[int, int] | None = None
         self.mouse = (origin.x, origin.y)
 
         self.window = tk.Toplevel(root)
@@ -99,6 +69,7 @@ class Overlay:
         c.bind("<B1-Motion>", self._drag)
         c.bind("<ButtonRelease-1>", self._up)
         c.bind("<Motion>", self._move)
+        c.bind("<ButtonRelease-3>", lambda _e: self._step_choice(-1))
         w = self.window
         w.bind("<Escape>", lambda _e: self._close("cancel", None))
         w.bind("<Return>", lambda _e: self._finish())
@@ -114,32 +85,30 @@ class Overlay:
             w.bind(f"<Shift-KeyPress-{key}>", lambda _e, dx=dx, dy=dy: self._nudge(dx, dy, True))
         self._draw()
         w.after(50, w.focus_force)
+        w.after(80, lambda: self.prep)  # work out edges and lines right after the overlay shows
 
     @property
-    def edges(self) -> np.ndarray:
-        if self._edges is None:
-            self._edges = edges_of(self.shot)
-        return self._edges
+    def prep(self) -> Prepared:
+        if self._prep is None:
+            self._prep = prepare(self.shot)
+        return self._prep
 
     # ----------------------------------------------------------------- input
 
     def _screen(self, x: int, y: int) -> tuple[int, int]:
         return x + self.origin.x, y + self.origin.y
 
-    def _snapped(self, event: tk.Event) -> tuple[int, int]:
-        if event.state & ALT or self.mode == "point":
-            return event.x, event.y
-        return snap(self.edges, event.x, event.y)
-
     def _set_mode(self, mode: str) -> None:
         self.mode = mode
         self._draw()
 
     def _down(self, event: tk.Event) -> None:
-        self._start = self._snapped(event)
+        self._start = (event.x, event.y)
         self._pressed_at = (event.x, event.y)
-        if self.mode == "point":
+        self._drawing = "region" if event.state & SHIFT and self.kind == "image" else self.mode
+        if self.mode == "point" or (event.state & CTRL and self.kind == "image"):
             self.result.point = Location(*self._screen(event.x, event.y))
+            self._start = None
             self._draw()
 
     def _drag(self, event: tk.Event) -> None:
@@ -149,9 +118,12 @@ class Overlay:
         if abs(event.x - self._pressed_at[0]) < CLICK and abs(event.y - self._pressed_at[1]) < CLICK:
             return
         x0, y0 = self._start
-        x1, y1 = self._snapped(event)
-        box = Region(*self._screen(min(x0, x1), min(y0, y1)), abs(x1 - x0), abs(y1 - y0))
-        self._set_box(box)
+        x1, y1 = event.x, event.y
+        box = Region(min(x0, x1), min(y0, y1), abs(x1 - x0), abs(y1 - y0))
+        if not event.state & ALT and box.w and box.h:
+            box, _ = snap_box(self.prep.lines, box, {"left", "top", "right", "bottom"})
+        self._set_box(box.moved(self.origin.x, self.origin.y), self._drawing)
+        self._clicked_at = None
 
     def _up(self, event: tk.Event) -> None:
         if self._start is not None and self.mode != "point":
@@ -159,19 +131,37 @@ class Overlay:
             if moved:
                 self._drag(event)
             else:
-                found = box_at(self.shot, event.x, event.y)
-                if found is None:
-                    self.message = "no shape found there; drag a box instead"
-                else:
-                    self._set_box(found.moved(self.origin.x, self.origin.y))
-                    self.message = ""
+                self._select(event.x, event.y)
         self._start = None
         if self.kind == "image" and self.mode != "image":
             self.mode = "image"
         self._draw()
 
-    def _set_box(self, box: Region) -> None:
-        if self.mode == "image":
+    def _select(self, x: int, y: int) -> None:
+        """A click: the smallest sensible box there, or the next bigger one when the same spot is clicked again."""
+        again = self._clicked_at is not None and abs(self._clicked_at[0] - x) < CLICK \
+            and abs(self._clicked_at[1] - y) < CLICK
+        if again and self._choices:
+            self._step_choice(1)
+            return
+        self._choices = candidates(self.prep, x, y, "image" if self.mode == "image" else "region")
+        self._choice = pick(self._choices)
+        self._clicked_at = (x, y)
+        self._show_choice()
+
+    def _step_choice(self, step: int) -> None:
+        if not self._choices:
+            return
+        self._choice = min(max(0, self._choice + step), len(self._choices) - 1)
+        self._show_choice()
+
+    def _show_choice(self) -> None:
+        box = self._choices[self._choice]
+        self.message = f"{self._choice + 1} of {len(self._choices)}: click again for bigger, right-click for smaller"
+        self._set_box(box.moved(self.origin.x, self.origin.y))
+
+    def _set_box(self, box: Region, kind: str | None = None) -> None:
+        if (kind or self.mode) == "image":
             self.result.image = box
         else:
             self.result.region = box
@@ -243,8 +233,9 @@ class Overlay:
         if r.region:
             x0, y0, x1, y1 = self._local(r.region)
             c.create_rectangle(x0, y0, x1, y1, outline=Theme.DANGER, width=2, dash=(6, 4), tags="marks")
-            c.create_text(x0 + 4, y0 - 4, anchor="sw", text="search region", fill=Theme.DANGER,
-                          font=(Theme.FONT, 9), tags="marks")
+            g = r.region
+            c.create_text(x0 + 4, y0 - 4, anchor="sw", text=f"search region   {g.x}, {g.y} · {g.w} × {g.h}",
+                          fill=Theme.DANGER, font=(Theme.MONO, 9), tags="marks")
         if r.image:
             x0, y0, x1, y1 = self._local(r.image)
             c.create_rectangle(x0, y0, x1, y1, outline=Theme.OK, width=2, tags="marks")
@@ -256,6 +247,9 @@ class Overlay:
             c.create_oval(x - 7, y - 7, x + 7, y + 7, outline=Theme.ACCENT, width=2, tags="marks")
             c.create_line(x - 12, y, x + 13, y, fill=Theme.ACCENT, width=1, tags="marks")
             c.create_line(x, y - 12, x, y + 13, fill=Theme.ACCENT, width=1, tags="marks")
+            if r.point:
+                c.create_text(x + 12, y + 10, anchor="nw", text=f"{r.point.x}, {r.point.y}", fill=Theme.ACCENT,
+                              font=(Theme.MONO, 9), tags="marks")
         self._draw_bar()
 
     def _draw_zoom(self, x: int, y: int) -> None:
@@ -267,6 +261,7 @@ class Overlay:
         if sx1 > sx0 and sy1 > sy0:
             crop[sy0 - y0 : sy1 - y0, sx0 - x0 : sx1 - x0] = self.shot[sy0:sy1, sx0:sx1]
         big = cv2.resize(crop, None, fx=ZOOM, fy=ZOOM, interpolation=cv2.INTER_NEAREST)
+        self._zoom_marks(big, x0, y0)
         c = half * ZOOM
         cv2.rectangle(big, (c - 1, c - 1), (c + ZOOM, c + ZOOM), (250, 200, 90), 1)
         self.zoom_photo = photo(big)
@@ -284,10 +279,22 @@ class Overlay:
         canvas.tag_raise("zoom")
         canvas.tag_raise(self.zoom)
 
+    def _zoom_marks(self, big: np.ndarray, x0: int, y0: int) -> None:
+        """Draw the boxes and the click point into the magnifier, so a box under it still shows."""
+        r = self.result
+        for box, colour in ((r.region, Theme.DANGER), (r.image, Theme.OK)):
+            if box is None:
+                continue
+            bx, by = (box.x - self.origin.x - x0) * ZOOM, (box.y - self.origin.y - y0) * ZOOM
+            cv2.rectangle(big, (bx, by), (bx + box.w * ZOOM - 1, by + box.h * ZOOM - 1), _bgr(colour), 2)
+        if r.point:
+            px, py = (r.point.x - self.origin.x - x0) * ZOOM + ZOOM // 2, (r.point.y - self.origin.y - y0) * ZOOM + ZOOM // 2
+            cv2.drawMarker(big, (px, py), _bgr(Theme.ACCENT), cv2.MARKER_CROSS, 3 * ZOOM, 2)
+
     def _draw_bar(self) -> None:
         c = self.canvas
         c.delete("bar")
-        hints = {"image": "click or drag  image   R  region   C  click point",
+        hints = {"image": "click or drag  image   Shift+drag  region   Ctrl+click  click point",
                  "location": "click  point", "region": "click or drag  region"}[self.kind]
         parts = [(f"{self.counter}  " if self.counter else "", Theme.MUTED, (Theme.FONT, 10)),
                  (self.title, Theme.TEXT, (Theme.BOLD, 11)),

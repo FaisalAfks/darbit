@@ -175,8 +175,10 @@ region: menus/bag        # the bag window
 
 In a session, a card at the top of the screen shows the next target. Open its screen and press F8: the screen freezes and every target on that screen is taken from the same shot.
 
-- Click a button to box it, or drag a box; edges snap to lines nearby (hold Alt to stop)
-- R then drag sets the search region, C then click sets the click point
+- Click a button to box it; click the same spot again for the next bigger thing (up to whole windows), right-click for smaller
+- Or drag a box; its edges snap onto borders nearby (hold Alt to stop)
+- Shift+drag sets the search region, Ctrl+click sets the click point (R then drag, C then click work too)
+- Regions and points show their position and size; the magnifier shows the boxes too
 - Arrows move the box by a pixel, Shift+arrows resize it
 - Enter saves and goes to the next target; the image is checked on the live screen right away
 - Space takes a new shot, Tab skips, Backspace undoes, Esc goes back to the card
