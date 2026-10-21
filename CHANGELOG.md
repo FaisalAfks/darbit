@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 - 2026-10-21
 
 First version: what a SikuliX script needs, in Python.
 
