@@ -124,6 +124,21 @@ if raid.due():
 
 Each day gets a log file in `logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot in `logs/screenshots/`.
 
+## Checking a library
+
+```
+python -m darbit.tools.check --screens shots/ --similarity 0.85
+```
+
+Scores every target in `images/` against the live screen, or against saved screenshots (one per app screen works best). Each target gets a verdict:
+
+- **ok**: found in its region, nothing else on screen comes close
+- **risky**: found, but something else scores almost as high and could be clicked by mistake
+- **moved**: only found outside its region, so the region needs updating
+- **not seen**: not on any screen checked
+
+Results are added to `state/check.jsonl`, to follow scores over time.
+
 ## Capture tool
 
 ```
