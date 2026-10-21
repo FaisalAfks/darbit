@@ -15,3 +15,20 @@ def test_distinct_scores_high_for_a_repeated_image():
     image = shot[50:70, 100:130].copy()
     shot[150:170, 200:230] = image
     assert distinct(image, shot, Region(100, 50, 30, 20)) > 0.99
+
+
+def test_images_in_a_script_skips_comments(tmp_path):
+    from darbit.capture import images_in
+
+    script = tmp_path / "bot.py"
+    script.write_text('a = "Gui.Play.png" #"Old.png"\n#b = ["Gone.png"]\nc = ["x.png","Gui.Play.png"]\n',
+                      encoding="utf-8")
+    assert images_in(script) == ["Gui.Play.png", "x.png"]
+
+
+def test_item_kinds():
+    from darbit.capture import Item
+
+    assert Item.parse("Gui.Play") == Item("Gui.Play", "image")
+    assert Item.parse("location:afk/spot") == Item("afk/spot", "location")
+    assert Item.parse("region:menus/bag") == Item("menus/bag", "region")
