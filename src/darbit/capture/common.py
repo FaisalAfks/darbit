@@ -24,7 +24,7 @@ class Item:
 
     name: str
     kind: str = "image"
-    reference: Path | None = field(default=None, compare=False)  # an old image of it, shown while capturing
+    note: str = field(default="", compare=False)  # what it is, shown while capturing
 
     @staticmethod
     def parse(text: str) -> Item:
@@ -109,15 +109,39 @@ def images_in(script: Path) -> list[str]:
     return names
 
 
-OLD_COPY = re.compile(r"\((?:Old|old)\d*\)")
+def read_list(path: Path) -> list[Item]:
+    """Targets from a list file: one per line, `name`, `location: name` or `region: name`, a note after `#`.
 
-
-def reference_names(folder: Path) -> list[Item]:
-    """Images in an old folder that were named by hand: not numbered temp files, not "(Old)" copies."""
+    Blank lines and lines starting with `#` are skipped.
+    """
     items = []
-    for path in sorted(folder.glob("*.png"), key=lambda p: p.name.lower()):
-        stem = path.stem
-        if stem.isdigit() or OLD_COPY.search(stem):
+    for line in path.read_text(encoding="utf-8").splitlines():
+        text, _, note = line.partition("#")
+        text = text.strip()
+        if not text:
             continue
-        items.append(Item(stem, reference=path))
+        kind, _, name = text.partition(":")
+        if name and kind.strip() in KINDS:
+            items.append(Item(name.strip(), kind.strip(), note.strip()))
+        else:
+            items.append(Item(text, "image", note.strip()))
     return items
+
+
+def add_to_list(path: Path, item: Item) -> None:
+    """Add a target to the end of a list file."""
+    text = item.name if item.kind == "image" else f"{item.kind}: {item.name}"
+    line = f"{text:<40}  # {item.note}" if item.note else text
+    existing = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if existing and not existing.endswith("\n"):
+        existing += "\n"
+    path.write_text(existing + line + "\n", encoding="utf-8")
+
+
+def captured(item: Item, folder: Path) -> bool:
+    """Whether a target is already saved in `folder`."""
+    from ..core.targets import find_file
+
+    if item.kind == "image":
+        return find_file(item.name, [folder]) is not None
+    return (folder / (item.name + ".json")).is_file()
