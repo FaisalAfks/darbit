@@ -15,10 +15,11 @@ _screen.enable_dpi_awareness()
 
 from .core.geometry import Location, Region
 from .core.targets import Match, Target
-from .errors import DarbitError, Stopped, TargetError, UnknownKey
+from .errors import DarbitError, Interrupted, Stopped, TargetError, UnknownKey
 from .platform import input as _input
 from .platform import safety as _safety
 from .platform.keys import Keys
+from .platform.safety import no_interrupts
 from .platform.screen import Screen
 from .runtime import apps
 from .runtime.actions import (
@@ -36,6 +37,7 @@ from .runtime.actions import (
 )
 from .runtime.find import check, exists, find_all, vanish, wait
 from .runtime.log import log, screenshot
+from .runtime.observe import Observer, observe, observers, stop_observing
 from .settings import settings
 
 __version__ = "0.1.0"
@@ -51,7 +53,41 @@ def stop_key(combo: str) -> None:
 _atexit.register(_input.release_all)
 
 __all__ = [
-    "DarbitError", "Keys", "Location", "Match", "Region", "Screen", "Stopped", "Target", "TargetError", "UnknownKey",
-    "apps", "check", "click", "double_click", "drag", "exists", "find_all", "hold", "hover", "log", "press",
-    "release", "right_click", "screenshot", "scroll", "settings", "sleep", "stop_key", "vanish", "wait", "write",
+    "DarbitError",
+    "Interrupted",
+    "Keys",
+    "Location",
+    "Match",
+    "Observer",
+    "Region",
+    "Screen",
+    "Stopped",
+    "Target",
+    "TargetError",
+    "UnknownKey",
+    "apps",
+    "check",
+    "click",
+    "double_click",
+    "drag",
+    "exists",
+    "find_all",
+    "hold",
+    "hover",
+    "log",
+    "no_interrupts",
+    "observe",
+    "observers",
+    "press",
+    "release",
+    "right_click",
+    "screenshot",
+    "scroll",
+    "settings",
+    "sleep",
+    "stop_key",
+    "stop_observing",
+    "vanish",
+    "wait",
+    "write",
 ]

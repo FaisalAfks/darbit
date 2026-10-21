@@ -1,8 +1,11 @@
-"""The stop hotkey, a sleep it can cut short, and keeping the PC awake.
+"""The stop hotkey, interrupts from observers, a sleep they can cut short, and keeping the PC awake.
 
 A small thread watches the keyboard. When the stop hotkey is pressed, every held key
 and button is let go, and every darbit call from then on raises Stopped, including
 a sleep that's already running.
+
+An observer that fires posts an interrupt: held keys are let go and the next darbit
+call in the script's main thread raises Interrupted, once.
 """
 from __future__ import annotations
 
@@ -12,11 +15,15 @@ import threading
 import time
 from collections.abc import Callable
 
-from ..errors import Stopped
+from ..errors import Interrupted, Stopped
 from .keys import key
 
 _stopped = threading.Event()
+_wake = threading.Event()  # set by a stop or an interrupt, to cut a sleep short
 _on_stop: list[Callable[[], None]] = []
+_pending: list[Interrupted] = []  # at most one interrupt waiting for the script
+_lock = threading.Lock()
+_muted = 0  # inside no_interrupts() blocks
 _watching: str | None = None
 _armed = False
 
@@ -31,8 +38,50 @@ def stop() -> None:
     if _stopped.is_set():
         return
     _stopped.set()
+    _wake.set()
     for callback in _on_stop:
         callback()
+
+
+def interrupt(event: Interrupted) -> bool:
+    """Post an interrupt for the script. False if one is already waiting or interrupts are muted."""
+    with _lock:
+        if _pending or _muted:
+            return False
+        _pending.append(event)
+    _wake.set()
+    return True
+
+
+def _take_interrupt() -> None:
+    if threading.current_thread() is not threading.main_thread():
+        return
+    with _lock:
+        if not _pending or _muted:
+            return
+        event = _pending.pop()
+        if not _stopped.is_set():
+            _wake.clear()
+    for callback in _on_stop:  # let go of held keys and buttons, as for a stop
+        callback()
+    raise event
+
+
+class _NoInterrupts:
+    def __enter__(self) -> None:
+        global _muted
+        with _lock:
+            _muted += 1
+
+    def __exit__(self, *exc: object) -> None:
+        global _muted
+        with _lock:
+            _muted -= 1
+
+
+def no_interrupts() -> _NoInterrupts:
+    """A block where observers don't interrupt the script, e.g. while it recovers from an interrupt."""
+    return _NoInterrupts()
 
 
 def arm() -> None:
@@ -53,13 +102,19 @@ def check() -> None:
     arm()
     if _stopped.is_set():
         raise Stopped("stopped by the stop hotkey")
+    _take_interrupt()
 
 
 def sleep(seconds: float) -> None:
-    """Wait, but stop at once when the stop hotkey is pressed."""
-    arm()
-    if seconds > 0 and _stopped.wait(seconds):
-        check()
+    """Wait, but stop at once when the stop hotkey is pressed or an observer interrupts."""
+    check()
+    deadline = time.monotonic() + seconds
+    while (left := deadline - time.monotonic()) > 0:
+        if not _wake.wait(left):
+            break
+        check()  # raises for a stop, or for an interrupt in the main thread
+        _stopped.wait(max(0.0, deadline - time.monotonic()))  # an interrupt meant for another thread: sleep on
+        break
     check()
 
 
