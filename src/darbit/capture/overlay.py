@@ -20,6 +20,7 @@ import numpy as np
 
 from ..core.geometry import Location, Region
 from .common import Result, Theme, photo, rounded
+from .engine.select import edges_of, fill, grow, shape_at
 
 ZOOM, ZOOM_SIZE = 8, 21  # magnifier: 21x21 pixels shown 8 times bigger
 DIM = 0.42  # how bright the screen is outside the box
@@ -28,11 +29,6 @@ CLICK = 4  # a press and release closer than this is a click, not a drag
 ALT = 0x20000  # Tk's Alt modifier on Windows
 
 Done = Callable[[str, Result | None], None]  # action: save, cancel, refreeze, skip, undo
-
-
-def edges_of(shot: np.ndarray) -> np.ndarray:
-    gray = cv2.cvtColor(shot, cv2.COLOR_BGR2GRAY)
-    return cv2.Canny(gray, 60, 160)
 
 
 def snap(edges: np.ndarray, x: int, y: int, reach: int = SNAP) -> tuple[int, int]:
@@ -50,15 +46,6 @@ def snap(edges: np.ndarray, x: int, y: int, reach: int = SNAP) -> tuple[int, int
     return x, y
 
 
-def _fill(shot: np.ndarray, x: int, y: int, diff: int = 12) -> Region:
-    """The area of similar colour connected to (x, y)."""
-    h, w = shot.shape[:2]
-    mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(shot, mask, (x, y), 0, (diff,) * 3, (diff,) * 3, 4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8))
-    ys, xs = np.nonzero(mask[1:-1, 1:-1])
-    return Region(int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1))
-
-
 def box_at(shot: np.ndarray, x: int, y: int) -> Region | None:
     """The button or icon that was clicked.
 
@@ -68,58 +55,18 @@ def box_at(shot: np.ndarray, x: int, y: int) -> Region | None:
     icon) falls back to the shape's edges.
     """
     h, w = shot.shape[:2]
-    found = _fill(shot, x, y)
+    found = fill(shot, x, y)
     if found.w * found.h > 0.2 * w * h:
-        return _shape_at(shot, x, y)
+        return shape_at(shot, x, y)
     if found.w >= 40 and found.h >= 30:
         return found
     grown = None
     for _ in range(4):
-        step = _grow(shot, grown or found, x, y)
+        step = grow(shot, grown or found, x, y, limit=0.06)
         if step is None:
             break
         grown = step
-    return grown or _shape_at(shot, x, y) or found
-
-
-def _grow(shot: np.ndarray, inner: Region, x: int, y: int) -> Region | None:
-    """The biggest button-sized area of one colour just outside `inner` that contains it."""
-    h, w = shot.shape[:2]
-    best = None
-    for px, py in ((inner.x - 3, y), (inner.right + 2, y), (x, inner.y - 3), (x, inner.bottom + 2)):
-        if not (0 <= px < w and 0 <= py < h):
-            continue
-        around = _fill(shot, px, py)
-        inside = around.x <= inner.x and around.y <= inner.y and around.right >= inner.right \
-            and around.bottom >= inner.bottom
-        bigger = around.w * around.h > inner.w * inner.h
-        button_sized = around.w * around.h <= 0.06 * w * h
-        if inside and bigger and button_sized and (best is None or around.w * around.h > best.w * best.h):
-            best = around
-    return best
-
-
-def _shape_at(shot: np.ndarray, x: int, y: int, around: tuple[int, int] = (900, 600)) -> Region | None:
-    """The smallest closed shape around (x, y), from the edges near it."""
-    h, w = shot.shape[:2]
-    left, top = max(0, x - around[0] // 2), max(0, y - around[1] // 2)
-    right, bottom = min(w, left + around[0]), min(h, top + around[1])
-    edges = edges_of(shot[top:bottom, left:right])
-    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8))
-    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    px, py = x - left, y - top
-    best = None
-    limit = 0.7 * (right - left) * (bottom - top)
-    for contour in contours:
-        bx, by, bw, bh = cv2.boundingRect(contour)
-        if bw < 12 or bh < 12 or bw * bh > limit:
-            continue
-        if bx <= px < bx + bw and by <= py < by + bh and (best is None or bw * bh < best[2] * best[3]):
-            best = (bx, by, bw, bh)
-    if best is None:
-        return None
-    bx, by, bw, bh = best
-    return Region(left + bx, top + by, bw, bh)
+    return grown or shape_at(shot, x, y) or found
 
 
 class Overlay:
