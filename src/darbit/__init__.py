@@ -38,6 +38,7 @@ from .runtime.actions import (
 from .runtime.find import check, exists, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
+from .runtime.state import State, Timer
 from .settings import settings
 
 __version__ = "0.1.0"
@@ -61,9 +62,11 @@ __all__ = [
     "Observer",
     "Region",
     "Screen",
+    "State",
     "Stopped",
     "Target",
     "TargetError",
+    "Timer",
     "UnknownKey",
     "apps",
     "check",
