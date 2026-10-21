@@ -38,7 +38,7 @@ from .runtime.find import check, exists, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .settings import settings
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 
 def stop_key(combo: str) -> None:
