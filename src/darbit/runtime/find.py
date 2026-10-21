@@ -19,13 +19,33 @@ def target(what: What) -> Target:
     return load(what, settings.images)
 
 
-def _look(chosen: Target, region: Region | None) -> Match | None:
-    area = region if region is not None else chosen.region
-    pixels, origin = screen.grab(area)
+def _union(areas: list[Region | None]) -> Region | None:
+    """The smallest region holding every area; None (the whole screen) if any of them is the whole screen."""
+    if any(area is None for area in areas):
+        return None
+    left, top = min(a.x for a in areas), min(a.y for a in areas)
+    right, bottom = max(a.right for a in areas), max(a.bottom for a in areas)
+    return Region(left, top, right - left, bottom - top)
+
+
+def _look(chosen: list[Target], region: Region | None) -> Match | None:
+    """One screen capture covering every target's area, then each target searched in its own part of it."""
+    areas = [region if region is not None else one.region for one in chosen]
+    pixels, origin = screen.grab(_union(areas))
     if pixels.size == 0:
         return None
-    similarity = chosen.similarity if chosen.similarity is not None else settings.similarity
-    return matching.best(chosen, pixels, origin, similarity)
+    for one, area in zip(chosen, areas, strict=True):
+        part, part_origin = pixels, origin
+        if area is not None:
+            inside = area.intersect(origin)
+            if inside is None:
+                continue
+            x, y = inside.x - origin.x, inside.y - origin.y
+            part, part_origin = pixels[y : y + inside.h, x : x + inside.w], inside
+        similarity = one.similarity if one.similarity is not None else settings.similarity
+        if found := matching.best(one, part, part_origin, similarity):
+            return found
+    return None
 
 
 def _usable(whats: tuple[What, ...]) -> list[Target]:
@@ -52,10 +72,8 @@ def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> M
     while True:
         safety.check()
         started = time.monotonic()
-        for one in chosen:
-            found = _look(one, region)
-            if found is not None:
-                return found
+        if found := _look(chosen, region):
+            return found
         if started >= deadline:
             return None
         pause = 1 / settings.scan_rate - (time.monotonic() - started)
