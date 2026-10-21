@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `python -m darbit.tools.check`: every target scored in its region and everywhere else, against the live screen or saved screenshots, with a verdict and a history
 - Waiting for several targets takes one screen capture per look, covering all their regions
 - `d.State(name)`: saved values, counters, daily and weekly resets, timers; kept in `settings.state`
 - Observers: `d.observe(image or condition)` watches in the background; the next darbit call raises `Interrupted` and held keys are let go; `d.no_interrupts()` for quiet blocks
