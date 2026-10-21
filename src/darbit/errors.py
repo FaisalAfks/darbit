@@ -15,3 +15,12 @@ class UnknownKey(DarbitError):
 
 class Stopped(DarbitError):
     """The stop hotkey was pressed."""
+
+
+class Interrupted(DarbitError):
+    """An observer fired. `name` says which; `match` is where its target was seen, if it's an image."""
+
+    def __init__(self, name: str, match: object = None) -> None:
+        super().__init__(f"interrupted by {name}")
+        self.name = name
+        self.match = match

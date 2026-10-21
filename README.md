@@ -85,6 +85,24 @@ d.stop_key("ctrl+alt+q")         # the stop hotkey
 
 Ctrl+Alt+Q stops a running script: every held key and button is let go and the next darbit call raises `Stopped`, even in the middle of a wait or a sleep. Held keys are also let go when a script ends or crashes. While a script runs, the PC doesn't go to sleep.
 
+## Observers
+
+Watch for something in the background, and interrupt the script when it shows up:
+
+```python
+d.observe("Roblox.Disconnected")                                    # an image
+d.observe(lambda: not d.apps.running("Roblox"), name="Roblox closed")  # a condition
+
+try:
+    play()
+except d.Interrupted as event:
+    d.log(f"{event.name}: rejoining")
+    with d.no_interrupts():
+        rejoin()
+```
+
+When an observer fires, held keys are let go and the next darbit call (a wait, a click, a sleep) raises `Interrupted` once. It fires again only after what it watches has gone away and come back. All image observers share one screen capture every half second. `observer.stop()` or `d.stop_observing()` ends them.
+
 ## Logs
 
 Each day gets a log file in `logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot in `logs/screenshots/`.
