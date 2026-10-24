@@ -107,12 +107,12 @@ kbd { font: 600 10px/1.5 var(--font-strong); padding: 0 5px; min-width: 16px; te
 .strip i { display: block; height: 100%; width: 100%; transform-origin: left; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: transform 600ms var(--ease); }
 
 /* motion */
-@keyframes appear { from { opacity: 0; transform: translateY(10px) scale(.97); } }
-@keyframes pop { from { opacity: 0; transform: scale(1.06); } }
+@keyframes appear { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
 @keyframes pulse { 50% { opacity: .3; } }
 @keyframes march { to { stroke-dashoffset: -20; } }
 .reveal { opacity: 0; }
-.reveal.in { animation: appear 420ms var(--spring) both; }
+.reveal.in { opacity: 1; animation: appear 420ms var(--spring) both; }
 .reveal.in .pop { animation: pop 300ms var(--spring) both; }
 .reveal.in .pop:nth-child(2) { animation-delay: 80ms; } .reveal.in .pop:nth-child(3) { animation-delay: 160ms; }
 .reveal.in .pop:nth-child(4) { animation-delay: 240ms; } .reveal.in .pop:nth-child(5) { animation-delay: 320ms; }
