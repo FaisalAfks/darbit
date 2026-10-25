@@ -21,10 +21,11 @@ from .log import log, record, screenshot
 What = str | Path | Target
 
 
-NEARBY = (0.95, 1.05, 0.9, 1.1)  # sizes tried once when a resized target isn't found
+NEARBY = (0.95, 1.05, 0.9, 1.1)  # sizes tried when a resized target isn't found
+NEARBY_EVERY = 60  # seconds between such tries for one target, until a size works
 
 _adjust: dict[str, float] = {}  # a nearby size that worked, per target
-_tried: set[str] = set()  # targets already tried at nearby sizes
+_tried: dict[str, float] = {}  # when each target was last tried at nearby sizes
 _warned: set[str] = set()  # targets already warned about a window of another shape
 
 
@@ -47,6 +48,8 @@ def where_now(targets: list[Target]) -> Place:
         found = windows.matching(settings.window, loose=True)
         if found:
             window = windows.region(found[0].handle)
+            if window.w <= 0 or window.h <= 0:
+                window = None  # minimised: targets stay as they were taken
     scale = None
     if needs_scale:
         spot = window
@@ -157,14 +160,21 @@ def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> M
 
 
 def _nearby_sizes(loaded: list[Target], now: Place, region: Region | None) -> Match | None:
-    """One look at nearby sizes for resized targets not tried yet; a size that works is kept."""
+    """One look at nearby sizes for resized targets not tried in the last minute; a size that works is kept.
+
+    A target that simply isn't on screen yet is tried again a minute later, not on every look.
+    """
     resized = []
+    clock = time.monotonic()
     for one in loaded:
-        if one.label in _tried or one._pixels is None:
+        if one._pixels is None or one.label in _adjust:
             continue
         if abs(ratio(one, now) - 1) < SAME:
             continue
-        _tried.add(one.label)
+        last = _tried.get(one.label)
+        if last is not None and clock - last < NEARBY_EVERY:
+            continue
+        _tried[one.label] = clock
         resized.append(one)
     if not resized:
         return None

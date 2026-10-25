@@ -26,8 +26,12 @@ class Place:
 
 
 def follows_window(target: Target, place: Place) -> bool:
-    """Whether the target was taken in a window that can be found now."""
-    return target.window is not None and target.origin is not None and place.window is not None
+    """Whether the target was taken in a window that can be found now (not minimised: it has a size)."""
+    if target.window is None or target.origin is None or place.window is None:
+        return False
+    sizes_known = target.window[0] > 0 and target.window[1] > 0
+    shown = place.window.w > 0 and place.window.h > 0
+    return sizes_known and shown
 
 
 def ratio(target: Target, place: Place) -> float:

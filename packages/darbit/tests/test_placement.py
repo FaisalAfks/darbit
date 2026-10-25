@@ -113,7 +113,7 @@ def draw(tmp_path, monkeypatch):
     monkeypatch.setattr(d.settings, "similarity", 0.9)
     monkeypatch.setattr(d.settings, "window", "Game")
     monkeypatch.setattr(find, "_adjust", {})
-    monkeypatch.setattr(find, "_tried", set())
+    monkeypatch.setattr(find, "_tried", {})
     monkeypatch.setattr(find, "_warned", set())
     game_at(monkeypatch, None)
 
@@ -187,7 +187,7 @@ def test_nearby_sizes_are_tried_once_and_kept(draw, tmp_path, monkeypatch):
     assert tries == []  # found at the kept size straight away
 
 
-def test_not_found_at_any_size_is_tried_only_once(draw, tmp_path, monkeypatch):
+def test_not_found_at_any_size_is_tried_again_a_minute_later(draw, tmp_path, monkeypatch):
     save(tmp_path / "Play", BUTTON, scale=1.0)
     looks = []
     real_look = find._look
@@ -196,12 +196,35 @@ def test_not_found_at_any_size_is_tried_only_once(draw, tmp_path, monkeypatch):
         looks.append(1)
         return real_look(chosen, region)
 
+    clock = [1000.0]
+
+    def monotonic():
+        return clock[0]
+
     monkeypatch.setattr(find, "_look", counted)
+    monkeypatch.setattr(find.time, "monotonic", monotonic)
     assert d.exists("Play") is None
     assert len(looks) == 1 + 4  # one look, then the four nearby sizes
     looks.clear()
+    clock[0] += 30
     assert d.exists("Play") is None
-    assert len(looks) == 1
+    assert len(looks) == 1  # not again within the minute
+    looks.clear()
+    clock[0] += 31
+    draw((300, 200), size=1.5 * 1.1)  # now it shows, a bit bigger than expected
+    monkeypatch.setattr(d.settings, "similarity", 0.98)
+    assert d.exists("Play") is not None
+    assert find._adjust == {"Play": 1.1}
+
+
+def test_a_minimised_window_leaves_targets_as_taken(draw, tmp_path, monkeypatch):
+    save(tmp_path / "Play", BUTTON, region=[10, 10, 100, 60], window=[400, 300], origin=[0, 0])
+    game_at(monkeypatch, Region(-32000, -32000, 0, 0))  # what Windows reports for a minimised window
+    draw((30, 20))
+    found = d.exists("Play")
+    assert (found.x, found.y, found.w, found.h) == (30, 20, 40, 28)
+    target = Target(window=(400, 300), origin=(0, 0))
+    assert not aspect_changed(target, Place(Region(0, 0, 0, 0)))
 
 
 def test_observers_follow_the_window(draw, tmp_path, monkeypatch):
