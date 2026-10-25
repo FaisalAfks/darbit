@@ -48,7 +48,7 @@ Python 3.11 or newer, Windows. The repo is a monorepo: the Python package is in 
 | [Architecture](docs/architecture/index.md) | how the code fits together |
 | [Decisions](docs/decisions/README.md), [roadmap](docs/roadmap.md), [tasks](docs/tasks/README.md) | why, what's next, and how to build it |
 
-The docs site: `uv run --group docs mkdocs serve`.
+The docs site: <https://faisalafks.github.io/darbit/> (or locally: `uv run --group docs mkdocs serve`).
 
 ## License
 

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The docs site is published on GitHub Pages after each merge to main
 - Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
 ## 0.2.0 - 2026-10-25
 
