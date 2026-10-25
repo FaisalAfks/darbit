@@ -4,6 +4,7 @@
 
 - The docs site is published on GitHub Pages after each merge to main
 - Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
+- Decision 0010: runs and flows are saved as `@d.flow` Python; the T14 page is rewritten for it
 ## 0.2.0 - 2026-10-25
 
 The runtime grows up (observers, saved state, run reports, library checks), the capture tool gets a real engine, and the repo is set up for darbit Studio.
