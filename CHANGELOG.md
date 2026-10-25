@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
 ## 0.2.0 - 2026-10-25
 
 The runtime grows up (observers, saved state, run reports, library checks), the capture tool gets a real engine, and the repo is set up for darbit Studio.
