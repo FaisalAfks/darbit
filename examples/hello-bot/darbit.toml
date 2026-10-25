@@ -1,0 +1,11 @@
+# The bot's manifest: who it is, and darbit's settings for it (code can still change them).
+[bot]
+name = "hello-bot"
+version = "0.1.0"
+darbit = ">=0.2"
+
+[settings]
+similarity = 0.85
+
+[images]
+folders = ["images"]

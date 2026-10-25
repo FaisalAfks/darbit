@@ -1,26 +1,31 @@
-"""Defaults that scripts can change: `darbit.settings.timeout = 10`."""
+"""Defaults that scripts can change: `darbit.settings.timeout = 10`.
+
+Layers, the last one wins: these defaults, then the project's darbit.toml (project/manifest.py),
+then what the script sets, then one call's own arguments (`d.click("Play", timeout=5)`).
+"""
 
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 
-def _script_folder() -> Path:
+def script_folder() -> Path:
+    """The running script's folder, or the current folder when there is no script (a console)."""
     main = sys.modules.get("__main__")
     path = getattr(main, "__file__", None)
     return Path(path).resolve().parent if path else Path.cwd()
 
 
 def _default_images() -> list[Path]:
-    return [_script_folder() / "images", _script_folder()]
+    return [script_folder() / "images", script_folder()]
 
 
 def _default_logs() -> Path:
-    return _script_folder() / ".darbit" / "logs"
+    return script_folder() / ".darbit" / "logs"
 
 
 def _default_state() -> Path:
-    return _script_folder() / ".darbit" / "state"
+    return script_folder() / ".darbit" / "state"
 
 
 @dataclass

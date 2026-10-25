@@ -4,6 +4,7 @@
 
 - The docs site is published on GitHub Pages after each merge to main
 - Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
+- Bot projects: a `darbit.toml` next to the bot (or above its script) gives its name, version and the darbit it needs, and sets darbit's settings for it before the script runs; image folders from `[images]` are searched first. A darbit version that doesn't match is a warning. Without one nothing changes
 - darbit's own code follows the plain style of decision 0008 (no walrus, lambdas, `@staticmethod` or `__future__` imports), checked by a `plain-python` hook in pre-commit and CI
 ## 0.2.0 - 2026-10-25
 

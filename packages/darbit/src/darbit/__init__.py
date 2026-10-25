@@ -55,6 +55,10 @@ def stop_key(combo: str) -> None:
 
 _atexit.register(_input.release_all)
 
+from .project import manifest as _manifest
+
+_project = _manifest.setup(settings, __version__)  # layer 2 of the settings: the bot's darbit.toml, if it has one
+
 __all__ = [
     "DarbitError",
     "Interrupted",
