@@ -29,9 +29,9 @@ folders = ["images"]
 
 ## Files
 
-- `src/darbit/project/manifest.py`: `Project`, `find(path)` (walks up to the nearest `darbit.toml`), `load()`
-- `src/darbit/settings.py`: apply layer 2 when a project is found at start
-- `tests/test_project.py`
+- `packages/darbit/src/darbit/project/manifest.py`: `Project`, `find(path)` (walks up to the nearest `darbit.toml`), `load()`
+- `packages/darbit/src/darbit/settings.py`: apply layer 2 when a project is found at start
+- `packages/darbit/tests/test_project.py`
 
 ## Steps
 

@@ -1,0 +1,51 @@
+/* Theme-independent tokens: type, space, shape, motion. Colours are in themes.css.
+   Spec: docs/ui/design-system.md */
+:root {
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-strong: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, monospace;
+  --size-xs: 11px;
+  --size-s: 12px;
+  --size-m: 14px;
+  --size-l: 18px;
+  --size-xl: 24px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+  --radius-pill: 999px;
+
+  --fast: 120ms;
+  --move: 200ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --screen-dim: rgb(0 0 0 / 0.58); /* the frozen screen outside the selection: 42% in every theme */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font: var(--size-m) / 1.4 var(--font);
+  color: var(--text);
+  background: transparent; /* windows are transparent; panels bring their own glass */
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}

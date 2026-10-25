@@ -1,0 +1,11 @@
+{
+  "name": "darbit-workspace",
+  "private": true,
+  "description": "npm workspaces of the darbit monorepo: the web UI (and later the VS Code extension)",
+  "workspaces": ["packages/ui"],
+  "scripts": {
+    "dev": "npm run dev -w packages/ui",
+    "build": "npm run build -w packages/ui",
+    "check": "npm run check -w packages/ui"
+  }
+}

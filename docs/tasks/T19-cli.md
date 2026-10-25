@@ -17,13 +17,13 @@
 
 ## Files
 
-- `src/darbit/cli.py`: `main()` with subcommands calling the existing modules
+- `packages/darbit/src/darbit/cli.py`: `main()` with subcommands calling the existing modules
 - `pyproject.toml`: `[project.scripts] darbit = "darbit.cli:main"`
 
 ## Steps
 
 1. `argparse` subcommands that hand their arguments to each tool's `main(argv)` (they all have one).
-2. `new` writes files from templates in `src/darbit/project/templates/`.
+2. `new` writes files from templates in `packages/darbit/src/darbit/project/templates/`.
 3. `install`: `git clone --depth 1`, `python -m venv`, `pip install -r`, then `darbit` itself in that venv at the version the manifest asks for.
 4. `run`: sets the working folder, starts the entry, forwards Ctrl+C.
 

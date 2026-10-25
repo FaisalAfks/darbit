@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The repo is a monorepo: the Python package moved to `packages/darbit`, the web UI to `packages/ui`; install from git with `#subdirectory=packages/darbit`
+- Development uses uv (`uv sync`, `uv.lock`, Python 3.13); the optional `ui` extra is now called `app`
+- Text files are stored with LF line endings (`.gitattributes`)
 - Screenshots in `logs/screenshots` are saved as JPEG (quality 85), about 10 times smaller; the newest 200 are kept, old PNGs included, and `darbit check` reads both
 - Capture tool: the grid harvest (`--harvest`) and `--from script.py` are removed
 - Run report: `logs/report-<day>.jsonl` with searches (closest score when not found), clicks, `d.step(name)` and `d.record(event)`; `python -m darbit.tools.report` summarises a day

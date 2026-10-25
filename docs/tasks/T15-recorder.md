@@ -14,10 +14,10 @@
 
 ## Files
 
-- `src/darbit/platform/hooks.py`: low-level keyboard and mouse hooks
-- `src/darbit/runs/recorder.py`: `Recorder` (events → steps)
-- `ui/src/apps/recorder/App.svelte`: the bar
-- `src/darbit/runs/service.py`: `record.start`, `record.mark`, `record.pause`, `record.stop`, events `record.tick`
+- `packages/darbit/src/darbit/platform/hooks.py`: low-level keyboard and mouse hooks
+- `packages/darbit/src/darbit/runs/recorder.py`: `Recorder` (events → steps)
+- `packages/ui/src/apps/recorder/App.svelte`: the bar
+- `packages/darbit/src/darbit/runs/service.py`: `record.start`, `record.mark`, `record.pause`, `record.stop`, events `record.tick`
 
 ## Steps
 

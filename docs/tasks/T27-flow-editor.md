@@ -25,8 +25,8 @@
 
 ## Files
 
-- `ui/src/apps/studio/flow/`: `FlowList.svelte`, `FlowGraph.svelte`, `StepPalette.svelte`, `ConditionBuilder.svelte`, `TargetPicker.svelte`
-- `src/darbit/runs/model.py`: the flow model, including functions (T14)
+- `packages/ui/src/apps/studio/flow/`: `FlowList.svelte`, `FlowGraph.svelte`, `StepPalette.svelte`, `ConditionBuilder.svelte`, `TargetPicker.svelte`
+- `packages/darbit/src/darbit/runs/model.py`: the flow model, including functions (T14)
 
 ## Done when
 

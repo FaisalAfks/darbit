@@ -25,8 +25,8 @@ def pick_character(name: str, slide: int = 0) -> bool:
 
 ## Files
 
-- `src/darbit/runs/actions.py`: the decorator and the registry
-- `src/darbit/server/…`: `actions.list` for the palette
+- `packages/darbit/src/darbit/runs/actions.py`: the decorator and the registry
+- `packages/darbit/src/darbit/server/…`: `actions.list` for the palette
 
 ## Done when
 

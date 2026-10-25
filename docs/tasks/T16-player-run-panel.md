@@ -6,9 +6,9 @@
 
 ## Files
 
-- `src/darbit/runs/player.py`: `play(path_or_run, panel=False)`; also `d.play`
-- `ui/src/apps/runpanel/App.svelte`, `StepRow.svelte`
-- `src/darbit/runs/service.py`: `run.load`, `run.control`, `run.edit`, events `run.at`, `run.paused`
+- `packages/darbit/src/darbit/runs/player.py`: `play(path_or_run, panel=False)`; also `d.play`
+- `packages/ui/src/apps/runpanel/App.svelte`, `StepRow.svelte`
+- `packages/darbit/src/darbit/runs/service.py`: `run.load`, `run.control`, `run.edit`, events `run.at`, `run.paused`
 
 ## Steps
 

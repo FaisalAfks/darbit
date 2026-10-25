@@ -6,8 +6,8 @@
 
 ## Files
 
-- `src/darbit/platform/dxgi.py`: a DXGI Desktop Duplication grabber
-- `src/darbit/platform/screen.py`: picks the back end (`settings.capture = "auto" | "dxgi" | "mss"`)
+- `packages/darbit/src/darbit/platform/dxgi.py`: a DXGI Desktop Duplication grabber
+- `packages/darbit/src/darbit/platform/screen.py`: picks the back end (`settings.capture = "auto" | "dxgi" | "mss"`)
 - `benchmarks/bench.py`, `.github/workflows/ci.yml`: a benchmark job
 
 ## Steps

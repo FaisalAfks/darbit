@@ -6,11 +6,11 @@
 
 ## Files
 
-- `src/darbit/keymap.toml`: the defaults (written)
-- `src/darbit/keymap.py`: `load()` (written), `normalise()`, `conflicts()` (to do)
-- `src/darbit/platform/hotkeys.py`: global hotkeys from the `[global]` scope
-- `ui/src/lib/keymap.ts`: the keymap store and key matching in windows
-- the hub's Settings → Keys page (T20 builds the page; this task builds the editor component `ui/src/lib/components/KeyEditor.svelte`)
+- `packages/darbit/src/darbit/keymap.toml`: the defaults (written)
+- `packages/darbit/src/darbit/keymap.py`: `load()` (written), `normalise()`, `conflicts()` (to do)
+- `packages/darbit/src/darbit/platform/hotkeys.py`: global hotkeys from the `[global]` scope
+- `packages/ui/src/lib/keymap.ts`: the keymap store and key matching in windows
+- the hub's Settings → Keys page (T20 builds the page; this task builds the editor component `packages/ui/src/lib/components/KeyEditor.svelte`)
 
 ## Steps
 

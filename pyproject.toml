@@ -1,31 +1,23 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+# The darbit workspace: one repo for the Python package, the web UI and the VS Code extension
+# (docs/decisions/0002-monorepo.md). `uv sync` here sets up everything for development.
+# The package itself is packages/darbit/pyproject.toml.
 
-[project]
-name = "darbit"
-version = "0.1.0"
-description = "Simple GUI automation for Windows, in Python"
-readme = "README.md"
-license = "MIT OR Apache-2.0"
-requires-python = ">=3.11"
-dependencies = [
-    "numpy>=1.26",
-    "opencv-python>=4.9",
-    "mss>=9.0",
-]
+[tool.uv.workspace]
+members = ["packages/darbit"]
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
-# the web UI: local server and desktop windows (docs/tasks/T05, T06)
-ui = ["starlette>=0.40", "uvicorn>=0.30", "pywebview>=5.3"]
+[tool.uv.sources]
+darbit = { workspace = true }
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/darbit"]
+[dependency-groups]
+dev = ["darbit", "pytest>=8", "ruff>=0.6"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.26"]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["packages/darbit/tests"]
 
 [tool.ruff]
 line-length = 120
-src = ["src"]
+src = ["packages/darbit/src"]

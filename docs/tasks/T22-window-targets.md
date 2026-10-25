@@ -6,10 +6,10 @@
 
 ## Files
 
-- `src/darbit/core/targets.py`: `scale`, `window` already saved; add `origin` (the window's top-left when captured)
-- `src/darbit/runtime/find.py`: place regions and locations relative to the window, rescale images
-- `src/darbit/platform/windows.py`: the window's client rectangle in real pixels
-- `src/darbit/settings.py`: `settings.window = "Roblox"` (or from `darbit.toml`, T17)
+- `packages/darbit/src/darbit/core/targets.py`: `scale`, `window` already saved; add `origin` (the window's top-left when captured)
+- `packages/darbit/src/darbit/runtime/find.py`: place regions and locations relative to the window, rescale images
+- `packages/darbit/src/darbit/platform/windows.py`: the window's client rectangle in real pixels
+- `packages/darbit/src/darbit/settings.py`: `settings.window = "Roblox"` (or from `darbit.toml`, T17)
 
 ## Steps
 
