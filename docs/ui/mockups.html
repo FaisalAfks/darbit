@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>darbit UI mockups</title>
+<meta name="color-scheme" content="dark light">
+<title>darbit Studio mockups</title>
 <style>
-/* Same tokens and themes as ui/src/lib/tokens (docs/ui/design-system.md). */
+/* Tokens and themes: the same names as packages/ui (docs/style/ui/design-system.md). */
 :root {
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-strong: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
@@ -14,461 +15,999 @@
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
   --radius-s: 6px; --radius-m: 10px; --radius-l: 16px; --radius-pill: 999px;
   --fast: 120ms; --move: 200ms; --ease: cubic-bezier(.2,.8,.2,1); --spring: cubic-bezier(.34,1.4,.64,1);
+  --screen-dim: rgb(0 0 0 / .58);            /* the frozen screen outside the selection: 42% brightness in every theme */
 }
 :root, [data-theme="glass-dark"] {
-  --bg: #0b0d12; --glass: rgb(22 25 33 / .72); --glass-strong: rgb(28 31 41 / .92); --raised: rgb(255 255 255 / .06);
-  --raised-hover: rgb(255 255 255 / .11); --line: rgb(255 255 255 / .09); --blur: 18px; --shadow: 0 12px 40px rgb(0 0 0 / .45);
-  --text: #eef1f6; --muted: #9aa1ad; --faint: #626876; --accent: #5ac8fa; --accent-2: #a78bfa;
-  --glow: 0 0 0 1px rgb(90 200 250 / .5), 0 0 18px rgb(90 200 250 / .35); --on-accent: #06121c;
-  --ok: #4ade80; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa;
-  --kind-image: #5ac8fa; --kind-region: #a78bfa; --kind-point: #4ade80;
-  --slot-tool: #9aa1ad; --slot-bot: #f0abfc; --slot-guide: #eef1f6; --dim: rgb(0 0 0 / .58);
+  color-scheme: dark;
+  --bg: #0b0d12; --glass: rgb(22 25 33 / .74); --glass-strong: rgb(28 31 41 / .94); --raised: rgb(255 255 255 / .06);
+  --raised-hover: rgb(255 255 255 / .11); --line: rgb(255 255 255 / .1); --blur: 18px; --shadow: 0 12px 40px rgb(0 0 0 / .45);
+  --text: #eef1f6; --muted: #9aa1ad; --faint: #6b7280; --accent: #5ac8fa; --accent-2: #a78bfa;
+  --glow: 0 0 0 1px rgb(90 200 250 / .5), 0 0 18px rgb(90 200 250 / .3); --on-accent: #06121c;
+  --ok: #4ade80; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa; --on-status: #071016;
+  --kind-image: #5ac8fa; --kind-region: #a78bfa; --kind-point: #4ade80; --handle-fill: #ffffff;
+  --slot-tool: #9aa1ad; --slot-bot: #f0abfc; --slot-guide: #eef1f6; --on-bot: #1a0b14;
 }
 [data-theme="glass-light"] {
-  --bg: #e9edf3; --glass: rgb(255 255 255 / .74); --glass-strong: rgb(255 255 255 / .94); --raised: rgb(15 23 42 / .05);
-  --raised-hover: rgb(15 23 42 / .09); --line: rgb(15 23 42 / .1); --blur: 18px; --shadow: 0 12px 36px rgb(15 23 42 / .16);
-  --text: #111827; --muted: #5b6474; --faint: #9aa1ad; --accent: #0284c7; --accent-2: #7c3aed;
-  --glow: 0 0 0 1px rgb(2 132 199 / .45), 0 0 16px rgb(2 132 199 / .22); --on-accent: #fff;
-  --ok: #16a34a; --warn: #b45309; --danger: #dc2626; --info: #2563eb;
-  --kind-image: #0284c7; --kind-region: #7c3aed; --kind-point: #16a34a;
-  --slot-tool: #5b6474; --slot-bot: #a21caf; --slot-guide: #111827; --dim: rgb(255 255 255 / .5);
+  color-scheme: light;
+  --bg: #e9edf3; --glass: rgb(255 255 255 / .78); --glass-strong: rgb(255 255 255 / .96); --raised: rgb(15 23 42 / .05);
+  --raised-hover: rgb(15 23 42 / .09); --line: rgb(15 23 42 / .12); --blur: 18px; --shadow: 0 12px 36px rgb(15 23 42 / .16);
+  --text: #111827; --muted: #4b5563; --faint: #8a93a1; --accent: #0369a1; --accent-2: #6d28d9;
+  --glow: 0 0 0 1px rgb(3 105 161 / .45), 0 0 14px rgb(3 105 161 / .2); --on-accent: #ffffff;
+  --ok: #15803d; --warn: #a16207; --danger: #b91c1c; --info: #1d4ed8; --on-status: #ffffff;
+  --kind-image: #0369a1; --kind-region: #6d28d9; --kind-point: #15803d; --handle-fill: #ffffff;
+  --slot-tool: #4b5563; --slot-bot: #a21caf; --slot-guide: #111827; --on-bot: #ffffff;
 }
 [data-theme="midnight"] {
-  --bg: #000; --glass: #0d0f14; --glass-strong: #12151c; --raised: #171a22; --raised-hover: #20242e; --line: #232733;
-  --blur: 0px; --shadow: 0 8px 24px rgb(0 0 0 / .6); --text: #e7eaf0; --muted: #8a909c; --faint: #555b67;
+  color-scheme: dark;
+  --bg: #000; --glass: #0d0f14; --glass-strong: #12151c; --raised: #171a22; --raised-hover: #20242e; --line: #262a36;
+  --blur: 0px; --shadow: 0 8px 24px rgb(0 0 0 / .6); --text: #e7eaf0; --muted: #8a909c; --faint: #5b6170;
   --accent: #38bdf8; --accent-2: #818cf8; --glow: 0 0 0 1px #38bdf8; --on-accent: #001018;
-  --ok: #22c55e; --warn: #eab308; --danger: #ef4444; --info: #3b82f6;
-  --kind-image: #38bdf8; --kind-region: #818cf8; --kind-point: #22c55e;
-  --slot-tool: #8a909c; --slot-bot: #e879f9; --slot-guide: #e7eaf0; --dim: rgb(0 0 0 / .66);
+  --ok: #22c55e; --warn: #eab308; --danger: #ef4444; --info: #3b82f6; --on-status: #031008;
+  --kind-image: #38bdf8; --kind-region: #818cf8; --kind-point: #22c55e; --handle-fill: #e7eaf0;
+  --slot-tool: #8a909c; --slot-bot: #e879f9; --slot-guide: #e7eaf0; --on-bot: #14041a;
 }
 [data-theme="high-contrast"] {
+  color-scheme: dark;
   --bg: #000; --glass: #000; --glass-strong: #000; --raised: #1a1a1a; --raised-hover: #333; --line: #fff;
-  --blur: 0px; --shadow: none; --text: #fff; --muted: #e5e5e5; --faint: #bfbfbf;
+  --blur: 0px; --shadow: none; --text: #fff; --muted: #e5e5e5; --faint: #c8c8c8;
   --accent: #ff0; --accent-2: #0ff; --glow: 0 0 0 2px #ff0; --on-accent: #000;
-  --ok: #0f0; --warn: #ffbf00; --danger: #ff4d4d; --info: #00bfff;
-  --kind-image: #0ff; --kind-region: #f0f; --kind-point: #0f0;
-  --slot-tool: #e5e5e5; --slot-bot: #ff80ff; --slot-guide: #fff; --dim: rgb(0 0 0 / .7);
+  --ok: #0f0; --warn: #ffbf00; --danger: #ff6b6b; --info: #00bfff; --on-status: #000;
+  --kind-image: #0ff; --kind-region: #f0f; --kind-point: #0f0; --handle-fill: #fff;
+  --slot-tool: #e5e5e5; --slot-bot: #ff80ff; --slot-guide: #fff; --on-bot: #000;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: var(--size-m)/1.45 var(--font);
-       transition: background var(--move) var(--ease), color var(--move) var(--ease); }
-main { max-width: 1120px; margin: 0 auto; padding: var(--space-6) var(--space-4) 96px; }
+/* ------------------------------------------------------------------ base */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--text); font: var(--size-m)/1.45 var(--font); }
+main { max-width: 1160px; margin: 0 auto; padding: var(--space-6) var(--space-4) 96px; }
 h1 { font: 700 30px/1.15 var(--font-strong); margin: 0; letter-spacing: -.01em; }
 h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-h2 { font: 650 var(--size-l)/1.3 var(--font-strong); margin: 56px 0 var(--space-2); }
-.lead { color: var(--muted); max-width: 68ch; margin: var(--space-2) 0 0; }
-.note { color: var(--muted); font-size: var(--size-s); max-width: 72ch; margin: var(--space-3) 0 0; }
+h2 { font: 650 var(--size-l)/1.3 var(--font-strong); margin: 0; }
+.sec-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: baseline; justify-content: space-between; margin: 56px 0 var(--space-3); scroll-margin-top: 64px; }
+.sec-head p { margin: 0; color: var(--muted); font-size: var(--size-s); }
+.lead { color: var(--muted); max-width: 70ch; margin: var(--space-2) 0 0; }
+.note { color: var(--muted); font-size: var(--size-s); max-width: 76ch; margin: var(--space-3) 0 0; }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+code { font: 12px var(--mono); background: var(--raised); padding: 1px 5px; border-radius: 5px; }
+:where(a, button, input, select, textarea, [tabindex="0"]):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* top bar */
-.topbar { position: sticky; top: 0; z-index: 10; display: flex; gap: var(--space-2); align-items: center; justify-content: flex-end;
+/* ------------------------------------------------------------------ top bar */
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; gap: var(--space-3); align-items: center;
           padding: var(--space-2) var(--space-4); background: var(--glass); backdrop-filter: blur(var(--blur)); border-bottom: 1px solid var(--line); }
-.topbar b { margin-right: auto; font: 700 var(--size-m) var(--font-strong); display: flex; gap: 8px; align-items: center; }
-.logo { width: 22px; height: 22px; border-radius: 7px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
-.seg { display: inline-flex; padding: 2px; border-radius: var(--radius-pill); background: var(--raised); flex-wrap: wrap; }
-.seg button { border: 0; background: none; color: var(--muted); padding: 4px 10px; border-radius: var(--radius-pill);
+.brand { display: flex; gap: 8px; align-items: center; font: 700 var(--size-m) var(--font-strong); white-space: nowrap; }
+.logo { width: 24px; height: 24px; border-radius: 7px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); flex: none; }
+.topnav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.topnav a { color: var(--muted); text-decoration: none; font-size: var(--size-s); padding: 4px 9px; border-radius: var(--radius-pill); white-space: nowrap; }
+.topnav a:hover { color: var(--text); background: var(--raised); }
+
+/* ------------------------------------------------------------------ components */
+.glass { background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.seg { display: inline-flex; padding: 2px; border-radius: var(--radius-pill); background: var(--raised); flex: none; }
+.seg button { border: 0; background: none; color: var(--muted); padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap;
               font: 600 var(--size-xs) var(--font-strong); cursor: pointer; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-
-/* shared components */
-.glass { background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur));
-         border: 1px solid var(--line); box-shadow: var(--shadow); }
-.btn { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 14px;
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; padding: 6px 14px; white-space: nowrap;
        border-radius: var(--radius-pill); background: var(--raised); color: var(--text); font: 600 var(--size-s)/1.2 var(--font-strong);
-       transition: background var(--fast) var(--ease), transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+       transition: background var(--fast) var(--ease), transform var(--fast) var(--ease); }
 .btn:hover { background: var(--raised-hover); } .btn:active { transform: scale(.97); }
-.btn.primary { background: var(--accent); color: var(--on-accent); } .btn.primary:hover { box-shadow: var(--glow); }
-.icon { position: relative; width: 30px; height: 30px; display: inline-grid; place-items: center; border: 0; border-radius: var(--radius-pill);
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.danger { color: var(--danger); }
+.btn.small { padding: 3px 10px; font-size: var(--size-xs); }
+.icon { width: 30px; height: 30px; display: inline-grid; place-items: center; border: 0; border-radius: var(--radius-pill); flex: none;
         background: none; color: var(--muted); cursor: pointer; font-size: 14px; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
 .icon:hover { background: var(--raised-hover); color: var(--text); }
-.icon.on { color: var(--accent); background: var(--raised); }
-[data-tip] .tip, .icon .tip, .btn .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 4px; white-space: nowrap; z-index: 5;
-        display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; border-radius: var(--radius-s); background: var(--glass-strong);
-        border: 1px solid var(--line); color: var(--text); font: 500 var(--size-xs) var(--font); opacity: 0; pointer-events: none;
-        transition: opacity var(--fast) var(--ease), translate var(--fast) var(--ease); }
-.icon:hover .tip, .btn:hover .tip { opacity: 1; translate: -50% 0; }
-kbd { font: 600 10px/1.5 var(--font-strong); padding: 0 5px; min-width: 16px; text-align: center; border: 1px solid var(--line);
-      border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); }
-.chip { --c: var(--muted); display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: var(--radius-pill);
-        font: 600 var(--size-xs)/1.6 var(--font-strong); color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent);
-        border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); white-space: nowrap; }
+.icon[aria-pressed="true"] { color: var(--accent); background: var(--raised); }
+kbd { font: 600 10px/1.5 var(--font-strong); padding: 0 5px; min-width: 16px; text-align: center; display: inline-block; border: 1px solid var(--line);
+      border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); transition: transform var(--fast) var(--ease), background var(--fast) var(--ease); }
+kbd.down { background: var(--accent); color: var(--on-accent); transform: translateY(1px); }
+.chip { --c: var(--muted); display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: var(--radius-pill); white-space: nowrap;
+        font: 600 var(--size-xs)/1.6 var(--font-strong); color: var(--c); background: color-mix(in oklab, var(--c) 14%, transparent);
+        border: 1px solid color-mix(in oklab, var(--c) 32%, transparent); }
 .chip.image { --c: var(--kind-image); } .chip.region { --c: var(--kind-region); } .chip.point { --c: var(--kind-point); }
-.chip.ok { --c: var(--ok); } .chip.warn { --c: var(--warn); } .chip.danger { --c: var(--danger); }
-.readout { padding: 1px 6px; border-radius: var(--radius-s); font: 600 var(--size-xs) var(--mono); color: var(--on-accent); white-space: nowrap; }
-.badge { padding: 0 6px; border-radius: var(--radius-pill); font: 700 var(--size-xs) var(--mono); color: #071016; }
+.chip.ok { --c: var(--ok); } .chip.warn { --c: var(--warn); } .chip.danger { --c: var(--danger); } .chip.info { --c: var(--info); }
+.readout { border: 0; cursor: text; padding: 1px 6px; border-radius: var(--radius-s); font: 600 var(--size-xs) var(--mono); color: var(--on-accent); white-space: nowrap; }
+.readout input { width: 46px; font: inherit; border: 0; border-radius: 4px; padding: 0 3px; background: rgb(255 255 255 / .9); color: #000; }
+.badge { padding: 0 6px; border-radius: var(--radius-pill); font: 700 var(--size-xs) var(--mono); color: var(--on-status); }
 .badge.ok { background: var(--ok); } .badge.risky { background: var(--warn); } .badge.missing { background: var(--danger); }
 .slot-tool { color: var(--slot-tool); font-size: var(--size-xs); }
 .slot-guide { color: var(--slot-guide); font-size: var(--size-s); }
-.slot-bot { color: var(--slot-bot); font-size: var(--size-s); display: inline-flex; gap: 6px; align-items: baseline; }
-.slot-bot b { font: 600 var(--size-xs)/1.6 var(--font-strong); padding: 0 6px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--slot-bot) 18%, transparent); }
+.slot-bot { color: var(--slot-bot); font-size: var(--size-s); display: inline-flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.slot-bot b { font: 600 var(--size-xs)/1.6 var(--font-strong); padding: 0 6px; border-radius: var(--radius-pill); white-space: nowrap; flex: none;
+              background: color-mix(in oklab, var(--slot-bot) 18%, transparent); }
 .strip { height: 5px; border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
-.strip i { display: block; height: 100%; width: 100%; transform-origin: left; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: transform 600ms var(--ease); }
+.strip i { display: block; height: 100%; width: 100%; transform-origin: left; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: transform var(--move) var(--ease); }
+.field { display: grid; gap: 4px; font-size: var(--size-s); }
+.field input, .field select, .search input { font: inherit; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 6px 10px; }
+.status { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.status.run { --c: var(--ok); animation: pulse 2s ease-in-out infinite; } .status.idle { --c: var(--faint); } .status.err { --c: var(--danger); }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin 800ms linear infinite; flex: none; }
 
-/* motion */
-@keyframes appear { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
-@keyframes pop { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
-@keyframes pulse { 50% { opacity: .3; } }
+/* one tooltip layer for the whole page, so no panel ever clips it */
+#tip { position: fixed; z-index: 100; pointer-events: none; display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px;
+       border-radius: var(--radius-s); background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow);
+       color: var(--text); font: 500 var(--size-xs) var(--font); white-space: nowrap; opacity: 0; transform: translateY(3px);
+       transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
+#tip.on { opacity: 1; transform: none; }
+
+/* palette and toasts */
+dialog.palette { width: min(520px, 92vw); padding: var(--space-2); border-radius: var(--radius-l); border: 1px solid var(--line);
+                 background: var(--glass-strong); color: var(--text); box-shadow: var(--shadow); }
+dialog.palette::backdrop { background: rgb(0 0 0 / .35); }
+dialog.palette input { width: 100%; font: inherit; color: var(--text); background: var(--raised); border: 0; border-radius: var(--radius-m); padding: 9px 12px; }
+dialog.palette ul { list-style: none; margin: var(--space-2) 0 0; padding: 0; max-height: 300px; overflow: auto; }
+dialog.palette li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 12px; border-radius: var(--radius-s); cursor: pointer; }
+dialog.palette li[aria-selected="true"] { background: var(--raised-hover); }
+#toasts { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 90; display: grid; gap: var(--space-2); }
+.toast { padding: 8px 12px; border-radius: var(--radius-m); max-width: 340px; animation: appear var(--move) var(--spring) both; }
+
+/* motion: only transform and opacity, nothing longer than 200 ms */
+@keyframes appear { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes march { to { stroke-dashoffset: -20; } }
 .reveal { opacity: 0; }
-.reveal.in { opacity: 1; animation: appear 420ms var(--spring) both; }
-.reveal.in .pop { animation: pop 300ms var(--spring) both; }
-.reveal.in .pop:nth-child(2) { animation-delay: 80ms; } .reveal.in .pop:nth-child(3) { animation-delay: 160ms; }
-.reveal.in .pop:nth-child(4) { animation-delay: 240ms; } .reveal.in .pop:nth-child(5) { animation-delay: 320ms; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
+.shot *, .shot *::before, .shot *::after { animation: none !important; transition: none !important; }
+.shot .reveal { opacity: 1; }
+.shot .topbar { display: none; }
+.shot main { padding-top: 8px; }
+.shot .sec-head { margin-top: 0; }
+.reveal.in { opacity: 1; animation: appear var(--move) var(--ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 80ms !important; animation-iteration-count: 1 !important; transition-duration: 80ms !important; }
+  @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+}
+@media (forced-colors: active) {
+  .glass, .btn, .icon, .chip, .readout, .badge, kbd { border: 1px solid CanvasText; }
+  .seg button[aria-pressed="true"], .icon[aria-pressed="true"] { outline: 2px solid Highlight; }
+  .swatch i, .gcard, .gbtn { forced-color-adjust: none; }
+}
 
-/* a fake game screen behind the tools */
+/* ------------------------------------------------------------------ a fake game screen behind the tools */
 .screen { position: relative; border-radius: var(--radius-l); overflow: hidden; aspect-ratio: 16 / 9; border: 1px solid var(--line);
-          background: radial-gradient(120% 90% at 20% 10%, #3b2a6b 0%, #1b1e3a 45%, #0d1222 100%); isolation: isolate; }
-.screen .sky { position: absolute; inset: 0; background:
-  radial-gradient(40% 30% at 75% 80%, rgb(255 140 60 / .35), transparent 70%),
-  radial-gradient(30% 25% at 30% 70%, rgb(90 200 250 / .18), transparent 70%); }
-.screen .dimmed { position: absolute; inset: 0; background: var(--dim); }
+          background: radial-gradient(120% 90% at 20% 10%, #3b2a6b 0%, #1b1e3a 45%, #0d1222 100%); isolation: isolate; touch-action: none; }
+.screen .sky { position: absolute; inset: 0; background: radial-gradient(40% 30% at 75% 80%, rgb(255 140 60 / .35), transparent 70%), radial-gradient(30% 25% at 30% 70%, rgb(90 200 250 / .18), transparent 70%); }
 .gwin { position: absolute; border-radius: 10px; background: linear-gradient(180deg, #2b2f55, #1d2140); border: 2px solid #6b72c9; box-shadow: inset 0 0 0 2px #14183a; }
 .gwin h4 { margin: 0; padding: 6px 10px; font: 700 12px var(--font-strong); color: #ffe7a3; letter-spacing: .04em; background: rgb(0 0 0 / .25); }
-.gcard { position: absolute; width: 11%; aspect-ratio: 1; border-radius: 8px; border: 2px solid #8b93ff; background: linear-gradient(160deg, #ff9a62, #ff5f8f); }
+.gcard { position: absolute; width: 10%; aspect-ratio: 1; border-radius: 8px; border: 2px solid #8b93ff; background: linear-gradient(160deg, #ff9a62, #ff5f8f); }
 .gcard.b { background: linear-gradient(160deg, #6ee7ff, #4f7cff); } .gcard.c { background: linear-gradient(160deg, #b8ff8a, #2fbf71); }
 .gcard.d { background: linear-gradient(160deg, #f7d26b, #e08a1e); } .gcard.e { background: linear-gradient(160deg, #d8a6ff, #8a5cff); }
 .gcard.used { filter: grayscale(1) brightness(.45); }
 .gbtn { position: absolute; border-radius: 9px; background: linear-gradient(180deg, #52e38f, #1fa35a); border: 2px solid #0f6a39;
-        color: #fff; font: 800 13px var(--font-strong); display: grid; place-items: center; text-shadow: 0 1px 0 #0b4d29; }
+        color: #fff; font: 800 clamp(9px, 1.1vw, 13px) var(--font-strong); display: grid; place-items: center; text-shadow: 0 1px 0 #0b4d29; }
 
-/* capture overlay pieces */
-.box { position: absolute; border: 2px solid var(--kind-image); border-radius: 2px; box-shadow: 0 0 0 9999px transparent; }
-.box.region { border: 0; }
-.box.region svg { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); overflow: visible; }
-.box.region rect { fill: none; stroke: var(--kind-region); stroke-width: 2; stroke-dasharray: 7 5; animation: march 1.2s linear infinite; }
-.box .lbl { position: absolute; display: flex; gap: 6px; align-items: center; white-space: nowrap; }
-.box .lbl.top { bottom: calc(100% + 6px); left: -2px; } .box .lbl.bottom { top: calc(100% + 6px); left: -2px; }
-.handle { position: absolute; width: 9px; height: 9px; border-radius: 2px; background: #fff; border: 2px solid var(--kind-image); translate: -50% -50%; }
-.bright { position: absolute; inset: 0; backdrop-filter: brightness(1.75) saturate(1.1); }
-.pt { position: absolute; width: 22px; height: 22px; translate: -50% -50%; }
+/* ------------------------------------------------------------------ capture */
+.sel { position: absolute; z-index: 1; border: 2px solid var(--kind-image); box-shadow: 0 0 0 100vmax var(--screen-dim); cursor: move; touch-action: none; }
+.sel .lbl { z-index: 3; }
+.sel .h { position: absolute; width: 10px; height: 10px; border-radius: 2px; background: var(--handle-fill); border: 2px solid var(--kind-image); translate: -50% -50%; }
+.sel .h[data-h="nw"] { left: 0; top: 0; cursor: nwse-resize; } .sel .h[data-h="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.sel .h[data-h="ne"] { left: 100%; top: 0; cursor: nesw-resize; } .sel .h[data-h="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.sel .h[data-h="se"] { left: 100%; top: 100%; cursor: nwse-resize; } .sel .h[data-h="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.sel .h[data-h="sw"] { left: 0; top: 100%; cursor: nesw-resize; } .sel .h[data-h="w"] { left: 0; top: 50%; cursor: ew-resize; }
+.pt { position: absolute; width: 22px; height: 22px; translate: -50% -50%; cursor: grab; }
 .pt::before, .pt::after { content: ""; position: absolute; background: var(--kind-point); }
 .pt::before { left: 50%; top: 0; bottom: 0; width: 2px; translate: -50% 0; } .pt::after { top: 50%; left: 0; right: 0; height: 2px; translate: 0 -50%; }
-.pt i { position: absolute; inset: 5px; border: 2px solid var(--kind-point); border-radius: 50%; background: rgb(0 0 0 / .25); }
-.guide-line { position: absolute; background: var(--accent); box-shadow: 0 0 8px var(--accent); opacity: .9; }
-.toolbar { position: absolute; left: 50%; bottom: 4%; translate: -50% 0; display: flex; align-items: center; gap: 2px;
-           padding: 4px 6px 4px 12px; border-radius: var(--radius-pill); max-width: 96%; }
+.pt i { position: absolute; inset: 5px; border: 2px solid var(--kind-point); border-radius: 50%; }
+.ghost { position: absolute; inset: 0; background: linear-gradient(180deg, #74f0a8, #2bb86a); opacity: 0; mix-blend-mode: difference; transition: opacity var(--fast) var(--ease); pointer-events: none; }
+.sel.compare .ghost { opacity: .7; }
+.linked { position: absolute; pointer-events: none; z-index: 2; }        /* above the dimming, so the linked region stays readable */
+.linked svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.linked rect { fill: none; stroke: var(--kind-region); stroke-width: 2; stroke-dasharray: 7 5; animation: march 1.2s linear infinite; }
+.lbl { position: absolute; display: flex; gap: 6px; align-items: center; white-space: nowrap; pointer-events: auto; }
+.snapline { position: absolute; width: 2px; background: var(--accent); box-shadow: 0 0 8px var(--accent); opacity: 0; transition: opacity var(--fast) var(--ease); pointer-events: none; }
+.snapline.on { opacity: 1; }
+.mag { position: absolute; padding: 4px; border-radius: var(--radius-m); background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); pointer-events: none; z-index: 3; }
+.mag canvas { display: block; width: 120px; height: 120px; border-radius: 6px; image-rendering: pixelated; }
+.mag .num { display: flex; justify-content: space-between; gap: 8px; padding: 3px 2px 0; font-size: 10px; color: var(--muted); }
+.guidecard { position: absolute; top: 3%; right: 2.5%; width: min(330px, 46%); padding: 10px 12px 8px; border-radius: var(--radius-l); display: grid; gap: 6px;
+             transition: transform var(--move) var(--ease), opacity var(--move) var(--ease); z-index: 4; }
+.guidecard header { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 650 var(--size-s) var(--font-strong); }
+.guidecard .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.guidecard.collapsed { transform: translateY(calc(-100% + 8px)); }
+.guidecard.collapsed > :not(.strip) { opacity: 0; }
+.thumbs { display: flex; gap: 4px; margin-left: auto; }
+.thumbs i { width: 16px; height: 16px; border-radius: 4px; background: var(--raised); border: 1px solid var(--line); }
+.thumbs i.done { background: linear-gradient(160deg, #6ee7ff, #4f7cff); } .thumbs i.now { box-shadow: var(--glow); background: linear-gradient(160deg, #f7d26b, #e08a1e); }
+.toolbar { position: absolute; left: 50%; bottom: 3%; translate: -50% 0; display: flex; align-items: center; gap: 2px; z-index: 4;
+           padding: 4px 6px 4px 12px; border-radius: var(--radius-pill); max-width: 96%; overflow-x: auto; scrollbar-width: none; }
 .toolbar .name { font: 600 var(--size-s) var(--font-strong); white-space: nowrap; margin-right: 6px; }
-.toolbar hr { width: 1px; height: 18px; border: 0; background: var(--line); margin: 0 4px; }
+.toolbar hr, .bar hr { width: 1px; height: 18px; border: 0; background: var(--line); margin: 0 4px; flex: none; }
+.toolbar select { font: 600 var(--size-xs) var(--font-strong); color: var(--kind-region); background: var(--raised); border: 0; border-radius: var(--radius-pill); padding: 4px 8px; flex: none; }
 .kinds button[data-k="image"][aria-pressed="true"] { background: var(--kind-image); }
 .kinds button[data-k="region"][aria-pressed="true"] { background: var(--kind-region); }
 .kinds button[data-k="point"][aria-pressed="true"] { background: var(--kind-point); }
-.mag { position: absolute; padding: 4px; border-radius: var(--radius-m); background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.mag canvas { display: block; width: 132px; height: 132px; border-radius: 6px; image-rendering: pixelated; }
-.mag .num { display: flex; justify-content: space-between; gap: 8px; padding: 3px 2px 0; font-size: 10px; color: var(--muted); }
-.mag .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; vertical-align: -1px; background: #52e38f; }
-.guidecard { position: absolute; top: 3%; left: 50%; translate: -50% 0; width: min(400px, 78%); padding: 10px 12px 8px; border-radius: var(--radius-l); display: grid; gap: 6px; }
-.guidecard header { display: flex; justify-content: space-between; align-items: center; font: 650 var(--size-s) var(--font-strong); }
-.guidecard header span { color: var(--muted); font: 500 var(--size-xs) var(--mono); }
-.guidecard .row { display: flex; gap: 8px; align-items: center; }
-.guidecard .thumbs { display: flex; gap: 4px; }
-.guidecard .thumbs i { width: 18px; height: 18px; border-radius: 4px; background: var(--raised); border: 1px solid var(--line); }
-.guidecard .thumbs i.done { background: linear-gradient(160deg, #6ee7ff, #4f7cff); }
-.guidecard .thumbs i.now { box-shadow: var(--glow); background: linear-gradient(160deg, #f7d26b, #e08a1e); }
-.hint { position: absolute; left: 50%; bottom: calc(4% + 48px); translate: -50% 0; padding: 3px 10px; border-radius: var(--radius-pill); }
+.hint { position: absolute; left: 2.5%; top: 3%; max-width: 34%; padding: 6px 10px; border-radius: var(--radius-m); z-index: 3; }
 
 /* highlight */
-.hl { position: absolute; border: 2px solid var(--c); border-radius: 6px; box-shadow: 0 0 14px color-mix(in srgb, var(--c) 55%, transparent); }
-.hl.ok { --c: var(--ok); } .hl.risky { --c: var(--warn); }
-.hl .lbl { position: absolute; bottom: calc(100% + 4px); left: -2px; display: inline-flex; gap: 4px; align-items: center; white-space: nowrap;
-           padding: 1px 6px; border-radius: var(--radius-s); background: var(--glass-strong); font: 600 10px var(--font-strong); color: var(--text); }
-.missing { position: absolute; right: 2%; top: 4%; padding: 8px 10px; border-radius: var(--radius-m); font-size: var(--size-xs); max-width: 40%; }
-.missing b { color: var(--danger); display: block; font: 650 var(--size-s) var(--font-strong); }
+.hl { transition: opacity var(--fast) var(--ease); cursor: pointer; }
+.hl.ok { --c: var(--ok); } .hl.risky { --c: var(--warn); } .hl.refused { --c: var(--danger); outline-style: dashed; }
+.hl.hidden { outline-color: transparent; box-shadow: none; }
+.hl.hidden .lbl { opacity: 0; }
+.hl .lbl { bottom: calc(100% + 6px); left: -3px; z-index: 2; padding: 1px 6px; border-radius: var(--radius-s); background: var(--glass-strong); font: 600 10px var(--font-strong); color: var(--text); }
+.glist { position: absolute; left: 14%; top: 12%; width: 58%; height: 64%; overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr);
+         gap: 7% 4%; padding: 0 4%; align-content: start; }
+.glist > .gcard2:nth-child(-n+4) { margin-top: -55%; }   /* the list is scrolled: only the bottom of the top row shows */
+.gcard2 { position: relative; aspect-ratio: 1; border-radius: 8px; border: 2px solid #8b93ff; background: var(--g); }
+.gcard2.used { filter: grayscale(1) brightness(.45); }
+.gcard2.hl, .gbtn.hl { outline: 2px solid var(--c); outline-offset: 3px; box-shadow: 0 0 14px color-mix(in oklab, var(--c) 55%, transparent); }
+.cutoff { position: absolute; left: 0; right: 0; top: 0; height: 15%; z-index: 2; display: grid; place-items: center;
+          background: repeating-linear-gradient(135deg, rgb(0 0 0 / .45) 0 8px, rgb(0 0 0 / .25) 8px 16px); border-bottom: 1px dashed var(--warn); }
+.cutoff span { font: 600 var(--size-xs) var(--font-strong); color: var(--warn); background: var(--glass-strong); padding: 1px 8px; border-radius: var(--radius-pill); }
+.side { position: absolute; right: 2%; top: 4%; width: min(250px, 34%); padding: 10px 12px; border-radius: var(--radius-m); display: grid; gap: 8px; font-size: var(--size-xs); z-index: 3; }
+.side b { font: 650 var(--size-s) var(--font-strong); }
+.side input[type="range"] { width: 100%; accent-color: var(--accent); }
 
-/* recorder and run panel */
-.rec { display: inline-flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: var(--radius-pill); font-size: var(--size-s); }
-.rec .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
-.panel { width: 290px; border-radius: var(--radius-l); overflow: hidden; font-size: var(--size-s); }
+/* recorder bar, run panel, compact pill */
+.bar { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 14px; border-radius: var(--radius-pill); font-size: var(--size-s); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; flex: none; }
+.bar.paused .dot { background: var(--warn); animation: none; }
+.checks { margin-top: var(--space-2); width: min(360px, 100%); padding: var(--space-3); border-radius: var(--radius-l); display: grid; gap: 6px; }
+.checks button { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; text-align: left; border: 0; background: none; color: var(--text);
+                 padding: 7px 8px; border-radius: var(--radius-m); cursor: pointer; font: inherit; }
+.checks button:hover { background: var(--raised-hover); }
+.checks button[disabled] { opacity: .45; cursor: default; }
+.checks .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--raised); }
+.panel { width: 300px; max-width: 100%; border-radius: var(--radius-l); font-size: var(--size-s); }
 .panel header { display: flex; align-items: center; gap: 2px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--line); }
 .panel header b { flex: 1; font-family: var(--font-strong); }
-.tree { list-style: none; margin: 0; padding: 8px; display: grid; gap: 2px; }
+.tree { list-style: none; margin: 0; padding: 8px; display: grid; gap: 2px; max-height: 330px; overflow: auto; }
 .tree li { padding: 3px 8px; border-radius: var(--radius-s); display: flex; gap: 8px; align-items: center; }
 .tree .cp { font-weight: 650; margin-top: 4px; } .tree .cp::before { content: "◆"; color: var(--accent); font-size: 10px; }
-.tree .goal { padding-left: 18px; color: var(--muted); } .tree .step { padding-left: 30px; font: 12px var(--mono); }
+.tree .goal { padding-left: 18px; color: var(--muted); }
+.tree .step { padding-left: 30px; font: 12px var(--mono); cursor: pointer; position: relative; }
 .tree .step.done { color: var(--faint); } .tree .step.now { background: var(--raised-hover); box-shadow: var(--glow); }
-.tree .step.bp::before { content: "●"; color: var(--danger); margin-left: -14px; font-size: 10px; }
+.tree .step.bp::before { content: ""; position: absolute; left: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .tree .t { margin-left: auto; color: var(--faint); font-size: 10px; }
 
-/* hub */
-.hub { display: grid; grid-template-columns: 76px 1fr; height: 460px; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg); }
-.rail { display: flex; flex-direction: column; gap: 4px; padding: 12px 8px; background: var(--glass); border-right: 1px solid var(--line); }
-.rail .logo { width: 32px; height: 32px; margin: 0 auto 10px; border-radius: 10px; font-size: 15px; }
+/* studio */
+.studio { display: grid; grid-template-columns: 78px 1fr; height: 600px; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg); }
+.titlebar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--size-xs); color: var(--muted); border-bottom: 1px solid var(--line); background: var(--glass); }
+.titlebar span:last-child { margin-left: auto; letter-spacing: 6px; }
+.studio { grid-template-rows: auto 1fr; }
+.rail { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px; background: var(--glass); border-right: 1px solid var(--line); }
 .rail button { border: 0; background: none; color: var(--muted); padding: 7px 4px; border-radius: var(--radius-m); font: 600 10px var(--font-strong);
                cursor: pointer; display: grid; gap: 2px; place-items: center; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
 .rail button span { font-size: 16px; }
 .rail button:hover { background: var(--raised-hover); color: var(--text); }
-.rail button.on { color: var(--accent); background: var(--raised); box-shadow: var(--glow); }
-.hubmain { padding: 18px 20px; overflow: auto; display: grid; gap: 14px; align-content: start; }
-.hubhead { display: flex; align-items: center; gap: 10px; }
-.hubhead h3 { margin: 0; font: 700 var(--size-l) var(--font-strong); }
-.bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-.bot { border-radius: var(--radius-l); padding: 12px; display: grid; gap: 8px; transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
-.bot:hover { transform: translateY(-2px); box-shadow: var(--glow), var(--shadow); }
+.rail button[aria-current="page"] { color: var(--accent); background: var(--raised); box-shadow: var(--glow); }
+.view { padding: 16px 18px; overflow: auto; display: none; align-content: start; gap: 14px; }
+.view.on { display: grid; animation: appear var(--move) var(--ease) both; }
+.vhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.vhead h3 { margin: 0; font: 700 var(--size-l) var(--font-strong); }
+.vhead .grow { flex: 1; }
+.bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.bot { border-radius: var(--radius-l); padding: 12px; display: grid; gap: 8px; transition: transform var(--fast) var(--ease); }
+.bot:hover { transform: translateY(-2px); }
 .bot .top { display: flex; align-items: center; gap: 8px; }
-.bot .av { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; color: #1a0b14; background: var(--a); }
+.av { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; color: var(--on-bot); background: var(--a); flex: none; }
 .bot .top b { flex: 1; font-family: var(--font-strong); }
-.status { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
-.status.run { --c: var(--ok); animation: pulse 2s ease-in-out infinite; } .status.idle { --c: var(--faint); }
-.bot .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--size-xs); }
-.live { border-radius: var(--radius-l); padding: 12px 14px; display: grid; gap: 8px; }
-.live h4 { margin: 0; font: 650 var(--size-s) var(--font-strong); display: flex; gap: 8px; align-items: center; }
-.timeline { display: grid; gap: 4px; }
-.tl { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; font-size: var(--size-xs); }
-.tl .bar { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
-.tl .bar i { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--accent)); width: var(--w); }
-.tl .bar i.ok { --c: var(--ok); } .tl .bar i.fail { --c: var(--danger); } .tl .bar i.now { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.bot .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: var(--size-xs); flex-wrap: wrap; }
+.empty { display: grid; place-items: center; text-align: center; gap: 10px; padding: 40px 16px; border: 1px dashed var(--line); border-radius: var(--radius-l); color: var(--muted); }
+.card { border-radius: var(--radius-l); padding: 12px 14px; display: grid; gap: 8px; }
+.card h4 { margin: 0; font: 650 var(--size-s) var(--font-strong); display: flex; gap: 8px; align-items: center; }
+.tl { display: grid; grid-template-columns: 130px 1fr 44px; gap: 8px; align-items: center; font-size: var(--size-xs); }
+.tl .bar2 { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
+.tl .bar2 i { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--accent)); width: var(--w); }
+.tl .bar2 i.ok { --c: var(--ok); } .tl .bar2 i.fail { --c: var(--danger); } .tl .bar2 i.now { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
 .logline { font: 11px/1.6 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .logline b { color: var(--text); font-weight: 500; }
-.mini { display: inline-flex; align-items: center; gap: 8px; padding: 5px 6px 5px 12px; border-radius: var(--radius-pill); font-size: var(--size-s); }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs button { border: 0; background: none; color: var(--muted); padding: 7px 12px; font: 600 var(--size-s) var(--font-strong); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.tool { text-align: left; border-radius: var(--radius-l); padding: 12px; display: grid; gap: 6px; cursor: pointer; color: var(--text); font: inherit; border: 1px solid var(--line); background: var(--glass); }
+.tool:hover { box-shadow: var(--glow); }
+.tool .ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; background: color-mix(in oklab, var(--c, var(--accent)) 18%, transparent); color: var(--c, var(--accent)); }
+.tool b { font-family: var(--font-strong); }
+.lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.lib div { border-radius: var(--radius-m); padding: 8px; display: grid; gap: 6px; font-size: var(--size-xs); background: var(--raised); }
+.lib i { display: block; aspect-ratio: 1.4; border-radius: 6px; background: var(--g); }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.help { color: var(--slot-tool); font-size: var(--size-xs); }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.stack { display: grid; gap: 16px; justify-items: start; }
-.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
-.sw { border-radius: var(--radius-m); padding: 8px; border: 1px solid var(--line); background: var(--raised); font-size: var(--size-xs); }
-.sw i { display: block; height: 26px; border-radius: 6px; margin-bottom: 6px; background: var(--c); border: 1px solid var(--line); }
-.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 16px; font-size: var(--size-s); }
-.keys div { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+/* install wizard */
+dialog.wizard { width: min(620px, 94vw); padding: 0; border-radius: var(--radius-l); border: 1px solid var(--line); background: var(--glass-strong); color: var(--text); box-shadow: var(--shadow); }
+dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
+.wizard header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.wizard header b { font: 700 var(--size-m) var(--font-strong); }
+.steps { display: flex; gap: 6px; padding: 12px 16px 0; flex-wrap: wrap; }
+.steps span { display: inline-flex; gap: 6px; align-items: center; font-size: var(--size-xs); color: var(--muted); padding: 3px 9px; border-radius: var(--radius-pill); background: var(--raised); }
+.steps span.done { color: var(--ok); } .steps span.now { color: var(--on-accent); background: var(--accent); } .steps span.err { color: var(--on-status); background: var(--danger); }
+.wbody { padding: 14px 16px; display: grid; gap: 12px; min-height: 190px; }
+.wfoot { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+.srcs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.srcs button { border: 1px solid var(--line); background: var(--raised); color: var(--text); border-radius: var(--radius-m); padding: 10px; text-align: left; cursor: pointer; font: inherit; display: grid; gap: 4px; }
+.srcs button[aria-pressed="true"] { box-shadow: var(--glow); }
+.loglist { font: 11px/1.7 var(--mono); color: var(--muted); background: var(--raised); border-radius: var(--radius-m); padding: 8px 10px; max-height: 110px; overflow: auto; }
+
+/* flows */
+.flow { display: grid; grid-template-columns: 200px 1fr; gap: 12px; min-height: 0; }
+.palette-list { display: grid; gap: 4px; align-content: start; font-size: var(--size-s); }
+.palette-list h5 { margin: 8px 0 2px; font: 600 10px var(--font-strong); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.palette-list button { text-align: left; border: 0; background: var(--raised); color: var(--text); padding: 6px 8px; border-radius: var(--radius-s); cursor: grab; font: inherit; display: flex; gap: 6px; align-items: center; }
+.palette-list button:hover { background: var(--raised-hover); }
+.steps-list { display: grid; gap: 4px; align-content: start; }
+.fs { display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center; padding: 7px 10px; border-radius: var(--radius-m); background: var(--raised); font-size: var(--size-s); border-left: 3px solid var(--k, transparent); }
+.fs.check { --k: var(--kind-image); } .fs.code { --k: var(--warn); } .fs.call { --k: var(--accent-2); } .fs.loop { --k: var(--info); }
+.fs.in1 { margin-left: 22px; } .fs.in2 { margin-left: 44px; }
+.fs .k { font: 600 10px var(--mono); color: var(--muted); }
+.fs .sum { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0; }
+.fs select, .fs input { font: 600 var(--size-xs) var(--mono); color: var(--text); background: var(--glass-strong); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; max-width: 150px; }
+.fs pre { margin: 0; font: 11px/1.5 var(--mono); color: var(--text); white-space: pre-wrap; }
+.fs.now { box-shadow: var(--glow); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.codeview { margin: 0; padding: 12px 14px; border-radius: var(--radius-l); font: 12px/1.65 var(--mono); overflow: auto; background: var(--glass-strong); border: 1px solid var(--line); white-space: pre; }
+.codeview .kw { color: var(--accent-2); } .codeview .fn { color: var(--accent); } .codeview .st { color: var(--ok); } .codeview .cm { color: var(--faint); }
+.codeview .hl-line { background: color-mix(in oklab, var(--accent) 16%, transparent); display: inline-block; width: 100%; }
+
+/* tokens and keys */
+.voices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.voice { padding: 10px 12px; border-radius: var(--radius-m); background: var(--raised); display: grid; gap: 8px; }
+.voice small { color: var(--muted); font-size: var(--size-xs); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-top: 10px; }
+.swatch { border-radius: var(--radius-m); padding: 8px; border: 1px solid var(--line); background: var(--raised); font: 11px var(--mono); color: var(--text); text-align: left; cursor: copy; }
+.swatch i { display: block; height: 24px; border-radius: 6px; margin-bottom: 6px; background: var(--c); border: 1px solid var(--line); }
+.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 16px; font-size: var(--size-s); }
+.keys div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .keys span:last-child { display: inline-flex; gap: 2px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+/* grid columns may shrink below their content (long code lines scroll inside instead of widening the page) */
+.grid2 > *, .split > *, .flow > *, .studio > *, .view > * { min-width: 0; }
+.stack { display: grid; gap: 14px; justify-items: start; min-width: 0; }
+
+/* phone width */
 @media (max-width: 760px) {
-  .grid2 { grid-template-columns: 1fr; }
-  .toolbar .name, .toolbar .hide-s { display: none; }
-  .mag { display: none; }
-  .hub { grid-template-columns: 56px 1fr; height: auto; min-height: 420px; }
-  .rail button { font-size: 0; } .rail button span { font-size: 16px; }
-  .tl { grid-template-columns: 90px 1fr 40px; }
+  main { padding: var(--space-5) var(--space-3) 80px; }
+  .grid2, .split, .voices { grid-template-columns: 1fr; }
+  .screen { aspect-ratio: 3 / 4; }
+  .toolbar .name, .toolbar .hide-s, .hint, .mag { display: none; }
+  .guidecard { width: 92%; right: 4%; }
+  .side { width: 60%; }
+  .studio { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; height: 640px; }
+  .rail { order: 3; flex-direction: row; justify-content: space-around; border-right: 0; border-top: 1px solid var(--line); padding: 4px; }
+  .rail .logo { display: none; }
+  .flow { grid-template-columns: 1fr; }
+  .palette-list { grid-template-columns: repeat(2, 1fr); }
+  .palette-list h5 { grid-column: 1 / -1; }
+  .srcs { grid-template-columns: 1fr; }
+  .tl { grid-template-columns: 96px 1fr 38px; }
+  .hide-xs { display: none; }
 }
 </style>
 </head>
 <body>
-<div class="topbar">
-  <b><span class="logo">d</span> darbit mockups</b>
+<header class="topbar">
+  <span class="brand"><span class="logo">d</span><span class="hide-xs">darbit Studio</span><span class="chip info">concept</span></span>
+  <nav class="topnav" aria-label="Sections">
+    <a href="#capture">Capture</a><a href="#highlight">Highlight</a><a href="#recorder">Recorder</a>
+    <a href="#studio">Studio</a><a href="#flow">Flow ↔ Python</a><a href="#tokens">Tokens & keys</a>
+  </nav>
   <div class="seg" role="group" aria-label="Theme" id="themes">
-    <button data-t="glass-dark" aria-pressed="true">glass dark</button>
-    <button data-t="glass-light" aria-pressed="false">glass light</button>
-    <button data-t="midnight" aria-pressed="false">midnight</button>
-    <button data-t="high-contrast" aria-pressed="false">high contrast</button>
+    <button data-t="glass-dark" aria-pressed="true">dark</button><button data-t="glass-light" aria-pressed="false">light</button>
+    <button data-t="midnight" aria-pressed="false">midnight</button><button data-t="high-contrast" aria-pressed="false">contrast</button>
   </div>
-</div>
+  <button class="btn small" id="openPalette" data-tip="Commands" data-keys="ctrl+k">⌘ Commands</button>
+</header>
+
 <main>
-  <h1>One look for <span>every darbit tool</span></h1>
-  <p class="lead">The capture tool, highlight, the setup guide, the recorder, the run panel and the hub, built from the same tokens and components. Themes switch everything at once. Only <code>transform</code> and <code>opacity</code> animate, nothing for longer than 240 ms. Specs: <code>docs/ui/design-system.md</code>, keys: <code>docs/ui/keymap.md</code>, tasks: <code>docs/tasks/</code>.</p>
+  <h1>darbit <span>Studio</span>: one look for every tool</h1>
+  <p class="lead">A concept of the whole suite before it's built: capture, highlight, the recorder with checks, the run panel, and the Studio that installs bots, launches every tool and edits flows. Everything here works with the mouse, the keyboard and touch. Specs: <code>docs/style/ui/design-system.md</code>, keys: <code>docs/style/ui/keymap.md</code>, decisions: <code>docs/decisions/</code>.</p>
 
-  <!-- ------------------------------------------------------------ capture -->
-  <h2>Capture: a frozen screen, a guide and the toolbar</h2>
-  <div class="screen reveal" id="capture">
+  <!-- ============================================================ capture -->
+  <div class="sec-head"><h2 id="capture">Capture: a frozen screen, a guide, one toolbar</h2>
+    <p>Drag the box, its handles or the green point · click a readout to type · hold <kbd data-key="c">C</kbd> to compare a retake</p></div>
+  <div class="screen reveal" id="capScreen" aria-label="Capture overlay mockup">
     <div class="sky"></div>
-    <div class="gwin" style="left:22%;top:14%;width:56%;height:70%"><h4>BAG · CHARACTERS</h4></div>
-    <div class="gcard" style="left:27%;top:28%"></div><div class="gcard b" style="left:40%;top:28%"></div>
-    <div class="gcard c" style="left:53%;top:28%"></div><div class="gcard d" style="left:27%;top:52%"></div>
-    <div class="gcard e" style="left:40%;top:52%"></div>
-    <div class="gbtn" style="left:56%;top:70%;width:16%;height:9%">EQUIP</div>
-    <div class="dimmed"></div>
+    <div class="gwin" style="left:14%;top:16%;width:58%;height:66%"><h4>BAG · CHARACTERS</h4></div>
+    <div class="gcard" style="left:18%;top:28%"></div><div class="gcard b" style="left:30.5%;top:28%"></div>
+    <div class="gcard c" style="left:43%;top:28%"></div><div class="gcard d" style="left:18%;top:51%"></div>
+    <div class="gcard e" style="left:30.5%;top:51%"></div>
+    <div class="gbtn" style="left:50%;top:68%;width:17%;height:9%">EQUIP</div>
 
-    <!-- the linked region: the Bag window -->
-    <div class="box region pop" style="left:21.4%;top:13.2%;width:57.2%;height:71.6%">
-      <svg preserveAspectRatio="none"><rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="10"/></svg>
-      <span class="lbl top"><span class="chip region">⬚ Measure.bagMenuRegion</span><span class="readout" style="background:var(--kind-region)">548, 211 · 1465 × 1146</span></span>
+    <div class="linked" id="capRegion" style="left:13.4%;top:15.2%;width:59.2%;height:67.6%">
+      <svg preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="99.6%" height="99.4%" rx="10"/></svg>
+      <span class="lbl" style="bottom:calc(100% + 6px);left:-2px"><span class="chip region">⬚ Measure.bagMenuRegion</span><span class="readout" style="background:var(--kind-region)">344, 243 · 1515 × 1082</span></span>
     </div>
-    <!-- the image being taken: the Equip button, bright inside -->
-    <div class="box pop" style="left:55.8%;top:69.6%;width:16.4%;height:9.8%">
-      <div class="bright"></div>
-      <span class="handle" style="left:0;top:0"></span><span class="handle" style="left:100%;top:0"></span>
-      <span class="handle" style="left:0;top:100%"></span><span class="handle" style="left:100%;top:100%"></span>
-      <span class="handle" style="left:50%;top:0"></span><span class="handle" style="left:50%;top:100%"></span>
-      <span class="handle" style="left:0;top:50%"></span><span class="handle" style="left:100%;top:50%"></span>
-      <span class="pt" style="left:62%;top:50%"><i></i></span>
-      <span class="lbl bottom"><span class="readout" style="background:var(--kind-image)">420 × 94</span><span class="chip ok">inside ✓</span><span class="chip point">◎ +20, 0</span></span>
-    </div>
-    <div class="guide-line pop" style="left:55.8%;top:66%;width:2px;height:17%"></div>
-
-    <div class="mag pop" style="left:74%;top:52%">
-      <canvas id="magcanvas" width="22" height="22"></canvas>
-      <div class="num"><span>1430, 1118</span><span><i class="swatch"></i> 52e38f</span></div>
+    <div class="snapline" id="snapline" style="left:50%;top:62%;height:21%"></div>
+    <div class="sel" id="capSel" style="left:50%;top:68%;width:17%;height:9%" tabindex="0" aria-label="Image box Bag.Equip">
+      <div class="ghost"></div>
+      <span class="h" data-h="nw"></span><span class="h" data-h="n"></span><span class="h" data-h="ne"></span><span class="h" data-h="e"></span>
+      <span class="h" data-h="se"></span><span class="h" data-h="s"></span><span class="h" data-h="sw"></span><span class="h" data-h="w"></span>
+      <span class="pt" id="capPt" style="left:62%;top:50%" aria-label="Click point"><i></i></span>
+      <span class="lbl" style="top:calc(100% + 6px);left:-2px">
+        <button class="readout" id="sizeReadout" style="background:var(--kind-image)" data-tip="Click to type exact pixels">420 × 94</button>
+        <span class="chip ok" id="insideChip">inside ✓</span><span class="chip point" id="ptChip">◎ +20, 0</span>
+      </span>
     </div>
 
-    <div class="guidecard glass pop">
-      <header>Bag, Characters tab <span>7 / 24</span></header>
+    <div class="mag" id="mag" style="left:76%;top:52%"><canvas id="magcanvas" width="22" height="22" aria-hidden="true"></canvas>
+      <div class="num"><span id="magxy">1430, 1118</span><span>52e38f</span></div></div>
+
+    <section class="guidecard glass" id="guide" aria-label="Setup guide">
+      <header>Bag, Characters tab <span class="num slot-tool">7 / 24</span>
+        <button class="icon" id="guideFold" data-tip="Hide the guide (it also hides when the mouse leaves)" aria-label="Hide the guide" style="width:24px;height:24px">▴</button></header>
       <div class="slot-guide">Open the Bag and go to the Characters tab.</div>
       <div class="row"><span class="chip image">▣ image</span><b style="font-size:var(--size-s)">Bag.Equip</b>
-        <span class="thumbs" style="margin-left:auto"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i></span></div>
+        <span class="thumbs" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i></span></div>
       <div class="slot-bot"><b>ad-bot</b>The green Equip button, without the shadow under it.</div>
       <div class="strip"><i style="transform:scaleX(.29)"></i></div>
-    </div>
+    </section>
 
-    <div class="hint glass slot-tool pop">click again for bigger · drag a handle to resize · <kbd>Alt</kbd> no snapping</div>
+    <div class="hint glass slot-tool">click again for bigger · right-click smaller · <kbd data-key="alt">Alt</kbd> no snapping</div>
 
-    <div class="toolbar glass pop">
+    <div class="toolbar glass" role="toolbar" aria-label="Capture tools">
       <span class="name">Bag.Equip</span>
       <div class="seg kinds" role="radiogroup" aria-label="Kind">
-        <button data-k="image" aria-pressed="true">Image</button><button data-k="region" aria-pressed="false">Region</button><button data-k="point" aria-pressed="false">Point</button>
+        <button data-k="image" aria-pressed="true" data-tip="Image" data-keys="tab">Image</button><button data-k="region" aria-pressed="false" data-tip="Search region" data-keys="shift+drag">Region</button><button data-k="point" aria-pressed="false" data-tip="Click point" data-keys="ctrl+click">Point</button>
       </div>
+      <select aria-label="Linked region" data-tip="Link a region target"><option>⬚ bagMenuRegion</option><option>⬚ srMenuRegion</option><option>+ Draw a region</option></select>
       <hr>
-      <button class="icon hide-s">⊟<span class="tip">Smaller <kbd>right-click</kbd></span></button>
-      <button class="icon hide-s">⊞<span class="tip">Bigger <kbd>click</kbd> again</span></button>
-      <button class="icon on">⌗<span class="tip">Snapping <kbd>S</kbd></span></button>
-      <button class="icon">⌕<span class="tip">Pin magnifier <kbd>Z</kbd></span></button>
-      <button class="icon">↶<span class="tip">Undo <kbd>Ctrl</kbd><kbd>Z</kbd></span></button>
-      <button class="icon hide-s">⟳<span class="tip">New shot <kbd>Space</kbd></span></button>
-      <button class="icon">◎<span class="tip">Highlight <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></span></button>
+      <button class="icon hide-s" aria-label="Smaller" data-tip="Smaller" data-keys="right-click">⊟</button>
+      <button class="icon hide-s" aria-label="Bigger" data-tip="Bigger" data-keys="click">⊞</button>
+      <button class="icon" aria-label="Snapping" aria-pressed="true" data-tip="Snapping" data-keys="s" id="snapBtn">⌗</button>
+      <button class="icon" aria-label="Pin magnifier" aria-pressed="false" data-tip="Pin magnifier" data-keys="z" id="pinBtn">⌕</button>
+      <button class="icon" aria-label="Compare with saved" aria-pressed="false" data-tip="Compare with the saved picture" data-keys="c" id="cmpBtn">◫</button>
+      <button class="icon" aria-label="Undo" data-tip="Undo" data-keys="ctrl+z" id="undoBtn">↶</button>
+      <button class="icon hide-s" aria-label="New shot" data-tip="New shot" data-keys="space">⟳</button>
+      <button class="icon" aria-label="Highlight" data-tip="Highlight" data-keys="ctrl+alt+h">◎</button>
       <hr>
-      <button class="btn primary">Save<span class="tip"><kbd>⏎</kbd> · next <kbd>Ctrl</kbd><kbd>⏎</kbd></span></button>
+      <button class="btn primary" id="saveBtn" data-tip="Save · save and next" data-keys="enter">Save</button>
     </div>
   </div>
-  <p class="note">The image (cyan) is linked to an existing region (violet, named), so the readout says whether it's inside. The click point (green) starts at the centre and was dragged right: <code>+20, 0</code>. Every kind shows where and how big it is, and clicking a readout lets you type exact numbers. The snap guide (glow) shows which line the left edge snapped to, and the magnifier draws the box edge too. Kinds switch with the segmented control or <kbd>Tab</kbd>; <kbd>Shift</kbd>+drag always draws a region, <kbd>Ctrl</kbd>+click sets the point. The guide card shows the author's text (white) and the bot's text (pink chip) separately. Hover the toolbar buttons to see their keys.</p>
+  <p class="note">The frozen screen is dimmed to 42% outside the box in every theme, and the box keeps the game's real colours. The image links to a named region, so its readout says whether it's inside. The click point starts at the centre and can be dragged. The guide card shows the setup author's text (white) and the bot's text (pink) apart, and folds into its progress strip.</p>
 
-  <!-- ------------------------------------------------------------ highlight -->
-  <h2>Highlight: what's found right now, with scores</h2>
-  <div class="screen reveal">
+  <!-- ============================================================ highlight -->
+  <div class="sec-head"><h2 id="highlight">Highlight: what's found right now</h2>
+    <p><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="h">H</kbd> anywhere, or <code>d.highlight(...)</code> · click a box to retake it</p></div>
+  <div class="screen reveal" id="hlScreen">
     <div class="sky"></div>
-    <div class="gwin" style="left:16%;top:10%;width:68%;height:78%"><h4>SPEED RAID</h4></div>
-    <div class="gcard" style="left:21%;top:24%"></div><div class="gcard b" style="left:34%;top:24%"></div>
-    <div class="gcard c" style="left:47%;top:24%"></div><div class="gcard d" style="left:60%;top:24%"></div>
-    <div class="gcard e used" style="left:21%;top:50%"></div><div class="gcard used" style="left:34%;top:50%"></div>
-    <div class="gbtn" style="left:58%;top:74%;width:18%;height:9%">START</div>
-    <div class="hl ok pop" style="left:20.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Naruto <span class="badge ok">0.97</span></span></div>
-    <div class="hl ok pop" style="left:33.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Sakura <span class="badge ok">0.95</span></span></div>
-    <div class="hl risky pop" style="left:46.6%;top:23.3%;width:11.8%;height:21%"><span class="lbl">SR.Char.Goku <span class="badge risky">0.82</span></span></div>
-    <div class="hl ok pop" style="left:57.6%;top:73.3%;width:18.8%;height:10.4%"><span class="lbl">Start <span class="badge ok">0.99</span></span></div>
-    <div class="missing glass pop"><b>not seen: 2</b><span class="slot-tool">SR.Char.Killua, SR.Char.Itadori (greyed out)</span></div>
+    <div class="gwin" style="left:12%;top:5%;width:62%;height:90%"><h4>SPEED RAID</h4></div>
+    <div class="glist" aria-label="The character list">
+      <div class="gcard2" style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"></div><div class="gcard2" style="--g:linear-gradient(160deg,#6ee7ff,#4f7cff)"></div>
+      <div class="gcard2" style="--g:linear-gradient(160deg,#b8ff8a,#2fbf71)"></div><div class="gcard2" style="--g:linear-gradient(160deg,#d8a6ff,#8a5cff)"></div>
+      <div class="gcard2 hl ok" data-s=".97" data-min=".85" style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"><span class="lbl">Naruto <span class="badge ok">0.97</span></span></div>
+      <div class="gcard2 hl ok" data-s=".95" data-min=".85" style="--g:linear-gradient(160deg,#6ee7ff,#4f7cff)"><span class="lbl">Sakura <span class="badge ok">0.95</span></span></div>
+      <div class="gcard2 hl risky" data-s=".88" data-min=".85" style="--g:linear-gradient(160deg,#b8ff8a,#2fbf71)"><span class="lbl">Goku <span class="badge risky">0.88</span> Luffy 0.82</span></div>
+      <div class="gcard2 hl refused" data-s=".86" data-min=".85" style="--g:linear-gradient(160deg,#f7d26b,#e08a1e)"><span class="lbl">Goku? <span class="badge missing">refused</span> Goku(MUI)</span></div>
+      <div class="gcard2 used" style="--g:linear-gradient(160deg,#d8a6ff,#8a5cff)"></div><div class="gcard2 used" style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"></div>
+      <div class="cutoff"><span>cut-off row: not searched</span></div>
+    </div>
+    <div class="gbtn hl ok" data-s=".99" data-min=".9" style="left:46%;top:82%;width:16%;height:9%">START<span class="lbl">Start <span class="badge ok">0.99</span></span></div>
+    <aside class="side glass" aria-label="Highlight results">
+      <b>4 found · 2 not seen</b>
+      <span class="slot-tool">Killua, Itadori (greyed out: used this week)</span>
+      <label class="field">Show matches above <span class="num" id="thrVal">each target's own (0.85–0.90)</span>
+        <input type="range" id="thr" min="70" max="98" value="70" aria-label="Override similarity"></label>
+      <button class="btn small" id="thrReset">Use each target's own</button>
+    </aside>
   </div>
-  <p class="note"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd> at any time, or <code>d.highlight(...)</code> from a script. The mouse goes through to the game; hold <kbd>Ctrl</kbd> to click a box and retake it. Yellow means a look-alike scores high somewhere else too.</p>
+  <p class="note">Each box uses its target's own similarity until the slider overrides it. Yellow means a look-alike scores close behind it. Red dashes mark a card the look-alike check refused, with what it really is. The cut-off row at the top of the list isn't searched at all, which is the fix for the Goku(MUI) pick.</p>
 
-  <!-- ------------------------------------------------------------ recorder and run panel -->
-  <h2>Recorder bar and live run panel</h2>
+  <!-- ============================================================ recorder -->
+  <div class="sec-head"><h2 id="recorder">Recorder with checks, and the run panel</h2>
+    <p>Pause, add a check, resume · click a step for a breakpoint (<kbd data-key="f9">F9</kbd>) · <kbd data-key="f10">F10</kbd> step</p></div>
   <div class="grid2 reveal">
     <div class="stack">
-      <div class="rec glass pop">
-        <i class="dot"></i><span class="num">01:42</span><b>Slime</b><span class="num slot-tool">◆ 2</span>
-        <button class="icon">◆<span class="tip">Checkpoint <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></span></button>
-        <button class="icon">❚❚<span class="tip">Pause <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>P</kbd></span></button>
-        <button class="icon">■<span class="tip">Stop <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd></span></button>
+      <div class="bar glass" id="recBar">
+        <i class="dot"></i><span class="num" id="recClock">01:42</span><b>Slime</b><span class="num slot-tool" id="recCp">◆ 2 · checks 1</span>
+        <hr>
+        <button class="icon" aria-label="Checkpoint" data-tip="Checkpoint" data-keys="ctrl+alt+m">◆</button>
+        <button class="icon" aria-label="Pause" aria-pressed="false" data-tip="Pause and add a check" data-keys="ctrl+alt+p" id="recPause">❚❚</button>
+        <button class="icon" aria-label="Stop" data-tip="Stop and save" data-keys="ctrl+alt+r">■</button>
       </div>
-      <p class="note" style="margin:0">One pill at the top of the screen that never takes focus from the game. <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd> freezes the screen for one click: the thing that proves this part started becomes the checkpoint.</p>
-      <div class="mini glass pop"><span class="status run"></span><b>ad-bot</b><span class="slot-tool">Speed Raid › Sakura</span>
-        <button class="icon">❚❚<span class="tip">Pause</span></button><button class="icon">■<span class="tip">Stop</span></button><button class="icon">⤢<span class="tip">Open the hub <kbd>Ctrl</kbd><kbd>.</kbd></span></button></div>
-      <p class="note" style="margin:0">The hub in compact mode: 300 × 48 px over the game.</p>
+      <div class="checks glass" id="checks" hidden>
+        <span class="slot-tool">Paused at 01:42. Add a check here:</span>
+        <button data-check="image"><span class="ic">▣</span><span><b>Image</b><br><span class="slot-tool">wait for it · if seen · if not seen · until gone</span></span><kbd>I</kbd></button>
+        <button data-check="colour"><span class="ic">◉</span><span><b>Colour at a point</b><br><span class="slot-tool">a pixel matches a colour</span></span><kbd>P</kbd></button>
+        <button data-check="change"><span class="ic">⬚</span><span><b>Region changes</b><br><span class="slot-tool">anything in an area changes</span></span><kbd>R</kbd></button>
+        <button disabled><span class="ic">T</span><span><b>Text</b><br><span class="slot-tool">later (text targets)</span></span></button>
+      </div>
+      <p class="note" style="margin:0">A recording is a flow from the start. An image check freezes the screen and opens the capture tool; the picture is saved into the bot's <code>assets/images/</code> and the check lands at the paused moment.</p>
+      <div class="bar glass"><span class="status run"></span><b>ad-bot</b><span class="slot-tool">Speed Raid › Sakura</span>
+        <button class="icon" aria-label="Pause bot" data-tip="Pause" data-keys="ctrl+alt+p">❚❚</button><button class="icon" aria-label="Stop bot" data-tip="Stop" data-keys="ctrl+alt+q">■</button>
+        <button class="icon" aria-label="Open Studio" data-tip="Open Studio" data-keys="ctrl+.">⤢</button></div>
+      <p class="note" style="margin:0">The Studio in compact mode: 300 × 48 px over the game, never taking focus from it.</p>
     </div>
-    <div class="panel glass pop">
-      <header><b>Slime</b>
-        <button class="icon">▶<span class="tip">Continue <kbd>F5</kbd></span></button>
-        <button class="icon">⤼<span class="tip">Step <kbd>F10</kbd></span></button>
-        <button class="icon">■<span class="tip">Stop <kbd>Shift</kbd><kbd>F5</kbd></span></button>
-        <button class="icon">⇥<span class="tip">Collapse</span></button></header>
-      <ul class="tree">
+    <div class="panel glass">
+      <header><b>Slime</b><span class="chip warn" id="runState">paused</span>
+        <button class="icon" aria-label="Continue" data-tip="Continue" data-keys="f5" id="runGo">▶</button>
+        <button class="icon" aria-label="Step" data-tip="Step" data-keys="f10" id="runStep">⤼</button>
+        <button class="icon" aria-label="Stop run" data-tip="Stop" data-keys="shift+f5">■</button></header>
+      <ul class="tree" id="runTree">
         <li class="cp">Wave 1 <span class="t">Dim.Game.Left</span></li>
         <li class="goal">Clear the left side</li>
-        <li class="step done">hold w <span class="t">0.0</span></li>
-        <li class="step done">wait 0.5 <span class="t">0.0</span></li>
-        <li class="step now">press q <span class="t">0.5</span></li>
-        <li class="step bp">do dodge <span class="t">0.6</span></li>
-        <li class="step">turn −90° <span class="t">1.2</span></li>
+        <li class="step done" tabindex="0">hold w <span class="t">0.0</span></li>
+        <li class="step done" tabindex="0">wait 0.5 <span class="t">0.5</span></li>
+        <li class="step now" tabindex="0">press q <span class="t">0.5</span></li>
+        <li class="step bp" tabindex="0">if seen Dim.Boss.Bar <span class="t">0.6</span></li>
+        <li class="step" tabindex="0">  call dodge() <span class="t">0.6</span></li>
+        <li class="step" tabindex="0">turn −90° <span class="t">1.2</span></li>
         <li class="cp">Wave 2 <span class="t">Dim.Game.Next</span></li>
         <li class="goal">Boss</li>
+        <li class="step" tabindex="0">press 5 4 1 3 2 <span class="t">2.0</span></li>
       </ul>
     </div>
   </div>
 
-  <!-- ------------------------------------------------------------ hub -->
-  <h2>The hub</h2>
-  <div class="hub reveal">
-    <nav class="rail">
-      <span class="logo">d</span>
-      <button class="on"><span>▦</span>Bots</button><button><span>▶</span>Bot</button><button><span>▣</span>Library</button>
-      <button><span>☰</span>Runs</button><button><span>⚙</span>Settings</button>
+  <!-- ============================================================ studio -->
+  <div class="sec-head"><h2 id="studio">darbit Studio</h2>
+    <div class="seg" role="group" aria-label="Show state" id="states">
+      <button data-state="normal" aria-pressed="true">normal</button><button data-state="empty" aria-pressed="false">no bots</button>
+      <button data-state="loading" aria-pressed="false">loading</button><button data-state="error" aria-pressed="false">error</button>
+    </div></div>
+  <div class="studio reveal" id="studioWin">
+    <div class="titlebar"><span class="logo" style="width:16px;height:16px;font-size:9px">d</span><span>darbit Studio</span><span aria-hidden="true">– ▢ ✕</span></div>
+    <nav class="rail" aria-label="Studio sections">
+      <span class="logo" style="width:32px;height:32px;margin:0 auto 8px;font-size:15px;border-radius:10px">d</span>
+      <button data-view="bots" aria-current="page"><span>▦</span>Bots</button>
+      <button data-view="bot"><span>▶</span>Bot</button>
+      <button data-view="tools"><span>✦</span>Tools</button>
+      <button data-view="flows"><span>⑂</span>Flows</button>
+      <button data-view="settings"><span>⚙</span>Settings</button>
     </nav>
-    <div class="hubmain">
-      <div class="hubhead"><h3>Bots</h3><span class="chip">2 installed</span><span style="flex:1"></span>
-        <button class="btn">＋ Install<span class="tip">from a git link</span></button></div>
-      <div class="bots">
-        <div class="bot glass pop" style="--a:#ff7ab6"><div class="top"><span class="av">ad</span><b>ad-bot</b><span class="status run"></span></div>
-          <div class="slot-tool">Speed Raid › Sakura · 6 of 133 this week</div>
-          <div class="meta"><span>running 3 h 12 m</span><button class="btn" style="padding:3px 10px">Stop</button></div></div>
-        <div class="bot glass pop" style="--a:#7ad7ff"><div class="top"><span class="av">fs</span><b>fish-bot</b><span class="status idle"></span></div>
+
+    <section class="view on" data-view="bots" aria-label="Bots">
+      <div class="vhead"><h3>Bots</h3><span class="chip" id="botCount">2 installed</span><span class="grow"></span>
+        <button class="btn primary" id="installBtn">＋ Install a bot</button></div>
+      <div class="bots" id="botCards">
+        <div class="bot glass" style="--a:#ff7ab6"><div class="top"><span class="av">ad</span><b>ad-bot</b><span class="chip ok">v0.3.0</span><span class="status run" aria-label="running"></span></div>
+          <div class="slot-tool">Speed Raid › Sakura · 31 of 133 this week</div>
+          <div class="meta"><span>running 3 h 12 m · library 0.96</span><button class="btn small">Stop</button></div></div>
+        <div class="bot glass" style="--a:#7ad7ff"><div class="top"><span class="av">fs</span><b>fish-bot</b><span class="chip info">update v0.2.1</span><span class="status idle" aria-label="idle"></span></div>
           <div class="slot-tool">idle · last run yesterday, ok</div>
-          <div class="meta"><span>setup 24 / 24</span><button class="btn primary" style="padding:3px 10px">Run</button></div></div>
+          <div class="meta"><span>setup 24 / 24</span><button class="btn small primary">Run</button></div></div>
       </div>
-      <div class="live glass pop">
-        <h4><span class="status run"></span> ad-bot · live</h4>
-        <div class="timeline">
-          <div class="tl"><span>Raid</span><span class="bar"><i class="ok" style="--w:72%"></i></span><span class="num slot-tool">41 m</span></div>
-          <div class="tl"><span>Speed Raid › Natsu</span><span class="bar"><i class="ok" style="--w:28%"></i></span><span class="num slot-tool">1 m</span></div>
-          <div class="tl"><span>AFK</span><span class="bar"><i class="fail" style="--w:12%"></i></span><span class="num slot-tool">5 m</span></div>
-          <div class="tl"><span>Speed Raid › Sakura</span><span class="bar"><i class="now" style="--w:46%"></i></span><span class="num slot-tool">now</span></div>
+      <div class="empty" id="botsEmpty" hidden><span style="font-size:28px">▦</span><b>No bots yet</b>
+        <span class="slot-tool">Install one from a git link, start from a template, or open a folder.</span>
+        <button class="btn primary" onclick="openWizard()">＋ Install a bot</button></div>
+      <div class="card glass" id="liveCard">
+        <h4><span class="status run"></span> ad-bot · live <span class="grow"></span></h4>
+        <div class="tl"><span>Raid</span><span class="bar2"><i class="ok" style="--w:72%"></i></span><span class="num slot-tool">41 m</span></div>
+        <div class="tl"><span>Speed Raid › Natsu</span><span class="bar2"><i class="ok" style="--w:28%"></i></span><span class="num slot-tool">1 m</span></div>
+        <div class="tl"><span>AFK</span><span class="bar2"><i class="fail" style="--w:12%"></i></span><span class="num slot-tool">fail</span></div>
+        <div class="tl"><span>Speed Raid › Sakura</span><span class="bar2"><i class="now" style="--w:46%"></i></span><span class="num slot-tool">now</span></div>
+        <div class="logline">11:24:31 <b>picking Sakura (1.00); looks most like Sakura</b> · 11:24:40 exists Lobby.Play 0.98</div>
+      </div>
+    </section>
+
+    <section class="view" data-view="bot" aria-label="Bot">
+      <div class="vhead"><span class="av" style="--a:#ff7ab6">ad</span><h3>ad-bot</h3><span class="chip ok">v0.3.0 · darbit 0.2.0</span><span class="grow"></span>
+        <button class="btn">❚❚ Pause</button><button class="btn danger">■ Stop</button></div>
+      <div class="tabs" role="tablist" id="botTabs">
+        <button role="tab" aria-selected="true" data-tab="live">Live</button><button role="tab" aria-selected="false" data-tab="settings">Settings</button>
+        <button role="tab" aria-selected="false" data-tab="setup">Setup</button><button role="tab" aria-selected="false" data-tab="library">Library</button>
+        <button role="tab" aria-selected="false" data-tab="runs">Runs</button></div>
+      <div data-tab="live" class="card glass"><h4>Now: Speed Raid › Sakura <span class="chip info">fight · 0:42</span></h4>
+        <div class="logline">11:25:02 <b>Speed Raid: picking Sakura (1.00) at 497,568</b></div>
+        <div class="logline">11:25:05 vanish Start · 11:25:08 exists Dim.Game.Left 0.84 · fighting</div>
+        <div class="logline">11:25:47 exists Dim.Game.Leave 1.00 · <b>Speed Raid done: 32 of 133</b></div></div>
+      <div data-tab="settings" class="formgrid" hidden>
+        <label class="field">Speed Raid every (minutes)<input type="number" value="30"><span class="help">How often to try the next character.</span></label>
+        <label class="field">Skills<input value="54132"><span class="help">Pressed in this order; click to record keys.</span></label>
+        <label class="field">Boss Rush per day<input type="number" value="1"></label>
+        <label class="field">Private server<select><option>from AD_PS (set)</option></select><span class="help">Never stored in the repo.</span></label>
+      </div>
+      <div data-tab="setup" class="card glass" hidden><h4>Setup guide <span class="chip ok">164 / 165</span></h4>
+        <div class="strip"><i style="transform:scaleX(.99)"></i></div>
+        <span class="slot-tool">Missing: Boss.Raid.Guardian · <button class="btn small">Capture now</button></span></div>
+      <div data-tab="library" class="lib" hidden>
+        <div><i style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"></i>SR.Char.Naruto <span class="badge ok">1.00</span></div>
+        <div><i style="--g:linear-gradient(160deg,#b8ff8a,#2fbf71)"></i>SR.Char.Goku <span class="badge risky">0.82 Luffy</span></div>
+        <div><i style="--g:linear-gradient(180deg,#52e38f,#1fa35a)"></i>Bag.Equip <span class="badge ok">0.99</span></div>
+        <div><i style="--g:#333"></i>Dim.Game.Left <span class="badge risky">0.84</span></div>
+      </div>
+      <div data-tab="runs" class="card glass" hidden><h4>Today <span class="chip">8 Speed Raids · 1 failure</span></h4>
+        <div class="logline">09:12 AFK failed: no AFK rewards to claim · screenshot 09-12-04_failed_AFK.jpg</div></div>
+    </section>
+
+    <section class="view" data-view="tools" aria-label="Tools">
+      <div class="vhead"><h3>Tools</h3><span class="slot-tool">for</span><select aria-label="Bot" class="btn small"><option>ad-bot</option><option>fish-bot</option></select></div>
+      <div class="tools">
+        <button class="tool" style="--c:var(--kind-image)" onclick="toast('Capture: the screen freezes in 3 s','tool')"><span class="ic">▣</span><b>Capture</b><span class="slot-tool">take an image, region or point</span></button>
+        <button class="tool" style="--c:var(--ok)" onclick="toast('Highlight: scanning 165 targets','tool')"><span class="ic">◎</span><b>Highlight</b><span class="slot-tool">see what's found, with scores</span></button>
+        <button class="tool" style="--c:var(--danger)" onclick="toast('Recording: Ctrl+Alt+R to stop','tool')"><span class="ic">●</span><b>Record</b><span class="slot-tool">a macro, with checks as you go</span></button>
+        <button class="tool" style="--c:var(--accent-2)"><span class="ic">▶</span><b>Play a flow</b><span class="slot-tool">with the run panel</span></button>
+        <button class="tool" style="--c:var(--warn)"><span class="ic">☰</span><b>Setup guide</b><span class="slot-tool">walk through what's missing</span></button>
+        <button class="tool" style="--c:var(--info)"><span class="ic">✓</span><b>Check library</b><span class="slot-tool">every picture's health</span></button>
+        <button class="tool"><span class="ic">≡</span><b>Run report</b><span class="slot-tool">a day's steps and failures</span></button>
+      </div>
+    </section>
+
+    <section class="view" data-view="flows" aria-label="Flows">
+      <div class="vhead"><h3>Flows</h3><span class="chip">slime.flow.py</span><span class="grow"></span>
+        <button class="btn small" data-tip="Run" data-keys="f5">▶ Run</button><button class="btn small" data-tip="Step" data-keys="f10">⤼ Step</button>
+        <button class="btn small" onclick="location.hash='flow'">⇄ Python</button></div>
+      <div class="flow">
+        <div class="palette-list" aria-label="Actions">
+          <h5>Steps</h5><button>⌨ Press keys</button><button>⏱ Wait</button><button>🖱 Click</button>
+          <h5>Checks</h5><button>▣ If seen</button><button>⌛ Wait for</button><button>↻ Until gone</button><button>⟲ Retry</button>
+          <h5>Functions</h5><button>ƒ dodge()</button><button>ƒ pick_character(name)</button>
+          <h5>Python actions</h5><button>⚙ open_bag()</button><button>⚙ spam_skills(times)</button>
+          <h5>Other</h5><button>{ } Code</button>
         </div>
-        <div class="logline">11:24:31 <b>Speed Raid done: 6 of 133</b> · 11:24:40 exists Lobby.Play 0.98 · 11:24:41 click Play</div>
+        <div class="steps-list">
+          <div class="fs check"><span class="k">1</span><span class="sum">wait for <select><option>▣ Dim.Game.Left</option><option>+ capture now</option></select> within <input value="30 s" style="width:52px"></span><span class="chip ok">0.84</span></div>
+          <div class="fs"><span class="k">2</span><span class="sum">hold <kbd>W</kbd> · wait <input value="0.5 s" style="width:52px"> · press <kbd>Q</kbd></span><span></span></div>
+          <div class="fs loop now"><span class="k">3</span><span class="sum">repeat until <select><option>▣ Dim.Game.Leave</option></select> is seen</span><span class="chip info">loop</span></div>
+          <div class="fs call in1"><span class="k">3.1</span><span class="sum">⚙ spam_skills(times = <input value="5" style="width:34px">)</span><span class="chip">action</span></div>
+          <div class="fs check in1"><span class="k">3.2</span><span class="sum">if seen <select><option>▣ Dim.Boss.Bar</option></select></span><span></span></div>
+          <div class="fs call in2"><span class="k">3.2.1</span><span class="sum">ƒ dodge()</span><span class="chip">function</span></div>
+          <div class="fs code in1"><span class="k">3.3</span><pre>if state.sr_done > 100:
+    d.log("almost done this week")</pre><span class="chip warn">code</span></div>
+          <div class="fs"><span class="k">4</span><span class="sum">click <select><option>▣ Dim.Game.Leave</option></select></span><span></span></div>
+        </div>
       </div>
+    </section>
+
+    <section class="view" data-view="settings" aria-label="Settings">
+      <div class="vhead"><h3>Settings</h3></div>
+      <div class="formgrid">
+        <label class="field">Theme<select id="themeSel"><option value="glass-dark">Glass dark</option><option value="glass-light">Glass light</option><option value="midnight">Midnight</option><option value="high-contrast">High contrast</option></select></label>
+        <label class="field">darbit<select><option>0.2.0 (latest)</option><option>0.1.0</option></select><span class="help">Each bot pins its own version; this is the Studio's.</span></label>
+        <label class="field">Folders<input value="%LOCALAPPDATA%\darbit" readonly><span class="help">Bots, cache and logs. Settings: %APPDATA%\darbit.</span></label>
+        <label class="field">Keys<button class="btn small" type="button">Edit keymap…</button><span class="help">Every shortcut; conflicts are shown before saving.</span></label>
+      </div>
+    </section>
+  </div>
+  <p class="note">The Studio is the only normal window. It installs bots through a wizard, launches every tool for the chosen bot, and edits flows. Built-in steps, flow functions and Python actions all appear as actions in one palette. Use the state switch above to see the empty, loading and error states.</p>
+
+  <dialog class="wizard" id="wizard" aria-label="Install a bot">
+    <header><b>Install a bot</b><button class="icon" aria-label="Close" onclick="wizard.close()">✕</button></header>
+    <div class="steps" id="wsteps"><span class="now">1 Source</span><span>2 Download</span><span>3 Environment</span><span>4 Settings</span><span>5 Setup guide</span><span>6 Ready</span></div>
+    <div class="wbody" id="wbody"></div>
+    <div class="wfoot"><button class="btn" id="wBack">Back</button><button class="btn primary" id="wNext">Next</button></div>
+  </dialog>
+
+  <!-- ============================================================ flow and python -->
+  <div class="sec-head"><h2 id="flow">Flow ↔ Python</h2><p>The same bot, in the Studio and in a code editor. Hover a step to see its line.</p></div>
+  <div class="split reveal">
+    <div class="steps-list glass" style="padding:12px;border-radius:var(--radius-l)" id="flowSide">
+      <div class="fs check" data-line="4"><span class="k">1</span><span class="sum">wait for ▣ Dim.Game.Left within 30 s</span><span></span></div>
+      <div class="fs" data-line="5"><span class="k">2</span><span class="sum">hold W · wait 0.5 s · press Q</span><span></span></div>
+      <div class="fs loop" data-line="8"><span class="k">3</span><span class="sum">repeat until ▣ Dim.Game.Leave</span><span></span></div>
+      <div class="fs call in1" data-line="9"><span class="k">3.1</span><span class="sum">⚙ spam_skills(5)</span><span></span></div>
+      <div class="fs check in1" data-line="10"><span class="k">3.2</span><span class="sum">if seen ▣ Dim.Boss.Bar → ƒ dodge()</span><span></span></div>
+      <div class="fs code in1" data-line="12"><span class="k">3.3</span><span class="sum">{ } code, kept word for word</span><span></span></div>
+      <div class="fs" data-line="14"><span class="k">4</span><span class="sum">click ▣ Dim.Game.Leave</span><span></span></div>
     </div>
+<pre class="codeview" id="codeSide"><span data-l="1"><span class="kw">import</span> darbit <span class="kw">as</span> d</span>
+<span data-l="2"></span>
+<span data-l="3"><span class="fn">@d.flow</span></span>
+<span data-l="4"><span class="kw">def</span> <span class="fn">slime</span>():                       <span class="cm"># d.wait("Dim.Game.Left", 30)</span></span>
+<span data-l="5">    d.wait(<span class="st">"Dim.Game.Left"</span>, timeout=30)</span>
+<span data-l="6">    d.hold(<span class="st">"w"</span>); d.sleep(0.5); d.press(<span class="st">"q"</span>)</span>
+<span data-l="7"></span>
+<span data-l="8">    <span class="kw">while not</span> d.exists(<span class="st">"Dim.Game.Leave"</span>):</span>
+<span data-l="9">        spam_skills(times=5)</span>
+<span data-l="10">        <span class="kw">if</span> d.exists(<span class="st">"Dim.Boss.Bar"</span>):</span>
+<span data-l="11">            dodge()</span>
+<span data-l="12">        <span class="kw">if</span> state.sr_done > 100:          <span class="cm"># a Code step</span></span>
+<span data-l="13">            d.log(<span class="st">"almost done this week"</span>)</span>
+<span data-l="14">    d.click(<span class="st">"Dim.Game.Leave"</span>)</span></pre>
   </div>
-  <p class="note">A rail with five sections (<kbd>Ctrl</kbd><kbd>Tab</kbd> cycles them), cards per bot with their own accent, and a live timeline of steps from the run report. <kbd>Ctrl</kbd><kbd>K</kbd> opens the command palette everywhere.</p>
+  <p class="note">Export writes plain darbit code, one statement per step. Python reads back as a flow with no decompiler: inside <code>@d.flow</code>, Python's own <code>ast</code> parser maps known statements to steps, and anything else becomes a Code step, kept word for word.</p>
 
-  <!-- ------------------------------------------------------------ tokens and keys -->
-  <h2>Tokens</h2>
-  <div class="swatches reveal">
-    <div class="sw pop" style="--c:var(--accent)"><i></i>accent</div>
-    <div class="sw pop" style="--c:var(--accent-2)"><i></i>accent-2</div>
-    <div class="sw pop" style="--c:var(--kind-image)"><i></i>kind-image</div>
-    <div class="sw pop" style="--c:var(--kind-region)"><i></i>kind-region</div>
-    <div class="sw pop" style="--c:var(--kind-point)"><i></i>kind-point</div>
-    <div class="sw" style="--c:var(--ok)"><i></i>ok</div>
-    <div class="sw" style="--c:var(--warn)"><i></i>warn</div>
-    <div class="sw" style="--c:var(--danger)"><i></i>danger</div>
-    <div class="sw" style="--c:var(--slot-bot)"><i></i>slot-bot</div>
-    <div class="sw" style="--c:var(--glass)"><i></i>glass</div>
+  <!-- ============================================================ tokens and keys -->
+  <div class="sec-head"><h2 id="tokens">Voices, tokens and keys</h2><p>Click a swatch to copy its token · press keys to light them up</p></div>
+  <div class="voices reveal">
+    <div class="voice"><small>tool · darbit</small><span class="slot-tool">click again for bigger · Alt disables snapping</span></div>
+    <div class="voice"><small>guide · setup author</small><span class="slot-guide">Open the Bag and go to the Characters tab.</span></div>
+    <div class="voice"><small>bot · project text</small><span class="slot-bot"><b>ad-bot</b>The green Equip button, without the shadow under it.</span></div>
   </div>
-
-  <h2>Keys</h2>
-  <div class="keys reveal">
-    <div><span>Capture</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>C</kbd></span></div>
-    <div><span>Highlight</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></span></div>
-    <div><span>Record / stop recording</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>R</kbd></span></div>
-    <div><span>Checkpoint</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></span></div>
-    <div><span>Pause / resume</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>P</kbd></span></div>
-    <div><span>Stop everything</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Q</kbd></span></div>
-    <div><span>Commands</span><span><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
-    <div><span>Next kind</span><span><kbd>Tab</kbd></span></div>
-    <div><span>Save · and next</span><span><kbd>⏎</kbd><kbd>Ctrl</kbd><kbd>⏎</kbd></span></div>
-    <div><span>Back · close</span><span><kbd>Esc</kbd></span></div>
-    <div><span>Undo · redo</span><span><kbd>Ctrl</kbd><kbd>Z</kbd><kbd>Ctrl</kbd><kbd>Y</kbd></span></div>
-    <div><span>Run · step · breakpoint</span><span><kbd>F5</kbd><kbd>F10</kbd><kbd>F9</kbd></span></div>
+  <div class="swatches reveal" id="swatches"></div>
+  <div class="keys reveal" style="margin-top:16px">
+    <div><span>Capture</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="c">C</kbd></span></div>
+    <div><span>Highlight</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="h">H</kbd></span></div>
+    <div><span>Record / stop</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="r">R</kbd></span></div>
+    <div><span>Checkpoint</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="m">M</kbd></span></div>
+    <div><span>Pause · add a check</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="p">P</kbd></span></div>
+    <div><span>Stop everything</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="alt">Alt</kbd><kbd data-key="q">Q</kbd></span></div>
+    <div><span>Commands</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="k">K</kbd></span></div>
+    <div><span>Next kind</span><span><kbd data-key="tab">Tab</kbd></span></div>
+    <div><span>Snapping · magnifier · compare</span><span><kbd data-key="s">S</kbd><kbd data-key="z">Z</kbd><kbd data-key="c">C</kbd></span></div>
+    <div><span>Save · back</span><span><kbd data-key="enter">⏎</kbd><kbd data-key="escape">Esc</kbd></span></div>
+    <div><span>Undo · redo</span><span><kbd data-key="ctrl">Ctrl</kbd><kbd data-key="z">Z</kbd><kbd data-key="y">Y</kbd></span></div>
+    <div><span>Run · step · breakpoint</span><span><kbd data-key="f5">F5</kbd><kbd data-key="f10">F10</kbd><kbd data-key="f9">F9</kbd></span></div>
   </div>
-  <p class="note">Global keys all use <kbd>Ctrl</kbd><kbd>Alt</kbd> so games don't get them. Everything is in <code>src/darbit/keymap.toml</code> and can be changed per user or per bot.</p>
 </main>
 
+<div id="tip" role="tooltip"></div>
+<div id="toasts" aria-live="polite"></div>
+<dialog class="palette" id="palette" aria-label="Commands">
+  <input id="palInput" placeholder="Type a command" aria-label="Command">
+  <ul id="palList" role="listbox"></ul>
+</dialog>
+
 <script>
-// themes
-const themes = document.getElementById("themes");
-themes.addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  document.documentElement.dataset.theme = b.dataset.t;
-  themes.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-  paintMag();
-});
-// the kind control in the toolbar
-document.querySelectorAll(".kinds").forEach((seg) => seg.addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-}));
-// sections animate in once when they scroll into view
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+// ---------------------------------------------------------------- themes
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $$("#themes button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.t === t));
+  $("#themeSel").value = t;
+  paintMag(); paintSwatches();
+}
+$("#themes").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setTheme(b.dataset.t); });
+$("#themeSel").addEventListener("change", (e) => setTheme(e.target.value));
+
+// ---------------------------------------------------------------- one tooltip layer
+const tip = $("#tip");
+function keycaps(keys) { return keys.split("+").map((k) => `<kbd>${({ ctrl: "Ctrl", alt: "Alt", shift: "Shift", enter: "⏎", tab: "Tab", space: "Space" })[k] || k.toUpperCase()}</kbd>`).join(""); }
+function showTip(el) {
+  if (!el.dataset.tip) return;
+  tip.innerHTML = el.dataset.tip + (el.dataset.keys ? "&nbsp;" + keycaps(el.dataset.keys) : "");
+  const r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
+  let x = r.left + r.width / 2 - t.width / 2, y = r.top - t.height - 8;
+  if (y < 56) y = r.bottom + 8;                                  // flip below near the top bar
+  x = Math.max(8, Math.min(x, innerWidth - t.width - 8));
+  tip.style.left = x + "px"; tip.style.top = y + "px"; tip.classList.add("on");
+}
+document.addEventListener("pointerover", (e) => { const el = e.target.closest("[data-tip]"); if (el) showTip(el); });
+document.addEventListener("pointerout", (e) => { if (e.target.closest("[data-tip]")) tip.classList.remove("on"); });
+document.addEventListener("focusin", (e) => { const el = e.target.closest("[data-tip]"); if (el) showTip(el); });
+document.addEventListener("focusout", () => tip.classList.remove("on"));
+addEventListener("scroll", () => tip.classList.remove("on"), { passive: true });
+
+// ---------------------------------------------------------------- toasts
+function toast(text, slot = "tool") {
+  const t = document.createElement("div");
+  t.className = "toast glass slot-" + slot; t.textContent = text;
+  $("#toasts").append(t);
+  while ($("#toasts").children.length > 3) $("#toasts").firstChild.remove();
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ---------------------------------------------------------------- sections appear once
 const io = new IntersectionObserver((entries) => entries.forEach((en) => {
   if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
-}), { threshold: 0.15 });
-document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-// the magnifier: the button's corner, pixel by pixel, with the box edge drawn on top
+}), { threshold: 0.12 });
+$$(".reveal").forEach((el) => io.observe(el));
+
+// ---------------------------------------------------------------- capture: drag, resize, point, snap, readout
+const cap = $("#capScreen"), sel = $("#capSel"), region = $("#capRegion");
+const box = { x: 50, y: 68, w: 17, h: 9 };                    // percent of the screen
+const SNAP_X = 50.0;                                           // a border line in the fake game, in percent
+let undo = [];
+function drawBox() {
+  Object.assign(sel.style, { left: box.x + "%", top: box.y + "%", width: box.w + "%", height: box.h + "%" });
+  const W = 2560, H = 1440;
+  $("#sizeReadout").textContent = `${Math.round(box.w / 100 * W)} × ${Math.round(box.h / 100 * H)}`;
+  const r = { x: 13.4, y: 15.2, w: 59.2, h: 67.6 };
+  const inside = box.x >= r.x && box.y >= r.y && box.x + box.w <= r.x + r.w && box.y + box.h <= r.y + r.h;
+  const chip = $("#insideChip"); chip.textContent = inside ? "inside ✓" : "outside ⚠"; chip.className = "chip " + (inside ? "ok" : "warn");
+}
+function pct(e) { const r = cap.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100 }; }
+let drag = null;
+sel.addEventListener("pointerdown", (e) => {
+  if (e.target.closest(".readout, .chip")) return;
+  const h = e.target.dataset.h, onPoint = e.target.closest(".pt");
+  drag = { h, onPoint, start: pct(e), from: { ...box }, alt: e.altKey };
+  undo.push({ ...box }); sel.setPointerCapture(e.pointerId); e.preventDefault();
+});
+sel.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const p = pct(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y, f = drag.from;
+  if (drag.onPoint) {
+    const px = Math.min(100, Math.max(0, (p.x - box.x) / box.w * 100)), py = Math.min(100, Math.max(0, (p.y - box.y) / box.h * 100));
+    $("#capPt").style.left = px + "%"; $("#capPt").style.top = py + "%";
+    $("#ptChip").textContent = `◎ ${px > 50 ? "+" : ""}${Math.round((px - 50) * 4.2)}, ${Math.round((py - 50) * .94)}`;
+    return;
+  }
+  const h = drag.h || "move";
+  if (h === "move") { box.x = f.x + dx; box.y = f.y + dy; }
+  if (h.includes("w")) { box.x = f.x + dx; box.w = f.w - dx; }
+  if (h.includes("e")) { box.w = f.w + dx; }
+  if (h.includes("n")) { box.y = f.y + dy; box.h = f.h - dy; }
+  if (h.includes("s")) { box.h = f.h + dy; }
+  box.w = Math.max(2, box.w); box.h = Math.max(2, box.h);
+  const snapping = $("#snapBtn").getAttribute("aria-pressed") === "true" && !e.altKey;
+  const near = Math.abs(box.x - SNAP_X) < 0.6;
+  if (snapping && near && (h === "move" || h.includes("w"))) { const right = box.x + box.w; box.x = SNAP_X; if (h.includes("w")) box.w = right - SNAP_X; }
+  $("#snapline").classList.toggle("on", snapping && box.x === SNAP_X);
+  drawBox();
+});
+sel.addEventListener("pointerup", () => { drag = null; setTimeout(() => $("#snapline").classList.remove("on"), 600); });
+$("#undoBtn").addEventListener("click", () => { const b = undo.pop(); if (b) { Object.assign(box, b); drawBox(); toast("Undone", "tool"); } });
+$("#sizeReadout").addEventListener("click", (e) => {
+  const b = e.currentTarget; if (b.querySelector("input")) return;
+  const [w, h] = b.textContent.split("×").map((v) => parseInt(v));
+  b.innerHTML = `<input aria-label="width" value="${w}"> × <input aria-label="height" value="${h}">`;
+  b.querySelector("input").focus();
+  b.addEventListener("keydown", function k(ev) {
+    if (ev.key === "Enter") { const [iw, ih] = $$("input", b).map((i) => +i.value); undo.push({ ...box }); box.w = iw / 2560 * 100; box.h = ih / 1440 * 100; drawBox(); b.removeEventListener("keydown", k); }
+    if (ev.key === "Escape") { drawBox(); b.removeEventListener("keydown", k); }
+  });
+});
+$$(".kinds button").forEach((b) => b.addEventListener("click", () => $$(".kinds button").forEach((x) => x.setAttribute("aria-pressed", x === b))));
+for (const id of ["#snapBtn", "#pinBtn", "#cmpBtn"]) $(id).addEventListener("click", (e) => {
+  const on = e.currentTarget.getAttribute("aria-pressed") !== "true"; e.currentTarget.setAttribute("aria-pressed", on);
+  if (id === "#cmpBtn") sel.classList.toggle("compare", on);
+});
+$("#saveBtn").addEventListener("click", () => toast("Saved Bag.Equip · 420 × 94 · next: Bag.Unequip", "tool"));
+$("#guideFold").addEventListener("click", () => {
+  const g = $("#guide"), c = g.classList.toggle("collapsed");
+  $("#guideFold").textContent = c ? "▾" : "▴";
+});
+$("#guide").addEventListener("pointerenter", () => { if ($("#guide").classList.contains("collapsed")) { $("#guide").classList.remove("collapsed"); $("#guideFold").textContent = "▴"; } });
+
+// the magnifier follows the mouse unless pinned; it draws the box edge too
+cap.addEventListener("pointermove", (e) => {
+  if ($("#pinBtn").getAttribute("aria-pressed") === "true" || drag) return;
+  const p = pct(e); const m = $("#mag");
+  m.style.left = Math.min(84, p.x + 3) + "%"; m.style.top = Math.min(70, p.y + 4) + "%";
+  $("#magxy").textContent = `${Math.round(p.x * 25.6)}, ${Math.round(p.y * 14.4)}`;
+});
 function paintMag() {
-  const c = document.getElementById("magcanvas"), g = c.getContext("2d");
-  const css = getComputedStyle(document.documentElement);
+  const g = $("#magcanvas").getContext("2d"), css = getComputedStyle(document.documentElement);
   for (let y = 0; y < 22; y++) for (let x = 0; x < 22; x++) {
     const inBtn = x >= 7 && y >= 6, edge = inBtn && (x === 7 || y === 6);
     g.fillStyle = edge ? "#0f6a39" : inBtn ? (y < 10 ? "#52e38f" : "#3cc779") : ((x + y) % 5 ? "#1d2140" : "#232850");
     g.fillRect(x, y, 1, 1);
   }
-  g.fillStyle = css.getPropertyValue("--kind-image").trim();
-  g.fillRect(6, 5, 16, 1); g.fillRect(6, 5, 1, 17);
-  g.strokeStyle = "#fff"; g.lineWidth = 0.15; g.strokeRect(10.5, 10.5, 1, 1);
+  g.fillStyle = css.getPropertyValue("--kind-image").trim(); g.fillRect(6, 5, 16, 1); g.fillRect(6, 5, 1, 17);
 }
-paintMag();
+
+// hold C to compare with the saved picture
+addEventListener("keydown", (e) => { if (e.key.toLowerCase() === "c" && !e.ctrlKey && !e.target.closest("input")) sel.classList.add("compare"); });
+addEventListener("keyup", (e) => { if (e.key.toLowerCase() === "c" && $("#cmpBtn").getAttribute("aria-pressed") !== "true") sel.classList.remove("compare"); });
+
+// ---------------------------------------------------------------- highlight threshold
+function applyThreshold(over) {
+  $$(".hl").forEach((h) => { const need = over ?? +h.dataset.min; h.classList.toggle("hidden", +h.dataset.s < need && !h.classList.contains("refused")); });
+}
+$("#thr").addEventListener("input", (e) => { const v = e.target.value / 100; $("#thrVal").textContent = v.toFixed(2) + " for all"; applyThreshold(v); });
+$("#thrReset").addEventListener("click", () => { $("#thr").value = 70; $("#thrVal").textContent = "each target's own (0.85–0.90)"; applyThreshold(null); });
+$$(".hl").forEach((h) => h.addEventListener("click", () => toast("Retake " + h.querySelector(".lbl").firstChild.textContent.trim() + " in the capture tool", "tool")));
+
+// ---------------------------------------------------------------- recorder pause and checks
+let recSec = 102, paused = false;
+setInterval(() => { if (!paused) { recSec++; $("#recClock").textContent = `${String(Math.floor(recSec / 60)).padStart(2, "0")}:${String(recSec % 60).padStart(2, "0")}`; } }, 1000);
+$("#recPause").addEventListener("click", () => {
+  paused = !paused; $("#recBar").classList.toggle("paused", paused); $("#recPause").setAttribute("aria-pressed", paused);
+  $("#recPause").textContent = paused ? "▶" : "❚❚"; $("#checks").hidden = !paused;
+});
+let checks = 1;
+$$("#checks button[data-check]").forEach((b) => b.addEventListener("click", () => {
+  checks++; $("#recCp").textContent = `◆ 2 · checks ${checks}`;
+  toast(b.dataset.check === "image" ? "Capture opens · saved to assets/images/Slime.check" + checks + ".png" : "Check added at " + $("#recClock").textContent, "tool");
+}));
+
+// ---------------------------------------------------------------- run panel
+const steps = $$("#runTree .step");
+steps.forEach((s) => s.addEventListener("click", () => s.classList.toggle("bp")));
+function stepOnce() {
+  const i = steps.findIndex((s) => s.classList.contains("now"));
+  if (i < 0 || i === steps.length - 1) return false;
+  steps[i].classList.remove("now"); steps[i].classList.add("done"); steps[i + 1].classList.add("now");
+  return true;
+}
+$("#runStep").addEventListener("click", stepOnce);
+$("#runGo").addEventListener("click", () => {
+  $("#runState").textContent = "running"; $("#runState").className = "chip ok";
+  const t = setInterval(() => {
+    if (!stepOnce() || $("#runTree .step.now").classList.contains("bp")) { clearInterval(t); $("#runState").textContent = "paused"; $("#runState").className = "chip warn"; }
+  }, 450);
+});
+
+// ---------------------------------------------------------------- studio views, tabs, states
+function showView(v) {
+  $$(".rail button").forEach((b) => {
+    if (b.dataset.view === v) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+  $$(".view").forEach((s) => s.classList.toggle("on", s.dataset.view === v));
+}
+$$(".rail button").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
+$$("#botTabs button").forEach((b) => b.addEventListener("click", () => {
+  $$("#botTabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+  $$('.view[data-view="bot"] > [data-tab]').forEach((p) => p.hidden = p.dataset.tab !== b.dataset.tab);
+}));
+$("#states").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  $$("#states button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  const s = b.dataset.state; showView("bots");
+  $("#botCards").hidden = s === "empty" || s === "loading"; $("#botsEmpty").hidden = s !== "empty"; $("#liveCard").hidden = s !== "normal";
+  $("#botCount").textContent = s === "empty" ? "none" : s === "loading" ? "loading…" : "2 installed";
+  if (s === "loading") toast("Reading installed bots…", "tool");
+  if (s === "error") { openWizard(); wizardStep = 2; wizardError = true; renderWizard(); }
+});
+
+// ---------------------------------------------------------------- install wizard
+const wizard = $("#wizard");
+let wizardStep = 0, wizardError = false;
+const pages = [
+  () => `<div class="srcs"><button aria-pressed="true"><b>Git link</b><span class="slot-tool">github.com/you/bot</span></button><button aria-pressed="false"><b>Template</b><span class="slot-tool">start from hello-bot</span></button><button aria-pressed="false"><b>Folder</b><span class="slot-tool">a bot on this PC</span></button></div>
+         <label class="field">Git link<input value="https://github.com/FaisalAfks/fish-bot"></label><span class="slot-tool">Installs into %LOCALAPPDATA%\\darbit\\bots\\fish-bot</span>`,
+  () => `<div class="vhead"><span class="spinner"></span><b>Downloading v0.2.1</b></div><div class="strip"><i style="transform:scaleX(.6)"></i></div><div class="loglist">git clone --depth 1 --branch v0.2.1 …<br>Receiving objects: 61% (118/192)</div>`,
+  () => wizardError
+    ? `<div class="vhead"><span class="chip danger">failed</span><b>The environment couldn't be made</b></div><div class="loglist">uv sync<br>error: darbit==0.3.0 not found (the bot needs a newer darbit)</div><span class="slot-tool">Update darbit in Settings, or install the bot's previous version.</span><div class="vhead"><button class="btn small">Install v0.2.0 instead</button><button class="btn small" onclick="wizardError=false;renderWizard()">Retry</button></div>`
+    : `<div class="vhead"><span class="spinner"></span><b>Making its environment</b></div><div class="loglist">uv sync · Python 3.13 · darbit 0.2.0 (pinned by the bot)<br>Installed 9 packages in 1.8 s</div>`,
+  () => `<div class="formgrid"><label class="field">Fish every (minutes)<input type="number" value="10"><span class="help">From the bot's settings.toml.</span></label><label class="field">Rod key<input value="e"></label></div>`,
+  () => `<div class="vhead"><b>3 pictures to take</b><span class="slot-tool">the rest came with the bot</span></div><div class="strip"><i style="transform:scaleX(.88)"></i></div><button class="btn small">Start the setup guide</button><span class="slot-tool">Or later, from the bot's Setup tab.</span>`,
+  () => `<div class="empty" style="padding:24px"><span style="font-size:26px;color:var(--ok)">✓</span><b>fish-bot is ready</b><span class="slot-tool">Run it now, or schedule it.</span></div>`,
+];
+function renderWizard() {
+  $("#wbody").innerHTML = pages[wizardStep]();
+  $$("#wsteps span").forEach((s, i) => s.className = i < wizardStep ? "done" : i === wizardStep ? (wizardError && i === 2 ? "err" : "now") : "");
+  $("#wBack").disabled = wizardStep === 0;
+  $("#wNext").textContent = wizardStep === pages.length - 1 ? "Run fish-bot" : "Next";
+  $$(".srcs button", $("#wbody")).forEach((b) => b.addEventListener("click", () => $$(".srcs button").forEach((x) => x.setAttribute("aria-pressed", x === b))));
+}
+function openWizard() { wizardStep = 0; wizardError = false; renderWizard(); wizard.showModal(); }
+$("#installBtn").addEventListener("click", openWizard);
+$("#wNext").addEventListener("click", () => { if (wizardStep < pages.length - 1 && !wizardError) { wizardStep++; renderWizard(); } else if (wizardStep === pages.length - 1) { wizard.close(); toast("fish-bot started", "tool"); } });
+$("#wBack").addEventListener("click", () => { if (wizardStep > 0) { wizardStep--; wizardError = false; renderWizard(); } });
+
+// ---------------------------------------------------------------- flow and python, linked lines
+$$("#flowSide .fs").forEach((f) => {
+  f.addEventListener("pointerenter", () => { $$("#codeSide [data-l]").forEach((l) => l.classList.toggle("hl-line", l.dataset.l === f.dataset.line)); f.classList.add("now"); });
+  f.addEventListener("pointerleave", () => { $$("#codeSide .hl-line").forEach((l) => l.classList.remove("hl-line")); f.classList.remove("now"); });
+});
+
+// ---------------------------------------------------------------- swatches and live keycaps
+const TOKENS = ["accent", "accent-2", "kind-image", "kind-region", "kind-point", "ok", "warn", "danger", "slot-bot", "glass", "screen-dim", "handle-fill"];
+function paintSwatches() {
+  $("#swatches").innerHTML = TOKENS.map((t) => `<button class="swatch" style="--c:var(--${t})" data-token="--${t}"><i></i>--${t}</button>`).join("");
+}
+$("#swatches").addEventListener("click", (e) => { const b = e.target.closest(".swatch"); if (b) { navigator.clipboard?.writeText(`var(${b.dataset.token})`); toast(`Copied var(${b.dataset.token})`, "tool"); } });
+function lightKeys(e, on) {
+  const names = [e.key.toLowerCase(), e.ctrlKey && "ctrl", e.altKey && "alt", e.shiftKey && "shift"].filter(Boolean);
+  $$("kbd[data-key]").forEach((k) => { if (names.includes(k.dataset.key)) k.classList.toggle("down", on); });
+  if (!on) $$("kbd.down").forEach((k) => { if (!names.includes(k.dataset.key)) k.classList.remove("down"); });
+}
+addEventListener("keydown", (e) => lightKeys(e, true));
+addEventListener("keyup", (e) => lightKeys(e, false));
+
+// ---------------------------------------------------------------- command palette (Ctrl+K)
+const COMMANDS = [
+  ["Go to Capture", "", () => location.hash = "capture"], ["Go to Highlight", "ctrl+alt+h", () => location.hash = "highlight"],
+  ["Go to Recorder", "ctrl+alt+r", () => location.hash = "recorder"], ["Open Studio: Bots", "", () => { location.hash = "studio"; showView("bots"); }],
+  ["Open Studio: Tools", "", () => { location.hash = "studio"; showView("tools"); }], ["Open Studio: Flows", "", () => { location.hash = "studio"; showView("flows"); }],
+  ["Install a bot", "", openWizard], ["Theme: glass dark", "", () => setTheme("glass-dark")], ["Theme: glass light", "", () => setTheme("glass-light")],
+  ["Theme: midnight", "", () => setTheme("midnight")], ["Theme: high contrast", "", () => setTheme("high-contrast")],
+];
+const pal = $("#palette"); let palIndex = 0, palFound = COMMANDS;
+function renderPalette() {
+  const q = $("#palInput").value.toLowerCase();
+  palFound = COMMANDS.filter(([n]) => n.toLowerCase().includes(q)); palIndex = Math.min(palIndex, Math.max(0, palFound.length - 1));
+  $("#palList").innerHTML = palFound.map(([n, k], i) => `<li role="option" aria-selected="${i === palIndex}" data-i="${i}"><span>${n}</span><span>${k ? keycaps(k) : ""}</span></li>`).join("");
+}
+function openPalette() { $("#palInput").value = ""; palIndex = 0; renderPalette(); pal.showModal(); $("#palInput").focus(); }
+function runPalette(i) { const c = palFound[i]; if (c) { pal.close(); c[2](); } }
+$("#openPalette").addEventListener("click", openPalette);
+$("#palInput").addEventListener("input", () => { palIndex = 0; renderPalette(); });
+$("#palInput").addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") { palIndex = Math.min(palIndex + 1, palFound.length - 1); renderPalette(); e.preventDefault(); }
+  if (e.key === "ArrowUp") { palIndex = Math.max(palIndex - 1, 0); renderPalette(); e.preventDefault(); }
+  if (e.key === "Enter") runPalette(palIndex);
+});
+$("#palList").addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) runPalette(+li.dataset.i); });
+pal.addEventListener("click", (e) => { const r = pal.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) pal.close(); });
+addEventListener("keydown", (e) => { if (e.ctrlKey && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); } });
+
+// ---------------------------------------------------------------- start
+drawBox(); paintMag(); paintSwatches();
+
+// Screenshot mode for scripts/render_mockups.py: ?theme=…&shot=<section id>&view=…&state=…&paused=1&wizard=<step>
+const q = new URLSearchParams(location.search);
+if (q.get("theme")) setTheme(q.get("theme"));
+if (q.get("shot")) {
+  document.documentElement.classList.add("shot");
+  const keep = q.get("shot"); let on = false;
+  for (const el of [...$("main").children]) {
+    if (el.classList.contains("sec-head")) on = !!el.querySelector("#" + keep);
+    if (!on) el.style.display = "none";
+  }
+  $$(".reveal").forEach((el) => el.classList.add("in"));
+  if (q.get("view")) showView(q.get("view"));
+  if (q.get("state")) $(`#states [data-state="${q.get("state")}"]`)?.click();
+  if (q.get("paused")) $("#recPause").click();
+  if (q.get("wizard")) { openWizard(); wizardStep = +q.get("wizard"); renderWizard(); }
+}
 </script>
 </body>
 </html>

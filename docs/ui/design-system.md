@@ -29,9 +29,10 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 | Surfaces | `--bg` (behind everything), `--glass` (panel fill), `--glass-strong` (popovers), `--raised`, `--raised-hover`, `--line`, `--blur` |
 | Text | `--text`, `--muted`, `--faint` |
 | Accent | `--accent`, `--accent-2`, `--glow` (the accent's shadow), `--on-accent` (text on the accent) |
-| Status | `--ok`, `--warn`, `--danger`, `--info` |
-| Target kinds | `--kind-image`, `--kind-region`, `--kind-point` |
-| Text slots | `--slot-tool`, `--slot-bot`, `--slot-guide` |
+| Status | `--ok`, `--warn`, `--danger`, `--info`, `--on-status` (text on a status colour) |
+| Target kinds | `--kind-image`, `--kind-region`, `--kind-point`, `--handle-fill` (resize handles) |
+| Capture | `--screen-dim`: the frozen screen outside the selection, 42% brightness, the **same in every theme** (a light theme must not wash the game out) |
+| Text slots | `--slot-tool`, `--slot-bot`, `--slot-guide`, `--on-bot` (text on a bot's accent) |
 | Type | `--font`, `--font-strong`, `--mono`; sizes `--size-xs` 11, `--size-s` 12, `--size-m` 14, `--size-l` 18, `--size-xl` 24 |
 | Space | `--space-1` 4 … `--space-6` 32 |
 | Shape | `--radius-s` 6, `--radius-m` 10, `--radius-l` 16, `--radius-pill` |
@@ -75,3 +76,26 @@ The `TextSlot` component takes `{slot, text, from?, image?}`. Text is cut at one
 | Focus, current item | the accent glow grows in, 120 ms |
 | Progress | the strip's fill slides; no counting animations |
 | Highlight | boxes draw in with a short scale from 104%, then sit still |
+
+## Rules from the 2026-10-25 review
+
+Found while reviewing the mockups (and in a second pass by Gemini). Every component follows them.
+
+- **Tooltips** come from one layer at the top of the page (or window), placed with `position: fixed` and kept inside the viewport, flipping below when near the top. No panel's `overflow` can clip them. A tooltip shows the action's name and its keys.
+- **Focus** is a 2 px `outline` in `--accent` with 2 px offset, on `:focus-visible` only. Never a glow alone: Windows high-contrast mode removes shadows.
+- **Names:** every icon-only button has an `aria-label`; toggles use `aria-pressed`, tabs `aria-selected`, the current section `aria-current`.
+- **Colour scheme:** each theme sets `color-scheme` (light or dark), so scrollbars and form controls match. Under `@media (forced-colors: active)` panels get a `CanvasText` border and the selected item a `Highlight` outline; only real colour samples use `forced-color-adjust: none`.
+- **No hard-coded colours** outside the token files, including handles, badges and avatars. Tints are mixed with `color-mix(in oklab, …)`.
+- **Motion:** at most 200 ms, `transform` and `opacity` only. A keyframe animation always states its end values (`to { … }`), so an element never ends up invisible. Reduced motion turns movement into 80 ms fades.
+- **The capture overlay:**
+  - the selection dims everything outside it with `box-shadow: 0 0 0 100vmax var(--screen-dim)`, so the inside keeps the game's exact colours;
+  - linked regions and labels sit above the dimming;
+  - the guide card, the hint, the region label and the toolbar never overlap;
+  - the kind switch never wraps;
+  - on narrow screens the toolbar scrolls sideways and the hint and magnifier hide.
+- **Shrinking:** grid and flex children that hold code, logs or long names get `min-width: 0`, so they scroll or cut with "…" instead of widening the window.
+- **Phone width (≤ 760 px):** single columns, the Studio's rail becomes a bottom tab bar, palettes become two columns. Mockup images of phone layouts are rendered at 390 px.
+- **States:** every list and view designs its empty, loading and error states, not only the full one (see the Studio's state switch in the mockups).
+- **`[hidden]` always hides,** even on elements with their own `display`.
+
+The mockups are rendered to images with `python scripts/render_mockups.py` (into `docs/ui/images/`).

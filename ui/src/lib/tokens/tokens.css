@@ -26,6 +26,8 @@
   --move: 200ms;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --screen-dim: rgb(0 0 0 / 0.58); /* the frozen screen outside the selection: 42% in every theme */
 }
 
 *,

@@ -28,7 +28,9 @@
   --slot-tool: #9aa1ad;
   --slot-bot: #f0abfc;
   --slot-guide: #eef1f6;
-  --dim: rgb(0 0 0 / 0.58);
+  --on-status: #071016;
+  --handle-fill: #ffffff;
+  --on-bot: #1a0b14;
 }
 
 [data-theme="glass-light"] {
@@ -57,7 +59,9 @@
   --slot-tool: #5b6474;
   --slot-bot: #a21caf;
   --slot-guide: #111827;
-  --dim: rgb(255 255 255 / 0.5);
+  --on-status: #ffffff;
+  --handle-fill: #ffffff;
+  --on-bot: #ffffff;
 }
 
 [data-theme="midnight"] {
@@ -86,7 +90,9 @@
   --slot-tool: #8a909c;
   --slot-bot: #e879f9;
   --slot-guide: #e7eaf0;
-  --dim: rgb(0 0 0 / 0.66);
+  --on-status: #031008;
+  --handle-fill: #e7eaf0;
+  --on-bot: #14041a;
 }
 
 [data-theme="high-contrast"] {
@@ -115,5 +121,7 @@
   --slot-tool: #e5e5e5;
   --slot-bot: #ff80ff;
   --slot-guide: #ffffff;
-  --dim: rgb(0 0 0 / 0.7);
+  --on-status: #000000;
+  --handle-fill: #ffffff;
+  --on-bot: #000000;
 }
