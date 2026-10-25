@@ -1,5 +1,7 @@
 # Contributing to darbit
 
+The rules, the repo map and the commands are in [AGENTS.md](AGENTS.md) (read by people and by coding tools alike); this page adds how to pick up a task.
+
 darbit is a simple GUI-automation toolkit for Windows, in Python: an improvement on SikuliX, not a framework. Read [docs/design.md](docs/design.md) once, then pick a task from [docs/tasks](docs/tasks/README.md).
 
 ## Picking up a task

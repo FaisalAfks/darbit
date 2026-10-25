@@ -1,0 +1,10 @@
+[project]
+name = "hello-bot"
+version = "0.1.0"
+description = "The smallest darbit bot"
+requires-python = ">=3.11"
+dependencies = ["darbit"]
+
+# A bot pins darbit to a release, so it only changes when upgraded on purpose (darbit decision 0001).
+[tool.uv.sources]
+darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.2.0", subdirectory = "packages/darbit" }

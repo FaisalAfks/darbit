@@ -1,6 +1,6 @@
 # Keys
 
-Every shortcut is in one file, [`packages/darbit/src/darbit/keymap.toml`](../../src/darbit/keymap.toml). It can be overridden in `%APPDATA%\darbit\keymap.toml` (for you) or in a project's `darbit.toml` under `[keys]` (for that bot). Every shortcut is also a button, and hovering a button shows its key.
+Every shortcut is in one file, [`packages/darbit/src/darbit/keymap.toml`](../../../packages/darbit/src/darbit/keymap.toml). It can be overridden in `%APPDATA%\darbit\keymap.toml` (for you) or in a project's `darbit.toml` under `[keys]` (for that bot). Every shortcut is also a button, and hovering a button shows its key.
 
 ## Anywhere, even with the game in front
 

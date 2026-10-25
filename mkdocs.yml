@@ -1,0 +1,55 @@
+site_name: darbit
+site_description: Simple GUI automation for Windows, in Python
+repo_url: https://github.com/FaisalAfks/darbit
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: cyan
+      accent: deep purple
+      toggle: { icon: material/brightness-4, name: Light }
+    - scheme: default
+      primary: cyan
+      accent: deep purple
+      toggle: { icon: material/brightness-7, name: Dark }
+  features: [navigation.sections, navigation.top, search.highlight, content.code.copy]
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [packages/darbit/src]
+          options:
+            docstring_style: google
+
+markdown_extensions:
+  - tables
+  - admonition
+  - toc: { permalink: true }
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Guides:
+      - Targets and calls: guides/targets-and-calls.md
+      - Observers and saved state: guides/observers-and-state.md
+      - Logs, reports, library check: guides/logs-and-reports.md
+      - The capture tool: guides/capture.md
+  - Architecture: architecture/index.md
+  - API reference: reference/api.md
+  - Style:
+      - Code: style/code.md
+      - Writing: style/writing.md
+      - UI design system: style/ui/design-system.md
+      - Keys: style/ui/keymap.md
+  - Decisions: decisions/README.md
+  - Roadmap: roadmap.md
+  - Tasks: tasks/README.md
+  - Ideas: ideas.md
+  - Design (2026-10-21): design.md
+  - Plan (2026-10-25): plan-2026-10-25.md
