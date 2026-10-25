@@ -50,6 +50,17 @@ Click a button to box it (click again for the next bigger thing), or drag a box;
 
 [examples/hello-bot](https://github.com/FaisalAfks/darbit/tree/main/examples/hello-bot) is a whole bot in a few lines: its folder layout, a pinned darbit, a target and a loop that stops cleanly.
 
+## The darbit command
+
+```
+darbit new my-bot                                  # a project: darbit.toml, bot.py, guide.toml, images/
+darbit install https://github.com/me/my-bot        # cloned at its newest release, with its own environment
+darbit run                                         # the project here (or above), with its environment
+darbit capture Gui.Play | guide | check | report   # the tools, same options as python -m darbit.<tool>
+```
+
+`darbit install` puts bots in `%LOCALAPPDATA%\darbit\bots\<name>` and needs git and [uv](https://docs.astral.sh/uv/). See [bot projects](guides/projects.md) for `darbit.toml`.
+
 ## Next
 
 - [Targets and calls](guides/targets-and-calls.md): every call and setting.

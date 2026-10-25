@@ -1,0 +1,12 @@
+# The bot's manifest: who it is, and darbit's settings for it (the script can still change them).
+[bot]
+name = "{name}"
+version = "0.1.0"
+darbit = "{darbit}"
+entry = "bot.py"
+
+[settings]
+similarity = 0.85
+
+[images]
+folders = ["images"]

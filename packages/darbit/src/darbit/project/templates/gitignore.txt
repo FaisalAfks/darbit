@@ -1,0 +1,4 @@
+.venv/
+__pycache__/
+.darbit/
+config.local.toml

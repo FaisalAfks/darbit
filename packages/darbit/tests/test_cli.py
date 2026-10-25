@@ -1,0 +1,129 @@
+"""The darbit command: new, install (from a local repo, no network), run, and handing over to the tools."""
+
+import subprocess
+import sys
+import tomllib
+
+import pytest
+
+from darbit import cli
+from darbit.project import bots
+from darbit.project.manifest import load
+
+
+def git(*args, cwd=None):
+    command = ["git", "-c", "user.name=test", "-c", "user.email=test@example.com", *args]
+    subprocess.run(command, cwd=cwd, check=True, capture_output=True)
+
+
+def test_new_makes_a_project(tmp_path):
+    assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 0
+    folder = tmp_path / "my-bot"
+    for name in ("darbit.toml", "bot.py", "guide.toml", ".gitignore", "images/.gitkeep"):
+        assert (folder / name).is_file(), name
+    project = load(folder)
+    assert project.name == "my-bot"
+    assert project.darbit.startswith(">=0.")
+    tomllib.loads((folder / "guide.toml").read_text(encoding="utf-8"))
+    compile((folder / "bot.py").read_text(encoding="utf-8"), "bot.py", "exec")
+
+
+def test_new_refuses_a_bad_name_or_a_full_folder(tmp_path, capsys):
+    assert cli.main(["new", "my bot!", "--where", str(tmp_path)]) == 2
+    assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 0
+    assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 2
+    assert "isn't empty" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("url", "name"),
+    [
+        ("https://github.com/FaisalAfks/ad-bot", "ad-bot"),
+        ("https://github.com/FaisalAfks/ad-bot.git", "ad-bot"),
+        ("https://github.com/me/hello_bot/", "hello_bot"),
+        ("C:\\bots\\local-bot", "local-bot"),
+    ],
+)
+def test_name_from_url(url, name):
+    assert bots.name_from_url(url) == name
+
+
+def make_repo(tmp_path):
+    """A bot repo with two releases and a newer commit after them."""
+    repo = bots.new("test-bot", tmp_path / "source")
+    git("init", "--quiet", cwd=repo)
+    git("add", ".", cwd=repo)
+    git("commit", "--quiet", "-m", "first", cwd=repo)
+    git("tag", "v0.9.0", cwd=repo)
+    (repo / "bot.py").write_text("print('v0.10')\n", encoding="utf-8")
+    git("commit", "--quiet", "-am", "second", cwd=repo)
+    git("tag", "v0.10.0", cwd=repo)
+    (repo / "bot.py").write_text("print('not released')\n", encoding="utf-8")
+    git("commit", "--quiet", "-am", "third", cwd=repo)
+    return repo
+
+
+def test_install_clones_at_the_newest_release(tmp_path):
+    repo = make_repo(tmp_path)
+    folder = bots.install(str(repo), tmp_path / "bots")
+    assert folder == tmp_path / "bots" / "test-bot"
+    assert (folder / "bot.py").read_text(encoding="utf-8") == "print('v0.10')\n"
+    assert bots.newest_tag(folder) == "v0.10.0"
+    with pytest.raises(FileExistsError):
+        bots.install(str(repo), tmp_path / "bots")
+
+
+def test_install_from_the_command(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    assert cli.main(["install", str(repo), "--into", str(tmp_path / "bots")]) == 0
+    out = capsys.readouterr().out
+    assert "installed in" in out
+    assert "darbit guide" in out
+
+
+def test_entry_commands(tmp_path):
+    python = sys.executable
+    assert bots.entry_command("bot.py", tmp_path) == [python, "bot.py"]
+    assert bots.entry_command("ad_bot", tmp_path) == [python, "-m", "ad_bot"]
+    assert bots.entry_command("ad_bot.main:main", tmp_path) == [python, "-c", "from ad_bot.main import main; main()"]
+    (tmp_path / "pyproject.toml").write_text("", encoding="utf-8")
+    assert bots.entry_command("bot.py", tmp_path)[:3] == ["uv", "run", "--no-dev"]
+    with pytest.raises(ValueError):
+        bots.entry_command("ad_bot; rm -rf", tmp_path)
+    with pytest.raises(ValueError):
+        bots.entry_command("ad_bot:main()", tmp_path)
+
+
+def test_run_starts_the_entry_in_the_project(tmp_path):
+    folder = bots.new("runner", tmp_path)
+    (folder / "bot.py").write_text("import sys\nopen('ran.txt', 'w').write('yes')\nsys.exit(3)\n", encoding="utf-8")
+    (folder / "src").mkdir()
+    assert cli.main(["run", str(folder / "src")]) == 3  # found from a folder inside the project
+    assert (folder / "ran.txt").read_text(encoding="utf-8") == "yes"
+
+
+def test_run_without_a_project(tmp_path, capsys):
+    assert cli.main(["run", str(tmp_path)]) == 2
+    assert "no darbit.toml" in capsys.readouterr().out
+
+
+def test_guide_hands_over_to_the_capture_tool(monkeypatch):
+    import darbit.capture
+
+    seen = []
+
+    def capture(argv):
+        seen.append(argv)
+        return 0
+
+    monkeypatch.setattr(darbit.capture, "main", capture)
+    assert cli.main(["guide"]) == 0
+    assert cli.main(["guide", "other.toml", "--folder", "assets/images"]) == 0
+    assert seen == [["--guide", "guide.toml"], ["--guide", "other.toml", "--folder", "assets/images"]]
+
+
+def test_commands_still_to_come_say_so(capsys):
+    assert cli.main(["app"]) == 2
+    assert "T20" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        cli.main(["fly"])
