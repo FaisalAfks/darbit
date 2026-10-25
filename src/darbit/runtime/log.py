@@ -76,12 +76,13 @@ def screenshot(label: str) -> str | None:
         folder.mkdir(parents=True, exist_ok=True)
         pixels, _ = screen.grab()
         safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in label)[:60]
-        path = folder / f"{datetime.now():%Y-%m-%d_%H-%M-%S}_{safe}.png"
-        ok, data = cv2.imencode(".png", pixels)
+        path = folder / f"{datetime.now():%Y-%m-%d_%H-%M-%S}_{safe}.jpg"
+        ok, data = cv2.imencode(".jpg", pixels, [cv2.IMWRITE_JPEG_QUALITY, 85])  # about 10x smaller than PNG
         if ok:
             data.tofile(str(path))
             log(f"screenshot {path.name}")
-        shots = sorted(folder.glob("*.png"), key=lambda p: p.stat().st_mtime)
+        shots = [*folder.glob("*.png"), *folder.glob("*.jpg")]  # older ones were PNG
+        shots.sort(key=lambda p: p.stat().st_mtime)
         for old in shots[:-_KEEP_SHOTS]:
             old.unlink(missing_ok=True)
         return path.name if ok else None

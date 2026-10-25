@@ -118,7 +118,7 @@ def _screens(folder: Path | None) -> list[tuple[str, np.ndarray, Region]]:
         pixels, origin = screen.grab()
         return [("live screen", pixels, origin)]
     shots = []
-    for path in sorted(folder.glob("*.png")):
+    for path in sorted([*folder.glob("*.png"), *folder.glob("*.jpg")]):
         pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
         if pixels is not None:
             shots.append((path.name, pixels, Region(0, 0, pixels.shape[1], pixels.shape[0])))
