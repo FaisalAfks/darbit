@@ -2,7 +2,7 @@
 
 Every task on the roadmap, as instructions. Each page says what to build, which files, the steps, the contracts it must keep and when it's done. Rules for working on them are in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-The focus is one suite: the **hub app** and its **tools** (capture, highlight, guide, recorder, run panel) on one front end, with a fast back end behind it.
+The focus is one suite: **darbit Studio** (the hub app) and its **tools** (capture, highlight, guide, recorder, run panel, flow editor) on one front end, with a fast back end behind it. Decisions behind the plan: [decisions/](../decisions/README.md).
 
 ## Order
 
@@ -14,8 +14,9 @@ v0.3  T01 ui package ─┬─ T02 tokens and themes ── T03 components ─�
       T08 capture engine ────────────────────────────────────────┼── T09 capture overlay ── T10 capture editing
       T21 fast capture and benchmark                              ├── T11 highlight
                                                                   └── T12 setup guide ── T13 retire the Tk tool
-v0.4  T14 run files ── T15 recorder ── T16 player and run panel
-v0.5  T17 projects ── T18 settings form ── T19 new, install, run ── T20 hub app
+v0.4  T14 run files (flows) ── T15 recorder ── T26 checks while recording ── T16 player and run panel
+v0.5  T17 projects ── T18 settings form ── T19 new, install, run ── T20 Studio
+      T27 flow editor ── T28 flow ↔ Python ── T29 custom actions
 later T23 VS Code extension, T24 text targets and masks, T25 docs site and installer
 ```
 
@@ -44,12 +45,16 @@ Tasks on the same line after a `──` wait for the one before it. Tasks in dif
 | [T17 Projects and layered settings](T17-projects.md) | v0.5 | #50 | |
 | [T18 Settings schema and form](T18-settings-form.md) | v0.5 | #51 | T03, T17 |
 | [T19 darbit new, install and run](T19-cli.md) | v0.5 | #52 | T17 |
-| [T20 Hub app](T20-hub.md) | v0.5 | #53 | T03, T05, T11, T18, T19 |
+| [T20 Studio (hub app)](T20-hub.md) | v0.5 | #53 | T03, T05, T11, T18, T19 |
 | [T21 Fast capture and benchmark](T21-fast-capture.md) | v0.3 | #72 | |
 | [T22 Window-relative targets](T22-window-targets.md) | v0.2 | #13 | |
 | [T23 VS Code extension](T23-vscode.md) | v0.6 | #54 | T05, T03 |
 | [T24 Text targets and masks](T24-text-masks.md) | v0.7 | #55, #56 | |
 | [T25 Docs site, installer, API freeze](T25-v1.md) | v1.0 | #57, #58, #59 | all |
+| [T26 Checks while recording](T26-checks-while-recording.md) | v0.4 | #79 | T09, T15 |
+| [T27 Flow editor](T27-flow-editor.md) | v0.5 | #80 | T14, T16, T03 |
+| [T28 Flow ↔ Python](T28-flow-python.md) | v0.5 | #81 | T14, T27 |
+| [T29 Custom steps with `@d.action`](T29-custom-actions.md) | v0.5 | #82 | T27 |
 
 ## How a task page is laid out
 

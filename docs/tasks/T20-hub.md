@@ -1,5 +1,7 @@
 # T20 Hub app
 
+> **Renamed 2026-10-25** ([ADR 0007](../decisions/0007-studio-flows-and-actions.md)): the hub is **darbit Studio**. It also installs bots through a wizard, launches every tool for the selected bot, and hosts the flow editor (T27).
+
 **Goal:** the desktop home of darbit: your bots, their settings, start and stop, what they're doing now, their history and their image library, with every tool one click away.
 
 **Depends on:** T03, T05, T11, T18, T19. **Issue:** #53. **Milestone:** v0.5.
