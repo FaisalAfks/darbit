@@ -25,7 +25,7 @@ When an observer fires, held keys are let go and the next darbit call (a wait, a
 
 ## Saved state
 
-Values that survive restarts, kept in `state/` next to the script:
+Values that survive restarts, kept in `.darbit/state/` next to the script:
 
 ```python
 s = d.State("speedraid")

@@ -61,4 +61,4 @@ def test_the_command_against_saved_screens(tmp_path, capsys):
     cv2.imwrite(str(shots / "lobby.png"), shot)
     assert main(["--folder", str(images), "--screens", str(shots)]) == 0
     assert "Gui.Play.png  ok" in capsys.readouterr().out
-    assert (tmp_path / "state" / "check.jsonl").read_text().count("Gui.Play") == 1
+    assert (tmp_path / ".darbit" / "state" / "check.jsonl").read_text().count("Gui.Play") == 1

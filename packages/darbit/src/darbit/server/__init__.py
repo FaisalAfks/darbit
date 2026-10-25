@@ -4,9 +4,10 @@ Needs the `app` extra (pip install "darbit[app]"). See docs/tasks/T05-local-serv
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
+
+from .. import paths
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,7 @@ class Running:
 
 def info_file() -> Path:
     """Where a running server writes its port and token, for windows and the IDE extension."""
-    return Path(os.environ.get("LOCALAPPDATA", Path.home())) / "darbit" / "server.json"
+    return paths.data_dir() / "server.json"
 
 
 def running() -> Running | None:

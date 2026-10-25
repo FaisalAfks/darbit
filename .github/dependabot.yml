@@ -1,0 +1,15 @@
+# Keeps GitHub Actions, the Python lock file and the UI's npm packages up to date, once a week.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["type: chore"]
+  - package-ecosystem: uv
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["type: chore"]
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["type: chore"]

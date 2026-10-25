@@ -40,10 +40,10 @@ A layer only imports from the layers above it in this list. `import darbit` load
 | What | Where |
 |---|---|
 | target images | `images/` next to the script (`settings.images`) |
-| logs, screenshots, run reports | `logs/` (`settings.logs`); moving to `<project>/.darbit/` (decision 0006) |
-| saved state | `state/` (`settings.state`); moving to `<project>/.darbit/` |
-| user settings, keymap, themes | `%APPDATA%\darbit\` |
-| Studio data, installed bots, cache | `%LOCALAPPDATA%\darbit\` |
+| logs, screenshots, run reports | `<project>/.darbit/logs/` (`settings.logs`) |
+| saved state | `<project>/.darbit/state/` (`settings.state`) |
+| user settings, keymap, themes | `%APPDATA%\darbit\` (`paths.config_dir()`) |
+| Studio data, installed bots, cache | `%LOCALAPPDATA%\darbit\` (`paths.data_dir()`, `bots_dir()`, `cache_dir()`) |
 
 ## Background threads
 

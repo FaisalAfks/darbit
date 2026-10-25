@@ -4,11 +4,11 @@ What a script leaves behind, and how healthy its pictures are.
 
 ## Logs
 
-Each day gets a log file in `logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot in `logs/screenshots/`.
+Each day gets a log file in `.darbit/logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot (JPEG) in `.darbit/logs/screenshots/`; the newest 200 are kept.
 
 ## Run report
 
-Next to each day's log, `logs/report-<day>.jsonl` records every search (with the closest score when nothing was found), click and drag, and the script's own steps and events:
+Next to each day's log, `.darbit/logs/report-<day>.jsonl` records every search (with the closest score when nothing was found), click and drag, and the script's own steps and events:
 
 ```python
 with d.step("Speed Raid"):                          # timed; ends ok, failed (with a screenshot), interrupted or stopped
@@ -36,4 +36,4 @@ Scores every target in `images/` against the live screen, or against saved scree
 - **moved**: only found outside its region, so the region needs updating
 - **not seen**: not on any screen checked
 
-Results are added to `state/check.jsonl`, to follow scores over time.
+Results are added to `.darbit/state/check.jsonl`, to follow scores over time.

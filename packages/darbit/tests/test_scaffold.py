@@ -31,7 +31,7 @@ def test_the_default_keymap_has_every_scope():
 
 
 def test_a_users_keymap_overrides_the_defaults(tmp_path, monkeypatch):
-    monkeypatch.setenv("APPDATA", str(tmp_path))
+    monkeypatch.setattr(keymap.paths, "config_dir", lambda: tmp_path / "darbit")
     (tmp_path / "darbit").mkdir()
     (tmp_path / "darbit" / "keymap.toml").write_text('[global]\n"capture.freeze" = "ctrl+alt+x"\n')
     project = tmp_path / "bot"

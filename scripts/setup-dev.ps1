@@ -15,6 +15,9 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
 # Python 3.13, darbit (editable) and the dev tools, exactly as in uv.lock
 uv sync
 
+# lint before each commit
+uv run pre-commit install
+
 # Claude Code reads skills only from .claude/skills; the skills live in .agents/skills
 # (docs/decisions/0004). A directory junction needs no admin rights and isn't committed.
 $link = Join-Path $root ".claude\skills"
