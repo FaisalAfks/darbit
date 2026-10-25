@@ -1,4 +1,5 @@
 """Looking for targets on screen. Not finding something returns None or False, never an error."""
+
 from __future__ import annotations
 
 import threading
@@ -154,8 +155,9 @@ def _report(kind: str, whats: tuple[What, ...], timeout: float, found: Match | N
     names = _names(whats)
     if found is not None:
         log(f"{kind} {names}: found {found.name} at {found.x},{found.y} score {found.score:.2f}")
-        record(kind, targets=names, timeout=timeout, found=found.name, score=round(found.score, 3),
-               at=[found.x, found.y])
+        record(
+            kind, targets=names, timeout=timeout, found=found.name, score=round(found.score, 3), at=[found.x, found.y]
+        )
         return
     closest = getattr(_closest, "match", None)
     near = f", closest {closest.name} {closest.score:.2f} at {closest.x},{closest.y}" if closest else ""
@@ -164,6 +166,13 @@ def _report(kind: str, whats: tuple[What, ...], timeout: float, found: Match | N
     shot = None
     if settings.screenshot_after and timeout >= settings.screenshot_after:
         shot = screenshot(f"not-found_{names}")
-    record(kind, targets=names, timeout=timeout, found=None,
-           closest=round(closest.score, 3) if closest else None, closest_name=closest.name if closest else None,
-           at=[closest.x, closest.y] if closest else None, screenshot=shot)
+    record(
+        kind,
+        targets=names,
+        timeout=timeout,
+        found=None,
+        closest=round(closest.score, 3) if closest else None,
+        closest_name=closest.name if closest else None,
+        at=[closest.x, closest.y] if closest else None,
+        screenshot=shot,
+    )

@@ -7,6 +7,7 @@ Shows each step (how often it ran, how often it failed, its average and longest 
 the reasons steps failed with their screenshots, the targets most often not found with
 the closest score they got, and the bot's own events (d.record) counted by name.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,16 +44,24 @@ def summary(events: list[dict]) -> str:
         for name, ends in sorted(steps.items()):
             times = [e.get("seconds", 0) for e in ends]
             states = Counter(e["state"] for e in ends)
-            out.append(f"{name:<{width}}  {len(ends):4}  {states['ok']:2}  {states['failed']:6}  "
-                       f"{states['interrupted']:11}  {sum(times) / len(times):5.1f}  {max(times):5.1f}")
+            out.append(
+                f"{name:<{width}}  {len(ends):4}  {states['ok']:2}  {states['failed']:6}  "
+                f"{states['interrupted']:11}  {sum(times) / len(times):5.1f}  {max(times):5.1f}"
+            )
 
     failures = [e for e in events if e.get("event") == "step" and e.get("state") in ("failed", "interrupted")]
     if failures:
         out.append("")
         out.append("why steps ended early:")
         for (where, reason), n in Counter((e["step"], e.get("reason", "")) for e in failures).most_common(10):
-            shot = next((e.get("screenshot") for e in reversed(failures)
-                         if e["step"] == where and e.get("reason", "") == reason and e.get("screenshot")), None)
+            shot = next(
+                (
+                    e.get("screenshot")
+                    for e in reversed(failures)
+                    if e["step"] == where and e.get("reason", "") == reason and e.get("screenshot")
+                ),
+                None,
+            )
             out.append(f"  {n:3}x  {where}: {reason}" + (f"  ({shot})" if shot else ""))
 
     misses = [e for e in events if e.get("event") in SEARCHES and e.get("found") is None and e.get("timeout", 0) > 0]
@@ -64,8 +73,11 @@ def summary(events: list[dict]) -> str:
             scores = [e["closest"] for e in misses if e["targets"] == target and e.get("closest") is not None]
             out.append(f"  {n:4}x  {target}" + (f"  (closest {max(scores):.2f})" if scores else ""))
 
-    own = Counter(e["event"] for e in events
-                  if e.get("event") not in (*SEARCHES, "step", "click", "double_click", "right_click", "drag"))
+    own = Counter(
+        e["event"]
+        for e in events
+        if e.get("event") not in (*SEARCHES, "step", "click", "double_click", "right_click", "drag")
+    )
     if own:
         out.append("")
         out.append("events:")

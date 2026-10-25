@@ -1,4 +1,5 @@
 """What the capture screens share: items, results, the look, and small drawing helpers."""
+
 from __future__ import annotations
 
 import base64
@@ -67,8 +68,32 @@ def photo(pixels: np.ndarray) -> tk.PhotoImage:
 def rounded(canvas: tk.Canvas, x0: float, y0: float, x1: float, y1: float, r: float, **options) -> int:
     """A rounded rectangle on a canvas."""
     r = min(r, (x1 - x0) / 2, (y1 - y0) / 2)
-    points = [x0 + r, y0, x1 - r, y0, x1, y0, x1, y0 + r, x1, y1 - r, x1, y1, x1 - r, y1,
-              x0 + r, y1, x0, y1, x0, y1 - r, x0, y0 + r, x0, y0]
+    points = [
+        x0 + r,
+        y0,
+        x1 - r,
+        y0,
+        x1,
+        y0,
+        x1,
+        y0 + r,
+        x1,
+        y1 - r,
+        x1,
+        y1,
+        x1 - r,
+        y1,
+        x0 + r,
+        y1,
+        x0,
+        y1,
+        x0,
+        y1 - r,
+        x0,
+        y0 + r,
+        x0,
+        y0,
+    ]
     return canvas.create_polygon(points, smooth=True, **options)
 
 

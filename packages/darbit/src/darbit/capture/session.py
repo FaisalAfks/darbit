@@ -4,6 +4,7 @@ The card slides out of the screen when the mouse has been away from it for a few
 seconds, leaving its progress strip at the top edge, and slides back in when the
 mouse comes near. F8 captures the current target; Ctrl+Alt+Q asks to finish.
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -46,8 +47,14 @@ def _down(vk: int) -> bool:
 
 
 class Session:
-    def __init__(self, items: list[Item], folder: Path, hotkey: str = "f8", window: str | None = None,
-                 list_file: Path | None = None) -> None:
+    def __init__(
+        self,
+        items: list[Item],
+        folder: Path,
+        hotkey: str = "f8",
+        window: str | None = None,
+        list_file: Path | None = None,
+    ) -> None:
         self.items, self.folder, self.window_name, self.list_file = items, folder, window, list_file
         self.index = 0
         self.saved: list[Saved] = []
@@ -104,8 +111,9 @@ class Session:
                 child.destroy()
         self._images.clear()
         rounded(c, 0, 0, self.w - 1, self.h - 1, self.u(20), fill=Theme.CARD, outline=Theme.LINE)
-        {"items": self._render_item, "add": self._render_add, "finish": self._render_finish,
-         "done": self._render_done}[self.state]()
+        {"items": self._render_item, "add": self._render_add, "finish": self._render_finish, "done": self._render_done}[
+            self.state
+        ]()
         self._render_progress()
 
     def _render_progress(self) -> None:
@@ -121,15 +129,16 @@ class Session:
         c, u = self.canvas, self.u
         c.create_text(u(28), u(28), anchor="w", text=text, fill=color, font=self.font(13, True))
         if self.toast and self.toast[0]:
-            c.create_text(self.w - u(28), u(28), anchor="e", text=self.toast[0], fill=self.toast[1],
-                          font=self.font(13))
+            c.create_text(self.w - u(28), u(28), anchor="e", text=self.toast[0], fill=self.toast[1], font=self.font(13))
 
     def _button(self, right: float, text: str, action: Callable[[], None], style: str = "plain") -> float:
         """A pill button ending at `right`; returns its left edge."""
         c, u = self.canvas, self.u
-        fill, hover, color = {"primary": (Theme.ACCENT, "#8fdcfc", "#0b1220"),
-                              "danger": (Theme.RAISED, "#3a2326", Theme.DANGER),
-                              "plain": (Theme.RAISED, "#30333c", Theme.TEXT)}[style]
+        fill, hover, color = {
+            "primary": (Theme.ACCENT, "#8fdcfc", "#0b1220"),
+            "danger": (Theme.RAISED, "#3a2326", Theme.DANGER),
+            "plain": (Theme.RAISED, "#30333c", Theme.TEXT),
+        }[style]
         tag = f"button-{text}"
         y = self.h - u(36)
         label = c.create_text(0, y, anchor="center", text=text, fill=color, font=self.font(14, True), tags=tag)
@@ -153,8 +162,11 @@ class Session:
             return
         ih, iw = image.shape[:2]
         scale = min((w - u(12)) / iw, (h - u(12)) / ih, 4 * self.k)
-        small = cv2.resize(image, (max(1, round(iw * scale)), max(1, round(ih * scale))),
-                           interpolation=cv2.INTER_AREA if scale < 1 else cv2.INTER_NEAREST)
+        small = cv2.resize(
+            image,
+            (max(1, round(iw * scale)), max(1, round(ih * scale))),
+            interpolation=cv2.INTER_AREA if scale < 1 else cv2.INTER_NEAREST,
+        )
         thumb = photo(small)
         self._images.append(thumb)
         c.create_image(x0 + w / 2, y0 + h / 2, image=thumb)
@@ -175,31 +187,46 @@ class Session:
         # the last capture on the right
         last = self.saved[-1] if self.saved else None
         thumb_x = self.w - u(28) - u(THUMB_W)
-        self._thumbnail(thumb_x, last.thumb if last else None, "LAST SAVED", "none yet",
-                        None if last is None or last.thumb is None else last.risky)
+        self._thumbnail(
+            thumb_x,
+            last.thumb if last else None,
+            "LAST SAVED",
+            "none yet",
+            None if last is None or last.thumb is None else last.risky,
+        )
 
         # kind badge, name, what it is, and what to do
         cx, cy, r = u(52), u(78), u(24)
         c.create_oval(cx - r, cy - r, cx + r, cy + r, fill=Theme.RAISED, outline=color, width=u(2))
         c.create_text(cx, cy, text=Theme.KIND_GLYPH[item.kind], fill=color, font=self.font(21))
         text_x, text_right = u(92), thumb_x - u(24)
-        self._fit(c.create_text(text_x, u(66), anchor="w", text=item.name, fill=Theme.TEXT,
-                                font=self.font(28, True)), item.name, text_right)
+        self._fit(
+            c.create_text(text_x, u(66), anchor="w", text=item.name, fill=Theme.TEXT, font=self.font(28, True)),
+            item.name,
+            text_right,
+        )
         if item.note:
-            self._fit(c.create_text(text_x, u(100), anchor="w", text=item.note, fill=Theme.TEXT,
-                                    font=self.font(15)), item.note, text_right)
+            self._fit(
+                c.create_text(text_x, u(100), anchor="w", text=item.note, fill=Theme.TEXT, font=self.font(15)),
+                item.note,
+                text_right,
+            )
         what = {"image": "box the image", "location": "click the point", "region": "box the region"}[item.kind]
         hint_y = u(132) if item.note else u(102)
         t = c.create_text(text_x, hint_y, anchor="w", text="Press", fill=Theme.MUTED, font=self.font(14))
         x = c.bbox(t)[2] + u(9)
-        key = c.create_text(x + u(9), hint_y, anchor="w", text=self.hotkey, fill=Theme.TEXT,
-                            font=self.font(13, True))
+        key = c.create_text(x + u(9), hint_y, anchor="w", text=self.hotkey, fill=Theme.TEXT, font=self.font(13, True))
         kx0, ky0, kx1, ky1 = c.bbox(key)
-        cap = rounded(c, kx0 - u(8), ky0 - u(3), kx1 + u(8), ky1 + u(3), u(7), fill=Theme.RAISED,
-                      outline=Theme.LINE)
+        cap = rounded(c, kx0 - u(8), ky0 - u(3), kx1 + u(8), ky1 + u(3), u(7), fill=Theme.RAISED, outline=Theme.LINE)
         c.tag_lower(cap, key)
-        c.create_text(kx1 + u(16), hint_y, anchor="w", text=f"when it's on screen, {what}, Enter",
-                      fill=Theme.MUTED, font=self.font(14))
+        c.create_text(
+            kx1 + u(16),
+            hint_y,
+            anchor="w",
+            text=f"when it's on screen, {what}, Enter",
+            fill=Theme.MUTED,
+            font=self.font(14),
+        )
 
         right = self.w - u(28)
         right = self._button(right, "Done", self._ask_finish, "primary") - u(10)
@@ -209,8 +236,9 @@ class Session:
         if self.saved:
             right = self._button(right, "Undo", self._undo) - u(10)
         self._button(right, "+ Add", self._open_add)
-        c.create_text(u(28), self.h - u(36), anchor="w", text="Ctrl+Alt+Q  finish", fill=Theme.MUTED,
-                      font=self.font(12))
+        c.create_text(
+            u(28), self.h - u(36), anchor="w", text="Ctrl+Alt+Q  finish", fill=Theme.MUTED, font=self.font(12)
+        )
 
     def _fit(self, label: int, text: str, right: float) -> None:
         """Shorten a text with an ellipsis until it ends before `right`."""
@@ -222,17 +250,26 @@ class Session:
     # ----------------------------------------------------------- add a target
 
     def _entry(self, x: float, y: float, width: float, value: str = "") -> tk.Entry:
-        entry = tk.Entry(self.root, bg=Theme.RAISED, fg=Theme.TEXT, insertbackground=Theme.TEXT, relief="flat",
-                         font=self.font(15), highlightthickness=self.u(1), highlightbackground=Theme.LINE,
-                         highlightcolor=Theme.ACCENT)
+        entry = tk.Entry(
+            self.root,
+            bg=Theme.RAISED,
+            fg=Theme.TEXT,
+            insertbackground=Theme.TEXT,
+            relief="flat",
+            font=self.font(15),
+            highlightthickness=self.u(1),
+            highlightbackground=Theme.LINE,
+            highlightcolor=Theme.ACCENT,
+        )
         entry.insert(0, value)
         self.canvas.create_window(x, y, anchor="w", window=entry, width=width, height=self.u(36))
         return entry
 
     def _render_add(self) -> None:
         c, u = self.canvas, self.u
-        self._header("ADD A TARGET" + (f"  ·  ALSO SAVED TO {self.list_file.name}" if self.list_file else ""),
-                     Theme.MUTED)
+        self._header(
+            "ADD A TARGET" + (f"  ·  ALSO SAVED TO {self.list_file.name}" if self.list_file else ""), Theme.MUTED
+        )
         c.create_text(u(28), u(72), anchor="w", text="Name", fill=Theme.MUTED, font=self.font(13))
         c.create_text(u(28), u(120), anchor="w", text="What", fill=Theme.MUTED, font=self.font(13))
         name = self._entry(u(92), u(72), u(330), self.form.get("name", ""))
@@ -242,13 +279,29 @@ class Session:
         for kind in ("image", "location", "region"):
             chosen = kind == self.adding_kind
             tag = f"kind-{kind}"
-            label = c.create_text(0, u(72), anchor="w", text=f"{Theme.KIND_GLYPH[kind]}  {kind}",
-                                  fill="#0b1220" if chosen else Theme.TEXT, font=self.font(13, True), tags=tag)
+            label = c.create_text(
+                0,
+                u(72),
+                anchor="w",
+                text=f"{Theme.KIND_GLYPH[kind]}  {kind}",
+                fill="#0b1220" if chosen else Theme.TEXT,
+                font=self.font(13, True),
+                tags=tag,
+            )
             x0, _, x1, _ = c.bbox(label)
             width = x1 - x0 + u(28)
             c.coords(label, x + u(14), u(72))
-            back = rounded(c, x, u(72) - u(17), x + width, u(72) + u(17), u(17),
-                           fill=Theme.KIND_COLOR[kind] if chosen else Theme.RAISED, outline="", tags=tag)
+            back = rounded(
+                c,
+                x,
+                u(72) - u(17),
+                x + width,
+                u(72) + u(17),
+                u(17),
+                fill=Theme.KIND_COLOR[kind] if chosen else Theme.RAISED,
+                outline="",
+                tags=tag,
+            )
             c.tag_lower(back, label)
             c.tag_bind(tag, "<ButtonRelease-1>", lambda _e, k=kind: self._pick_kind(k))
             c.tag_bind(tag, "<Enter>", lambda _e: c.configure(cursor="hand2"))
@@ -256,8 +309,9 @@ class Session:
             x += width + u(8)
         right = self._button(self.w - u(28), "Add", self._add, "primary") - u(10)
         self._button(right, "Cancel", self._cancel_add)
-        c.create_text(u(28), self.h - u(36), anchor="w", text="Goes next in the session", fill=Theme.MUTED,
-                      font=self.font(12))
+        c.create_text(
+            u(28), self.h - u(36), anchor="w", text="Goes next in the session", fill=Theme.MUTED, font=self.font(12)
+        )
         for entry in (name, note):
             entry.bind("<Return>", lambda _e: self._add())
             entry.bind("<Escape>", lambda _e: self._cancel_add())
@@ -299,10 +353,22 @@ class Session:
         c, u = self.canvas, self.u
         count = len(self.saved)
         self._header("FINISH", Theme.MUTED)
-        c.create_text(u(28), u(66), anchor="w", text=f"{count} new capture{'s' if count != 1 else ''} this session",
-                      fill=Theme.TEXT, font=self.font(28, True))
-        c.create_text(u(28), u(102), anchor="w", text="Keep them, or delete them and put back what they replaced.",
-                      fill=Theme.MUTED, font=self.font(15))
+        c.create_text(
+            u(28),
+            u(66),
+            anchor="w",
+            text=f"{count} new capture{'s' if count != 1 else ''} this session",
+            fill=Theme.TEXT,
+            font=self.font(28, True),
+        )
+        c.create_text(
+            u(28),
+            u(102),
+            anchor="w",
+            text="Keep them, or delete them and put back what they replaced.",
+            fill=Theme.MUTED,
+            font=self.font(15),
+        )
         right = self._button(self.w - u(28), "Keep", lambda: self._close(keep=True), "primary") - u(10)
         right = self._button(right, "Delete all", lambda: self._close(keep=False), "danger") - u(10)
         self._button(right, "Cancel", self._cancel_finish)
@@ -310,10 +376,17 @@ class Session:
     def _render_done(self) -> None:
         c, u = self.canvas, self.u
         self._header("ALL DONE", Theme.OK)
-        c.create_text(u(28), u(66), anchor="w", text="Everything is captured", fill=Theme.TEXT,
-                      font=self.font(28, True))
-        c.create_text(u(28), u(102), anchor="w", text=f"{len(self.saved)} saved in {self.folder}", fill=Theme.MUTED,
-                      font=self.font(15))
+        c.create_text(
+            u(28), u(66), anchor="w", text="Everything is captured", fill=Theme.TEXT, font=self.font(28, True)
+        )
+        c.create_text(
+            u(28),
+            u(102),
+            anchor="w",
+            text=f"{len(self.saved)} saved in {self.folder}",
+            fill=Theme.MUTED,
+            font=self.font(15),
+        )
         right = self._button(self.w - u(28), "Finish", self._ask_finish, "primary") - u(10)
         if self.saved:
             right = self._button(right, "Undo", self._undo) - u(10)
@@ -389,8 +462,9 @@ class Session:
         """The frozen screen for the current target."""
         item = self.items[self.index]
         counter = f"{self.index + 1}/{len(self.items)}" + (f"  {item.screen}" if item.screen else "")
-        self.overlay = Overlay(self.root, self.shot, self.origin, item.kind, item.name, self._overlay_done, counter,
-                               message)
+        self.overlay = Overlay(
+            self.root, self.shot, self.origin, item.kind, item.name, self._overlay_done, counter, message
+        )
 
     def _back_to_card(self, toast: tuple[str, str] | None) -> None:
         self.capturing = False
@@ -458,6 +532,7 @@ class Session:
         if not self.window_name:
             return None
         from ..runtime import apps
+
         area = apps.window(self.window_name)
         return [area.w, area.h] if area else None
 

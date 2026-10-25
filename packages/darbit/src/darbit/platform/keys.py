@@ -13,6 +13,7 @@ both get something sensible whatever layout is active.
 For real text, don't press keys at all: `input.write("héllo")` types characters
 directly and doesn't care about layouts either.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -45,8 +46,7 @@ def _letters() -> dict[str, Key]:
 
 def _digits() -> dict[str, Key]:
     # 1..9 then 0, the way they sit on the row
-    return {digit: Key(digit, 0x02 + index, ord(digit))
-            for index, digit in enumerate("1234567890")}
+    return {digit: Key(digit, 0x02 + index, ord(digit)) for index, digit in enumerate("1234567890")}
 
 
 _KEYS = {**_letters(), **_digits()}  # _add() puts the named keys in; read-only once Keys is built

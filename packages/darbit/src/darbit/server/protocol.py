@@ -7,6 +7,7 @@ it's an event. Images go in binary frames (see docs/tasks/T05-local-server.md).
 This list is the contract. The TypeScript side is generated from it:
     python -m darbit.server.protocol --ts > packages/ui/src/lib/protocol.ts
 """
+
 from __future__ import annotations
 
 import sys
@@ -35,8 +36,11 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "capture.delete": ("req", {"name": "str"}, "delete a target's files"),
     # T11 highlight
     "highlight.scan": ("req", {"targets": "list[str] | None", "context": "str | None"}, "start a scan"),
-    "highlight.hit": ("evt", {"name": "str", "box": "Box", "score": "float", "elsewhere": "float",
-                              "verdict": "str"}, "one target found"),
+    "highlight.hit": (
+        "evt",
+        {"name": "str", "box": "Box", "score": "float", "elsewhere": "float", "verdict": "str"},
+        "one target found",
+    ),
     "highlight.done": ("evt", {"missing": "list[str]"}, "the scan finished"),
     # T12 guide
     "guide.open": ("req", {"path": "str", "say": "str | None", "only": "list[str] | None"}, "show the guide card"),

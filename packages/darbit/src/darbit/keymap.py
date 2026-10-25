@@ -6,6 +6,7 @@
 The web UI gets the same table from the local server (GET /keymap), so a key changed here
 changes in every window, the hub and the IDE extension. See docs/tasks/T04-keymap.md.
 """
+
 from __future__ import annotations
 
 import tomllib

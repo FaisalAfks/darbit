@@ -3,6 +3,7 @@
 screen.grab() picks it with settings.capture = "auto" and falls back to mss on any error.
 See docs/tasks/T21-fast-capture.md.
 """
+
 from __future__ import annotations
 
 import numpy as np

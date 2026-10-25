@@ -3,6 +3,7 @@
 WH_KEYBOARD_LL and WH_MOUSE_LL on their own thread with a message loop. The callbacks only put
 events on a queue and return at once; injected events (darbit's own input) are skipped.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable

@@ -3,6 +3,7 @@
 The hooks (platform/hooks.py) only queue raw events; everything here is pure, so it's tested with
 lists of fake events.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

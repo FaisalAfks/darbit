@@ -1,4 +1,5 @@
 """Saving captures, and taking them back."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -47,8 +48,9 @@ def undo(saved: Saved) -> None:
             path.write_bytes(old)
 
 
-def save_result(folder: Path, item: Item, result: Result, shot: np.ndarray, origin: Region,
-                window: list[int] | None) -> Saved:
+def save_result(
+    folder: Path, item: Item, result: Result, shot: np.ndarray, origin: Region, window: list[int] | None
+) -> Saved:
     """Save a captured target."""
     path = folder / item.name
     before = _backup(_files(path, item.kind))
@@ -70,7 +72,10 @@ def save_result(folder: Path, item: Item, result: Result, shot: np.ndarray, orig
     save(path, image, region=region, offset=offset, scale=screen.scale_at(box.x, box.y), window=window)
     elsewhere = distinct(image, shot, Region(box.x - origin.x, box.y - origin.y, box.w, box.h))
     verdict = "distinct" if elsewhere < RISKY else "RISKY, something else looks alike"
-    message = (f"saved {path}.png ({box.w}x{box.h} at {box.x},{box.y})"
-               + (f", region {region}" if region else "") + (f", click offset {offset}" if offset else "")
-               + f"; {verdict} (best elsewhere {elsewhere:.2f})")
+    message = (
+        f"saved {path}.png ({box.w}x{box.h} at {box.x},{box.y})"
+        + (f", region {region}" if region else "")
+        + (f", click offset {offset}" if offset else "")
+        + f"; {verdict} (best elsewhere {elsewhere:.2f})"
+    )
     return Saved(item, message, before, image, elsewhere)

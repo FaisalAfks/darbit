@@ -3,6 +3,7 @@
 An app is named by its window title ("Roblox") or by its program file
 ("chrome.exe", or a full path to it).
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -32,8 +33,12 @@ _user32.GetWindowThreadProcessId.argtypes = (wintypes.HWND, ctypes.POINTER(winty
 _user32.PostMessageW.argtypes = (wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
 _kernel32.OpenProcess.restype = wintypes.HANDLE
 _kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
-_kernel32.QueryFullProcessImageNameW.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
-                                                 ctypes.POINTER(wintypes.DWORD))
+_kernel32.QueryFullProcessImageNameW.argtypes = (
+    wintypes.HANDLE,
+    wintypes.DWORD,
+    wintypes.LPWSTR,
+    ctypes.POINTER(wintypes.DWORD),
+)
 _kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
 _kernel32.TerminateProcess.argtypes = (wintypes.HANDLE, wintypes.UINT)
 

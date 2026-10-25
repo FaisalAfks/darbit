@@ -3,6 +3,7 @@
 An app is named by its window title ("Roblox") or by its program ("chrome.exe",
 or a full path to it).
 """
+
 from __future__ import annotations
 
 import os

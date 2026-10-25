@@ -1,8 +1,9 @@
 """The darbit command. See docs/tasks/T19-cli.md.
 
-    darbit new NAME | install GIT_URL | run [PATH] | app | keys
-    darbit capture … | guide | highlight | record NAME | play FILE | check | report
+darbit new NAME | install GIT_URL | run [PATH] | app | keys
+darbit capture … | guide | highlight | record NAME | play FILE | check | report
 """
+
 from __future__ import annotations
 
 import argparse

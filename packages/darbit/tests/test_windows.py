@@ -1,4 +1,5 @@
 """Finding an app's windows, against a made-up list of windows."""
+
 import pytest
 
 from darbit.platform import windows

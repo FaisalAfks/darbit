@@ -1,4 +1,5 @@
 """The run report: events written while a script runs, and the summary of a day."""
+
 import json
 
 import numpy as np
@@ -32,7 +33,10 @@ def test_steps_record_how_they_ended(logs):
         raise ValueError("no Start button")
     ends = [e for e in events(logs) if e["event"] == "step" and e["state"] != "started"]
     assert [(e["step"], e["state"]) for e in ends] == [
-        ("Speed Raid > pick", "ok"), ("Speed Raid", "ok"), ("Boss Rush", "failed")]
+        ("Speed Raid > pick", "ok"),
+        ("Speed Raid", "ok"),
+        ("Boss Rush", "failed"),
+    ]
     assert ends[2]["reason"] == "no Start button" and ends[2]["screenshot"]
 
 
@@ -58,5 +62,5 @@ def test_the_summary(logs, tmp_path):
 
 def test_a_line_cut_short_is_ignored(tmp_path):
     path = tmp_path / "report.jsonl"
-    path.write_text(json.dumps({"event": "x"}) + "\n{\"event\": \"y", encoding="utf-8")
+    path.write_text(json.dumps({"event": "x"}) + '\n{"event": "y', encoding="utf-8")
     assert read(path) == [{"event": "x"}]

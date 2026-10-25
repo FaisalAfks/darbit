@@ -4,6 +4,7 @@ The log (logs/<day>.log) is for reading. The run report (logs/report-<day>.jsonl
 one JSON line per event (searches, clicks, steps) for tools to summarise:
 python -m darbit.tools.report.
 """
+
 from __future__ import annotations
 
 import json

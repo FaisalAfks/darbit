@@ -9,6 +9,7 @@ Each step records when it started, how long it took and how it ended: ok, failed
 Steps inside steps are recorded with their path, e.g. "Speed Raid > pick a character".
 Bots can add their own events with d.record("speed raid done", character="Naruto").
 """
+
 from __future__ import annotations
 
 import threading

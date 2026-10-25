@@ -1,4 +1,5 @@
 """Finding and waiting against a fake screen."""
+
 import numpy as np
 import pytest
 
@@ -74,8 +75,14 @@ def test_check_lists_missing_images(fake):
 
 
 def test_several_targets_cost_one_capture_per_look(fake, tmp_path, monkeypatch):
-    save(tmp_path / "A", np.random.default_rng(5).integers(0, 255, (20, 30, 3), dtype=np.uint8), region=[0, 0, 200, 200])
-    save(tmp_path / "B", np.random.default_rng(6).integers(0, 255, (20, 30, 3), dtype=np.uint8), region=[300, 100, 200, 200])
+    save(
+        tmp_path / "A", np.random.default_rng(5).integers(0, 255, (20, 30, 3), dtype=np.uint8), region=[0, 0, 200, 200]
+    )
+    save(
+        tmp_path / "B",
+        np.random.default_rng(6).integers(0, 255, (20, 30, 3), dtype=np.uint8),
+        region=[300, 100, 200, 200],
+    )
     real = screen.grab
     grabs = []
     monkeypatch.setattr(screen, "grab", lambda region=None: grabs.append(region) or real(region))
@@ -89,7 +96,10 @@ def test_several_targets_cost_one_capture_per_look(fake, tmp_path, monkeypatch):
 
 
 def test_a_target_is_only_searched_in_its_own_region(fake, tmp_path):
-    save(tmp_path / "Play.Here", np.random.default_rng(2).integers(0, 255, (20, 30, 3), dtype=np.uint8),
-         region=[0, 0, 100, 100])
+    save(
+        tmp_path / "Play.Here",
+        np.random.default_rng(2).integers(0, 255, (20, 30, 3), dtype=np.uint8),
+        region=[0, 0, 100, 100],
+    )
     fake((300, 200))  # the same picture, outside Play.Here's region
     assert d.exists("Play.Here") is None

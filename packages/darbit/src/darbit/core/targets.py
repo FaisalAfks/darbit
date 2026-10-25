@@ -8,6 +8,7 @@ A target saved by the capture tool is two files with the same name:
 
 Every field is optional. A target with only a location and no image is a point.
 """
+
 from __future__ import annotations
 
 import json

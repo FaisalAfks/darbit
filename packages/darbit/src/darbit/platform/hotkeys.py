@@ -3,6 +3,7 @@
 RegisterHotKey on one thread with its own message loop. The stop key always works: if the
 keymap can't be read, it falls back to ctrl+alt+q.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable

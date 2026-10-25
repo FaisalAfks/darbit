@@ -45,14 +45,14 @@ Keys are sent by their position on the keyboard, so games get them and the keybo
 ## Settings
 
 ```python
-d.settings.timeout = 3           # how long actions wait for a target
-d.settings.similarity = 0.7      # default similarity
-d.settings.glide = 0.5           # seconds the mouse takes to move
-d.settings.scan_rate = 5         # searches per second while waiting
-d.settings.window = "Roblox"     # bring this window to the front before any input
+d.settings.timeout = 3  # how long actions wait for a target
+d.settings.similarity = 0.7  # default similarity
+d.settings.glide = 0.5  # seconds the mouse takes to move
+d.settings.scan_rate = 5  # searches per second while waiting
+d.settings.window = "Roblox"  # bring this window to the front before any input
 d.settings.missing_images = "skip"  # treat a missing image file as never found, instead of an error
-d.settings.screenshot_after = 20 # save a screenshot when a wait this long runs out
-d.stop_key("ctrl+alt+q")         # the stop hotkey
+d.settings.screenshot_after = 20  # save a screenshot when a wait this long runs out
+d.stop_key("ctrl+alt+q")  # the stop hotkey
 ```
 
 ## Stopping
