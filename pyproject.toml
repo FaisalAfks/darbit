@@ -10,7 +10,7 @@ darbit = { workspace = true }
 
 [dependency-groups]
 dev = ["darbit", "pytest>=8", "ruff>=0.6", "pre-commit>=3.7"]
-docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.26"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=1.0.8"]
 
 [tool.uv]
 default-groups = ["dev"]
