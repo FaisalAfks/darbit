@@ -1,5 +1,7 @@
 # T14 Run file format
 
+> **Redefined 2026-10-25** ([ADR 0007](../decisions/0007-studio-flows-and-actions.md)): run files are **flows**. The same model also holds checks (`wait_for`, `if`/`else`, `until`, `retry`, `on_fail`), `repeat`, `set`, calls, and functions (`define`, `call`, `return`), so the recorder, the player, the flow editor (T27) and export (T28) share it.
+
 **Goal:** the YAML format for recorded runs, its model in Python, and a JSON Schema so editors check and complete it.
 
 **Depends on:** nothing. **Issue:** #49. **Milestone:** v0.4. **Design:** [design.md §8](../design.md).
