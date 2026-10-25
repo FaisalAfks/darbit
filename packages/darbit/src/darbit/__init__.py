@@ -43,7 +43,7 @@ from .runtime.state import State, Timer
 from .runtime.steps import step
 from .settings import settings
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 def stop_key(combo: str) -> None:
