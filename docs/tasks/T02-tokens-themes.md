@@ -1,5 +1,7 @@
 # T02 Design tokens, themes and motion
 
+> **Front end done 2026-10-26:** the four themes with the reviewed values, `color-scheme` and a forced-colors fallback, motion with end values and reduced-motion fades, `scripts/check-tokens.ts` (also refuses colours outside the token files), and windows following each other through storage. Left for T05: saving `ui.theme` on the server, `theme.changed` from it, and serving a custom `theme.toml`.
+
 **Goal:** every colour, size and motion value as CSS variables in one place, with four themes and custom themes from a file.
 
 **Depends on:** T01. **Issue:** #45. **Milestone:** v0.3. **Spec:** [docs/style/ui/design-system.md](../style/ui/design-system.md).

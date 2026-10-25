@@ -1,11 +1,12 @@
-<!-- Cycles the themes, like ctrl+alt+t. -->
+<!-- Cycles the themes, like ctrl+alt+t, and shows the current one (also when another window changed it). -->
 <script lang="ts">
-  import { cycleTheme } from "$lib/theme";
+  import { currentTheme, cycleTheme, onThemeChange } from "$lib/theme";
 
-  let name = $state(document.documentElement.dataset.theme ?? "glass-dark");
+  let name = $state(currentTheme());
+  $effect(() => onThemeChange((now) => (name = now)));
 </script>
 
-<button onclick={() => (name = cycleTheme())} title="Theme (ctrl+alt+t)">◐ {name}</button>
+<button onclick={() => cycleTheme()} title="Theme (ctrl+alt+t)" aria-label="Theme: {name}, change">◐ {name}</button>
 
 <style>
   button {

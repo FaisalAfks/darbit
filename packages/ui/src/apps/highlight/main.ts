@@ -2,10 +2,10 @@
 import { mount } from "svelte";
 import { connect, request } from "$lib/api";
 import { listen, setKeymap } from "$lib/keymap";
-import { applyTheme } from "$lib/theme";
+import { startTheme } from "$lib/theme";
 import App from "./App.svelte";
 
-applyTheme();
+startTheme();
 mount(App, { target: document.getElementById("app")! });
 
 connect()

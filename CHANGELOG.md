@@ -10,6 +10,7 @@
 - Targets follow their window: taken with `--window`, a target's region, point and picture move and resize with the window; a target taken at another display scaling is resized; a resized target not found is tried once at nearby sizes
 - Setup guides: `guide.toml` lists the screens to open and the targets to take on each, in order; `python -m darbit.capture --guide guide.toml` walks through it, and `--guide capture.txt` converts a list once
 - The web UI package builds: `npm install`, `npm run build` puts every window's page into the package, and the wheel ships it; CI checks and builds it
+- UI themes: glass-dark, glass-light, midnight and high-contrast with every token, a theme chosen in one window shows in the others, and `npm run check` fails on a missing token or a colour outside the token files
 
 ## 0.2.0 - 2026-10-25
 
