@@ -1,6 +1,6 @@
 """{name}: wait for a button, click it, and repeat until stopped (Ctrl+Alt+Q).
 
-Take the button's picture first:  darbit capture Hello.Button
+Take the button's picture first:  darbit guide --folder assets/images
 """
 
 import darbit as d

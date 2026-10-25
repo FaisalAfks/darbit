@@ -19,17 +19,31 @@ def git(*args, cwd=None):
 def test_new_makes_a_project(tmp_path):
     assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 0
     folder = tmp_path / "my-bot"
-    for name in ("darbit.toml", "bot.py", "guide.toml", ".gitignore", "images/.gitkeep"):
+    for name in (
+        "pyproject.toml",
+        "darbit.toml",
+        "guide.toml",
+        ".gitignore",
+        "assets/images/.gitkeep",
+        "src/my_bot/__init__.py",
+        "src/my_bot/bot.py",
+    ):
         assert (folder / name).is_file(), name
     project = load(folder)
     assert project.name == "my-bot"
+    assert project.entry == "my_bot.bot:main"
+    assert project.images == ["assets/images"]
     assert project.darbit.startswith(">=0.")
+    pyproject = tomllib.loads((folder / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["scripts"] == {"my-bot": "my_bot.bot:main"}
+    assert pyproject["tool"]["uv"]["sources"]["darbit"]["tag"].startswith("v0.")
     tomllib.loads((folder / "guide.toml").read_text(encoding="utf-8"))
-    compile((folder / "bot.py").read_text(encoding="utf-8"), "bot.py", "exec")
+    compile((folder / "src/my_bot/bot.py").read_text(encoding="utf-8"), "bot.py", "exec")
 
 
 def test_new_refuses_a_bad_name_or_a_full_folder(tmp_path, capsys):
     assert cli.main(["new", "my bot!", "--where", str(tmp_path)]) == 2
+    assert cli.main(["new", "1bot", "--where", str(tmp_path)]) == 2  # not a Python package name
     assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 0
     assert cli.main(["new", "my-bot", "--where", str(tmp_path)]) == 2
     assert "isn't empty" in capsys.readouterr().out
@@ -51,14 +65,15 @@ def test_name_from_url(url, name):
 def make_repo(tmp_path):
     """A bot repo with two releases and a newer commit after them."""
     repo = bots.new("test-bot", tmp_path / "source")
+    (repo / "pyproject.toml").unlink()  # no environment to make: no network in tests
     git("init", "--quiet", cwd=repo)
     git("add", ".", cwd=repo)
     git("commit", "--quiet", "-m", "first", cwd=repo)
     git("tag", "v0.9.0", cwd=repo)
-    (repo / "bot.py").write_text("print('v0.10')\n", encoding="utf-8")
+    (repo / "src/test_bot/bot.py").write_text("print('v0.10')\n", encoding="utf-8")
     git("commit", "--quiet", "-am", "second", cwd=repo)
     git("tag", "v0.10.0", cwd=repo)
-    (repo / "bot.py").write_text("print('not released')\n", encoding="utf-8")
+    (repo / "src/test_bot/bot.py").write_text("print('not released')\n", encoding="utf-8")
     git("commit", "--quiet", "-am", "third", cwd=repo)
     return repo
 
@@ -67,7 +82,7 @@ def test_install_clones_at_the_newest_release(tmp_path):
     repo = make_repo(tmp_path)
     folder = bots.install(str(repo), tmp_path / "bots")
     assert folder == tmp_path / "bots" / "test-bot"
-    assert (folder / "bot.py").read_text(encoding="utf-8") == "print('v0.10')\n"
+    assert (folder / "src/test_bot/bot.py").read_text(encoding="utf-8") == "print('v0.10')\n"
     assert bots.newest_tag(folder) == "v0.10.0"
     with pytest.raises(FileExistsError):
         bots.install(str(repo), tmp_path / "bots")
@@ -96,9 +111,10 @@ def test_entry_commands(tmp_path):
 
 def test_run_starts_the_entry_in_the_project(tmp_path):
     folder = bots.new("runner", tmp_path)
+    (folder / "pyproject.toml").unlink()  # run with this Python, not uv
+    (folder / "darbit.toml").write_text('[bot]\nname = "runner"\nentry = "bot.py"\n', encoding="utf-8")
     (folder / "bot.py").write_text("import sys\nopen('ran.txt', 'w').write('yes')\nsys.exit(3)\n", encoding="utf-8")
-    (folder / "src").mkdir()
-    assert cli.main(["run", str(folder / "src")]) == 3  # found from a folder inside the project
+    assert cli.main(["run", str(folder / "src" / "runner")]) == 3  # found from a folder inside the project
     assert (folder / "ran.txt").read_text(encoding="utf-8") == "yes"
 
 

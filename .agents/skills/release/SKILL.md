@@ -8,6 +8,8 @@ description: Release a new darbit version (SemVer tag, GitHub release with the w
 1. Make sure `main` is green in CI and everything for the release is merged.
 2. On a branch `release/vX.Y.Z`:
    - set `version` in `packages/darbit/pyproject.toml`;
+   - set `__version__` in `packages/darbit/src/darbit/__init__.py` (a test checks they match);
+   - set the `tag` in `examples/hello-bot/pyproject.toml` and the default darbit pin of `darbit new` follows `__version__` by itself;
    - in `CHANGELOG.md`, rename `## Unreleased` to `## X.Y.Z - YYYY-MM-DD` and start a new empty `## Unreleased` above it;
    - open a PR "Release vX.Y.Z" that says `Closes #<release issue>`. The owner merges.
 3. After the merge, tag `main`: `git tag vX.Y.Z && git push origin vX.Y.Z`. The release workflow builds the wheel and makes the GitHub release, with notes generated from the PR labels.

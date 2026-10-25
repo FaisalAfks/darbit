@@ -1,6 +1,6 @@
 """The smallest darbit bot: wait for a button, click it, and repeat until stopped (Ctrl+Alt+Q).
 
-Capture the button first:  python -m darbit.capture Hello.Button
+Take the button's picture first:  darbit guide --folder assets/images
 """
 
 import darbit as d

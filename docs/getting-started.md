@@ -53,7 +53,7 @@ Click a button to box it (click again for the next bigger thing), or drag a box;
 ## The darbit command
 
 ```
-darbit new my-bot                                  # a project: darbit.toml, bot.py, guide.toml, images/
+darbit new my-bot                                  # a project laid out like examples/hello-bot
 darbit install https://github.com/me/my-bot        # cloned at its newest release, with its own environment
 darbit run                                         # the project here (or above), with its environment
 darbit capture Gui.Play | guide | check | report   # the tools, same options as python -m darbit.<tool>

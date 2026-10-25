@@ -3,10 +3,10 @@
 name = "{name}"
 version = "0.1.0"
 darbit = "{darbit}"
-entry = "bot.py"
+entry = "{package}.bot:main"
 
 [settings]
 similarity = 0.85
 
 [images]
-folders = ["images"]
+folders = ["assets/images"]

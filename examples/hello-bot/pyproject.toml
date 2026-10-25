@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "hello-bot"
 version = "0.1.0"
@@ -5,6 +9,12 @@ description = "The smallest darbit bot"
 requires-python = ">=3.11"
 dependencies = ["darbit"]
 
+[project.scripts]
+hello-bot = "hello_bot.bot:main"
+
 # A bot pins darbit to a release, so it only changes when upgraded on purpose (darbit decision 0001).
 [tool.uv.sources]
 darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.2.0", subdirectory = "packages/darbit" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hello_bot"]

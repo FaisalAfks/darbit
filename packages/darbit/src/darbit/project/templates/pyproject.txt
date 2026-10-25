@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{name}"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["darbit"]
+
+[project.scripts]
+{name} = "{package}.bot:main"
+
+# darbit pinned to a release, so the bot only changes when upgraded on purpose (darbit decision 0001).
+[tool.uv.sources]
+darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v{version}", subdirectory = "packages/darbit" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{package}"]

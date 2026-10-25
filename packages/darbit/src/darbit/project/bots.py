@@ -28,23 +28,28 @@ def good_name(name: str) -> bool:
 
 
 def new(name: str, where: Path) -> Path:
-    """A new project folder `where/name` with a manifest, a bot, a setup guide and an images folder."""
-    if not good_name(name):
-        raise ValueError(f"{name!r}: a bot name is letters, digits, - and _")
+    """A new project folder `where/name`: the layout every bot has (see examples/hello-bot)."""
+    package = name.replace("-", "_")
+    if not good_name(name) or not package.isidentifier():
+        raise ValueError(f"{name!r}: a bot name starts with a letter and has letters, digits, - and _")
     folder = where / name
     if folder.exists() and any(folder.iterdir()):
         raise FileExistsError(f"{folder} already exists and isn't empty")
-    (folder / "images").mkdir(parents=True, exist_ok=True)
-    (folder / "images" / ".gitkeep").write_text("", encoding="utf-8")
+    (folder / "assets" / "images").mkdir(parents=True, exist_ok=True)
+    (folder / "assets" / "images" / ".gitkeep").write_text("", encoding="utf-8")
+    (folder / "src" / package).mkdir(parents=True, exist_ok=True)
     minor = ".".join(__version__.split(".")[:2])
     for template, target in (
+        ("pyproject.txt", "pyproject.toml"),
         ("darbit.toml", "darbit.toml"),
-        ("bot.py", "bot.py"),
         ("guide.toml", "guide.toml"),
         ("gitignore.txt", ".gitignore"),
+        ("init.py", f"src/{package}/__init__.py"),
+        ("bot.py", f"src/{package}/bot.py"),
     ):
         text = (TEMPLATES / template).read_text(encoding="utf-8")
-        text = text.replace("{name}", name).replace("{darbit}", f">={minor}")
+        text = text.replace("{name}", name).replace("{package}", package)
+        text = text.replace("{darbit}", f">={minor}").replace("{version}", __version__)
         (folder / target).write_text(text, encoding="utf-8", newline="\n")
     return folder
 
