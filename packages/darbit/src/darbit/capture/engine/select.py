@@ -5,6 +5,7 @@
 
 No size caps: the list goes from a letter or an icon up to whole menus, windows and the monitor.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
@@ -37,8 +38,9 @@ def fill(shot: np.ndarray, x: int, y: int, diff: int = FILL_DIFF) -> Region:
     """The area of similar colour connected to (x, y)."""
     h, w = shot.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
-    _, _, _, (bx, by, bw, bh) = cv2.floodFill(shot, mask, (x, y), 0, (diff,) * 3, (diff,) * 3,
-                                              4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8))
+    _, _, _, (bx, by, bw, bh) = cv2.floodFill(
+        shot, mask, (x, y), 0, (diff,) * 3, (diff,) * 3, 4 | cv2.FLOODFILL_MASK_ONLY | (255 << 8)
+    )
     return Region(int(bx), int(by), int(bw), int(bh))
 
 
@@ -50,8 +52,12 @@ def grow(shot: np.ndarray, inner: Region, x: int, y: int, limit: float = 1.0) ->
         if not (0 <= px < w and 0 <= py < h):
             continue
         around = fill(shot, px, py)
-        inside = around.x <= inner.x and around.y <= inner.y and around.right >= inner.right \
+        inside = (
+            around.x <= inner.x
+            and around.y <= inner.y
+            and around.right >= inner.right
             and around.bottom >= inner.bottom
+        )
         bigger = around.w * around.h > inner.w * inner.h
         small_enough = around.w * around.h <= limit * w * h
         if inside and bigger and small_enough and (best is None or around.w * around.h > best.w * best.h):

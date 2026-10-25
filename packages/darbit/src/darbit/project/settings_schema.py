@@ -1,5 +1,6 @@
 """A bot's own settings: declared in settings.toml, filled in config.toml, edited in the hub's form.
 See docs/tasks/T18-settings-form.md."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

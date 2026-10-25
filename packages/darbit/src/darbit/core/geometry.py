@@ -1,4 +1,5 @@
 """Points and rectangles in real screen pixels."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

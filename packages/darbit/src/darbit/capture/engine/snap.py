@@ -9,6 +9,7 @@ texture or a letter doesn't pull a box. The overlay gets `lines()` once per free
 the window (packages/ui/src/apps/capture/snap.ts) with the same rules; both pass
 packages/darbit/tests/data/capture/snap_cases.json.
 """
+
 from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
@@ -73,8 +74,9 @@ def _around(segments: list[tuple[int, int, int]], low: int, high: int) -> list[t
     return ordered[bisect_left(positions, low) : bisect_right(positions, high)]
 
 
-def _nearest(segments: list[tuple[int, int, int]], at: int, span: tuple[int, int], reach: int,
-             side: int) -> tuple[int, int, int] | None:
+def _nearest(
+    segments: list[tuple[int, int, int]], at: int, span: tuple[int, int], reach: int, side: int
+) -> tuple[int, int, int] | None:
     """The line nearest to `at` (within reach) that runs along at least OVERLAP of `span`; longer wins ties.
     Lines on `side` of it (-1 lower, +1 higher) within BAND are the same border, so the walk goes to the
     last of them: the border's outer side when snapping outward, its inner side when inward."""
@@ -90,8 +92,13 @@ def _nearest(segments: list[tuple[int, int, int]], at: int, span: tuple[int, int
     return best
 
 
-def snap_box(found: Lines, box: Region, moving: set[Edge] | frozenset[Edge], reach: int = 6,
-             border: Literal["include", "exclude"] = "include") -> tuple[Region, list[Guide]]:
+def snap_box(
+    found: Lines,
+    box: Region,
+    moving: set[Edge] | frozenset[Edge],
+    reach: int = 6,
+    border: Literal["include", "exclude"] = "include",
+) -> tuple[Region, list[Guide]]:
     """Move only the `moving` edges, each onto the nearest line within `reach` that runs along at least 30% of
     that side. With border="include" a border is kept in the box (edges go to its outer side), with "exclude"
     left out (its inner side). Returns the box and the lines it snapped to, for drawing."""

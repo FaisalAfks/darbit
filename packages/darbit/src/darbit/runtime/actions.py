@@ -1,4 +1,5 @@
 """Mouse and keyboard actions on targets, matches and locations."""
+
 from __future__ import annotations
 
 from ..core.geometry import Location, Region

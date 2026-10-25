@@ -48,8 +48,9 @@ def test_every_finds_each_copy_once():
 
 
 def test_click_point_uses_offset():
-    found = matching.best(Target(image="x", offset=(5, -5), _pixels=patch()), screen_with(patch(), (0, 0)),
-                          Region(0, 0, 300, 200), 0.9)
+    found = matching.best(
+        Target(image="x", offset=(5, -5), _pixels=patch()), screen_with(patch(), (0, 0)), Region(0, 0, 300, 200), 0.9
+    )
     assert found.point == Location(20, 5)
 
 

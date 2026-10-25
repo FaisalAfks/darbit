@@ -1,4 +1,5 @@
 """Screenshots in the log folder: saved as JPEG, and only the newest kept (old PNGs included)."""
+
 import os
 
 import numpy as np

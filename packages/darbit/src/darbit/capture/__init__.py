@@ -22,6 +22,7 @@ A session, guided by a card at the top centre of the screen:
 Targets are saved in the `images` folder next to the list or script, or in
 `images` here for names on the command line; --folder changes it.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -108,7 +109,9 @@ def _main(argv: list[str] | None = None) -> int:
         if len(items) == 1:
             kind = "location" if args.location else "region" if args.region else items[0].kind
             return _single(Item(items[0].name, kind), folder, args.delay)
-    print(f"{len(items)} to capture into {folder}; press {args.hotkey.upper()} when each is on screen, "
-          "Ctrl+Alt+Q to finish")
+    print(
+        f"{len(items)} to capture into {folder}; press {args.hotkey.upper()} when each is on screen, "
+        "Ctrl+Alt+Q to finish"
+    )
     Session(items, folder, args.hotkey, args.window, list_file).run()
     return 0

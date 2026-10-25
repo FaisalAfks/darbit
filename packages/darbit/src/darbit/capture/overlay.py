@@ -1,16 +1,17 @@
 """The frozen screen where a target is boxed or pointed at.
 
-    click           box what's under the mouse; click the same spot again for the next bigger thing,
-                    right-click for smaller
-    drag            draw the box; edges snap onto borders nearby (hold Alt to stop)
-    Shift+drag      the image's search region (or R, then drag)
-    Ctrl+click      the image's click point (or C, then click)
-    arrows          move the box 1 pixel; Shift+arrows resize it
+click           box what's under the mouse; click the same spot again for the next bigger thing,
+                right-click for smaller
+drag            draw the box; edges snap onto borders nearby (hold Alt to stop)
+Shift+drag      the image's search region (or R, then drag)
+Ctrl+click      the image's click point (or C, then click)
+arrows          move the box 1 pixel; Shift+arrows resize it
 
-    Enter           save            Tab        skip
-    Space           take a new shot  Backspace  undo the last capture
-    Esc             back to the card
+Enter           save            Tab        skip
+Space           take a new shot  Backspace  undo the last capture
+Esc             back to the card
 """
+
 from __future__ import annotations
 
 import tkinter as tk
@@ -36,8 +37,17 @@ def _bgr(colour: str) -> tuple[int, int, int]:
 
 
 class Overlay:
-    def __init__(self, root: tk.Tk, shot: np.ndarray, origin: Region, kind: str, title: str, done: Done,
-                 counter: str = "", message: str = "") -> None:
+    def __init__(
+        self,
+        root: tk.Tk,
+        shot: np.ndarray,
+        origin: Region,
+        kind: str,
+        title: str,
+        done: Done,
+        counter: str = "",
+        message: str = "",
+    ) -> None:
         self.shot, self.origin, self.kind, self.title, self.done = shot, origin, kind, title, done
         self.counter, self.message = counter, message
         self.result = Result()
@@ -55,8 +65,9 @@ class Overlay:
         self.window.overrideredirect(True)
         self.window.geometry(f"{origin.w}x{origin.h}+{origin.x}+{origin.y}")
         self.window.attributes("-topmost", True)
-        c = self.canvas = tk.Canvas(self.window, width=origin.w, height=origin.h, highlightthickness=0,
-                                    cursor="crosshair", bg="black")
+        c = self.canvas = tk.Canvas(
+            self.window, width=origin.w, height=origin.h, highlightthickness=0, cursor="crosshair", bg="black"
+        )
         c.pack()
         self.dim_photo = photo((shot * DIM).astype(np.uint8))
         c.create_image(0, 0, anchor="nw", image=self.dim_photo)
@@ -139,8 +150,11 @@ class Overlay:
 
     def _select(self, x: int, y: int) -> None:
         """A click: the smallest sensible box there, or the next bigger one when the same spot is clicked again."""
-        again = self._clicked_at is not None and abs(self._clicked_at[0] - x) < CLICK \
+        again = (
+            self._clicked_at is not None
+            and abs(self._clicked_at[0] - x) < CLICK
             and abs(self._clicked_at[1] - y) < CLICK
+        )
         if again and self._choices:
             self._step_choice(1)
             return
@@ -186,9 +200,11 @@ class Overlay:
 
     def _finish(self) -> None:
         r = self.result
-        ready = {"location": r.point is not None,
-                 "region": r.region is not None and r.region.w >= 3 and r.region.h >= 3,
-                 "image": r.image is not None and r.image.w >= 3 and r.image.h >= 3}[self.kind]
+        ready = {
+            "location": r.point is not None,
+            "region": r.region is not None and r.region.w >= 3 and r.region.h >= 3,
+            "image": r.image is not None and r.image.w >= 3 and r.image.h >= 3,
+        }[self.kind]
         if ready:
             self._close("save", r)
 
@@ -234,13 +250,27 @@ class Overlay:
             x0, y0, x1, y1 = self._local(r.region)
             c.create_rectangle(x0, y0, x1, y1, outline=Theme.DANGER, width=2, dash=(6, 4), tags="marks")
             g = r.region
-            c.create_text(x0 + 4, y0 - 4, anchor="sw", text=f"search region   {g.x}, {g.y} · {g.w} × {g.h}",
-                          fill=Theme.DANGER, font=(Theme.MONO, 9), tags="marks")
+            c.create_text(
+                x0 + 4,
+                y0 - 4,
+                anchor="sw",
+                text=f"search region   {g.x}, {g.y} · {g.w} × {g.h}",
+                fill=Theme.DANGER,
+                font=(Theme.MONO, 9),
+                tags="marks",
+            )
         if r.image:
             x0, y0, x1, y1 = self._local(r.image)
             c.create_rectangle(x0, y0, x1, y1, outline=Theme.OK, width=2, tags="marks")
-            c.create_text(x0, y1 + 4, anchor="nw", text=f"{r.image.w} × {r.image.h}", fill=Theme.OK,
-                          font=(Theme.MONO, 9), tags="marks")
+            c.create_text(
+                x0,
+                y1 + 4,
+                anchor="nw",
+                text=f"{r.image.w} × {r.image.h}",
+                fill=Theme.OK,
+                font=(Theme.MONO, 9),
+                tags="marks",
+            )
         point = r.point or (r.image.center if r.image else None)
         if point:
             x, y = point.x - self.origin.x, point.y - self.origin.y
@@ -248,8 +278,15 @@ class Overlay:
             c.create_line(x - 12, y, x + 13, y, fill=Theme.ACCENT, width=1, tags="marks")
             c.create_line(x, y - 12, x, y + 13, fill=Theme.ACCENT, width=1, tags="marks")
             if r.point:
-                c.create_text(x + 12, y + 10, anchor="nw", text=f"{r.point.x}, {r.point.y}", fill=Theme.ACCENT,
-                              font=(Theme.MONO, 9), tags="marks")
+                c.create_text(
+                    x + 12,
+                    y + 10,
+                    anchor="nw",
+                    text=f"{r.point.x}, {r.point.y}",
+                    fill=Theme.ACCENT,
+                    font=(Theme.MONO, 9),
+                    tags="marks",
+                )
         self._draw_bar()
 
     def _draw_zoom(self, x: int, y: int) -> None:
@@ -270,12 +307,19 @@ class Overlay:
         zy = y + 28 if y + 28 + size + 22 < self.origin.h else y - 28 - size - 22
         canvas = self.canvas
         canvas.delete("zoom")
-        rounded(canvas, zx - 3, zy - 3, zx + size + 3, zy + size + 25, 8, fill=Theme.CARD, outline=Theme.LINE,
-                tags="zoom")
+        rounded(
+            canvas, zx - 3, zy - 3, zx + size + 3, zy + size + 25, 8, fill=Theme.CARD, outline=Theme.LINE, tags="zoom"
+        )
         canvas.itemconfigure(self.zoom, image=self.zoom_photo)
         canvas.coords(self.zoom, zx, zy)
-        canvas.create_text(zx + size / 2, zy + size + 11, text=f"{self.mouse[0]}, {self.mouse[1]}",
-                           fill=Theme.TEXT, font=(Theme.MONO, 9), tags="zoom")
+        canvas.create_text(
+            zx + size / 2,
+            zy + size + 11,
+            text=f"{self.mouse[0]}, {self.mouse[1]}",
+            fill=Theme.TEXT,
+            font=(Theme.MONO, 9),
+            tags="zoom",
+        )
         canvas.tag_raise("zoom")
         canvas.tag_raise(self.zoom)
 
@@ -288,19 +332,30 @@ class Overlay:
             bx, by = (box.x - self.origin.x - x0) * ZOOM, (box.y - self.origin.y - y0) * ZOOM
             cv2.rectangle(big, (bx, by), (bx + box.w * ZOOM - 1, by + box.h * ZOOM - 1), _bgr(colour), 2)
         if r.point:
-            px, py = (r.point.x - self.origin.x - x0) * ZOOM + ZOOM // 2, (r.point.y - self.origin.y - y0) * ZOOM + ZOOM // 2
+            px, py = (
+                (r.point.x - self.origin.x - x0) * ZOOM + ZOOM // 2,
+                (r.point.y - self.origin.y - y0) * ZOOM + ZOOM // 2,
+            )
             cv2.drawMarker(big, (px, py), _bgr(Theme.ACCENT), cv2.MARKER_CROSS, 3 * ZOOM, 2)
 
     def _draw_bar(self) -> None:
         c = self.canvas
         c.delete("bar")
-        hints = {"image": "click or drag  image   Shift+drag  region   Ctrl+click  click point",
-                 "location": "click  point", "region": "click or drag  region"}[self.kind]
-        parts = [(f"{self.counter}  " if self.counter else "", Theme.MUTED, (Theme.FONT, 10)),
-                 (self.title, Theme.TEXT, (Theme.BOLD, 11)),
-                 (f"  {self.mode}  ", Theme.KIND_COLOR.get(self.kind, Theme.ACCENT), (Theme.FONT, 10)),
-                 (f"{hints}    Enter  save   Space  new shot   Tab  skip   Backspace  undo   Esc  card",
-                  Theme.MUTED, (Theme.FONT, 10))]
+        hints = {
+            "image": "click or drag  image   Shift+drag  region   Ctrl+click  click point",
+            "location": "click  point",
+            "region": "click or drag  region",
+        }[self.kind]
+        parts = [
+            (f"{self.counter}  " if self.counter else "", Theme.MUTED, (Theme.FONT, 10)),
+            (self.title, Theme.TEXT, (Theme.BOLD, 11)),
+            (f"  {self.mode}  ", Theme.KIND_COLOR.get(self.kind, Theme.ACCENT), (Theme.FONT, 10)),
+            (
+                f"{hints}    Enter  save   Space  new shot   Tab  skip   Backspace  undo   Esc  card",
+                Theme.MUTED,
+                (Theme.FONT, 10),
+            ),
+        ]
         if self.message:
             parts.append((f"    {self.message}", Theme.WARN, (Theme.FONT, 10)))
         x, y = 0, self.origin.h - 34

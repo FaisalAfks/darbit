@@ -5,6 +5,7 @@
 
 Both need the `app` extra; without it they log what's missing and return None.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,8 +15,12 @@ from ..core.geometry import Region
 from ..core.targets import Target
 
 
-def capture(name: str, kind: Literal["image", "region", "location"] = "image", say: str | None = None,
-            region: Region | str | None = None) -> Target | None:
+def capture(
+    name: str,
+    kind: Literal["image", "region", "location"] = "image",
+    say: str | None = None,
+    region: Region | str | None = None,
+) -> Target | None:
     """Freeze the screen for one target, with the bot's own text. Returns the saved target, or None."""
     raise NotImplementedError("TODO(T12)")
 

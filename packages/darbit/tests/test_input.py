@@ -1,4 +1,5 @@
 """Mouse and keyboard, recorded instead of sent: nothing moves or types."""
+
 import pytest
 
 import darbit as d

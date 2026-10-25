@@ -15,6 +15,7 @@ in the script (a wait, a click, a sleep...) raises Interrupted, once. The script
 decides what to do. An observer fires again only after what it watches has gone away
 and come back. All image observers share one screen capture per tick.
 """
+
 from __future__ import annotations
 
 import threading

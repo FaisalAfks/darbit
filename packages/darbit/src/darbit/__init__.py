@@ -1,12 +1,13 @@
 """Simple GUI automation for Windows.
 
-    import darbit as d
+import darbit as d
 
-    d.click("lobby/play")                  # True if clicked, False if not found in time
-    if m := d.exists("run/enemies_left", 90):
-        d.press("tab")
-    d.press(*"54132")
+d.click("lobby/play")                  # True if clicked, False if not found in time
+if m := d.exists("run/enemies_left", 90):
+    d.press("tab")
+d.press(*"54132")
 """
+
 import atexit as _atexit
 
 from .platform import screen as _screen

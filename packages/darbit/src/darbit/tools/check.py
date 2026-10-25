@@ -15,6 +15,7 @@ Each target is scored inside its own search region and everywhere else on the sc
 With several screenshots, each target gets its best result over all of them. Results
 are added to state/check.jsonl, so scores can be followed over time.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -48,8 +49,9 @@ class Result:
     screen: str  # which screen it was found on
 
 
-def _region_best(result: np.ndarray, origin: Region, area: Region | None, size: tuple[int, int]
-                 ) -> tuple[float, tuple[int, int]]:
+def _region_best(
+    result: np.ndarray, origin: Region, area: Region | None, size: tuple[int, int]
+) -> tuple[float, tuple[int, int]]:
     """The best score in a score map for positions where the whole image fits inside `area`."""
     h, w = size
     if area is not None:

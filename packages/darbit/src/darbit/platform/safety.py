@@ -7,6 +7,7 @@ a sleep that's already running.
 An observer that fires posts an interrupt: held keys are let go and the next darbit
 call in the script's main thread raises Interrupted, once.
 """
+
 from __future__ import annotations
 
 import atexit

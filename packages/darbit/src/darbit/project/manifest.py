@@ -1,5 +1,6 @@
 """darbit.toml: a bot's name, version, entry, game window, accent, and its darbit settings.
 See docs/tasks/T17-projects.md."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

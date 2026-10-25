@@ -1,8 +1,9 @@
 """Setup guides: an ordered walk-through of what to capture for a bot. See docs/tasks/T12-setup-guide.md.
 
-    guide = load(Path("guide.toml"))
-    progress(guide, Path("images"))      # what's done, what's next
+guide = load(Path("guide.toml"))
+progress(guide, Path("images"))      # what's done, what's next
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

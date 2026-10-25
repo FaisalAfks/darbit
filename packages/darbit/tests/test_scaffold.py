@@ -1,4 +1,5 @@
 """The parts still being built import without the `app` extra, and their written pieces work."""
+
 import importlib
 
 import pytest
@@ -8,13 +9,28 @@ from darbit.server import events
 from darbit.server.protocol import MESSAGES
 
 MODULES = [
-    "darbit.keymap", "darbit.cli", "darbit.ui",
-    "darbit.server", "darbit.server.app", "darbit.server.events", "darbit.server.protocol", "darbit.server.hub",
-    "darbit.desktop", "darbit.capture.engine", "darbit.capture.guide", "darbit.capture.service",
-    "darbit.runtime.highlight", "darbit.runtime.capture_api",
-    "darbit.runs", "darbit.runs.recorder", "darbit.runs.player",
-    "darbit.platform.hooks", "darbit.platform.hotkeys", "darbit.platform.dxgi",
-    "darbit.project", "darbit.project.settings_schema",
+    "darbit.keymap",
+    "darbit.cli",
+    "darbit.ui",
+    "darbit.server",
+    "darbit.server.app",
+    "darbit.server.events",
+    "darbit.server.protocol",
+    "darbit.server.hub",
+    "darbit.desktop",
+    "darbit.capture.engine",
+    "darbit.capture.guide",
+    "darbit.capture.service",
+    "darbit.runtime.highlight",
+    "darbit.runtime.capture_api",
+    "darbit.runs",
+    "darbit.runs.recorder",
+    "darbit.runs.player",
+    "darbit.platform.hooks",
+    "darbit.platform.hotkeys",
+    "darbit.platform.dxgi",
+    "darbit.project",
+    "darbit.project.settings_schema",
 ]
 
 

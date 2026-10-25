@@ -1,4 +1,5 @@
 """Defaults that scripts can change: `darbit.settings.timeout = 10`."""
+
 from __future__ import annotations
 
 import sys

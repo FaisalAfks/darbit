@@ -1,4 +1,5 @@
 """pywebview windows with the Win32 styles each kind needs. See docs/tasks/T06-desktop-windows.md."""
+
 from __future__ import annotations
 
 from typing import Literal
@@ -14,8 +15,9 @@ WS_EX_NOACTIVATE = 0x08000000
 
 def styles(kind: Kind) -> int:
     """The extended window styles for a kind (a pure function, so it can be tested)."""
-    raise NotImplementedError("TODO(T06): bar = topmost | toolwindow | noactivate; clickthrough adds "
-                              "layered | transparent; overlay = topmost")
+    raise NotImplementedError(
+        "TODO(T06): bar = topmost | toolwindow | noactivate; clickthrough adds layered | transparent; overlay = topmost"
+    )
 
 
 class Window:

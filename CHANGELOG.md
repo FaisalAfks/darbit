@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- All code is formatted with `ruff format`, checked in CI and before each commit
 - A script's logs and saved state go in its `.darbit/` folder (`.darbit/logs`, `.darbit/state`) instead of `logs/` and `state/`; set `settings.logs` / `settings.state` to keep the old places
 - `darbit.paths`: the folders darbit uses (user settings in `%APPDATA%\darbit`, app data and cache in `%LOCALAPPDATA%\darbit`, a project's `.darbit`)
 - Issue forms, a PR checklist, Dependabot, and a release workflow that builds the package and makes the GitHub release from a tag

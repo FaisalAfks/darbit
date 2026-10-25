@@ -1,12 +1,26 @@
 """The run file model: checkpoints, goals, steps and reusable actions. See docs/tasks/T14-run-files.md."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-STEP_KINDS = ("press", "hold", "release", "write", "wait", "click", "right_click", "move", "drag", "scroll",
-              "turn", "until", "do")
+STEP_KINDS = (
+    "press",
+    "hold",
+    "release",
+    "write",
+    "wait",
+    "click",
+    "right_click",
+    "move",
+    "drag",
+    "scroll",
+    "turn",
+    "until",
+    "do",
+)
 
 
 @dataclass

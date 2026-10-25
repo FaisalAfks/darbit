@@ -24,10 +24,10 @@ darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.2.0", subdire
 ```python
 import darbit as d
 
-d.settings.timeout = 10              # how long clicks wait for their target
+d.settings.timeout = 10  # how long clicks wait for their target
 
-if d.click("Gui.Play"):              # waits up to 10 s; False if it never shows
-    menu = d.wait("Play.Raid", "Roblox.Disconnected")   # the first of several
+if d.click("Gui.Play"):  # waits up to 10 s; False if it never shows
+    menu = d.wait("Play.Raid", "Roblox.Disconnected")  # the first of several
     if menu and menu.name == "Play.Raid.png":
         d.press("tab")
 ```

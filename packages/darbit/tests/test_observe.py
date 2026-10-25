@@ -1,4 +1,5 @@
 """Observers and interrupts, with a fake screen and no background thread."""
+
 import threading
 import time
 

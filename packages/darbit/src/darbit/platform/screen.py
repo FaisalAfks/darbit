@@ -1,4 +1,5 @@
 """Screen captures in real pixels."""
+
 from __future__ import annotations
 
 import ctypes

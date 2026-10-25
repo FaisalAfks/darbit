@@ -2,6 +2,7 @@
 
 Registered with server.app.handles when the server starts; nothing here imports the server.
 """
+
 from __future__ import annotations
 
 

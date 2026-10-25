@@ -29,8 +29,10 @@ def test_list_file(tmp_path):
     from darbit.capture.common import Item, add_to_list, captured, read_list
 
     path = tmp_path / "capture.txt"
-    path.write_text("# what the bot needs\n\nGui.Play   # lobby: Play button\nlocation: afk/spot\n"
-                    "region: menus/bag  # the bag\n", encoding="utf-8")
+    path.write_text(
+        "# what the bot needs\n\nGui.Play   # lobby: Play button\nlocation: afk/spot\nregion: menus/bag  # the bag\n",
+        encoding="utf-8",
+    )
     items = read_list(path)
     assert items == [Item("Gui.Play"), Item("afk/spot", "location"), Item("menus/bag", "region")]
     assert items[0].note == "lobby: Play button"
@@ -50,8 +52,9 @@ def test_undo_restores_what_was_there(tmp_path):
     shot = np.random.default_rng(1).integers(0, 255, (200, 300, 3), dtype=np.uint8)
     (tmp_path / "Old.png").write_bytes(b"before")
     first = save_result(tmp_path, Item("New"), Result(image=Region(10, 10, 30, 20)), shot, Region(0, 0, 300, 200), None)
-    second = save_result(tmp_path, Item("Old"), Result(image=Region(50, 50, 30, 20)), shot, Region(0, 0, 300, 200),
-                         None)
+    second = save_result(
+        tmp_path, Item("Old"), Result(image=Region(50, 50, 30, 20)), shot, Region(0, 0, 300, 200), None
+    )
     assert (tmp_path / "New.png").is_file()
     undo(second)
     undo(first)

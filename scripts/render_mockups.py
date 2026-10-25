@@ -53,15 +53,28 @@ def shoot(name: str, query: str, width: int, height: int) -> Path:
     narrow = width < 504
     if narrow:
         frame = profile / "frame.html"
-        frame.write_text(f'<body style="margin:0;background:#000"><iframe src="{url}" '
-                         f'style="border:0;width:{width}px;height:{height}px"></iframe>', encoding="utf-8")
+        frame.write_text(
+            f'<body style="margin:0;background:#000"><iframe src="{url}" '
+            f'style="border:0;width:{width}px;height:{height}px"></iframe>',
+            encoding="utf-8",
+        )
         url, width = frame.as_uri(), 600
     command = [
-        str(EDGE), "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
-        f"--user-data-dir={profile}", "--force-device-scale-factor=1", f"--window-size={width},{height}",
-        "--virtual-time-budget=2500", f"--screenshot={target}", url,
+        str(EDGE),
+        "--headless=new",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--no-first-run",
+        f"--user-data-dir={profile}",
+        "--force-device-scale-factor=1",
+        f"--window-size={width},{height}",
+        "--virtual-time-budget=2500",
+        f"--screenshot={target}",
+        url,
     ]
-    subprocess.run(command, capture_output=True, timeout=60, check=False)  # Edge's exit code isn't reliable; the file is checked
+    subprocess.run(
+        command, capture_output=True, timeout=60, check=False
+    )  # Edge's exit code isn't reliable; the file is checked
     shutil.rmtree(profile, ignore_errors=True)
     if narrow:
         image = cv2.imread(str(target))

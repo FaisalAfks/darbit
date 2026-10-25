@@ -1,4 +1,5 @@
 """The capture engine on synthetic screens: click to select at every size, and snapping."""
+
 import json
 import time
 from pathlib import Path
@@ -24,8 +25,10 @@ def _screen(w: int = 2560, h: int = 1600) -> tuple[np.ndarray, dict[str, Region]
         "panel": Region(400, 300, 1000, 800),
         "button": Region(1600, 1150, 420, 94),
     }
-    for name, colour, thick, inside in (("window", (200, 120, 110), 3, (70, 40, 45)),
-                                         ("panel", (160, 160, 160), 2, (90, 60, 60))):
+    for name, colour, thick, inside in (
+        ("window", (200, 120, 110), 3, (70, 40, 45)),
+        ("panel", (160, 160, 160), 2, (90, 60, 60)),
+    ):
         r = parts[name]  # the border is inside the region, `thick` pixels wide
         shot[r.y : r.bottom, r.x : r.right] = colour
         shot[r.y + thick : r.bottom - thick, r.x + thick : r.right - thick] = inside

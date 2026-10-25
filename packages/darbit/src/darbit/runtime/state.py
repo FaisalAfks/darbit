@@ -11,6 +11,7 @@
 
 Every change is saved straight away, so a crash or the stop hotkey loses nothing.
 """
+
 from __future__ import annotations
 
 import json
@@ -126,4 +127,3 @@ class State:
         temporary = self.path.with_name(self.path.name + ".tmp")
         temporary.write_text(json.dumps(self.data, indent=2, sort_keys=True), encoding="utf-8")
         os.replace(temporary, self.path)
-
