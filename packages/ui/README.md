@@ -3,10 +3,10 @@
 The web front end of every darbit window: the hub, capture, highlight, the recorder bar and the run panel. The VS Code extension uses the same components.
 
 ```bash
-npm install
+npm install        # from the repo root (npm workspaces); versions are pinned exactly
 npm run dev        # http://127.0.0.1:5173/<app>/ ; windows load from here with DARBIT_UI_DEV=1
-npm run build      # into ../src/darbit/ui/static/
-npm run check
+npm run build      # into packages/darbit/src/darbit/ui/static/ (git-ignored, shipped in the wheel)
+npm run check      # svelte-check and TypeScript
 ```
 
 | Path | What |
@@ -18,4 +18,4 @@ npm run check
 | `src/lib/keymap.ts` | keys from `packages/darbit/src/darbit/keymap.toml` ([keys](../../docs/style/ui/keymap.md)) |
 | `src/apps/<name>/` | one app per window |
 
-Tasks: [docs/tasks](../docs/tasks/README.md), T01 to T03 for this package.
+Tasks: [docs/tasks](../../docs/tasks/README.md), T01 to T03 for this package.

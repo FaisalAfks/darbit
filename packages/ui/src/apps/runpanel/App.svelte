@@ -7,7 +7,8 @@
   interface Step { kind: string; value: unknown; note?: string; breakpoint?: boolean }
   interface Goal { name: string; steps: Step[] }
   interface Checkpoint { name: string; wait_for?: string; goals: Goal[] }
-  let run: { name: string; checkpoints: Checkpoint[] } | null = $state(null);
+  interface Run { name: string; checkpoints: Checkpoint[] }
+  let run = $state<Run | null>(null);
   let at = $state({ checkpoint: 0, goal: 0, step: 0 });
   let collapsed = $state(false);
 

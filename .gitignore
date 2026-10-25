@@ -14,3 +14,5 @@ site/
 .darbit/
 # made by scripts/setup-dev.ps1: a link to .agents/skills for Claude Code
 .claude/skills
+# the built web UI (npm run build); shipped in the wheel, not committed
+packages/darbit/src/darbit/ui/static/

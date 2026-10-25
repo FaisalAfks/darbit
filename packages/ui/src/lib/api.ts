@@ -17,7 +17,12 @@ const frameListeners = new Set<(frame: Frame) => void>();
 /** Connect with the port and token the window was opened with (?port=…&token=…). */
 export function connect(): Promise<void> {
   const params = new URLSearchParams(location.search);
-  const url = `ws://127.0.0.1:${params.get("port")}/ws?token=${params.get("token")}`;
+  const port = params.get("port");
+  if (!port) {
+    // opened on its own (npm run dev, a plain file server): no server to talk to
+    return Promise.reject(new Error("opened without darbit's server"));
+  }
+  const url = `ws://127.0.0.1:${port}/ws?token=${params.get("token")}`;
   socket = new WebSocket(url);
   socket.binaryType = "arraybuffer";
   socket.onmessage = (event) => (typeof event.data === "string" ? onText(event.data) : onBinary(event.data));

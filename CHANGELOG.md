@@ -9,6 +9,7 @@
 - The `darbit` command: `darbit new NAME` makes a bot project, `darbit install GIT_URL` clones one at its newest release with its own uv environment, `darbit run` starts it; `darbit capture`, `guide`, `check` and `report` run the tools
 - Targets follow their window: taken with `--window`, a target's region, point and picture move and resize with the window; a target taken at another display scaling is resized; a resized target not found is tried once at nearby sizes
 - Setup guides: `guide.toml` lists the screens to open and the targets to take on each, in order; `python -m darbit.capture --guide guide.toml` walks through it, and `--guide capture.txt` converts a list once
+- The web UI package builds: `npm install`, `npm run build` puts every window's page into the package, and the wheel ships it; CI checks and builds it
 
 ## 0.2.0 - 2026-10-25
 
