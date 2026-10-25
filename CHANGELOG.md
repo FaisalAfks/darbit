@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `AGENTS.md` with the repo's rules, map and commands; `.agents/skills` (release, new task, review a PR, render the mockups); `scripts/setup-dev.ps1`
+- A docs site (`uv run --group docs mkdocs serve`): getting started, guides split out of the README, architecture, API reference from the docstrings, code and writing style
+- `examples/hello-bot`, the smallest bot
 - The repo is a monorepo: the Python package moved to `packages/darbit`, the web UI to `packages/ui`; install from git with `#subdirectory=packages/darbit`
 - Development uses uv (`uv sync`, `uv.lock`, Python 3.13); the optional `ui` extra is now called `app`
 - Text files are stored with LF line endings (`.gitattributes`)

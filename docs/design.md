@@ -137,9 +137,9 @@ actions:                             # reusable steps, like functions
 
 Every window, the hub app and the IDE extension are built from one web UI package.
 
-- **Design tokens** in one file: colours, type scale (Segoe UI and the system font), spacing, corner radius, motion. Themes: glass dark (default), glass light, midnight, high contrast, and custom themes from a file. Details in [ui/design-system.md](ui/design-system.md).
+- **Design tokens** in one file: colours, type scale (Segoe UI and the system font), spacing, corner radius, motion. Themes: glass dark (default), glass light, midnight, high contrast, and custom themes from a file. Details in [ui/design-system.md](style/ui/design-system.md).
 - **Text slots:** text on any surface is darbit's (`tool`), a bot's (`bot`) or a setup guide author's (`guide`), each styled differently.
-- **Keys:** every shortcut is in one remappable file and every shortcut is also a button ([ui/keymap.md](ui/keymap.md)).
+- **Keys:** every shortcut is in one remappable file and every shortcut is also a button ([ui/keymap.md](style/ui/keymap.md)).
 - **Components:**
   - card
   - pill button

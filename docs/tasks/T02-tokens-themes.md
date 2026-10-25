@@ -2,7 +2,7 @@
 
 **Goal:** every colour, size and motion value as CSS variables in one place, with four themes and custom themes from a file.
 
-**Depends on:** T01. **Issue:** #45. **Milestone:** v0.3. **Spec:** [docs/ui/design-system.md](../ui/design-system.md).
+**Depends on:** T01. **Issue:** #45. **Milestone:** v0.3. **Spec:** [docs/style/ui/design-system.md](../style/ui/design-system.md).
 
 ## Files
 

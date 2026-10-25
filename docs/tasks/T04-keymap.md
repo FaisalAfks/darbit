@@ -2,7 +2,7 @@
 
 **Goal:** one remappable table of every shortcut, used by the Python side (global hotkeys) and every window, with conflicts caught before they happen.
 
-**Depends on:** T01. **Milestone:** v0.3. **Spec:** [docs/ui/keymap.md](../ui/keymap.md).
+**Depends on:** T01. **Milestone:** v0.3. **Spec:** [docs/style/ui/keymap.md](../style/ui/keymap.md).
 
 ## Files
 
