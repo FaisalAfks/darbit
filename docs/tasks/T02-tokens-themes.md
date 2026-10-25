@@ -6,11 +6,11 @@
 
 ## Files
 
-- `ui/src/lib/tokens/tokens.css`: sizes, spacing, radius, motion, fonts (theme-independent)
-- `ui/src/lib/tokens/themes.css`: one `[data-theme="..."]` block per theme with every colour token
-- `ui/src/lib/tokens/motion.css`: the shared keyframes (`appear`, `hide`, `glow-in`) and the reduced-motion rule
-- `ui/src/lib/theme.ts`: `applyTheme(name)`, `cycleTheme()`, `loadCustomTheme(tokens)`
-- `src/darbit/server/app.py`: `GET /theme` returns the custom theme's tokens (T05)
+- `packages/ui/src/lib/tokens/tokens.css`: sizes, spacing, radius, motion, fonts (theme-independent)
+- `packages/ui/src/lib/tokens/themes.css`: one `[data-theme="..."]` block per theme with every colour token
+- `packages/ui/src/lib/tokens/motion.css`: the shared keyframes (`appear`, `hide`, `glow-in`) and the reduced-motion rule
+- `packages/ui/src/lib/theme.ts`: `applyTheme(name)`, `cycleTheme()`, `loadCustomTheme(tokens)`
+- `packages/darbit/src/darbit/server/app.py`: `GET /theme` returns the custom theme's tokens (T05)
 
 ## Steps
 

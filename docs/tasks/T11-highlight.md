@@ -6,10 +6,10 @@
 
 ## Files
 
-- `src/darbit/runtime/highlight.py`: `d.highlight(*targets, seconds=3, region=None)` and `scan()`
-- `src/darbit/tools/check.py`: reuse `check_one` for scores (in-region best and best elsewhere)
-- `ui/src/apps/highlight/App.svelte`: the click-through overlay
-- `src/darbit/capture/service.py` or `runtime/highlight.py`: server handler `highlight.scan`
+- `packages/darbit/src/darbit/runtime/highlight.py`: `d.highlight(*targets, seconds=3, region=None)` and `scan()`
+- `packages/darbit/src/darbit/tools/check.py`: reuse `check_one` for scores (in-region best and best elsewhere)
+- `packages/ui/src/apps/highlight/App.svelte`: the click-through overlay
+- `packages/darbit/src/darbit/capture/service.py` or `runtime/highlight.py`: server handler `highlight.scan`
 
 ## Steps
 

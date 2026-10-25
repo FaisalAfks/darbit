@@ -21,9 +21,9 @@
 
 ## Files
 
-- `src/darbit/runs/recorder.py`: `Recorder.add_check(kind, target)` inserts the check at the current time
-- `ui/src/apps/recorder/App.svelte`: the Add check menu
-- `src/darbit/runs/service.py`: `record.check` message
+- `packages/darbit/src/darbit/runs/recorder.py`: `Recorder.add_check(kind, target)` inserts the check at the current time
+- `packages/ui/src/apps/recorder/App.svelte`: the Add check menu
+- `packages/darbit/src/darbit/runs/service.py`: `record.check` message
 
 ## Done when
 

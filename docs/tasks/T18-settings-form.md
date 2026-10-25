@@ -30,8 +30,8 @@ Types: `bool`, `int`, `float`, `str`, `choice` (with `options`), `keys`, `target
 
 ## Files
 
-- `src/darbit/project/settings_schema.py`: `Schema`, `load_schema()`, `load_values(schema, config_path)`, `write_values()`
-- `ui/src/lib/components/Field.svelte`, `ui/src/apps/hub/SettingsForm.svelte`
+- `packages/darbit/src/darbit/project/settings_schema.py`: `Schema`, `load_schema()`, `load_values(schema, config_path)`, `write_values()`
+- `packages/ui/src/lib/components/Field.svelte`, `packages/ui/src/apps/hub/SettingsForm.svelte`
 
 ## Steps
 

@@ -6,9 +6,9 @@
 
 ## Files
 
-`ui/src/lib/components/`: `Button`, `IconButton`, `Toolbar`, `Chip`, `Keycap`, `Card`, `Toast`, `TextSlot`, `Readout`, `Magnifier`, `ProgressStrip`, `ScoreBadge`, `ThemeSwitch`, `CommandPalette`, `Field`, `List`, `Tree`. Placeholders exist for the first fourteen; add `Field`, `List`, `Tree`.
+`packages/ui/src/lib/components/`: `Button`, `IconButton`, `Toolbar`, `Chip`, `Keycap`, `Card`, `Toast`, `TextSlot`, `Readout`, `Magnifier`, `ProgressStrip`, `ScoreBadge`, `ThemeSwitch`, `CommandPalette`, `Field`, `List`, `Tree`. Placeholders exist for the first fourteen; add `Field`, `List`, `Tree`.
 
-Plus `ui/src/apps/hub/Gallery.svelte`: a page in the hub (dev only) that shows every component in every state, used for screenshots in PRs.
+Plus `packages/ui/src/apps/hub/Gallery.svelte`: a page in the hub (dev only) that shows every component in every state, used for screenshots in PRs.
 
 ## Steps
 

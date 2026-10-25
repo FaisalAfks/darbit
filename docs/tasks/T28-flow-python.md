@@ -23,9 +23,9 @@
 
 ## Files
 
-- `src/darbit/runs/export.py`: flow → Python
-- `src/darbit/runs/parse.py`: Python → flow (with `ast`)
-- `tests/test_flow_python.py`: round-trip cases
+- `packages/darbit/src/darbit/runs/export.py`: flow → Python
+- `packages/darbit/src/darbit/runs/parse.py`: Python → flow (with `ast`)
+- `packages/darbit/tests/test_flow_python.py`: round-trip cases
 
 ## Done when
 

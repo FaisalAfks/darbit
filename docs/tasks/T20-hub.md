@@ -24,9 +24,9 @@ A `normal` window, 960 × 640 (down to 720 × 480). A slim rail on the left with
 
 ## Files
 
-- `ui/src/apps/hub/App.svelte`, `Rail.svelte`, `Bots.svelte`, `Bot.svelte`, `Library.svelte`, `Runs.svelte`, `Settings.svelte`
-- `src/darbit/server/hub.py`: handlers `projects.list`, `project.run`, `project.stop`, `project.pause`, `library.list`, `reports.days`, `reports.day`
-- `src/darbit/desktop/__main__.py`: `darbit app` opens it
+- `packages/ui/src/apps/hub/App.svelte`, `Rail.svelte`, `Bots.svelte`, `Bot.svelte`, `Library.svelte`, `Runs.svelte`, `Settings.svelte`
+- `packages/darbit/src/darbit/server/hub.py`: handlers `projects.list`, `project.run`, `project.stop`, `project.pause`, `library.list`, `reports.days`, `reports.day`
+- `packages/darbit/src/darbit/desktop/__main__.py`: `darbit app` opens it
 
 ## Steps
 

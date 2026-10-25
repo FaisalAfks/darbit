@@ -6,10 +6,10 @@
 
 ## Files
 
-- `ui/src/apps/capture/history.ts`: the undo and redo stack
-- `ui/src/apps/capture/NameField.svelte`: inline name field with autocomplete
-- `src/darbit/capture/store.py`: extend `undo()` into a history of file changes (already keeps the bytes it replaced)
-- `src/darbit/capture/service.py`: `capture.undo`, `capture.redo`, `capture.rename`, `capture.delete`
+- `packages/ui/src/apps/capture/history.ts`: the undo and redo stack
+- `packages/ui/src/apps/capture/NameField.svelte`: inline name field with autocomplete
+- `packages/darbit/src/darbit/capture/store.py`: extend `undo()` into a history of file changes (already keeps the bytes it replaced)
+- `packages/darbit/src/darbit/capture/service.py`: `capture.undo`, `capture.redo`, `capture.rename`, `capture.delete`
 
 ## Steps
 

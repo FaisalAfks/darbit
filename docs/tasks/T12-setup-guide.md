@@ -47,10 +47,10 @@ say = "Open Speed Raid and press Start."
 
 ## Files
 
-- `src/darbit/capture/guide.py`: `Guide`, `load()`, `progress()`, `convert_list()`
-- `ui/src/apps/capture/GuideCard.svelte`: the card
-- `src/darbit/capture/service.py`: `guide.open`, `guide.progress`
-- `src/darbit/runtime/capture_api.py`: `d.capture()` and `d.guide()`
+- `packages/darbit/src/darbit/capture/guide.py`: `Guide`, `load()`, `progress()`, `convert_list()`
+- `packages/ui/src/apps/capture/GuideCard.svelte`: the card
+- `packages/darbit/src/darbit/capture/service.py`: `guide.open`, `guide.progress`
+- `packages/darbit/src/darbit/runtime/capture_api.py`: `d.capture()` and `d.guide()`
 
 ## Steps
 
@@ -64,7 +64,7 @@ say = "Open Speed Raid and press Start."
 5. **From a bot:**
    - `d.capture("Gui.Play", kind="image", say="Box the Play button", region=None) -> Target | None`: opens the overlay for one target (bot slot text), blocks until saved or cancelled. For bots that need a picture taken during a run (a new event banner, a reward).
    - `d.guide("guide.toml", say=None, only=None)`: opens the guide card (for first-run setup); returns when the user presses Done. `only` limits it to some screens.
-   - Both need the `ui` extra; without it they log what's missing and return `None`.
+   - Both need the `app` extra; without it they log what's missing and return `None`.
 6. A bot's name and accent on its text come from its project manifest (T17), or `d.settings.name` until then.
 
 ## Contracts

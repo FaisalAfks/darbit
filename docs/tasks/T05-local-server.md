@@ -6,12 +6,12 @@
 
 ## Files
 
-- `src/darbit/server/__init__.py`: `serve()`, `running()`
-- `src/darbit/server/app.py`: the Starlette app: `/ws`, `/keymap`, `/theme`, static files
-- `src/darbit/server/events.py`: the in-process event bus (written as a sketch)
-- `src/darbit/server/protocol.py`: every message type (written: the contract)
-- `ui/src/lib/api.ts`: `connect()`, `request()`, `on()`
-- `pyproject.toml`: the `ui` extra (`starlette`, `uvicorn`, `pywebview`)
+- `packages/darbit/src/darbit/server/__init__.py`: `serve()`, `running()`
+- `packages/darbit/src/darbit/server/app.py`: the Starlette app: `/ws`, `/keymap`, `/theme`, static files
+- `packages/darbit/src/darbit/server/events.py`: the in-process event bus (written as a sketch)
+- `packages/darbit/src/darbit/server/protocol.py`: every message type (written: the contract)
+- `packages/ui/src/lib/api.ts`: `connect()`, `request()`, `on()`
+- `pyproject.toml`: the `app` extra (`starlette`, `uvicorn`, `pywebview`)
 
 ## Steps
 
@@ -25,7 +25,7 @@
 
 ## Contracts
 
-- `protocol.py` is the list of message types and their fields. The TypeScript types in `ui/src/lib/protocol.ts` are generated from it (`python -m darbit.server.protocol --ts > ui/src/lib/protocol.ts`), so both sides can't drift.
+- `protocol.py` is the list of message types and their fields. The TypeScript types in `packages/ui/src/lib/protocol.ts` are generated from it (`python -m darbit.server.protocol --ts > packages/ui/src/lib/protocol.ts`), so both sides can't drift.
 - `server.json` location and fields: the VS Code extension reads it.
 
 ## Done when

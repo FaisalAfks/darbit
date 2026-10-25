@@ -35,8 +35,8 @@ Step kinds: `press`, `hold`, `release`, `write`, `wait`, `click`, `right_click`,
 
 ## Files
 
-- `src/darbit/runs/model.py`: dataclasses `Run`, `Checkpoint`, `Goal`, `Step`; `load(path)`, `dump(run)`
-- `src/darbit/runs/runfile.schema.json`: generated from the model (`python -m darbit.runs.model --schema`)
+- `packages/darbit/src/darbit/runs/model.py`: dataclasses `Run`, `Checkpoint`, `Goal`, `Step`; `load(path)`, `dump(run)`
+- `packages/darbit/src/darbit/runs/runfile.schema.json`: generated from the model (`python -m darbit.runs.model --schema`)
 - `pyproject.toml`: `pyyaml` in the `runs` part of the dependencies (small; add to the main list)
 
 ## Steps

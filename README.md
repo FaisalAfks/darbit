@@ -23,10 +23,17 @@ Not finding something is a normal result: `None` or `False`, never an error.
 ## Install
 
 ```
-pip install git+https://github.com/FaisalAfks/darbit
+pip install "darbit @ git+https://github.com/FaisalAfks/darbit#subdirectory=packages/darbit"
 ```
 
-Python 3.11 or newer, Windows.
+or, in a project managed with [uv](https://docs.astral.sh/uv/), pinned to a release:
+
+```toml
+[tool.uv.sources]
+darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.2.0", subdirectory = "packages/darbit" }
+```
+
+Python 3.11 or newer, Windows. The repo is a monorepo: the Python package is in `packages/darbit`, the web UI in `packages/ui`.
 
 ## Targets
 

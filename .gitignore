@@ -8,3 +8,9 @@ build/
 .pytest_cache/
 .vscode/
 logs/
+node_modules/
+.ruff_cache/
+site/
+.darbit/
+# made by scripts/setup-dev.ps1: a link to .agents/skills for Claude Code
+.claude/skills

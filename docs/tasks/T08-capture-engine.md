@@ -11,11 +11,11 @@
 
 ## Files
 
-- `src/darbit/capture/engine/__init__.py`: `prepare()`, `Prepared`
-- `src/darbit/capture/engine/select.py`: `candidates()`
-- `src/darbit/capture/engine/snap.py`: `lines()`, `snap_box()`
-- `tests/test_capture_engine.py`, `tests/data/capture/`: saved screenshots with expected boxes (the owner's game screens cut down, plus synthetic ones)
-- `tests/data/capture/snap_cases.json`: shared cases that the TypeScript port (T09) runs too
+- `packages/darbit/src/darbit/capture/engine/__init__.py`: `prepare()`, `Prepared`
+- `packages/darbit/src/darbit/capture/engine/select.py`: `candidates()`
+- `packages/darbit/src/darbit/capture/engine/snap.py`: `lines()`, `snap_box()`
+- `packages/darbit/tests/test_capture_engine.py`, `packages/darbit/tests/data/capture/`: saved screenshots with expected boxes (the owner's game screens cut down, plus synthetic ones)
+- `packages/darbit/tests/data/capture/snap_cases.json`: shared cases that the TypeScript port (T09) runs too
 
 ## Steps
 
@@ -27,7 +27,7 @@
 3. **`lines(gray) -> Lines`**: straight runs (≥ 16 px) of **boundaries between two pixels** where the brightness jumps by 24 or more, not Canny's edge pixels: Canny puts its pixel on either side of a border depending on the texture next to it, which made boxes land one pixel off. A line at x = 300 is between pixels 299 and 300, so a drawn border has two exact lines, its outer and inner side. `{"h": [[y, x0, x1], ...], "v": [[x, y0, y1], ...]}`, the longest 4000. They're sent to the overlay once per freeze, so snapping runs in the window without a round trip.
 4. **`snap_box(lines, box, moving, reach=6, border="include") -> (Region, guides)`**: only the edges being moved (`moving` ⊆ `{"left","top","right","bottom"}`) snap, each to the nearest line within `reach` that **runs along at least 30% of that side**. Lines within 8 px of it on the same side are the same border: `"include"` walks outward to the border's outer side (the border is in the image), `"exclude"` inward to its inner side. Returns the guides it snapped to, so the overlay can draw them.
 5. A drag snaps only the corner being dragged; the fixed corner was snapped at press. Alt held: no snapping.
-6. Port `snap_box` to `ui/src/apps/capture/snap.ts` (T09) and keep both passing `snap_cases.json`.
+6. Port `snap_box` to `packages/ui/src/apps/capture/snap.ts` (T09) and keep both passing `snap_cases.json`.
 
 ## Contracts
 
@@ -41,7 +41,7 @@
 
 ## Tests
 
-- `candidates` against the expected boxes in `tests/data/capture/*.json` (within 2 px).
+- `candidates` against the expected boxes in `packages/darbit/tests/data/capture/*.json` (within 2 px).
 - `snap_cases.json`: input box, moving edges, expected box.
 - Timing test marked `slow`: `prepare` on a 2560×1600 image under 200 ms on CI.
 

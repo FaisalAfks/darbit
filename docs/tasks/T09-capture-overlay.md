@@ -6,13 +6,13 @@
 
 ## Files
 
-- `ui/src/apps/capture/App.svelte`: the window: frame layer, shapes layer, chips, toolbar, magnifier
-- `ui/src/apps/capture/stage.ts`: the Konva stage (frame, dim, bright cut-outs, shapes, handles)
-- `ui/src/apps/capture/gestures.ts`: mouse and keys → actions
-- `ui/src/apps/capture/snap.ts`: the port of `snap_box` (T08)
-- `ui/src/apps/capture/model.ts`: the capture state (below)
-- `src/darbit/capture/service.py`: server handlers `capture.freeze`, `capture.candidates`, `capture.save`, `capture.targets`
-- `src/darbit/core/targets.py`: named regions (step 8)
+- `packages/ui/src/apps/capture/App.svelte`: the window: frame layer, shapes layer, chips, toolbar, magnifier
+- `packages/ui/src/apps/capture/stage.ts`: the Konva stage (frame, dim, bright cut-outs, shapes, handles)
+- `packages/ui/src/apps/capture/gestures.ts`: mouse and keys → actions
+- `packages/ui/src/apps/capture/snap.ts`: the port of `snap_box` (T08)
+- `packages/ui/src/apps/capture/model.ts`: the capture state (below)
+- `packages/darbit/src/darbit/capture/service.py`: server handlers `capture.freeze`, `capture.candidates`, `capture.save`, `capture.targets`
+- `packages/darbit/src/darbit/core/targets.py`: named regions (step 8)
 
 ## The model
 

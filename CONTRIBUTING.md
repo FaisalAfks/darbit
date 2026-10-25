@@ -16,7 +16,7 @@ darbit is a simple GUI-automation toolkit for Windows, in Python: an improvement
 - **Writing.** Commits, PRs, docs and comments are plain and short, and describe what changed and why it matters to the code. No "I" or "we", no notes about how the work was done.
 - **Simple first.** The public API stays as simple as SikuliX: `d.click("Play")`. Not finding something is `None` or `False`, never an exception.
 - **Layers.** `core` (pure, no screen) ← `platform` (Windows) ← `runtime` ← `tools` / `capture` / `runs` / `project` ← `server` ← `desktop`. A layer only imports from layers below it.
-- **Optional parts stay optional.** The web UI, the server and the desktop windows need the `ui` extra (`pip install -e ".[ui]"`). `import darbit` must keep working without it: import those packages inside functions.
+- **Optional parts stay optional.** The web UI, the server and the desktop windows need the `app` extra (`uv sync --extra app`, or `pip install -e "packages/darbit[app]"`). `import darbit` must keep working without it: import those packages inside functions.
 - **No live input in tests.** Tests never move the mouse or press keys. Use fakes and saved screenshots (`tests/`); live checks are done by hand and described in the PR.
 - **Speed.** Anything that runs per frame or per tick gets a number in the PR (ms per call, before and after).
 - **Line endings.** Keep each file's existing line endings; don't rewrite whole files to change a few lines.
@@ -24,25 +24,32 @@ darbit is a simple GUI-automation toolkit for Windows, in Python: an improvement
 ## Setting up
 
 ```bash
-pip install -e ".[dev,ui]"
-cd ui && npm install && npm run dev
+uv sync                    # Python 3.13, darbit (editable) and the dev tools, from uv.lock
+uv run pytest
+uv run ruff check .
+npm install && npm run dev # the web UI, once T01 starts
 ```
 
-- `ruff check .` and `pytest` must pass (CI runs both on Windows).
-- `npm run build` in `ui/` writes the web UI into `src/darbit/ui/static/`, which is shipped in the wheel.
+- `uv run ruff check .` and `uv run pytest` must pass (CI runs both on Windows).
+- `uv sync --extra app` adds the Studio's dependencies (server, desktop windows).
+- `npm run build` writes the web UI into `packages/darbit/src/darbit/ui/static/`, which is shipped in the wheel.
 
 ## Where things go
 
 | Path | What |
 |---|---|
-| `src/darbit/core` | geometry, targets, matching, run-file model |
-| `src/darbit/platform` | screen capture, input, windows, hotkeys and hooks |
-| `src/darbit/runtime` | find, act, wait, observers, state, logs, highlight |
-| `src/darbit/capture` | the capture tool: `engine/` (pure selection and snapping), `guide.py`, the session |
-| `src/darbit/runs` | run files: model, recorder, player |
-| `src/darbit/project` | `darbit.toml`, settings schema |
-| `src/darbit/server` | the local server and its messages |
-| `src/darbit/desktop` | desktop windows (pywebview) |
-| `src/darbit/keymap.py`, `keymap.toml` | every shortcut in the suite |
-| `ui/` | the web UI: tokens, themes, components, and one app per window |
+| `packages/darbit/src/darbit/core` | geometry, targets, matching, run-file model |
+| `packages/darbit/src/darbit/platform` | screen capture, input, windows, hotkeys and hooks |
+| `packages/darbit/src/darbit/runtime` | find, act, wait, observers, state, logs, highlight |
+| `packages/darbit/src/darbit/capture` | the capture tool: `engine/` (pure selection and snapping), `guide.py`, the session |
+| `packages/darbit/src/darbit/runs` | run files: model, recorder, player |
+| `packages/darbit/src/darbit/project` | `darbit.toml`, settings schema |
+| `packages/darbit/src/darbit/server` | the local server and its messages |
+| `packages/darbit/src/darbit/desktop` | desktop windows (pywebview) |
+| `packages/darbit/src/darbit/keymap.py`, `keymap.toml` | every shortcut in the suite |
+| `packages/darbit/tests` | the package's tests (`uv run pytest`) |
+| `packages/ui/` | the web UI: tokens, themes, components, and one app per window |
+| `packages/vscode/` | the VS Code extension (later) |
 | `docs/tasks/` | instructions per task |
+| `docs/decisions/` | why things are the way they are (one record per decision) |
+| `scripts/` | dev helpers, e.g. `render_mockups.py` |

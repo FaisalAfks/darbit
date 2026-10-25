@@ -6,8 +6,8 @@
 
 ## Files
 
-- `src/darbit/desktop/__init__.py`: `open_window(app, kind, **options)`
-- `src/darbit/desktop/windows.py`: the pywebview host and the Win32 style changes
+- `packages/darbit/src/darbit/desktop/__init__.py`: `open_window(app, kind, **options)`
+- `packages/darbit/src/darbit/desktop/windows.py`: the pywebview host and the Win32 style changes
 
 ## Steps
 
