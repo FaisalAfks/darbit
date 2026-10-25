@@ -9,7 +9,7 @@ members = ["packages/darbit"]
 darbit = { workspace = true }
 
 [dependency-groups]
-dev = ["darbit", "pytest>=8", "ruff>=0.6"]
+dev = ["darbit", "pytest>=8", "ruff>=0.6", "pre-commit>=3.7"]
 docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.26"]
 
 [tool.uv]

@@ -8,9 +8,10 @@ changes in every window, the hub and the IDE extension. See docs/tasks/T04-keyma
 """
 from __future__ import annotations
 
-import os
 import tomllib
 from pathlib import Path
+
+from . import paths
 
 DEFAULTS = Path(__file__).with_name("keymap.toml")
 Keymap = dict[str, dict[str, str]]  # scope -> action -> keys
@@ -21,7 +22,7 @@ def defaults() -> Keymap:
 
 
 def user_file() -> Path:
-    return Path(os.environ.get("APPDATA", Path.home())) / "darbit" / "keymap.toml"
+    return paths.config_dir() / "keymap.toml"
 
 
 def load(project: Path | None = None) -> Keymap:

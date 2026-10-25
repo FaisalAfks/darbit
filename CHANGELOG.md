@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A script's logs and saved state go in its `.darbit/` folder (`.darbit/logs`, `.darbit/state`) instead of `logs/` and `state/`; set `settings.logs` / `settings.state` to keep the old places
+- `darbit.paths`: the folders darbit uses (user settings in `%APPDATA%\darbit`, app data and cache in `%LOCALAPPDATA%\darbit`, a project's `.darbit`)
+- Issue forms, a PR checklist, Dependabot, and a release workflow that builds the package and makes the GitHub release from a tag
 - `AGENTS.md` with the repo's rules, map and commands; `.agents/skills` (release, new task, review a PR, render the mockups); `scripts/setup-dev.ps1`
 - A docs site (`uv run --group docs mkdocs serve`): getting started, guides split out of the README, architecture, API reference from the docstrings, code and writing style
 - `examples/hello-bot`, the smallest bot

@@ -78,7 +78,7 @@ def summary(events: list[dict]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m darbit.tools.report", description="Summarise a day's run report.")
     parser.add_argument("day", nargs="?", default=datetime.now().strftime("%Y-%m-%d"), help="YYYY-MM-DD (today)")
-    parser.add_argument("--logs", default="logs", help="the logs folder (default: logs)")
+    parser.add_argument("--logs", default=".darbit/logs", help="the logs folder (default: .darbit/logs)")
     args = parser.parse_args(argv)
     path = Path(args.logs) / f"report-{args.day}.jsonl"
     if not path.is_file():

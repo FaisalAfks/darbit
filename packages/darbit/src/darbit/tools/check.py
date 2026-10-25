@@ -163,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
     results = check(_targets(folder, args.names), screens)
     print(report(results))
     if not args.no_history:
-        remember(results, folder.parent / "state")
+        remember(results, folder.parent / ".darbit" / "state")
     return 0 if all(r.verdict in ("ok", "not seen") for r in results) else 1
 
 

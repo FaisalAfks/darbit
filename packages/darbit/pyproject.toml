@@ -13,6 +13,7 @@ dependencies = [
     "numpy>=1.26",
     "opencv-python>=4.9",
     "mss>=9.0",
+    "platformdirs>=4.2",
 ]
 
 [project.optional-dependencies]
