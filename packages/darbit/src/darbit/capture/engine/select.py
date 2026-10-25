@@ -6,8 +6,6 @@
 No size caps: the list goes from a letter or an icon up to whole menus, windows and the monitor.
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Literal
 
 import cv2
@@ -119,10 +117,14 @@ def _distinct(boxes: list[Region]) -> list[Region]:
     for box in boxes:
         if box.w >= 3 and box.h >= 3 and all(_iou(box, k) <= SAME for k in kept):
             kept.append(box)
-    return sorted(kept, key=lambda b: b.w * b.h)
+    return sorted(kept, key=_area)
 
 
-def candidates(prep: Prepared, x: int, y: int, kind: Kind) -> list[Region]:
+def _area(box: Region) -> int:
+    return box.w * box.h
+
+
+def candidates(prep: "Prepared", x: int, y: int, kind: Kind) -> list[Region]:
     """Boxes around (x, y), smallest first, ending with the whole screen.
 
     image:  the colour fill (a button's background gives the button), the areas just outside it, the rectangles
@@ -142,11 +144,14 @@ def candidates(prep: Prepared, x: int, y: int, kind: Kind) -> list[Region]:
             boxes.append(first)
             step = first
             for _ in range(6):
-                if (step := grow(shot, step, x, y)) is None:
+                step = grow(shot, step, x, y)
+                if step is None:
                     break
                 boxes.append(step)
-    if kind == "image" and (shape := shape_at(shot, x, y)) is not None:
-        boxes.append(shape)  # traced from edge pixels: last, so exact boxes win over it
+    if kind == "image":
+        shape = shape_at(shot, x, y)
+        if shape is not None:
+            boxes.append(shape)  # traced from edge pixels: last, so exact boxes win over it
     screen = Region(0, 0, w, h)
     return [b for b in _distinct(boxes) if _iou(b, screen) <= SAME] + [screen]
 
@@ -157,4 +162,7 @@ def pick(boxes: list[Region], start: tuple[int, int] = START) -> int:
     scrollbar handle are selected too. Smaller ones stay in the list for "smaller"."""
     if len(boxes) > 1 and boxes[1].w * boxes[1].h < 4 * boxes[0].w * boxes[0].h:
         return 0
-    return next((i for i, b in enumerate(boxes) if b.w >= start[0] and b.h >= start[1]), 0)
+    for i, box in enumerate(boxes):
+        if box.w >= start[0] and box.h >= start[1]:
+            return i
+    return 0

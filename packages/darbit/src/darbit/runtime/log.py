@@ -5,13 +5,12 @@ one JSON line per event (searches, clicks, steps) for tools to summarise:
 python -m darbit.tools.report.
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import threading
 import time
 from datetime import datetime
+from pathlib import Path
 
 import cv2
 
@@ -83,7 +82,7 @@ def screenshot(label: str) -> str | None:
             data.tofile(str(path))
             log(f"screenshot {path.name}")
         shots = [*folder.glob("*.png"), *folder.glob("*.jpg")]  # older ones were PNG
-        shots.sort(key=lambda p: p.stat().st_mtime)
+        shots.sort(key=_modified_time)
         for old in shots[:-_KEEP_SHOTS]:
             old.unlink(missing_ok=True)
         return path.name if ok else None
@@ -93,3 +92,7 @@ def screenshot(label: str) -> str | None:
 
 def since(started: float) -> str:
     return f"{time.monotonic() - started:.1f}s"
+
+
+def _modified_time(path: Path) -> float:
+    return path.stat().st_mtime

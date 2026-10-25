@@ -7,8 +7,6 @@
 - A short pause follows every press and release.
 """
 
-from __future__ import annotations
-
 import ctypes
 import threading
 import time
@@ -132,7 +130,10 @@ def move(x: int, y: int, glide: float) -> None:
     if glide > 0:
         started = time.perf_counter()
         last = (start_x, start_y)
-        while (t := (time.perf_counter() - started) / glide) < 1:
+        while True:
+            t = (time.perf_counter() - started) / glide  # share of the glide done
+            if t >= 1:
+                break
             safety.check()
             eased = 1 - (1 - t) ** 4
             step = (round(start_x + (x - start_x) * eased), round(start_y + (y - start_y) * eased))

@@ -5,8 +5,6 @@
 Without the `app` extra it only logs the scores. Never raises. See docs/tasks/T11-highlight.md.
 """
 
-from __future__ import annotations
-
 from collections.abc import Iterator
 from dataclasses import dataclass
 

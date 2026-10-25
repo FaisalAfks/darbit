@@ -10,8 +10,6 @@ the window (packages/ui/src/apps/capture/snap.ts) with the same rules; both pass
 packages/darbit/tests/data/capture/snap_cases.json.
 """
 
-from __future__ import annotations
-
 from bisect import bisect_left, bisect_right
 from typing import Literal, TypedDict
 
@@ -50,9 +48,14 @@ def lines(gray: np.ndarray, length: int = 16, most: int = 4000, step: int = STEP
     down = np.abs(np.diff(g, axis=0)) >= step  # (h-1, w): between row y and y+1
     v = [(x + 1, y0, y1) for x, y0, y1 in _runs(np.ascontiguousarray(across.T), length)]
     h = [(y + 1, x0, x1) for y, x0, x1 in _runs(down, length)]
-    h.sort(key=lambda r: r[1] - r[2])
-    v.sort(key=lambda r: r[1] - r[2])
+    h.sort(key=_longest_first)
+    v.sort(key=_longest_first)
     return {"h": h[:most], "v": v[:most]}
+
+
+def _longest_first(segment: tuple[int, int, int]) -> int:
+    """Sort key: a segment (position, start, end), longer ones first."""
+    return segment[1] - segment[2]
 
 
 def _overlap(a0: int, a1: int, b0: int, b1: int) -> int:
@@ -86,9 +89,24 @@ def _nearest(
     near = [s for s in usable if abs(s[0] - at) <= reach]
     if not near:
         return None
-    best = min(near, key=lambda s: (abs(s[0] - at), s[1] - s[2]))
-    while beyond := [s for s in usable if 0 < (s[0] - best[0]) * side <= BAND]:
-        best = min(beyond, key=lambda s: abs(s[0] - best[0]))
+
+    def closest_then_longest(segment: tuple[int, int, int]) -> tuple[int, int]:
+        return abs(segment[0] - at), _longest_first(segment)
+
+    best = min(near, key=closest_then_longest)
+    while True:
+        beyond = [s for s in usable if 0 < (s[0] - best[0]) * side <= BAND]
+        if not beyond:
+            return best
+        best = _closest_to(beyond, best[0])
+
+
+def _closest_to(segments: list[tuple[int, int, int]], position: int) -> tuple[int, int, int]:
+    """The segment nearest to `position`; the first one on a tie."""
+    best = segments[0]
+    for segment in segments[1:]:
+        if abs(segment[0] - position) < abs(best[0] - position):
+            best = segment
     return best
 
 
@@ -105,18 +123,26 @@ def snap_box(
     left, top, right, bottom = box.x, box.y, box.right, box.bottom
     out = 1 if border == "include" else -1  # walk across a border outward from the box, or inward
     guides: list[Guide] = []
-    if "left" in moving and (s := _nearest(found["v"], left, (top, bottom), reach, -out)):
-        left = s[0]
-        guides.append((s[0], s[1], s[0], s[2]))
-    if "right" in moving and (s := _nearest(found["v"], right, (top, bottom), reach, out)):
-        right = s[0]
-        guides.append((s[0], s[1], s[0], s[2]))
-    if "top" in moving and (s := _nearest(found["h"], top, (left, right), reach, -out)):
-        top = s[0]
-        guides.append((s[1], s[0], s[2], s[0]))
-    if "bottom" in moving and (s := _nearest(found["h"], bottom, (left, right), reach, out)):
-        bottom = s[0]
-        guides.append((s[1], s[0], s[2], s[0]))
+    if "left" in moving:
+        s = _nearest(found["v"], left, (top, bottom), reach, -out)
+        if s:
+            left = s[0]
+            guides.append((s[0], s[1], s[0], s[2]))
+    if "right" in moving:
+        s = _nearest(found["v"], right, (top, bottom), reach, out)
+        if s:
+            right = s[0]
+            guides.append((s[0], s[1], s[0], s[2]))
+    if "top" in moving:
+        s = _nearest(found["h"], top, (left, right), reach, -out)
+        if s:
+            top = s[0]
+            guides.append((s[1], s[0], s[2], s[0]))
+    if "bottom" in moving:
+        s = _nearest(found["h"], bottom, (left, right), reach, out)
+        if s:
+            bottom = s[0]
+            guides.append((s[1], s[0], s[2], s[0]))
     if right - left < 1 or bottom - top < 1:
         return box, []
     return Region(left, top, right - left, bottom - top), guides

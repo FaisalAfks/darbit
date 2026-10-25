@@ -10,8 +10,6 @@ Steps inside steps are recorded with their path, e.g. "Speed Raid > pick a chara
 Bots can add their own events with d.record("speed raid done", character="Naruto").
 """
 
-from __future__ import annotations
-
 import threading
 import time
 from collections.abc import Iterator

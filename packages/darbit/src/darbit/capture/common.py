@@ -1,7 +1,5 @@
 """What the capture screens share: items, results, the look, and small drawing helpers."""
 
-from __future__ import annotations
-
 import base64
 import tkinter as tk
 from dataclasses import dataclass, field
@@ -26,12 +24,13 @@ class Item:
     note: str = field(default="", compare=False)  # what it is, shown while capturing
     screen: str = field(default="", compare=False)  # the screen it's on, from a [Screen] line in the list
 
-    @staticmethod
-    def parse(text: str) -> Item:
-        kind, _, name = text.partition(":")
-        if name and kind in KINDS:
-            return Item(name, kind)
-        return Item(text)
+
+def parse_item(text: str) -> Item:
+    """An item from a command-line name: `Gui.Play`, `location:afk/spot` or `region:menus/bag`."""
+    kind, _, name = text.partition(":")
+    if name and kind in KINDS:
+        return Item(name, kind)
+    return Item(text)
 
 
 @dataclass

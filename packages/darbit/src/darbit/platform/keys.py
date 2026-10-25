@@ -14,8 +14,6 @@ For real text, don't press keys at all: `input.write("héllo")` types characters
 directly and doesn't care about layouts either.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from types import MappingProxyType
 

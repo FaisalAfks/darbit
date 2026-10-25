@@ -5,8 +5,6 @@
 See docs/tasks/T05-local-server.md.
 """
 
-from __future__ import annotations
-
 import threading
 from collections.abc import Callable
 

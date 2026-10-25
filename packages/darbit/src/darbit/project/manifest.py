@@ -1,10 +1,12 @@
 """darbit.toml: a bot's name, version, entry, game window, accent, and its darbit settings.
 See docs/tasks/T17-projects.md."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+def _default_images() -> list[str]:
+    return ["images"]
 
 
 @dataclass
@@ -17,7 +19,7 @@ class Project:
     window: str | None = None
     accent: str | None = None
     settings: dict = field(default_factory=dict)  # layer 2 of darbit's settings
-    images: list[str] = field(default_factory=lambda: ["images"])
+    images: list[str] = field(default_factory=_default_images)
     keys: dict = field(default_factory=dict)  # keymap overrides
 
 

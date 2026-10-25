@@ -27,6 +27,8 @@ Plain, readable Python that anyone who knows the basics can follow ([decision 00
 
 In darbit's own internals a comprehension or a ternary is fine when it's clearly the simplest form. Bot code (and `examples/`) avoids them always.
 
+The `plain-python` check (pre-commit and CI) refuses `:=`, `lambda`, `@staticmethod` and `from __future__` in darbit and `examples/`. A forward reference to a class defined further down is written in quotes: `def moved(self) -> "Region":`.
+
 ## Explain
 
 - **Every module** starts with a 2–4 line plain-English summary: what it's for, and how its parts fit.

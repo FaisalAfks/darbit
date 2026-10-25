@@ -1,7 +1,5 @@
 """The hub's requests: projects, running bots, the library and run history. See docs/tasks/T20-hub.md."""
 
-from __future__ import annotations
-
 
 def projects_list(data: dict) -> list[dict]:
     """Installed bots: name, path, accent, status, last run."""

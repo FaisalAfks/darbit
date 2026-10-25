@@ -1,7 +1,5 @@
 """Points and rectangles in real screen pixels."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 
@@ -12,7 +10,7 @@ class Location:
     x: float
     y: float
 
-    def moved(self, dx: float, dy: float) -> Location:
+    def moved(self, dx: float, dy: float) -> "Location":
         return Location(self.x + dx, self.y + dy)
 
     def point(self) -> tuple[int, int]:
@@ -40,16 +38,16 @@ class Region:
     def center(self) -> Location:
         return Location(self.x + self.w / 2, self.y + self.h / 2)
 
-    def moved(self, dx: int, dy: int) -> Region:
+    def moved(self, dx: int, dy: int) -> "Region":
         return Region(self.x + dx, self.y + dy, self.w, self.h)
 
-    def grow(self, pixels: int) -> Region:
+    def grow(self, pixels: int) -> "Region":
         return Region(self.x - pixels, self.y - pixels, self.w + 2 * pixels, self.h + 2 * pixels)
 
     def contains(self, where: Location) -> bool:
         return self.x <= where.x < self.right and self.y <= where.y < self.bottom
 
-    def intersect(self, other: Region) -> Region | None:
+    def intersect(self, other: "Region") -> "Region | None":
         left, top = max(self.x, other.x), max(self.y, other.y)
         right, bottom = min(self.right, other.right), min(self.bottom, other.bottom)
         if right <= left or bottom <= top:

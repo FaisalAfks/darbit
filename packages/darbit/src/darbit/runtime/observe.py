@@ -1,7 +1,11 @@
 """Observers: watch for something in the background and interrupt the script when it happens.
 
     d.observe("Roblox.Disconnected")                       # an image appearing
-    d.observe(lambda: not d.apps.running("Roblox"), name="Roblox closed")   # a condition
+
+    def roblox_closed():
+        return not d.apps.running("Roblox")
+
+    d.observe(roblox_closed, name="Roblox closed")         # a condition
 
     try:
         play_the_game()
@@ -15,8 +19,6 @@ in the script (a wait, a click, a sleep...) raises Interrupted, once. The script
 decides what to do. An observer fires again only after what it watches has gone away
 and come back. All image observers share one screen capture per tick.
 """
-
-from __future__ import annotations
 
 import threading
 import time

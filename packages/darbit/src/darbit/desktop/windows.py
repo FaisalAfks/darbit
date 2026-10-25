@@ -1,7 +1,5 @@
 """pywebview windows with the Win32 styles each kind needs. See docs/tasks/T06-desktop-windows.md."""
 
-from __future__ import annotations
-
 from typing import Literal
 
 Kind = Literal["normal", "overlay", "bar", "clickthrough"]
