@@ -25,6 +25,7 @@ A layer only imports from the layers above it in this list. `import darbit` load
    - finds `Gui.Play.png` in `settings.images`;
    - reads `Gui.Play.json` (region, similarity, click offset);
    - caches the pixels.
+   - **`core/placement.py` `placed()`** moves it with its window and resizes it to the scaling, if it was taken somewhere else (unchanged otherwise).
 3. A target with a picture is **waited for** (`find.wait` → `_search`), up to `settings.timeout`:
    - **`_look()`** grabs one screenshot covering the target's region (`platform/screen.py` `grab()`, with mss, in real pixels);
    - **`core/matching.py` `best()`** scores the picture at every spot (OpenCV `TM_CCOEFF_NORMED` on colour; plain colour difference for single-colour pictures) and keeps the best;

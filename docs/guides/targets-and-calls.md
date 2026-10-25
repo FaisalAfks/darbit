@@ -19,6 +19,17 @@ A target can also be made in code: `d.Target("Bag.Character.png", similarity=0.6
 
 All positions are real screen pixels, also on scaled displays (150% etc.).
 
+### Other screens and moving windows
+
+The capture tool also saves `scale` (the display scaling) and, with `--window Roblox`, the window's size and corner (`window`, `origin`). Before each search the target is placed on the screen as it is now:
+
+- **Taken in a window** (`window` and `origin` saved) and `settings.window` set (or `[bot] window` in `darbit.toml`): its region, location and click offset follow the window, and the picture is resized by how much wider the window is now
+- **Only `scale` saved:** the picture is resized by the change in scaling, and its region grown to fit
+- **Nothing changed**, or neither saved: used exactly as it is
+- A resized picture that isn't found is tried once at 90–110% of that size; a size that works is kept for the rest of the run
+- A window whose shape changed (not just its size) is logged once: such targets may need taking again
+- `python -m darbit.tools.check` lists targets taken at another scaling
+
 ## Calls
 
 | Call | Does | Returns |

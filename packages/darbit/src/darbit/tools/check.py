@@ -145,6 +145,17 @@ def report(results: list[Result]) -> str:
     return "\n".join(lines)
 
 
+def taken_at_another_scaling(targets: list[Target], scale: float) -> str:
+    """A line naming the targets taken at another display scaling than `scale`; empty when there are none."""
+    others = []
+    for target in targets:
+        if target.scale is not None and abs(target.scale - scale) > 0.01:
+            others.append(f"{target.name} ({target.scale:.0%})")
+    if not others:
+        return ""
+    return f"taken at another scaling than this screen's {scale:.0%}, resized when searched: {', '.join(others)}"
+
+
 def remember(results: list[Result], folder: Path) -> None:
     """Add the results to the check history."""
     folder.mkdir(parents=True, exist_ok=True)
@@ -170,8 +181,12 @@ def main(argv: list[str] | None = None) -> int:
     if not screens:
         print("no screenshots to check against")
         return 2
-    results = check(_targets(folder, args.names), screens)
+    targets = _targets(folder, args.names)
+    results = check(targets, screens)
     print(report(results))
+    others = taken_at_another_scaling(targets, screen.scale_at(0, 0))
+    if others:
+        print(others)
     if not args.no_history:
         remember(results, folder.parent / ".darbit" / "state")
     return 0 if all(r.verdict in ("ok", "not seen") for r in results) else 1

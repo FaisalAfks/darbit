@@ -19,6 +19,7 @@ import cv2
 import numpy as np
 
 from ..core import matching
+from ..core.geometry import Region
 from ..core.targets import Target
 from ..platform import screen
 from .common import Item, Result, Theme, add_to_list, gradient, photo, rounded
@@ -497,7 +498,7 @@ class Session:
                 self.index = self.items.index(last.item)
             self._open(f"undone {last.item.name}")
         elif action == "save" and result is not None:
-            saved = save_result(self.folder, item, result, self.shot, self.origin, self._window_size())
+            saved = save_result(self.folder, item, result, self.shot, self.origin, self._window_area())
             print(saved.message, flush=True)
             self.saved.append(saved)
             self.index += 1
@@ -528,13 +529,12 @@ class Session:
             text += f"  ·  next: open {nxt.screen}"
         self._back_to_card((text, tone))
 
-    def _window_size(self) -> list[int] | None:
+    def _window_area(self) -> Region | None:
         if not self.window_name:
             return None
         from ..runtime import apps
 
-        area = apps.window(self.window_name)
-        return [area.w, area.h] if area else None
+        return apps.window(self.window_name)
 
     # ------------------------------------------------------------------ loop
 
