@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "konva": "9.3.16"
+    "konva": "10.9.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "4.0.0",
