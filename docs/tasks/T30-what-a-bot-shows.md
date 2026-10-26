@@ -1,5 +1,7 @@
 # T30 What a bot shows in the Studio
 
+> **Done 2026-10-26**, except step 4 (ad-bot's own calls, in its repo). The tiles are built in `server/dashboard.py` instead of `project/`, because the setup tile uses the capture guide and only the server layer sits above both. Observers now record `observer` events (watching, fired, stopped) for the Watching tile.
+
 **Goal:** a bot's page in the Studio fills itself from what the bot already reports, plus two small calls for progress and what's next.
 
 **Depends on:** T17. **Milestone:** v0.5. **Decision:** [0011](../decisions/0011-what-a-bot-shows.md).
@@ -9,7 +11,7 @@
 - `packages/darbit/src/darbit/runtime/show.py`: `progress(label, done, total)`, `next(label, at)`; both call `record("progress", ...)` / `record("next", ...)`
 - `packages/darbit/src/darbit/__init__.py`: export them as `d.progress`, `d.next`
 - `packages/darbit/src/darbit/project/manifest.py`: read `[studio]` (`summary`, `tiles`)
-- `packages/darbit/src/darbit/project/dashboard.py`: from a project and its run reports, the tiles to show and their values (`tiles(project, day) -> list[Tile]`), for the Studio's server (T20)
+- `packages/darbit/src/darbit/server/dashboard.py`: from a project and its run reports, the tiles to show and their values (`tiles(project, day) -> list[Tile]`), for the Studio's server (T20)
 - `packages/darbit/tests/test_dashboard.py`
 
 ## Steps

@@ -1,5 +1,7 @@
 # T18 Settings schema and form
 
+> **Done in part 2026-10-26:** `project/settings_schema.py` (schema with sections, checks per type and rule, `load_values` making `config.toml` from the defaults, `write_values` keeping comments with a small line editor instead of `tomlkit`, `as_json` for the form) and the `SettingsForm` component in Storybook. Left: the Studio's requests for it (T20) and ad-bot's `settings.toml` (in its repo).
+
 **Goal:** a bot declares its own settings once in `settings.toml`; darbit loads and checks the user's `config.toml` against it, and the hub shows a form for it.
 
 **Depends on:** T03, T17. **Issue:** #51. **Milestone:** v0.5.

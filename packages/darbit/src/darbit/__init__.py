@@ -39,9 +39,12 @@ from .runtime.actions import (
 from .runtime.find import check, exists, find_all, vanish, wait
 from .runtime.log import log, record, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
+from .runtime.show import next_up, progress
 from .runtime.state import State, Timer
 from .runtime.steps import step
 from .settings import settings
+
+next = next_up  # d.next("Weekly reset", when): shown in darbit Studio (decision 0011)
 
 __version__ = "0.2.0"
 
@@ -84,10 +87,12 @@ __all__ = [
     "hold",
     "hover",
     "log",
+    "next",
     "no_interrupts",
     "observe",
     "observers",
     "press",
+    "progress",
     "record",
     "release",
     "right_click",

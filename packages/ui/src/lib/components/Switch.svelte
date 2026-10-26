@@ -1,12 +1,22 @@
 <!-- An on/off setting, with its name and help beside it (a bool in settings.toml).
      <Switch label="Speed Raid" help="The next character, every 30 minutes." bind:checked /> -->
 <script lang="ts">
-  let { label, help, checked = $bindable(false) }: { label: string; help?: string; checked?: boolean } = $props();
+  let {
+    label,
+    help,
+    checked = $bindable(false),
+    onchange,
+  }: { label: string; help?: string; checked?: boolean; onchange?: (checked: boolean) => void } = $props();
+
+  function flip(): void {
+    checked = !checked;
+    onchange?.(checked);
+  }
 </script>
 
 <label class="row">
   <span class="text"><b>{label}</b>{#if help}<small>{help}</small>{/if}</span>
-  <button class="switch" role="switch" aria-checked={checked} aria-label={label} onclick={() => (checked = !checked)}></button>
+  <button class="switch" role="switch" aria-checked={checked} aria-label={label} onclick={flip}></button>
 </label>
 
 <style>

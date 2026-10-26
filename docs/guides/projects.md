@@ -34,6 +34,47 @@ The last one wins:
 
 `[settings]` takes every setting in `d.settings` except `images`, which come from `[images]`. `logs` and `state` are folders relative to the project, and default to its `.darbit/logs` and `.darbit/state`. The day's log starts with the values the manifest set.
 
+## What a bot shows in darbit Studio
+
+Most of a bot's Overview comes from what darbit already records: the open `d.step(...)` names (Now), its top-level steps (Today's round), `d.record(...)` (What happened), failed steps with their screenshots, and `d.observe(...)` (Watching). Two calls add the rest:
+
+```python
+d.progress("Speed Raid this week", done, 133)  # a ring; call again with new numbers
+d.next("Weekly reset", reset_time)  # a datetime; shown as "in 2 d 4 h"
+```
+
+`[studio]` picks and orders the tiles (decision 0011):
+
+```toml
+[studio]
+summary = "Raids, Speed Raid, challenges and AFK, all day"
+tiles = ["now", "progress:Speed Raid this week", "next", "round", "activity", "watching"]
+```
+
+Tiles: `now`, `round`, `progress` (or `progress:<label>` for one), `next`, `activity`, `failures`, `watching`, `setup`. Without the table, all of them in that order; a tile with nothing to show is left out.
+
+## The bot's own settings: settings.toml
+
+A bot declares its settings once; the Studio shows a form for them and `config.toml` holds the values:
+
+```toml
+[speed_raid]
+label = "Speed Raid"
+
+  [speed_raid.enabled]
+  type = "bool"
+  default = true
+  help = "The next character, every 30 minutes."
+
+  [speed_raid.every_minutes]
+  type = "int"
+  default = 30
+  min = 10
+  max = 120
+```
+
+Types: `bool`, `int`, `float`, `str`, `choice` (with `options`), `keys`, `target`, `region`, `location`, `list`. A missing `config.toml` is made from the defaults; a value of the wrong type or outside its limits is an error naming the key and the rule. Saving from the Studio keeps the comments in `config.toml`.
+
 ## Mistakes
 
 An unknown table or key, a missing `[bot] name`, or a setting of the wrong type (`timeout = "long"`) stops `import darbit` with a message naming the key. A `darbit = ...` that isn't plain comparisons (`>=0.3,<0.4`) gives a warning.
