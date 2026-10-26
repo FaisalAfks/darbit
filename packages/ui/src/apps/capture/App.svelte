@@ -33,7 +33,7 @@
   <Magnifier {frame} x={mouse.x} y={mouse.y} />
 </div>
 
-<Toolbar edge="bottom" avoidMouse>
+<Toolbar label="Capture tools" edge="bottom" avoidMouse>
   <span class="name">{draft.name}</span>
   {#if draft.say}<TextSlot slot={draft.say.slot} text={draft.say.text} from={draft.say.from} />{/if}
   <hr />
