@@ -12,9 +12,10 @@ from ctypes import wintypes
 from dataclasses import dataclass
 
 from .. import events
+from ..server import ui_settings
 from .windows import Window, open_window
 
-HIDE_AFTER = 3.0  # seconds after the mouse leaves the bar
+HIDE_AFTER = 3.0  # seconds after the mouse leaves the bar (the studio.pill_hide_after setting; 0 never hides)
 EDGE = 2  # pixels from the top of the screen that bring it back
 PEEK = 4  # pixels of the bar left showing when it's hidden
 MARGIN = 24  # pixels around the bar that still count as on it
@@ -33,6 +34,7 @@ class Peek:
     shown: bool = True
     on_bar: bool = False
     left_bar_at: float = 0.0
+    hide_after: float = HIDE_AFTER
 
     def near(self, x: int) -> bool:
         return self.left - MARGIN <= x <= self.left + self.width + MARGIN
@@ -50,10 +52,20 @@ class Peek:
         self.on_bar = over
 
     def should_hide(self, now: float) -> bool:
-        return self.shown and not self.on_bar and now - self.left_bar_at >= HIDE_AFTER
+        if self.hide_after <= 0:
+            return False
+        return self.shown and not self.on_bar and now - self.left_bar_at >= self.hide_after
 
     def hidden_top(self) -> int:
         return self.top - self.height + PEEK
+
+
+def hide_after() -> float:
+    """Seconds the bar waits before sliding away, from the Studio settings."""
+    value = ui_settings.get("studio.pill_hide_after", HIDE_AFTER)
+    if isinstance(value, (int, float)) and value >= 0:
+        return float(value)
+    return HIDE_AFTER
 
 
 class RECT(ctypes.Structure):
@@ -119,7 +131,7 @@ class RunPill:
         width, height = _size_of(self.bar.handle())
         left = screen.left + (screen.right - screen.left - width) // 2
         with self.lock:
-            self.peek = Peek(left, screen.top, width, height, left_bar_at=time.monotonic())
+            self.peek = Peek(left, screen.top, width, height, left_bar_at=time.monotonic(), hide_after=hide_after())
         self.at_top = screen.top
         _place(self.bar.handle(), left, screen.top)
         self.main.hide()

@@ -43,3 +43,9 @@ def test_injected_moves_are_not_real():
     assert not is_real(LLMHF_INJECTED)
     assert not is_real(LLMHF_INJECTED | LLMHF_LOWER_IL_INJECTED)
     assert not is_real(LLMHF_LOWER_IL_INJECTED)
+
+
+def test_a_bar_set_to_never_hide_stays():
+    peek = bar()
+    peek.hide_after = 0
+    assert not peek.should_hide(1000.0)
