@@ -3,26 +3,18 @@
 <script lang="ts">
   import { register } from "$lib/actions";
   import { on, request } from "$lib/api";
-  import Button from "$lib/components/Button.svelte";
   import CommandPalette from "$lib/components/CommandPalette.svelte";
-  import Field from "$lib/components/Field.svelte";
-  import ScoreBadge from "$lib/components/ScoreBadge.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
   import SettingsForm, { type Section } from "$lib/components/SettingsForm.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { toast } from "$lib/toasts.svelte";
   import { currentTheme } from "$lib/theme";
   import BotPicker, { type Bot } from "./BotPicker.svelte";
+  import LibraryPage from "./LibraryPage.svelte";
   import OverviewPage from "./OverviewPage.svelte";
   import ResultsPage from "./ResultsPage.svelte";
   import StudioSettings, { type StudioValues } from "./StudioSettings.svelte";
   import type { TileData } from "./TileView.svelte";
-
-  interface Picture {
-    name: string;
-    thumbnail: string | null;
-    score: number | null;
-  }
 
   const PAGES = [
     { value: "overview", label: "Overview" },
@@ -37,7 +29,6 @@
   let bots: Bot[] = $state([]);
   let bot: Bot | undefined = $state();
   let tiles: TileData[] = $state([]);
-  let pictures: Picture[] = $state([]);
   let form: { sections: Section[]; values: Record<string, unknown>; error: string | null } = $state({ sections: [], values: {}, error: null });
   let palette = $state(false);
   let editing = $state(false); // Edit unlocks adding and changing the bot's things
@@ -78,7 +69,6 @@
   async function openBot(next: Bot): Promise<void> {
     bot = next;
     tiles = [];
-    pictures = [];
     if (page === "studio") page = lastBotPage;
     await loadPage();
   }
@@ -99,8 +89,6 @@
       const overview = await request("dashboard.tiles", { path });
       tiles = overview.tiles;
       if (bot?.path === path) bot = { ...bot, ...overview.project };
-    } else if (page === "library") {
-      pictures = await request<Picture[]>("library.list", { path });
     } else if (page === "settings") {
       form = await request("project.settings", { path });
     }
@@ -252,31 +240,7 @@
         {:else if page === "overview"}
           <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openTool("guide")} onretake={() => openTool("capture")} />
         {:else if page === "library"}
-          <div class="pagehead">
-            <h1>Library</h1>
-            <span class="grow"></span>
-            {#if editing}
-              <Button label="Capture" icon="▣" variant="primary" size="s" onclick={() => openTool("capture")} />
-              <Button label="Setup guide" icon="☰" size="s" onclick={() => openTool("guide")} />
-            {:else}
-              <span class="hint">Turn on ✎ Edit to add or change things</span>
-            {/if}
-          </div>
-          {#if pictures.length}
-            <div class="library">
-              {#each pictures as picture (picture.name)}
-                <figure>
-                  {#if picture.thumbnail}<img src={picture.thumbnail} alt="" />{:else}<span class="nothumb">?</span>{/if}
-                  <figcaption>
-                    <span>{picture.name}</span>
-                    {#if picture.score !== null}<ScoreBadge score={picture.score} />{/if}
-                  </figcaption>
-                </figure>
-              {/each}
-            </div>
-          {:else if !loading}
-            <p class="empty">No pictures yet. Turn on Edit and use Capture, or the setup guide.</p>
-          {/if}
+          <LibraryPage path={bot.path} {editing} oncapture={() => openTool("capture")} />
         {:else if page === "results"}
           <ResultsPage path={bot.path} onretake={() => openTool("capture")} />
         {:else if page === "settings"}
@@ -443,58 +407,6 @@
       opacity: 0;
       transform: translateY(var(--space-s));
     }
-  }
-  .pagehead {
-    display: flex;
-    align-items: center;
-    gap: var(--space-m);
-    margin-bottom: var(--space-l);
-  }
-  .pagehead h1 {
-    margin: 0;
-    font: 700 var(--size-title3) / var(--line-title3) var(--font-strong);
-  }
-  .grow {
-    flex: 1;
-  }
-  .hint {
-    color: var(--muted);
-    font-size: var(--size-caption);
-  }
-  .library {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(calc(5 * var(--control-l)), 1fr));
-    gap: var(--space-l);
-  }
-  figure {
-    margin: 0;
-    display: grid;
-    gap: var(--space-s);
-    padding: var(--space-m);
-    border-radius: var(--radius-l);
-    background: var(--raised);
-    transition: transform var(--duration-normal) var(--curve-decelerate), background var(--duration-fast) var(--curve-easy-ease);
-  }
-  figure:hover {
-    transform: translateY(calc(-1 * var(--space-xxs)));
-    background: var(--raised-hover);
-  }
-  figure img,
-  .nothumb {
-    width: 100%;
-    height: calc(2 * var(--control-l));
-    object-fit: contain;
-    display: grid;
-    place-items: center;
-    color: var(--faint);
-  }
-  figcaption {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-s);
-    font-size: var(--size-caption);
-    word-break: break-all;
   }
   .empty {
     color: var(--muted);

@@ -70,6 +70,12 @@ export interface Requests {
   "project.settings.save": { path: string; values: Record<string, unknown> };
   /** pictures with thumbnails and last scores */
   "library.list": { path: string };
+  /** every line in the bot that names an asset */
+  "library.uses": { path: string; name: string };
+  /** what renaming an asset would change */
+  "library.rename.plan": { path: string; name: string; to: string };
+  /** rename an asset and every line naming it */
+  "library.rename": { path: string; name: string; to: string };
   /** the Results page's days, each with its lead gain */
   "results.days": { path: string };
   /** one day of the Results page */

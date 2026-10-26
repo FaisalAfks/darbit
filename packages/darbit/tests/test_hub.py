@@ -145,7 +145,8 @@ def test_the_library_has_thumbnails_and_scores(bot):
     (state / "check.jsonl").write_text(json.dumps({"name": "Gui.Play.png", "score": 0.97}) + "\n", encoding="utf-8")
     library = hub.library_list({"path": str(bot)})
     assert library[0]["name"] == "Gui.Play"
-    assert library[0]["score"] == 0.97
+    assert library[0]["scores"] == [0.97]
+    assert library[0]["kind"] == "image"
     assert library[0]["thumbnail"].startswith("data:image/png;base64,")
 
 

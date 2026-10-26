@@ -6,8 +6,6 @@ the bot's darbit watches (platform/safety.py), so held keys are always let go. W
 report is watched and every change goes to the windows as `project.changed`. See docs/tasks/T20-hub.md.
 """
 
-import base64
-import json
 import os
 import subprocess
 import threading
@@ -16,19 +14,14 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-import cv2
-import numpy as np
-
 from .. import paths
-from ..core.targets import IMAGE_TYPES
 from ..project import bots
 from ..project.manifest import MANIFEST, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, results, ui_settings
+from . import dashboard, library, results, ui_settings
 from .events import publish
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
-THUMB = 96  # px, the library's thumbnails
 WATCH_EVERY = 1.0  # seconds between looks at a running bot's report
 STOP_WAIT = 10.0  # seconds a bot gets to stop before it's ended
 
@@ -279,55 +272,27 @@ def settings_save(data: dict) -> dict:
 
 
 def library_list(data: dict) -> list[dict]:
-    """Every picture in the bot's image folders with a small thumbnail and its last check score."""
-    folder = _folder(data)
-    project = load(folder)
-    scores = _last_scores(folder)
+    """Every asset the bot uses: images, regions, points, and the guide's pictures still missing."""
+    return library.assets(load(_folder(data)))
+
+
+def library_uses(data: dict) -> list[dict]:
+    """Every line in the bot's code and guide that names an asset."""
+    project = load(_folder(data))
     found = []
-    for name in project.images:
-        images = folder / name
-        if not images.is_dir():
-            continue
-        for path in sorted(images.iterdir()):
-            if path.suffix.lower() not in IMAGE_TYPES:
-                continue
-            target = path.stem
-            found.append({"name": target, "thumbnail": _thumbnail(path), "score": scores.get(target)})
+    for use in library.uses(project, str(data.get("name", ""))):
+        found.append({"file": use.file.relative_to(project.folder).as_posix(), "line": use.line, "text": use.text})
     return found
 
 
-def _thumbnail(path: Path) -> str | None:
-    """A small PNG as a data URL, so the list needs no more requests."""
-    pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
-    if pixels is None:
-        return None
-    height, width = pixels.shape[:2]
-    scale = min(1.0, THUMB / max(height, width))
-    if scale < 1.0:
-        pixels = cv2.resize(
-            pixels, (max(1, round(width * scale)), max(1, round(height * scale))), interpolation=cv2.INTER_AREA
-        )
-    ok, encoded = cv2.imencode(".png", pixels)
-    if not ok:
-        return None
-    return "data:image/png;base64," + base64.b64encode(encoded.tobytes()).decode("ascii")
+def library_rename_plan(data: dict) -> dict:
+    """What renaming an asset would change, without changing anything."""
+    return library.rename_plan(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
 
 
-def _last_scores(folder: Path) -> dict[str, float]:
-    """The newest score per target from `darbit check`'s history."""
-    history = paths.project_dir(folder) / "state" / "check.jsonl"
-    scores: dict[str, float] = {}
-    if not history.is_file():
-        return scores
-    for line in history.read_text(encoding="utf-8").splitlines():
-        try:
-            row = json.loads(line)
-        except ValueError:
-            continue
-        name = str(row.get("name", "")).removesuffix(".png")
-        if name and isinstance(row.get("score"), (int, float)):
-            scores[name] = row["score"]
-    return scores
+def library_rename(data: dict) -> dict:
+    """Rename an asset and every line naming it, all at once."""
+    return library.rename(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
 
 
 def results_days(data: dict) -> list[dict]:
@@ -375,6 +340,9 @@ def register() -> None:
     HANDLERS["project.settings"] = settings_get
     HANDLERS["project.settings.save"] = settings_save
     HANDLERS["library.list"] = library_list
+    HANDLERS["library.uses"] = library_uses
+    HANDLERS["library.rename.plan"] = library_rename_plan
+    HANDLERS["library.rename"] = library_rename
     HANDLERS["results.days"] = results_days
     HANDLERS["results.day"] = results_day
     HANDLERS["tools.open"] = tools_open
