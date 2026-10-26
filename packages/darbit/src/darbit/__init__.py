@@ -37,14 +37,15 @@ from .runtime.actions import (
     write,
 )
 from .runtime.find import check, exists, find_all, vanish, wait
-from .runtime.log import log, record, screenshot
+from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
-from .runtime.show import next_up, progress
+from .runtime.show import Record, next_up, plan, progress
 from .runtime.state import State, Timer
 from .runtime.steps import step
 from .settings import settings
 
 next = next_up  # d.next("Weekly reset", when): shown in darbit Studio (decision 0011)
+record = Record()  # d.record("event", ...) and d.record.gain("Gems", 120): the run report (decision 0013)
 
 __version__ = "0.3.0"
 
@@ -91,6 +92,7 @@ __all__ = [
     "no_interrupts",
     "observe",
     "observers",
+    "plan",
     "press",
     "progress",
     "record",

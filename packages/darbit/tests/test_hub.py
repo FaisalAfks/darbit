@@ -124,7 +124,8 @@ def test_the_overview_comes_from_the_report(bot):
     assert overview["project"]["name"] == "tick-bot"
     kinds = [tile["kind"] for tile in overview["tiles"]]
     assert kinds[:3] == ["now", "round", "progress"]
-    assert hub.reports_days({"path": str(bot)}) == [today]
+    listed = hub.results_days({"path": str(bot)})
+    assert [entry["day"] for entry in listed] == [today]
 
 
 def test_settings_are_read_and_saved(bot):

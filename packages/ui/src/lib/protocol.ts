@@ -70,8 +70,10 @@ export interface Requests {
   "project.settings.save": { path: string; values: Record<string, unknown> };
   /** pictures with thumbnails and last scores */
   "library.list": { path: string };
-  /** days with a run report */
-  "reports.days": { path: string };
+  /** the Results page's days, each with its lead gain */
+  "results.days": { path: string };
+  /** one day of the Results page */
+  "results.day": { path: string; day: string | null };
   /** open capture, guide or check for a bot */
   "tools.open": { path: string; tool: string };
   /** hide the Studio behind the run pill while the bot runs */

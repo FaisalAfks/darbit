@@ -15,3 +15,11 @@ export function clock(time: string | null | undefined): string {
   const at = time.includes("T") ? time.split("T")[1] : time;
   return at.slice(0, 5);
 }
+
+/** A length of time for people: 38 160 seconds -> "10 h 36 m", 300 -> "5 m", 40 -> "40 s". */
+export function duration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)} s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} m`;
+  return `${Math.floor(minutes / 60)} h ${minutes % 60} m`;
+}

@@ -24,7 +24,7 @@ from ..core.targets import IMAGE_TYPES
 from ..project import bots
 from ..project.manifest import MANIFEST, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, ui_settings
+from . import dashboard, results, ui_settings
 from .events import publish
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
@@ -330,17 +330,17 @@ def _last_scores(folder: Path) -> dict[str, float]:
     return scores
 
 
-def reports_days(data: dict) -> list[str]:
-    """The days the bot has a run report for, newest first."""
+def results_days(data: dict) -> list[dict]:
+    """The Results page's day list: days with a run report, newest first, with their lead gain."""
     folder = _folder(data)
-    project = load(folder)
-    logs = dashboard.report_file(project, "x").parent
-    days = []
-    if logs.is_dir():
-        for path in logs.glob("report-*.jsonl"):
-            days.append(path.stem.removeprefix("report-"))
-    days.sort(reverse=True)
-    return days
+    return results.days(load(folder))
+
+
+def results_day(data: dict) -> dict:
+    """One day of the Results page (today when no day is given)."""
+    folder = _folder(data)
+    day = str(data.get("day") or datetime.now().strftime("%Y-%m-%d"))
+    return results.day(load(folder), day)
 
 
 def tools_open(data: dict) -> dict:
@@ -375,5 +375,6 @@ def register() -> None:
     HANDLERS["project.settings"] = settings_get
     HANDLERS["project.settings.save"] = settings_save
     HANDLERS["library.list"] = library_list
-    HANDLERS["reports.days"] = reports_days
+    HANDLERS["results.days"] = results_days
+    HANDLERS["results.day"] = results_day
     HANDLERS["tools.open"] = tools_open

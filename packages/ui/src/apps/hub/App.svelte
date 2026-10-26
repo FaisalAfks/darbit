@@ -13,6 +13,7 @@
   import { toast } from "$lib/toasts.svelte";
   import { currentTheme } from "$lib/theme";
   import BotPicker, { type Bot } from "./BotPicker.svelte";
+  import ResultsPage from "./ResultsPage.svelte";
   import StudioSettings, { type StudioValues } from "./StudioSettings.svelte";
   import TileView, { type TileData } from "./TileView.svelte";
 
@@ -31,14 +32,11 @@
 
   let { connected = false }: { connected?: boolean } = $props();
 
-  let page = $state("overview"); // a bot page, or "studio" for the Studio's own settings
+  let page = $state(firstPage()); // a bot page, or "studio" for the Studio's own settings
   let bots: Bot[] = $state([]);
   let bot: Bot | undefined = $state();
   let tiles: TileData[] = $state([]);
   let pictures: Picture[] = $state([]);
-  let days: string[] = $state([]);
-  let day = $state("");
-  let dayTiles: TileData[] = $state([]);
   let form: { sections: Section[]; values: Record<string, unknown>; error: string | null } = $state({ sections: [], values: {}, error: null });
   let palette = $state(false);
   let editing = $state(false); // Edit unlocks adding and changing the bot's things
@@ -59,6 +57,12 @@
   const live = $derived(status === "running" || status === "paused");
   const botPage = $derived(page === "studio" ? "" : page);
 
+  function firstPage(): string {
+    const asked = new URLSearchParams(location.search).get("page") ?? "";
+    if (asked === "studio" || PAGES.some((each) => each.value === asked)) return asked;
+    return "overview";
+  }
+
   function failed(error: Error): void {
     toast(error.message);
   }
@@ -74,8 +78,6 @@
     bot = next;
     tiles = [];
     pictures = [];
-    days = [];
-    dayTiles = [];
     if (page === "studio") page = lastBotPage;
     await loadPage();
   }
@@ -98,22 +100,9 @@
       if (bot?.path === path) bot = { ...bot, ...overview.project };
     } else if (page === "library") {
       pictures = await request<Picture[]>("library.list", { path });
-    } else if (page === "results") {
-      days = await request<string[]>("reports.days", { path });
-      if (!days.includes(day)) day = days[0] ?? "";
-      await loadDay();
     } else if (page === "settings") {
       form = await request("project.settings", { path });
     }
-  }
-
-  async function loadDay(): Promise<void> {
-    if (!bot || !day) {
-      dayTiles = [];
-      return;
-    }
-    const overview = await request("dashboard.tiles", { path: bot.path, day });
-    dayTiles = overview.tiles.filter((tile: TileData) => tile.kind !== "now");
   }
 
   async function control(type: "project.run" | "project.pause" | "project.stop"): Promise<void> {
@@ -292,22 +281,7 @@
             <p class="empty">No pictures yet. Turn on Edit and use Capture, or the setup guide.</p>
           {/if}
         {:else if page === "results"}
-          {#if days.length}
-            <div class="runs">
-              <Field label="Day">
-                <select bind:value={day} onchange={() => loadDay().catch(failed)}>
-                  {#each days as each (each)}<option value={each}>{each}</option>{/each}
-                </select>
-              </Field>
-              <div class="bento">
-                {#each dayTiles as tile (tile.kind)}
-                  <TileView {tile} />
-                {/each}
-              </div>
-            </div>
-          {:else if !loading}
-            <p class="empty">No runs yet.</p>
-          {/if}
+          <ResultsPage path={bot.path} onretake={() => openTool("capture")} />
         {:else if page === "settings"}
           {#if form.error}
             <p class="empty bad">{form.error}</p>
@@ -531,14 +505,6 @@
     gap: var(--space-s);
     font-size: var(--size-caption);
     word-break: break-all;
-  }
-  .runs {
-    display: grid;
-    gap: var(--space-l);
-    align-content: start;
-  }
-  .runs > :global(.field) {
-    max-width: var(--width-inspector);
   }
   .empty {
     color: var(--muted);
