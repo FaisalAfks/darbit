@@ -2,20 +2,27 @@
 
 ## Unreleased
 
-- The docs site is published on GitHub Pages after each merge to main
-- Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
+## 0.3.0 - 2026-10-26
+
+Bots become projects with their own settings, darbit gets one command for everything, and darbit Studio gets its foundations: the local server, the UI package and its components, and what a bot shows in it.
+
+### New
+
 - Bot projects: a `darbit.toml` next to the bot (or above its script) gives its name, version and the darbit it needs, and sets darbit's settings for it before the script runs; image folders from `[images]` are searched first. A darbit version that doesn't match is a warning. Without one nothing changes
-- darbit's own code follows the plain style of decision 0008 (no walrus, lambdas, `@staticmethod` or `__future__` imports), checked by a `plain-python` hook in pre-commit and CI
+- A bot's own settings: `settings.toml` declares them (sections, types, limits, help), `config.toml` is checked against it and made from the defaults when missing, and saving keeps its comments
 - The `darbit` command: `darbit new NAME` makes a bot project, `darbit install GIT_URL` clones one at its newest release with its own uv environment, `darbit run` starts it; `darbit capture`, `guide`, `check` and `report` run the tools
-- Targets follow their window: taken with `--window`, a target's region, point and picture move and resize with the window; a target taken at another display scaling is resized; a resized target not found is tried once at nearby sizes
-- Setup guides: `guide.toml` lists the screens to open and the targets to take on each, in order; `python -m darbit.capture --guide guide.toml` walks through it, and `--guide capture.txt` converts a list once
-- The web UI package builds: `npm install`, `npm run build` puts every window's page into the package, and the wheel ships it; CI checks and builds it
-- UI themes: glass-dark, glass-light, midnight and high-contrast with every token, a theme chosen in one window shows in the others, and `npm run check` fails on a missing token or a colour outside the token files
-- UI components for every window, in Storybook (`npm run storybook`): buttons, chips, pills, the tools dock, sheets, the command palette, toasts, settings fields and switches, dashboard tiles with progress rings and bars, flow step rows, and capture's readout and magnifier
-- The local server for darbit's windows (`darbit[app]`): one WebSocket per window with a token, requests and events, screens as raw pixels (a full 2560 x 1600 screen in about 65 ms), the keymap, theme and UI settings; log lines and run-report events reach every open window
-- What a bot shows in darbit Studio (decision 0011): `d.progress(label, done, total)` and `d.next(label, at)`, an optional `[studio]` table in `darbit.toml`, and the Overview's tiles built from the run report; observers now record when they start, fire and stop
-- A bot's own settings: `settings.toml` declares them (sections, types, limits, help), `config.toml` is checked against it and made from the defaults when missing, and saving keeps its comments; the Studio's settings form shows them
-- The UI follows Fluent 2's scales (type, spacing, corners, control heights, motion) and WCAG 2.2 AA (contrast, 24 px targets, focus); `npm run check` fails on a raw pixel size in a component or a colour pair below the contrast line
+- Setup guides: `guide.toml` lists the screens to open and the targets to take on each, in order; `darbit guide` walks through it, and `--guide capture.txt` converts a list once
+- Targets follow their window: taken with `--window`, a target's region, point and picture move and resize with the window; a target taken at another display scaling is resized; a resized target not found is tried at nearby sizes, at most once a minute
+- What a bot shows in darbit Studio (decision 0011): `d.progress(label, done, total)` and `d.next(label, at)`, an optional `[studio]` table, and the Overview's tiles built from the run report; observers record when they start, fire and stop
+- The local server for darbit's windows (`darbit[app]`): one WebSocket per window with a token, requests and events, screens as raw pixels (a 2560 x 1600 screen in about 65 ms), the keymap, theme and UI settings; log lines and run-report events reach every open window
+- The web UI package: built into the wheel; four themes (glass-dark, glass-light, midnight, high-contrast); components for every window in Storybook (`npm run storybook`)
+
+### Changed
+
+- The UI follows Fluent 2's scales and WCAG 2.2 AA (decision 0012); `npm run check` fails on a missing token, a colour or raw pixel size outside the tokens, or a colour pair below the contrast line
+- darbit's own code follows the plain style of decision 0008 (no walrus, lambdas, `@staticmethod` or `__future__` imports), checked in pre-commit and CI
+- Runs and flows are saved as `@d.flow` Python (decision 0010); `examples/hello-bot` and `darbit new` use the agreed layout (`src/<name>/`, `assets/images/`)
+- The docs site is published on GitHub Pages; releases upload only the wheel and the source package; Dependabot groups its updates weekly
 
 ## 0.2.0 - 2026-10-25
 
