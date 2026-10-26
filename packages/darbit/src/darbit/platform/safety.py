@@ -6,18 +6,28 @@ a sleep that's already running.
 
 An observer that fires posts an interrupt: held keys are let go and the next darbit
 call in the script's main thread raises Interrupted, once.
+
+darbit Studio stops or pauses a bot it started through a control folder (DARBIT_CONTROL):
+a `stop` file is the stop hotkey; while a `pause` file is there, held keys are let go and
+the next darbit call waits.
 """
 
 import atexit
 import ctypes
+import os
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from ..errors import Interrupted, Stopped
 from .keys import key
 
+CONTROL = "DARBIT_CONTROL"  # environment variable: the folder darbit Studio writes `stop` and `pause` into
+CONTROL_EVERY = 0.25  # seconds between looks at the control folder
+
 _stopped = threading.Event()
+_paused = threading.Event()
 _wake = threading.Event()  # set by a stop or an interrupt, to cut a sleep short
 _on_stop: list[Callable[[], None]] = []
 _pending: list[Interrupted] = []  # at most one interrupt waiting for the script
@@ -97,11 +107,46 @@ def arm() -> None:
 
 
 def check() -> None:
-    """Raise Stopped if the stop hotkey was pressed."""
+    """Raise Stopped if the stop hotkey was pressed; wait while darbit Studio has the bot paused."""
     arm()
     if _stopped.is_set():
         raise Stopped("stopped by the stop hotkey")
+    if _paused.is_set():
+        _wait_while_paused()
     _take_interrupt()
+
+
+def _wait_while_paused() -> None:
+    for callback in _on_stop:  # let go of held keys and buttons while paused
+        callback()
+    while _paused.is_set() and not _stopped.is_set():
+        time.sleep(0.1)
+    if _stopped.is_set():
+        raise Stopped("stopped while paused")
+    with _lock:
+        if not _pending:
+            _wake.clear()  # the pause woke a sleep; nothing else is waiting
+
+
+def control_folder() -> Path | None:
+    """The folder darbit Studio controls this bot through, when it started it."""
+    folder = os.environ.get(CONTROL)
+    if not folder:
+        return None
+    return Path(folder)
+
+
+def _look_at_control(folder: Path) -> None:
+    stop_file = folder / "stop"
+    if stop_file.exists():
+        stop_file.unlink(missing_ok=True)
+        stop()
+    if (folder / "pause").exists():
+        if not _paused.is_set():
+            _paused.set()
+            _wake.set()  # cut a running sleep short so the pause starts now
+    else:
+        _paused.clear()
 
 
 def sleep(seconds: float) -> None:
@@ -134,10 +179,16 @@ def watch(combo: str) -> None:
     get_state.argtypes = (ctypes.c_int,)
     get_state.restype = ctypes.c_short
 
+    folder = control_folder()
+
     def run() -> None:
+        last_look = 0.0
         while True:
             if all(get_state(vk) & 0x8000 for vk in _watch_keys[0]):
                 stop()
+            if folder is not None and time.monotonic() - last_look >= CONTROL_EVERY:
+                _look_at_control(folder)
+                last_look = time.monotonic()
             time.sleep(0.05)
 
     threading.Thread(target=run, name="darbit-stop-key", daemon=True).start()

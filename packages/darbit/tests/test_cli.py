@@ -139,7 +139,7 @@ def test_guide_hands_over_to_the_capture_tool(monkeypatch):
 
 
 def test_commands_still_to_come_say_so(capsys):
-    assert cli.main(["app"]) == 2
-    assert "T20" in capsys.readouterr().out
+    assert cli.main(["record"]) == 2
+    assert "T15" in capsys.readouterr().out
     with pytest.raises(SystemExit):
         cli.main(["fly"])
