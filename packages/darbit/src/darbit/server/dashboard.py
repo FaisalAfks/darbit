@@ -14,13 +14,15 @@ from pathlib import Path
 from .. import paths
 from ..project.manifest import Project
 
-DEFAULT_TILES = ["now", "round", "progress", "next", "activity", "failures", "watching", "setup"]
+DEFAULT_TILES = ["now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup"]
 ACTIVITY_SHOWN = 50  # newest events in the Activity tile
 # events that are darbit's own detail, not something that happened worth showing
 DETAIL = {
     "step",
     "progress",
     "next",
+    "gain",
+    "plan",
     "observer",
     "exists",
     "wait",
@@ -89,6 +91,8 @@ def _build(kind: str, label: str, events: list[dict], project: Project, now: dat
         return round_tile(events)
     if kind == "progress":
         return progress_tile(events, label)
+    if kind == "gains":
+        return gains_tile(events)
     if kind == "next":
         return next_tile(events, now)
     if kind == "activity":
@@ -128,8 +132,15 @@ def now_tile(events: list[dict]) -> Tile:
 
 
 def round_tile(events: list[dict]) -> Tile | None:
-    """Each top-level step (a mode, for most bots): when it last started, how it ended and how long it took."""
+    """Each top-level step (a mode, for most bots): when it last started, how it ended and how long it took.
+
+    Steps named in the last `d.plan` that haven't started yet come after, as "planned".
+    """
     rows: dict[str, dict] = {}
+    planned: list[str] = []
+    for event in events:
+        if event.get("event") == "plan" and isinstance(event.get("steps"), list):
+            planned = [str(name) for name in event["steps"]]
     for event in _steps(events):
         name = event["step"]
         if " > " in name:
@@ -141,9 +152,30 @@ def round_tile(events: list[dict]) -> Tile | None:
             rows[name]["seconds"] = event.get("seconds")
             if event.get("reason"):
                 rows[name]["reason"] = event["reason"]
+    for name in planned:
+        if name not in rows:
+            rows[name] = {"name": name, "started": None, "state": "planned", "seconds": None}
     if not rows:
         return None
-    return Tile("round", "Today's round", {"steps": list(rows.values())})
+    ordered = list(rows.values())
+    if planned:
+        ordered = _in_plan_order(ordered, planned)
+    return Tile("round", "Today's round", {"steps": ordered})
+
+
+def _in_plan_order(rows: list[dict], planned: list[str]) -> list[dict]:
+    """The planned steps in plan order, then any others in the order they ran."""
+    by_name = {}
+    for row in rows:
+        by_name[row["name"]] = row
+    ordered = []
+    for name in planned:
+        if name in by_name:
+            ordered.append(by_name.pop(name))
+    for row in rows:
+        if row["name"] in by_name:
+            ordered.append(row)
+    return ordered
 
 
 def progress_tile(events: list[dict], label: str = "") -> Tile | None:
@@ -163,6 +195,26 @@ def progress_tile(events: list[dict], label: str = "") -> Tile | None:
         return None
     title = label or "Progress"
     return Tile("progress", title, {"items": list(latest.values())})
+
+
+def gains_tile(events: list[dict]) -> Tile | None:
+    """Today's gains from d.record.gain: each name with its sum today and its last total."""
+    found: dict[str, dict] = {}
+    for event in events:
+        if event.get("event") != "gain" or not event.get("name"):
+            continue
+        amount = event.get("amount")
+        if not isinstance(amount, (int, float)):
+            continue
+        row = found.setdefault(event["name"], {"name": event["name"], "today": 0, "total": None, "icon": None})
+        row["today"] += amount
+        if event.get("total") is not None:
+            row["total"] = event["total"]
+        if event.get("icon"):
+            row["icon"] = event["icon"]
+    if not found:
+        return None
+    return Tile("gains", "Gains today", {"items": list(found.values())})
 
 
 def next_tile(events: list[dict], now: datetime) -> Tile | None:

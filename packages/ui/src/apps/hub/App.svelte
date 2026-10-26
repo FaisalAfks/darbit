@@ -13,9 +13,10 @@
   import { toast } from "$lib/toasts.svelte";
   import { currentTheme } from "$lib/theme";
   import BotPicker, { type Bot } from "./BotPicker.svelte";
+  import OverviewPage from "./OverviewPage.svelte";
   import ResultsPage from "./ResultsPage.svelte";
   import StudioSettings, { type StudioValues } from "./StudioSettings.svelte";
-  import TileView, { type TileData } from "./TileView.svelte";
+  import type { TileData } from "./TileView.svelte";
 
   interface Picture {
     name: string;
@@ -249,11 +250,7 @@
         {:else if !bot}
           <p class="empty">No bots yet. Install one with <code>darbit install &lt;link&gt;</code>, or add a bot folder from the bot menu.</p>
         {:else if page === "overview"}
-          <div class="bento">
-            {#each tiles as tile (tile.kind)}
-              <TileView {tile} />
-            {/each}
-          </div>
+          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openTool("guide")} onretake={() => openTool("capture")} />
         {:else if page === "library"}
           <div class="pagehead">
             <h1>Library</h1>
@@ -463,13 +460,6 @@
   .hint {
     color: var(--muted);
     font-size: var(--size-caption);
-  }
-  .bento {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    grid-auto-flow: dense; /* a narrow tile fills the gap beside a wide one */
-    gap: var(--space-l);
-    align-content: start;
   }
   .library {
     display: grid;

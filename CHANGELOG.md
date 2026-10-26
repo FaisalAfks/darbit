@@ -10,6 +10,7 @@
 
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it
 - darbit Studio's new frame (decision 0013): a bot dropdown or sidebar, a centred page bar (Overview, Results, Library, Settings) with a gliding highlight, Play, Pause, Stop and Edit, page fades, and the Studio's own settings page (look, window, while a bot runs)
+- The Overview page in blocks of rows: Now, what needs you (a failure with Retake, pictures still to take with Start setup), today's round with the steps still to come (`d.plan`), progress, today's gains, next up, what happened and what's watched; Customize rearranges, resizes and hides blocks, saved per bot on this PC
 - The Results page: a day list with each day's lead gain, and the chosen day as a sentence, its problems grouped with a Retake, a table of gains (today, the week, total) and progress, and a whole-day timeline that zooms and drags
 - `d.record.gain(name, amount, total=, icon=)` reports what the bot got, and `d.plan([...])` the round's order; `d.record(...)` works as before
 - Closing the Studio keeps darbit running in the tray: the icon gets a dot while a bot runs, and its menu pauses, stops or shows the running bot, opens the Studio settings or quits; the window opens where it was left

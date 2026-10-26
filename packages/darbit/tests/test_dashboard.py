@@ -155,3 +155,22 @@ def test_mistakes_in_the_calls_say_what_is_wrong(call, message, monkeypatch):
     monkeypatch.setattr(d.settings, "log", False)
     with pytest.raises((ValueError, TypeError), match=message):
         call()
+
+
+def test_the_plan_shows_steps_still_to_come_and_gains_add_up(tmp_path):
+    events = [
+        {"time": "09:00:00", "event": "plan", "steps": ["Raid", "Speed Raid", "AFK"]},
+        {"time": "09:01:00", "event": "step", "step": "Speed Raid", "state": "started"},
+        {"time": "09:02:00", "event": "gain", "name": "Gems", "amount": 100, "total": 900, "icon": "◆"},
+        {"time": "09:03:00", "event": "gain", "name": "Gems", "amount": 20, "total": 920},
+        {"time": "09:04:00", "event": "gain", "name": "Gold", "amount": "lots"},
+    ]
+    tiles = by_kind(dashboard.tiles(project_with(tmp_path, events), TODAY, NOON))
+    steps = tiles["round"].data["steps"]
+    assert [(row["name"], row["state"]) for row in steps] == [
+        ("Raid", "planned"),
+        ("Speed Raid", "running"),
+        ("AFK", "planned"),
+    ]
+    assert tiles["gains"].data["items"] == [{"name": "Gems", "today": 120, "total": 920, "icon": "◆"}]
+    assert "activity" not in tiles  # gains and plans are darbit's own detail
