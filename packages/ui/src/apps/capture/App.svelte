@@ -43,13 +43,13 @@
     {/each}
   </div>
   <hr />
-  <IconButton action="capture.snap.toggle" label="Snapping" icon="⌗" active={snapping} />
-  <IconButton action="capture.zoom.toggle" label="Pin magnifier" icon="⌕" active={pinned} />
+  <IconButton action="capture.snap.toggle" label="Snapping" icon="⌗" pressed={snapping} />
+  <IconButton action="capture.zoom.toggle" label="Pin magnifier" icon="⌕" pressed={pinned} />
   <IconButton action="edit.undo" label="Undo" icon="↶" />
   <IconButton action="capture.refreeze" label="New shot" icon="⟳" />
   <IconButton action="highlight.toggle" label="Highlight" icon="◎" />
   <hr />
-  <Button action="capture.confirm" label="Save" primary />
+  <Button action="capture.confirm" label="Save" variant="primary" />
 </Toolbar>
 
 <style>

@@ -1,5 +1,7 @@
 # T03 Components
 
+> **Part 1 done 2026-10-26** (from the approved Studio layout, decision 0011): Storybook with theme and backdrop switches; one tooltip layer (`use:tip`); `Button`, `IconButton`, `Keycap`, `Chip`, `ScoreBadge`, `TextSlot`, `Segmented` (the pill menu and filters), `Switch`, `Tile` (with its source line), `Ring`, `Bar`, `ProgressStrip`, `Field`. Storybook replaces the Gallery page. **Part 2:** the top pill and dock (`Toolbar`), sheets, `CommandPalette`, `Readout`, `Magnifier`, step rows, `List`, `Tree`, `Toast`.
+
 **Goal:** the shared building blocks every window is made of, each in one Svelte file, using only tokens.
 
 **Depends on:** T02. **Issue:** #45. **Milestone:** v0.3.

@@ -16,3 +16,5 @@ site/
 .claude/skills
 # the built web UI (npm run build); shipped in the wheel, not committed
 packages/darbit/src/darbit/ui/static/
+packages/ui/storybook-static/
+packages/ui/shots/

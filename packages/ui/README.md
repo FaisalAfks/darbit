@@ -6,7 +6,8 @@ The web front end of every darbit window: the hub, capture, highlight, the recor
 npm install        # from the repo root (npm workspaces); versions are pinned exactly
 npm run dev        # http://127.0.0.1:5173/<app>/ ; windows load from here with DARBIT_UI_DEV=1
 npm run build      # into packages/darbit/src/darbit/ui/static/ (git-ignored, shipped in the wheel)
-npm run check      # svelte-check and TypeScript
+npm run check      # the token check, svelte-check and TypeScript
+npm run storybook  # every component in every theme: http://127.0.0.1:6006 (theme and backdrop in its toolbar)
 ```
 
 | Path | What |
@@ -17,5 +18,6 @@ npm run check      # svelte-check and TypeScript
 | `src/lib/actions.ts` | every action, run by keys, buttons, the palette and menus alike |
 | `src/lib/keymap.ts` | keys from `packages/darbit/src/darbit/keymap.toml` ([keys](../../docs/style/ui/keymap.md)) |
 | `src/apps/<name>/` | one app per window |
+| `src/lib/components/*.stories.ts` | the Storybook stories; `python scripts/render_stories.py` renders them to `shots/` for PRs |
 
 Tasks: [docs/tasks](../../docs/tasks/README.md), T01 to T03 for this package.

@@ -1,0 +1,20 @@
+/* The story canvas: the theme's background, or a game-like scene behind glass like the real windows have. */
+body {
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+body[data-backdrop="game"] {
+  background:
+    radial-gradient(40% 30% at 75% 80%, var(--story-glow-warm), transparent 70%),
+    radial-gradient(30% 25% at 30% 70%, var(--story-glow-cool), transparent 70%),
+    radial-gradient(120% 90% at 20% 10%, var(--story-sky-1) 0%, var(--story-sky-2) 45%, var(--story-sky-3) 100%);
+}
+
+:root {
+  --story-sky-1: color-mix(in oklab, var(--accent-2) 45%, var(--bg));
+  --story-sky-2: color-mix(in oklab, var(--accent-2) 15%, var(--bg));
+  --story-sky-3: var(--bg);
+  --story-glow-warm: color-mix(in oklab, var(--warn) 35%, transparent);
+  --story-glow-cool: color-mix(in oklab, var(--accent) 22%, transparent);
+}

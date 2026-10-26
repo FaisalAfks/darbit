@@ -18,13 +18,13 @@
     </header>
     <TextSlot slot="guide" text={current.screenSay} />
     <div class="item">
-      <Chip tone={current.kind}>{current.kind}</Chip>
+      <Chip tone={current.kind} text={current.kind} />
       <span class="name">{current.name}</span>
       {#if current.listAt}<span class="num list">{current.listAt[0]} / {current.listAt[1]} · next {current.nextName}</span>{/if}
     </div>
     <TextSlot slot="guide" text={current.say} />
     <footer>
-      <Button action="capture.freeze" label="Capture" primary />
+      <Button action="capture.freeze" label="Capture" variant="primary" />
       <Button action="capture.previous" label="Back" />
       <Button action="capture.next" label="Skip" />
     </footer>
