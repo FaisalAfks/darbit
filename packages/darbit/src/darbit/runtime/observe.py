@@ -27,11 +27,12 @@ from dataclasses import dataclass, field
 
 from ..core import matching
 from ..core.geometry import Region
+from ..core.placement import Place
 from ..core.targets import Target
 from ..errors import Interrupted
 from ..platform import safety, screen
 from ..settings import settings
-from .find import What, _usable
+from .find import What, _loaded, place, where_now
 from .log import log
 
 Condition = Callable[[], bool]
@@ -67,10 +68,10 @@ def observe(what: What | Condition, name: str | None = None, region: Region | No
     if callable(what) and not isinstance(what, (str, Target)):
         observer = Observer(name or getattr(what, "__name__", "condition"), condition=what, region=region)
     else:
-        usable = _usable((what,))
-        if not usable:
+        loaded = _loaded((what,))
+        if not loaded:
             raise ValueError(f"nothing to observe: {what!r}")
-        target = usable[0]
+        target = loaded[0]  # placed on the screen at every look, so it follows its window
         observer = Observer(name or target.label, target=target, region=region)
     with _lock:
         _observers.append(observer)
@@ -98,11 +99,11 @@ def _start() -> None:
     _thread.start()
 
 
-def _look(observer: Observer, frame: tuple | None) -> object:
+def _look(observer: Observer, frame: tuple | None, now: Place) -> object:
     """A match or True when the observer's thing is there now, else None or False."""
     if observer.condition is not None:
         return observer.condition()
-    target = observer.target
+    target = place(observer.target, now)
     area = observer.region or target.region
     pixels, origin = frame
     if area is not None:
@@ -118,10 +119,17 @@ def _look(observer: Observer, frame: tuple | None) -> object:
 def tick() -> None:
     """One look at everything observed: one screen capture shared by all image observers."""
     watching = [o for o in observers() if not o._stopped]
-    frame = screen.grab() if any(o.target is not None for o in watching) else None
+    targets = []
+    for observer in watching:
+        if observer.target is not None:
+            targets.append(observer.target)
+    frame = None
+    if targets:
+        frame = screen.grab()
+    now = where_now(targets)
     for observer in watching:
         try:
-            hit = _look(observer, frame)
+            hit = _look(observer, frame, now)
         except Exception as error:  # noqa: BLE001 - a broken condition must not stop the other observers
             log(f"observer {observer.name} failed: {error}")
             continue

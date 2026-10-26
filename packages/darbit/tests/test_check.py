@@ -62,3 +62,14 @@ def test_the_command_against_saved_screens(tmp_path, capsys):
     assert main(["--folder", str(images), "--screens", str(shots)]) == 0
     assert "Gui.Play.png  ok" in capsys.readouterr().out
     assert (tmp_path / ".darbit" / "state" / "check.jsonl").read_text().count("Gui.Play") == 1
+
+
+def test_targets_taken_at_another_scaling_are_listed():
+    from darbit.core.targets import Target
+    from darbit.tools.check import taken_at_another_scaling
+
+    targets = [Target(name="Same", scale=1.5), Target(name="Small", scale=1.0), Target(name="Unknown")]
+    assert taken_at_another_scaling(targets, 1.5) == (
+        "taken at another scaling than this screen's 150%, resized when searched: Small (100%)"
+    )
+    assert taken_at_another_scaling(targets[:1], 1.5) == ""

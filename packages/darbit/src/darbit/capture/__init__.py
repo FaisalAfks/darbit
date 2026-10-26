@@ -45,7 +45,7 @@ screen.enable_dpi_awareness()
 __all__ = ["Item", "distinct", "main", "read_list"]
 
 
-def _single(item: Item, folder: Path, delay: float) -> int:
+def _single(item: Item, folder: Path, delay: float, window: str | None) -> int:
     for left in range(int(delay), 0, -1):
         print(f"freezing in {left}...", flush=True)
         time.sleep(1)
@@ -64,7 +64,12 @@ def _single(item: Item, folder: Path, delay: float) -> int:
     if not outcome or outcome[0] is None:
         print("cancelled")
         return 1
-    print(save_result(folder, item, outcome[0], shot, origin, None).message)
+    area = None
+    if window:
+        from ..runtime import apps
+
+        area = apps.window(window)
+    print(save_result(folder, item, outcome[0], shot, origin, area).message)
     return 0
 
 
@@ -89,7 +94,7 @@ def _main(argv: list[str] | None = None) -> int:
     parser.add_argument("--region", action="store_true", help="one target: a region instead of an image")
     parser.add_argument("--delay", type=float, default=3, help="one target: seconds before the screen freezes")
     parser.add_argument("--hotkey", default="f8", choices=sorted(HOTKEYS), help="session: the capture key")
-    parser.add_argument("--window", help="session: window to save the size of, e.g. Roblox")
+    parser.add_argument("--window", help="the app window targets are taken in, e.g. Roblox; they follow it later")
     args = parser.parse_args(argv)
 
     if args.guide_file and Path(args.guide_file).suffix == ".txt":
@@ -123,7 +128,7 @@ def _main(argv: list[str] | None = None) -> int:
             return 2
         if len(items) == 1:
             kind = "location" if args.location else "region" if args.region else items[0].kind
-            return _single(Item(items[0].name, kind), folder, args.delay)
+            return _single(Item(items[0].name, kind), folder, args.delay, args.window)
     print(
         f"{len(items)} to capture into {folder}; press {args.hotkey.upper()} when each is on screen, "
         "Ctrl+Alt+Q to finish"

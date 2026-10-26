@@ -47,18 +47,24 @@ def undo(saved: Saved) -> None:
 
 
 def save_result(
-    folder: Path, item: Item, result: Result, shot: np.ndarray, origin: Region, window: list[int] | None
+    folder: Path, item: Item, result: Result, shot: np.ndarray, origin: Region, window: Region | None
 ) -> Saved:
-    """Save a captured target."""
+    """Save a captured target. With the app's `window` area, its size and corner are saved too, so the target
+    follows the window when it moves or changes size (core/placement.py)."""
     path = folder / item.name
     before = _backup(_files(path, item.kind))
+    window_size = None
+    window_corner = None
+    if window is not None:
+        window_size = [window.w, window.h]
+        window_corner = [window.x, window.y]
     if item.kind == "location":
         p = result.point
-        save(path, None, location=[round(p.x), round(p.y)], window=window)
+        save(path, None, location=[round(p.x), round(p.y)], window=window_size, origin=window_corner)
         return Saved(item, f"saved {path}.json: location {round(p.x)},{round(p.y)}", before)
     if item.kind == "region":
         r = result.region
-        save(path, None, region=[r.x, r.y, r.w, r.h], window=window)
+        save(path, None, region=[r.x, r.y, r.w, r.h], window=window_size, origin=window_corner)
         return Saved(item, f"saved {path}.json: region {r.x},{r.y},{r.w},{r.h}", before)
     box = result.image
     image = shot[box.y - origin.y : box.bottom - origin.y, box.x - origin.x : box.right - origin.x].copy()
@@ -67,7 +73,8 @@ def save_result(
         center = box.center
         offset = [round(result.point.x - center.x), round(result.point.y - center.y)]
     region = [result.region.x, result.region.y, result.region.w, result.region.h] if result.region else None
-    save(path, image, region=region, offset=offset, scale=screen.scale_at(box.x, box.y), window=window)
+    scale = screen.scale_at(box.x, box.y)
+    save(path, image, region=region, offset=offset, scale=scale, window=window_size, origin=window_corner)
     elsewhere = distinct(image, shot, Region(box.x - origin.x, box.y - origin.y, box.w, box.h))
     verdict = "distinct" if elsewhere < RISKY else "RISKY, something else looks alike"
     message = (

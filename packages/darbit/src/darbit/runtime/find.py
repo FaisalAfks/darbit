@@ -1,4 +1,9 @@
-"""Looking for targets on screen. Not finding something returns None or False, never an error."""
+"""Looking for targets on screen. Not finding something returns None or False, never an error.
+
+Every search loads its targets, places them on today's screen (core/placement.py: following their
+window, resized to the scaling), then looks. A placed target that isn't found is tried once at nearby
+sizes, and a size that works is kept for that target.
+"""
 
 import threading
 import time
@@ -6,17 +11,65 @@ from pathlib import Path
 
 from ..core import matching
 from ..core.geometry import Region
+from ..core.placement import SAME, Place, aspect_changed, placed, ratio
 from ..core.targets import Match, Target, find_file, load
 from ..errors import TargetError
-from ..platform import safety, screen
+from ..platform import safety, screen, windows
 from ..settings import settings
 from .log import log, record, screenshot
 
 What = str | Path | Target
 
 
+NEARBY = (0.95, 1.05, 0.9, 1.1)  # sizes tried when a resized target isn't found
+NEARBY_EVERY = 60  # seconds between such tries for one target, until a size works
+
+_adjust: dict[str, float] = {}  # a nearby size that worked, per target
+_tried: dict[str, float] = {}  # when each target was last tried at nearby sizes
+_warned: set[str] = set()  # targets already warned about a window of another shape
+
+
 def target(what: What) -> Target:
+    """A target loaded from its files, as it was taken (not placed on today's screen)."""
     return load(what, settings.images)
+
+
+def where_now(targets: list[Target]) -> Place:
+    """Where the app window is and the display scaling, looked up only when a target needs them."""
+    needs_window = False
+    needs_scale = False
+    for one in targets:
+        if one.window is not None and one.origin is not None:
+            needs_window = True
+        if one.scale is not None:
+            needs_scale = True
+    window = None
+    if needs_window and settings.window:
+        found = windows.matching(settings.window, loose=True)
+        if found:
+            window = windows.region(found[0].handle)
+            if window.w <= 0 or window.h <= 0:
+                window = None  # minimised: targets stay as they were taken
+    scale = None
+    if needs_scale:
+        spot = window
+        for one in targets:
+            if spot is None and one.region is not None:
+                spot = one.region
+        if spot is not None:
+            middle = spot.center
+            scale = screen.scale_at(round(middle.x), round(middle.y))
+        else:
+            scale = screen.scale_at(0, 0)  # the main screen
+    return Place(window, scale)
+
+
+def place(one: Target, now: Place) -> Target:
+    """A loaded target placed on today's screen, with the nearby size that worked for it, if any."""
+    if aspect_changed(one, now) and one.label not in _warned:
+        _warned.add(one.label)
+        log(f"{one.label}: the window's shape changed since it was taken; it may need taking again")
+    return placed(one, now, _adjust.get(one.label, 1.0))
 
 
 def _union(areas: list[Region | None]) -> Region | None:
@@ -54,6 +107,16 @@ def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Ma
 
 
 def _usable(whats: tuple[What, ...]) -> list[Target]:
+    """The targets loaded and placed on today's screen."""
+    loaded = _loaded(whats)
+    now = where_now(loaded)
+    chosen = []
+    for one in loaded:
+        chosen.append(place(one, now))
+    return chosen
+
+
+def _loaded(whats: tuple[What, ...]) -> list[Target]:
     chosen = []
     for what in whats:
         try:
@@ -70,10 +133,14 @@ _closest = threading.local()  # the closest spot of the last search that found n
 
 def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> Match | None:
     _closest.match = None
-    chosen = _usable(whats)
-    if not chosen:
+    loaded = _loaded(whats)
+    if not loaded:
         safety.sleep(timeout)
         return None
+    now = where_now(loaded)
+    chosen = []
+    for one in loaded:
+        chosen.append(place(one, now))
     for one in chosen:
         if one._pixels is None:
             raise ValueError(f"{one.label} is a location, there's nothing to look for")
@@ -87,9 +154,40 @@ def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> M
         if closest is not None and (_closest.match is None or closest.score > _closest.match.score):
             _closest.match = closest
         if started >= deadline:
-            return None
+            return _nearby_sizes(loaded, now, region)
         pause = 1 / settings.scan_rate - (time.monotonic() - started)
         safety.sleep(min(max(pause, 0), max(deadline - time.monotonic(), 0)))
+
+
+def _nearby_sizes(loaded: list[Target], now: Place, region: Region | None) -> Match | None:
+    """One look at nearby sizes for resized targets not tried in the last minute; a size that works is kept.
+
+    A target that simply isn't on screen yet is tried again a minute later, not on every look.
+    """
+    resized = []
+    clock = time.monotonic()
+    for one in loaded:
+        if one._pixels is None or one.label in _adjust:
+            continue
+        if abs(ratio(one, now) - 1) < SAME:
+            continue
+        last = _tried.get(one.label)
+        if last is not None and clock - last < NEARBY_EVERY:
+            continue
+        _tried[one.label] = clock
+        resized.append(one)
+    if not resized:
+        return None
+    for extra in NEARBY:
+        tries = []
+        for one in resized:
+            tries.append(placed(one, now, extra))
+        found, _ = _look(tries, region)
+        if found is not None:
+            _adjust[found.target.label] = extra
+            log(f"{found.target.label}: found at {extra:.0%} of its expected size; keeping that size")
+            return found
+    return None
 
 
 def exists(what: What, timeout: float = 0, region: Region | None = None) -> Match | None:

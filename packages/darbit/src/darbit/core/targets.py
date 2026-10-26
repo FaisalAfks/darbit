@@ -4,9 +4,11 @@ A target saved by the capture tool is two files with the same name:
 `lobby/play.png` (the image) and `lobby/play.json` (its settings):
 
     {"region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
-     "location": [x, y], "scale": 1.5, "window": [w, h]}
+     "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
 
 Every field is optional. A target with only a location and no image is a point.
+`window` and `origin` are the size and top-left corner of the app window it was taken in;
+with them, core/placement.py follows the window when it moves or changes size.
 """
 
 import json
@@ -32,6 +34,7 @@ class Target:
     name: str = ""
     scale: float | None = None  # display scaling when captured
     window: tuple[int, int] | None = None  # size of the window it was captured in
+    origin: tuple[int, int] | None = None  # that window's top-left corner on screen, when captured
     _pixels: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     @property
@@ -141,6 +144,8 @@ def _from_json(target: Target, path: Path) -> Target:
         changes["scale"] = float(data["scale"])
     if "window" in data:
         changes["window"] = tuple(data["window"])
+    if "origin" in data:
+        changes["origin"] = tuple(data["origin"])
     return replace(target, **changes)
 
 
