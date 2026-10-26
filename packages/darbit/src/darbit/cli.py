@@ -29,7 +29,7 @@ COMMANDS = {
 }
 
 # commands whose task isn't done yet
-LATER = {"app": "T20", "keys": "T04", "highlight": "T11", "record": "T15", "play": "T16"}
+LATER = {"keys": "T04", "highlight": "T11", "record": "T15", "play": "T16"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -45,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
     if command in LATER:
         print(f"darbit {command} isn't built yet ({LATER[command]} in docs/tasks)")
         return 2
+    if command == "app":
+        return _app(args.rest)
     if command == "new":
         return _new(args.rest)
     if command == "install":
@@ -107,6 +109,24 @@ def _run(argv: list[str]) -> int:
     except (FileNotFoundError, ValueError) as error:
         print(error)
         return 2
+
+
+def _app(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="darbit app", description="Open darbit Studio.")
+    parser.add_argument("--debug", action="store_true", help="with the browser's developer tools")
+    args = parser.parse_args(argv)
+    try:
+        from .desktop import open_window, run
+    except ImportError:
+        print('darbit Studio needs the app extra: pip install "darbit[app]"')
+        return 2
+    try:
+        open_window("hub")
+    except ImportError:
+        print('darbit Studio needs the app extra: pip install "darbit[app]"')
+        return 2
+    run(args.debug)
+    return 0
 
 
 def _tool(command: str, argv: list[str]) -> int:

@@ -55,15 +55,20 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "run.edit": ("req", {"at": "list[int]", "step": "dict"}, "change, add or remove a step"),
     "run.at": ("evt", {"checkpoint": "int", "goal": "int", "step": "int"}, "the step being played"),
     "run.paused": ("evt", {"reason": "str"}, "stopped at a breakpoint or by pause"),
-    # T20 hub
-    "projects.list": ("req", {}, "installed bots"),
-    "project.run": ("req", {"name": "str"}, "start a bot"),
-    "project.pause": ("req", {"name": "str"}, "pause or resume a bot"),
-    "project.stop": ("req", {"name": "str"}, "stop a bot"),
-    "project.status": ("evt", {"name": "str", "status": "str", "step": "str | None"}, "a bot's state changed"),
-    "library.list": ("req", {"project": "str"}, "targets with thumbnails and last scores"),
-    "reports.days": ("req", {"project": "str"}, "days with a run report"),
-    "reports.day": ("req", {"project": "str", "day": "str"}, "one day's summary"),
+    # T20 Studio: a bot is named by its project folder
+    "projects.list": ("req", {}, "installed bots and added project folders"),
+    "project.add": ("req", {"path": "str"}, "add a project folder"),
+    "project.run": ("req", {"path": "str"}, "start a bot"),
+    "project.pause": ("req", {"path": "str"}, "pause or resume a bot"),
+    "project.stop": ("req", {"path": "str"}, "stop a bot"),
+    "project.status": ("evt", {"path": "str", "status": "str", "code": "int | None"}, "a bot started, paused or ended"),
+    "project.changed": ("evt", {"path": "str"}, "a running bot's report changed"),
+    "dashboard.tiles": ("req", {"path": "str", "day": "str | None"}, "a bot's Overview tiles"),
+    "project.settings": ("req", {"path": "str"}, "a bot's settings form and values"),
+    "project.settings.save": ("req", {"path": "str", "values": "dict"}, "save a bot's settings"),
+    "library.list": ("req", {"path": "str"}, "pictures with thumbnails and last scores"),
+    "reports.days": ("req", {"path": "str"}, "days with a run report"),
+    "tools.open": ("req", {"path": "str", "tool": "str"}, "open capture, guide or check for a bot"),
 }
 
 

@@ -52,20 +52,28 @@ export interface Requests {
   "run.control": { do: "continue" | "stop" | "step" | "pause" };
   /** change, add or remove a step */
   "run.edit": { at: number[]; step: Record<string, unknown> };
-  /** installed bots */
+  /** installed bots and added project folders */
   "projects.list": Record<string, never>;
+  /** add a project folder */
+  "project.add": { path: string };
   /** start a bot */
-  "project.run": { name: string };
+  "project.run": { path: string };
   /** pause or resume a bot */
-  "project.pause": { name: string };
+  "project.pause": { path: string };
   /** stop a bot */
-  "project.stop": { name: string };
-  /** targets with thumbnails and last scores */
-  "library.list": { project: string };
+  "project.stop": { path: string };
+  /** a bot's Overview tiles */
+  "dashboard.tiles": { path: string; day: string | null };
+  /** a bot's settings form and values */
+  "project.settings": { path: string };
+  /** save a bot's settings */
+  "project.settings.save": { path: string; values: Record<string, unknown> };
+  /** pictures with thumbnails and last scores */
+  "library.list": { path: string };
   /** days with a run report */
-  "reports.days": { project: string };
-  /** one day's summary */
-  "reports.day": { project: string; day: string };
+  "reports.days": { path: string };
+  /** open capture, guide or check for a bot */
+  "tools.open": { path: string; tool: string };
 }
 
 export interface Events {
@@ -91,8 +99,10 @@ export interface Events {
   "run.at": { checkpoint: number; goal: number; step: number };
   /** stopped at a breakpoint or by pause */
   "run.paused": { reason: string };
-  /** a bot's state changed */
-  "project.status": { name: string; status: string; step: string | null };
+  /** a bot started, paused or ended */
+  "project.status": { path: string; status: string; code: number | null };
+  /** a running bot's report changed */
+  "project.changed": { path: string };
 }
 
 export type RequestType = keyof Requests;

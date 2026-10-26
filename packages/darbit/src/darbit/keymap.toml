@@ -54,7 +54,7 @@
 [hub]
 "run.toggle"       = "f5"                 # run the open bot, or stop it
 "search"           = "ctrl+f"
-"section.next"     = "ctrl+tab"           # cycle Projects, Bot, Library, Runs, Settings
+"section.next"     = "ctrl+tab"           # cycle Overview, Library, Runs, Settings
 
 [mouse]                                   # gestures on the frozen screen (documented here, remappable)
 "select"           = "click"              # box what's under the mouse (click again: the next bigger thing)
