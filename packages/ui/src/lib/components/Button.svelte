@@ -1,5 +1,5 @@
 <!-- A button that runs a named action (its keys show in the tooltip), or its own onclick.
-     <Button action="flow.run" label="Run" icon="▶" />   <Button label="Save" variant="primary" onclick={save} /> -->
+     <Button action="run.pause" label="Pause" icon="❚❚" />   <Button label="Save" variant="primary" onclick={save} /> -->
 <script lang="ts">
   import { run } from "$lib/actions";
   import { keysFor } from "$lib/keymap";
