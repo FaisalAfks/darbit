@@ -10,7 +10,7 @@
 2. Play. Every key, click and camera turn is recorded with its timing.
 3. At a point the bot must be sure of (a wave starts), press `ctrl+alt+m`: the screen freezes, click the thing that proves it (click to select, T08), Enter. That's a checkpoint with `wait_for`. The bar shows `· checkpoint 2`.
 4. `ctrl+alt+p` pauses (nothing is recorded; the bar shows it); again to go on.
-5. `ctrl+alt+r` stops. The run opens in the run panel (T16) for a check, and is saved to `runs/slime.yaml`.
+5. `ctrl+alt+r` stops. The run opens in the run panel (T16) for a check, and is saved to `runs/slime.py` as a `@d.flow` function ([T14](T14-run-files.md)).
 
 ## Files
 
@@ -30,9 +30,9 @@
    - right-button drags → `turn` in degrees (pixels × a per-game factor set in the run, default from a calibration: turn 360° once at the start when asked);
    - arrow keys held for camera → `turn` too when the run says arrows turn the camera;
    - clicks → `click` at window fractions; drags → `drag`.
-4. **Checkpoints:** `record.mark` pauses recording, opens the capture overlay with a name `<run>.cp<n>` and kind image, and on save adds a checkpoint with `wait_for` that name. Steps after it go into a new goal under the new checkpoint.
+4. **Checkpoints:** `record.mark` pauses recording, opens the capture overlay with a name `<run>.cp<n>` and kind image, and on save adds a `d.checkpoint(...)` step with `wait_for` that name. The steps after it follow it in the flow.
 5. **The bar** (`bar` window, T06): red dot pulsing slowly while recording, time, run name, checkpoint count, buttons Mark, Pause, Stop (with their keys on hover). 360 px at most; drag it elsewhere; remembers its place.
-6. **Safety:** `run.stop` (`ctrl+alt+q`) stops the recorder too and saves what was recorded as `slime.partial.yaml`.
+6. **Safety:** `run.stop` (`ctrl+alt+q`) stops the recorder too and saves what was recorded as `slime.partial.py`.
 
 ## Contracts
 

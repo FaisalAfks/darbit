@@ -107,6 +107,8 @@ my-bot/
 
 ## 8. Recordings and run files
 
+> Run files are now `@d.flow` Python, not YAML: [decision 0010](decisions/0010-flows-are-python.md), [T14](tasks/T14-run-files.md).
+
 A run file is YAML, with a JSON Schema so editors check and complete it:
 
 ```yaml

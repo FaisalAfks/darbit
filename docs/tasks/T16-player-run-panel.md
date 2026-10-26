@@ -21,7 +21,7 @@
 
 ## Contracts
 
-- `d.play(run: str | Path | Run, panel: bool = False) -> bool`
+- `d.play(run: str | Path | Flow, panel: bool = False) -> bool`: a `runs/<name>.py` file, or a loaded flow; the same as calling the `@d.flow` function, with the panel and breakpoints ([T14](T14-run-files.md))
 
 ## Done when
 

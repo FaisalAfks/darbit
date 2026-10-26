@@ -1,55 +1,96 @@
-# T14 Run file format
+# T14 Flows: the file format and model
 
-> **Redefined 2026-10-25** ([ADR 0007](../decisions/0007-studio-flows-and-actions.md)): run files are **flows**. The same model also holds checks (`wait_for`, `if`/`else`, `until`, `retry`, `on_fail`), `repeat`, `set`, calls, and functions (`define`, `call`, `return`), so the recorder, the player, the flow editor (T27) and export (T28) share it.
+> **Rewritten 2026-10-26** ([decision 0010](../decisions/0010-flows-are-python.md)): runs and flows are saved as `@d.flow` Python, not YAML. The first version of this page planned YAML with a JSON Schema.
 
-**Goal:** the YAML format for recorded runs, its model in Python, and a JSON Schema so editors check and complete it.
+**Goal:** a recorded run, or a flow made in the Studio, is a Python file that plays by calling it. darbit reads it into a flow model (for the editor and the run panel) and writes it back.
 
-**Depends on:** nothing. **Issue:** #49. **Milestone:** v0.4. **Design:** [design.md §8](../design.md).
+**Depends on:** nothing. **Issue:** #49. **Milestone:** v0.4. **Decisions:** [0007](../decisions/0007-studio-flows-and-actions.md), [0008](../decisions/0008-readable-python.md), [0010](../decisions/0010-flows-are-python.md).
 
-## The format
+## The file: `runs/slime.py`
 
-```yaml
-run: Slime                      # name
-darbit: 0.4                     # format version
-window: Roblox                  # the app it's played in; positions are relative to this window
-checkpoints:
-  - name: Wave 1
-    wait_for: Dim.Game.Left     # a target that must be on screen before this part starts (timeout: 30)
-    timeout: 30
-    goals:
-      - name: Clear the left side
-        steps:
-          - hold: w             # key down
-          - wait: 0.5
-          - release: w
-          - press: q            # down and up
-          - do: dodge           # an action below
-          - turn: -90           # camera, degrees (right-drag or arrow keys, as recorded)
-          - click: [0.42, 0.61] # a click, as a fraction of the window
-          - until: Dim.Game.Next  # wait for a target, as a step
-actions:
-  dodge: [press: space, wait: 0.3, press: space]
+```python
+"""Slime: clears the Slime dimension, from the lobby to the end screen."""
+
+import darbit as d
+
+
+@d.flow(window="Roblox")
+def slime():
+    d.checkpoint("Wave 1", wait_for="Dim.Game.Left", timeout=30)
+    d.hold("w")
+    d.sleep(0.5)
+    d.release("w")
+    d.press("q")
+    dodge()
+    d.turn(-90)  # face the boss door
+    d.click(d.spot(0.42, 0.61))
+    d.wait("Dim.Game.Next", timeout=60)
+
+    d.checkpoint("Boss", wait_for="Boss.Bar")
+    for _ in range(3):
+        if d.exists("Boss.Shield"):
+            d.press("e")
+        else:
+            d.press("1")
+        d.sleep(1)
+
+
+def dodge():
+    """Jump twice."""
+    d.press("space")
+    d.sleep(0.3)
+    d.press("space")
 ```
 
-Step kinds: `press`, `hold`, `release`, `write`, `wait`, `click`, `right_click`, `move`, `drag`, `scroll`, `turn`, `until`, `do`. Each may have `note:` (shown in the run panel) and `break: true` (a saved breakpoint).
+- `slime()` plays it: `True` at the end, `False` when a checkpoint didn't show in time. A bot calls it like any function.
+- `d.spot(0.42, 0.61)` is a point as a fraction of the window's content area, so the run plays at any window size. Targets follow their window already (T22).
+- The comment on a line is that step's note in the run panel.
+
+## Statements and steps
+
+| Python | Step in the editor |
+|---|---|
+| `d.press`, `d.hold`, `d.release`, `d.write`, `d.sleep` | key and wait steps |
+| `d.click`, `d.double_click`, `d.right_click`, `d.hover`, `d.drag`, `d.scroll` | mouse steps, on a target or a `d.spot` |
+| `d.turn(degrees)` | camera turn (written by the recorder, T15) |
+| `d.wait(T)`, `d.vanish(T)` | wait for a target to show, or to go |
+| `d.checkpoint(name, wait_for=T, timeout=s)` | checkpoint: the run stops with `False` if T doesn't show |
+| `if d.exists(T): … else: …` | if / else check (also `if not d.exists(T)`) |
+| `while not d.exists(T): …` | until |
+| `for _ in range(n): …` | repeat |
+| `name()` for a `def` in the same file | call a flow function; its `def` is the function |
+| `name()` for an `@d.action` (T29) | an action step |
+| anything else | a **Code step**, kept word for word |
 
 ## Files
 
-- `packages/darbit/src/darbit/runs/model.py`: dataclasses `Run`, `Checkpoint`, `Goal`, `Step`; `load(path)`, `dump(run)`
-- `packages/darbit/src/darbit/runs/runfile.schema.json`: generated from the model (`python -m darbit.runs.model --schema`)
-- `pyproject.toml`: `pyyaml` in the `runs` part of the dependencies (small; add to the main list)
+- `packages/darbit/src/darbit/runs/model.py`: dataclasses `Flow` (name, window, steps, doc), `Function`, `Step` (kind, arguments, note, body, otherwise, line); `load(path) -> list[Flow]`, `save(flows) -> str`
+- `packages/darbit/src/darbit/runs/flow.py`: `d.flow`, `d.checkpoint`, `d.spot`; `Checkpoint` (the exception a missed checkpoint raises inside a flow)
+- `packages/darbit/src/darbit/__init__.py`: export `flow`, `checkpoint`, `spot`
+- `packages/darbit/tests/test_flows.py`
 
 ## Steps
 
-1. Model with plain dataclasses; `Step` is `kind`, `value`, `note`, `breakpoint`. Positions in `click`/`move`/`drag` are fractions of the window (so a run plays at any window size, as T22's targets do).
-2. `load` checks: unknown step kinds, `do:` naming a missing action, actions calling themselves → errors with the YAML line (`yaml.compose` keeps line numbers).
-3. `dump` writes the same layout back (flow style for short step lists, comments kept where possible with `ruamel.yaml` if it's worth the dependency; otherwise document that comments are lost).
-4. Schema: JSON Schema draft 2020-12, with descriptions, so VS Code's YAML extension shows help. Add a `# yaml-language-server: $schema=` line in files the recorder writes.
+1. **The calls.** `@d.flow(window=None)` wraps the function: it sets `settings.window` while it runs (if given), records a run-report step per checkpoint, and turns a missed checkpoint into `return False`. `d.checkpoint` waits for its target up to `timeout` (30 s) and raises `Checkpoint` when it doesn't show. `d.spot(x, y)` returns a `Location` from the window's content area now (the whole screen without a window).
+2. **Reading** (`load`): `ast.parse`, then every function marked `@d.flow` and every plain `def` it calls, statement by statement, into steps by the table above. A statement that doesn't fit is a Code step holding its exact source text (`ast.get_source_segment`). The note is the comment after the statement on its line. A syntax error is reported with its line.
+3. **Writing** (`save`): the module docstring, `import darbit as d`, each flow then its functions, one statement per step, in the plain style (no lambdas, no walrus). Code steps are written back exactly as read.
+4. **Round trip:** `save(load(text)) == text` for any file `save` wrote, and for hand-written files that only use flow statements and are formatted by `ruff format`.
+5. **Checks** on load: a flow function calling itself (directly or through others) is an error naming both; a `d.checkpoint` without `wait_for` is an error.
+
+## Contracts
+
+- The file shape above and the statement table: the recorder (T15), the player and run panel (T16), the editor (T27) and actions (T29) all rely on it.
+- `d.flow`, `d.checkpoint`, `d.spot`, and a flow returning `True`/`False`.
+- `Step.kind` names: `press`, `hold`, `release`, `write`, `sleep`, `click`, `double_click`, `right_click`, `hover`, `drag`, `scroll`, `turn`, `wait`, `vanish`, `checkpoint`, `if`, `until`, `repeat`, `call`, `code`.
 
 ## Done when
 
-The example above loads, dumps to the same file, validates with the schema, and errors point at the right line.
+The example above loads into the model, saves back to the same text, plays against a fake screen (checkpoints seen and missed), and a hand-edited version with an extra Python line keeps that line as a Code step.
 
 ## Tests
 
-Round trip, every error, the schema validates the example and rejects a broken one (`jsonschema` in dev dependencies).
+Round trip for every step kind; Code steps kept exactly; notes; nested `if`/`for`/`while`; a missed checkpoint returns `False`; recursion and missing `wait_for` errors; `d.spot` with and without a window (faked).
+
+## Not in this task
+
+`d.turn` and recording (T15), the player's pause and step (T16), the editor (T27), keeping comments between statements and odd formatting through an edit (T28).
