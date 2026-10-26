@@ -5,11 +5,12 @@
   import { on, request } from "$lib/api";
   import CommandPalette from "$lib/components/CommandPalette.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
-  import SettingsForm, { type Section } from "$lib/components/SettingsForm.svelte";
+  import type { Section } from "$lib/components/SettingsForm.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { toast } from "$lib/toasts.svelte";
   import { currentTheme } from "$lib/theme";
   import BotPicker, { type Bot } from "./BotPicker.svelte";
+  import BotSettingsPage from "./BotSettingsPage.svelte";
   import LibraryPage from "./LibraryPage.svelte";
   import OverviewPage from "./OverviewPage.svelte";
   import ResultsPage from "./ResultsPage.svelte";
@@ -109,9 +110,11 @@
 
   async function saveSettings(values: Record<string, unknown>): Promise<void> {
     if (!bot) return;
-    await request("project.settings.save", { path: bot.path, values })
+    const path = bot.path;
+    await request("project.settings.save", { path, values })
       .then(() => toast("Settings saved. The bot reads them when it starts."))
       .catch(failed);
+    form = await request("project.settings", { path });
   }
 
   async function openTool(tool: string): Promise<void> {
@@ -247,7 +250,7 @@
           {#if form.error}
             <p class="empty bad">{form.error}</p>
           {:else if form.sections.length}
-            <SettingsForm sections={form.sections} values={form.values} onsave={saveSettings} />
+            <BotSettingsPage sections={form.sections} values={form.values} onsave={saveSettings} />
           {:else if !loading}
             <p class="empty">This bot has no settings.toml.</p>
           {/if}
