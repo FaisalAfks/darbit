@@ -1,13 +1,23 @@
-/* Shared motion: only transform and opacity, nothing longer than 240 ms. */
+/* Shared motion: transform and opacity only, 200 ms at most. Every keyframe states its end values, so an
+   element never ends up invisible. Reduced motion turns movement into 80 ms fades.
+   Spec: docs/style/ui/design-system.md (Motion) */
 
 @keyframes appear {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.96);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes hide {
+  from {
+    opacity: 1;
+    transform: none;
+  }
   to {
     opacity: 0;
     transform: translateY(8px);
@@ -19,11 +29,37 @@
     opacity: 0;
     transform: scale(1.04);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
   50% {
     opacity: 0.35;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
@@ -35,16 +71,21 @@
   animation: hide var(--fast) var(--ease) both;
 }
 
+.pop {
+  animation: pop var(--move) var(--ease) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .appear,
+  .pop {
+    animation: fade-in 80ms linear both;
+  }
+  .hiding {
+    animation: fade-out 80ms linear both;
+  }
   *,
   *::before,
   *::after {
-    animation-duration: 80ms !important;
     transition-duration: 80ms !important;
-  }
-  @keyframes appear {
-    from {
-      opacity: 0;
-    }
   }
 }

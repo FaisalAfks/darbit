@@ -26,7 +26,7 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 
 | Group | Tokens |
 |---|---|
-| Surfaces | `--bg` (behind everything), `--glass` (panel fill), `--glass-strong` (popovers), `--raised`, `--raised-hover`, `--line`, `--blur` |
+| Surfaces | `--bg` (behind everything), `--glass` (panel fill), `--glass-strong` (popovers), `--raised`, `--raised-hover`, `--line`, `--blur`, `--shadow` |
 | Text | `--text`, `--muted`, `--faint` |
 | Accent | `--accent`, `--accent-2`, `--glow` (the accent's shadow), `--on-accent` (text on the accent) |
 | Status | `--ok`, `--warn`, `--danger`, `--info`, `--on-status` (text on a status colour) |

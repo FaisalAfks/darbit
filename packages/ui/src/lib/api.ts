@@ -34,8 +34,11 @@ export function connect(): Promise<void> {
 }
 
 export function request<T = any>(type: string, data: object = {}): Promise<T> {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    return Promise.reject(new Error("not connected to darbit's server"));
+  }
   const id = nextId++;
-  socket?.send(JSON.stringify({ type, id, data }));
+  socket.send(JSON.stringify({ type, id, data }));
   return new Promise((resolve, reject) => waiting.set(id, { resolve, reject }));
 }
 

@@ -49,3 +49,18 @@ body {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* [hidden] always hides, also on elements with their own display */
+[hidden] {
+  display: none !important;
+}
+
+/* focus: a 2 px accent outline on keyboard focus only; never a glow alone (high-contrast mode drops shadows) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
