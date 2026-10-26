@@ -4,8 +4,6 @@ guide = load(Path("guide.toml"))
 progress(guide, Path("images"))      # what's done, what's next
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal

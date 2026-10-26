@@ -4,8 +4,6 @@ The hooks (platform/hooks.py) only queue raw events; everything here is pure, so
 lists of fake events.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 
 from .model import Checkpoint, Run, Step

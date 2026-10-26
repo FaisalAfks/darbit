@@ -3,8 +3,6 @@
 d.play("runs/slime.yaml")
 """
 
-from __future__ import annotations
-
 from .model import Checkpoint, Goal, Run, Step, dump, load
 
 __all__ = ["Checkpoint", "Goal", "Run", "Step", "dump", "load"]

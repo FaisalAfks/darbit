@@ -23,8 +23,6 @@ Targets are saved in the `images` folder next to the list or script, or in
 `images` here for names on the command line; --folder changes it.
 """
 
-from __future__ import annotations
-
 import argparse
 import gc
 import time
@@ -32,7 +30,7 @@ import tkinter as tk
 from pathlib import Path
 
 from ..platform import screen
-from .common import Item, Result, captured, distinct, read_list
+from .common import Item, Result, captured, distinct, parse_item, read_list
 from .overlay import Overlay
 from .session import HOTKEYS, Session
 from .store import save_result
@@ -92,7 +90,7 @@ def _main(argv: list[str] | None = None) -> int:
     home = list_file
     folder = Path(args.folder) if args.folder else (home.parent / "images" if home else Path("images"))
 
-    items = [Item.parse(n) for n in args.names]
+    items = [parse_item(n) for n in args.names]
     if list_file:
         if not list_file.is_file():
             list_file.write_text("", encoding="utf-8")

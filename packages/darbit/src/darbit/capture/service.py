@@ -3,8 +3,6 @@
 Registered with server.app.handles when the server starts; nothing here imports the server.
 """
 
-from __future__ import annotations
-
 
 def freeze(data: dict) -> dict:
     """Grab the monitors, start engine.prepare() on each, send the frames, then capture.lines events."""

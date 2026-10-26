@@ -4,8 +4,6 @@ Imported only when the server starts, so darbit works without the `app` extra.
 See docs/tasks/T05-local-server.md.
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from typing import Any
 

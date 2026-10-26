@@ -4,6 +4,7 @@
 
 - The docs site is published on GitHub Pages after each merge to main
 - Releases upload only the wheel and the source package; Dependabot groups its updates weekly and leaves npm until the UI package is built
+- darbit's own code follows the plain style of decision 0008 (no walrus, lambdas, `@staticmethod` or `__future__` imports), checked by a `plain-python` hook in pre-commit and CI
 ## 0.2.0 - 2026-10-25
 
 The runtime grows up (observers, saved state, run reports, library checks), the capture tool gets a real engine, and the repo is set up for darbit Studio.

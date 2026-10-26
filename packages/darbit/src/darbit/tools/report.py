@@ -8,8 +8,6 @@ the reasons steps failed with their screenshots, the targets most often not foun
 the closest score they got, and the bot's own events (d.record) counted by name.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import sys

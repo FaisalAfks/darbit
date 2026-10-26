@@ -6,8 +6,6 @@
 Both need the `app` extra; without it they log what's missing and return None.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Literal
 

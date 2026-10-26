@@ -1,7 +1,5 @@
 """Looking for targets on screen. Not finding something returns None or False, never an error."""
 
-from __future__ import annotations
-
 import threading
 import time
 from pathlib import Path

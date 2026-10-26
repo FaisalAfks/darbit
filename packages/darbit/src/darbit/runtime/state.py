@@ -12,8 +12,6 @@
 Every change is saved straight away, so a crash or the stop hotkey loses nothing.
 """
 
-from __future__ import annotations
-
 import json
 import os
 from datetime import UTC, datetime, timedelta
@@ -33,7 +31,7 @@ def _now() -> datetime:
 class Timer:
     """Something due every few minutes. Its next due time is kept in the State."""
 
-    def __init__(self, state: State, name: str, minutes: float) -> None:
+    def __init__(self, state: "State", name: str, minutes: float) -> None:
         self.state, self.name, self.minutes = state, name, minutes
 
     @property

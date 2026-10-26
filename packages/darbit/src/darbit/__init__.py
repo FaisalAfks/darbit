@@ -3,7 +3,7 @@
 import darbit as d
 
 d.click("lobby/play")                  # True if clicked, False if not found in time
-if m := d.exists("run/enemies_left", 90):
+if d.exists("run/enemies_left", 90):    # the Match, or None after 90 s
     d.press("tab")
 d.press(*"54132")
 """

@@ -11,3 +11,12 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: check-merge-conflict
+  - repo: local
+    hooks:
+      - id: plain-python
+        name: plain Python (docs/style/code.md)
+        language: pygrep
+        entry: '(:=|^\s*from __future__ import|@staticmethod|\blambda\b)'
+        types: [python]
+        files: ^(packages/darbit/src|examples)/
+        exclude: ^packages/darbit/src/darbit/capture/(overlay|session)\.py$  # the Tk screens, retired in T13

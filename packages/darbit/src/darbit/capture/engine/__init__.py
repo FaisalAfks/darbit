@@ -8,8 +8,6 @@
 See docs/tasks/T08-capture-engine.md.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import cv2

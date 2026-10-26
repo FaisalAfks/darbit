@@ -16,8 +16,6 @@ With several screenshots, each target gets its best result over all of them. Res
 are added to state/check.jsonl, so scores can be followed over time.
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -99,14 +97,24 @@ RANK = {"ok": 0, "risky": 1, "moved": 2, "not seen": 3}
 
 def _check_target(target: Target, screens: list[tuple[str, np.ndarray, Region]]) -> Result:
     tries = [check_one(target, pixels, origin, name) for name, pixels, origin in screens]
-    return min(tries, key=lambda r: (RANK[r.verdict], -r.score))
+    return min(tries, key=_best_first)
+
+
+def _best_first(result: Result) -> tuple[int, float]:
+    """Sort key: the best verdict first, then the highest score."""
+    return RANK[result.verdict], -result.score
+
+
+def _by_verdict(result: Result) -> tuple[int, str]:
+    """Sort key: worst verdicts last, by name within each."""
+    return RANK[result.verdict], result.name
 
 
 def check(targets: list[Target], screens: list[tuple[str, np.ndarray, Region]]) -> list[Result]:
     """Every target against every screen, in parallel (OpenCV works outside Python's lock); each target keeps
     its best result."""
     with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-        return list(pool.map(lambda t: _check_target(t, screens), targets))
+        return list(pool.map(_check_target, targets, [screens] * len(targets)))
 
 
 def _targets(folder: Path, names: list[str]) -> list[Target]:
@@ -130,7 +138,7 @@ def _screens(folder: Path | None) -> list[tuple[str, np.ndarray, Region]]:
 def report(results: list[Result]) -> str:
     width = max([len(r.name) for r in results] + [6])
     lines = [f"{'target':<{width}}  verdict    score  elsewhere  screen"]
-    for r in sorted(results, key=lambda r: (RANK[r.verdict], r.name)):
+    for r in sorted(results, key=_by_verdict):
         lines.append(f"{r.name:<{width}}  {r.verdict:<9}  {r.score:5.2f}  {r.elsewhere:9.2f}  {r.screen}")
     counts = {v: sum(r.verdict == v for r in results) for v in RANK}
     lines.append(", ".join(f"{n} {v}" for v, n in counts.items() if n))

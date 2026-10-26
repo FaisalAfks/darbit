@@ -8,8 +8,6 @@ This list is the contract. The TypeScript side is generated from it:
     python -m darbit.server.protocol --ts > packages/ui/src/lib/protocol.ts
 """
 
-from __future__ import annotations
-
 import sys
 
 # type -> (who sends it, fields, what it does). "req" = request with a reply, "evt" = event.

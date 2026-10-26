@@ -18,11 +18,11 @@ def test_distinct_scores_high_for_a_repeated_image():
 
 
 def test_item_kinds():
-    from darbit.capture import Item
+    from darbit.capture.common import Item, parse_item
 
-    assert Item.parse("Gui.Play") == Item("Gui.Play", "image")
-    assert Item.parse("location:afk/spot") == Item("afk/spot", "location")
-    assert Item.parse("region:menus/bag") == Item("menus/bag", "region")
+    assert parse_item("Gui.Play") == Item("Gui.Play", "image")
+    assert parse_item("location:afk/spot") == Item("afk/spot", "location")
+    assert parse_item("region:menus/bag") == Item("menus/bag", "region")
 
 
 def test_list_file(tmp_path):

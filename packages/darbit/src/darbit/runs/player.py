@@ -1,7 +1,5 @@
 """Playing run files. See docs/tasks/T16-player-run-panel.md."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from .model import Run

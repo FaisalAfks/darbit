@@ -8,8 +8,6 @@ An observer that fires posts an interrupt: held keys are let go and the next dar
 call in the script's main thread raises Interrupted, once.
 """
 
-from __future__ import annotations
-
 import atexit
 import ctypes
 import threading
@@ -110,7 +108,10 @@ def sleep(seconds: float) -> None:
     """Wait, but stop at once when the stop hotkey is pressed or an observer interrupts."""
     check()
     deadline = time.monotonic() + seconds
-    while (left := deadline - time.monotonic()) > 0:
+    while True:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            break
         if not _wake.wait(left):
             break
         check()  # raises for a stop, or for an interrupt in the main thread
@@ -152,6 +153,11 @@ def keep_awake() -> None:
     """Stop Windows from sleeping or turning the screen off until the script ends."""
     try:
         ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS | _ES_SYSTEM_REQUIRED | _ES_DISPLAY_REQUIRED)
-        atexit.register(lambda: ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS))
+        atexit.register(_allow_sleep)
     except (AttributeError, OSError):
         pass
+
+
+def _allow_sleep() -> None:
+    """Let Windows sleep again, as it would after the script ends."""
+    ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS)

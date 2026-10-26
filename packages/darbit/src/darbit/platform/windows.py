@@ -4,8 +4,6 @@ An app is named by its window title ("Roblox") or by its program file
 ("chrome.exe", or a full path to it).
 """
 
-from __future__ import annotations
-
 import ctypes
 import ntpath
 import time
@@ -92,9 +90,13 @@ def windows() -> list[Window]:
     _user32.EnumWindows(_EnumWindowsProc(add), 0)
     found = []
     for hwnd in handles:
-        if _user32.IsWindowVisible(hwnd) and (title := _title(hwnd)):
-            exe, pid = _process(hwnd)
-            found.append(Window(hwnd, title, exe, pid))
+        if not _user32.IsWindowVisible(hwnd):
+            continue
+        title = _title(hwnd)
+        if not title:
+            continue
+        exe, pid = _process(hwnd)
+        found.append(Window(hwnd, title, exe, pid))
     return found
 
 

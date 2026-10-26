@@ -7,8 +7,6 @@
 Needs the `app` extra. See docs/tasks/T06-desktop-windows.md.
 """
 
-from __future__ import annotations
-
 from .windows import Kind, Window, open_window, styles
 
 __all__ = ["Kind", "Window", "open_window", "styles"]

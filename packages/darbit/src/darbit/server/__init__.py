@@ -3,8 +3,6 @@
 Needs the `app` extra (pip install "darbit[app]"). See docs/tasks/T05-local-server.md.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 
