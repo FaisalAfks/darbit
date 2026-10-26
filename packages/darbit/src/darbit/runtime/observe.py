@@ -33,7 +33,7 @@ from ..errors import Interrupted
 from ..platform import safety, screen
 from ..settings import settings
 from .find import What, _loaded, place, where_now
-from .log import log
+from .log import log, record
 
 Condition = Callable[[], bool]
 
@@ -50,6 +50,8 @@ class Observer:
 
     def stop(self) -> None:
         """Stop watching."""
+        if not self._stopped:
+            record("observer", name=self.name, state="stopped")
         self._stopped = True
         with _lock:
             if self in _observers:
@@ -77,6 +79,7 @@ def observe(what: What | Condition, name: str | None = None, region: Region | No
         _observers.append(observer)
     _start()
     log(f"observing {observer.name}")
+    record("observer", name=observer.name, state="watching")
     return observer
 
 
@@ -138,6 +141,7 @@ def tick() -> None:
             observer.fired += 1
             posted = safety.interrupt(Interrupted(observer.name, hit if not isinstance(hit, bool) else None))
             log(f"observer {observer.name}: seen" + ("" if posted else " (not interrupting)"))
+            record("observer", name=observer.name, state="fired")
         elif not hit:
             observer.seen = False
 

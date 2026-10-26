@@ -13,6 +13,8 @@
 - UI themes: glass-dark, glass-light, midnight and high-contrast with every token, a theme chosen in one window shows in the others, and `npm run check` fails on a missing token or a colour outside the token files
 - UI components for every window, in Storybook (`npm run storybook`): buttons, chips, pills, the tools dock, sheets, the command palette, toasts, settings fields and switches, dashboard tiles with progress rings and bars, flow step rows, and capture's readout and magnifier
 - The local server for darbit's windows (`darbit[app]`): one WebSocket per window with a token, requests and events, screens as raw pixels (a full 2560 x 1600 screen in about 65 ms), the keymap, theme and UI settings; log lines and run-report events reach every open window
+- What a bot shows in darbit Studio (decision 0011): `d.progress(label, done, total)` and `d.next(label, at)`, an optional `[studio]` table in `darbit.toml`, and the Overview's tiles built from the run report; observers now record when they start, fire and stop
+- A bot's own settings: `settings.toml` declares them (sections, types, limits, help), `config.toml` is checked against it and made from the defaults when missing, and saving keeps its comments; the Studio's settings form shows them
 - The UI follows Fluent 2's scales (type, spacing, corners, control heights, motion) and WCAG 2.2 AA (contrast, 24 px targets, focus); `npm run check` fails on a raw pixel size in a component or a colour pair below the contrast line
 
 ## 0.2.0 - 2026-10-25

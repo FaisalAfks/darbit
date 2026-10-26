@@ -16,9 +16,12 @@ from ..runtime.log import log
 from ..settings import Settings, script_folder
 
 MANIFEST = "darbit.toml"
-TABLES = {"bot", "settings", "images", "keys"}
+TABLES = {"bot", "settings", "images", "keys", "studio"}
 BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
 IMAGE_KEYS = {"folders"}
+STUDIO_KEYS = {"summary", "tiles"}
+# the tiles darbit Studio can show on a bot's Overview (decision 0011); "progress:<label>" picks one progress
+TILES = ("now", "round", "progress", "next", "activity", "failures", "watching", "setup")
 
 # what each darbit setting takes in [settings]; images come from [images] instead
 SETTING_KINDS = {
@@ -57,6 +60,8 @@ class Project:
     settings: dict = field(default_factory=dict)  # layer 2 of darbit's settings
     images: list[str] = field(default_factory=_default_images)  # image folders, relative to the project
     keys: dict = field(default_factory=dict)  # keymap overrides
+    summary: str = ""  # one line under the bot's name in the Studio
+    tiles: list[str] = field(default_factory=list)  # the Overview's tiles in order; empty: the defaults
 
 
 def find(start: Path) -> Path | None:
@@ -92,6 +97,10 @@ def load(folder: Path) -> Project:
     folders = images.get("folders", ["images"])
     if not isinstance(folders, list) or not all(isinstance(f, str) for f in folders):
         raise ProjectError('[images] folders is a list of folder names, e.g. ["images"]')
+    studio = data.get("studio", {})
+    _check_keys(studio, STUDIO_KEYS, "[studio]")
+    tiles = studio.get("tiles", [])
+    _check_tiles(tiles)
 
     return Project(
         folder=folder,
@@ -105,7 +114,18 @@ def load(folder: Path) -> Project:
         settings=settings,
         images=folders,
         keys=data.get("keys", {}),
+        summary=str(studio.get("summary", "")),
+        tiles=tiles,
     )
+
+
+def _check_tiles(tiles: object) -> None:
+    if not isinstance(tiles, list):
+        raise ProjectError(f'{MANIFEST} [studio]: tiles is a list, e.g. ["now", "progress", "activity"]')
+    for tile in tiles:
+        kind = str(tile).split(":", 1)[0]
+        if kind not in TILES:
+            raise ProjectError(f"{MANIFEST} [studio]: unknown tile {tile!r}; tiles are {', '.join(TILES)}")
 
 
 def _check_keys(data: dict, allowed: set[str], where: str) -> None:
