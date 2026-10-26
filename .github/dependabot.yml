@@ -1,5 +1,4 @@
-# Keeps GitHub Actions and the Python lock file up to date: one grouped PR per ecosystem a week.
-# npm (packages/ui) is added once the UI package is installed and built (docs/tasks/T01-ui-package.md).
+# Keeps GitHub Actions, the Python lock file and the web UI's packages up to date: one grouped PR per ecosystem a week.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -14,3 +13,9 @@ updates:
     labels: ["type: chore", "skip-notes"]
     groups:
       python: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    labels: ["type: chore", "skip-notes"]
+    groups:
+      ui: { patterns: ["*"] }

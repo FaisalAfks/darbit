@@ -1,5 +1,7 @@
 # T01 UI package and build
 
+> **Done 2026-10-26** with current versions (Svelte 5.57, Vite 8, TypeScript 6, pinned exactly). The build output is git-ignored, not committed: the wheel ships it (`[tool.hatch.build] artifacts`), and CI and the release workflow run `npm ci && npm run build`.
+
 **Goal:** one web front end in `ui/`, TypeScript and Svelte 5, built by Vite into `packages/darbit/src/darbit/ui/static/` with one entry page per window.
 
 **Depends on:** nothing. **Issue:** #45. **Milestone:** v0.3.

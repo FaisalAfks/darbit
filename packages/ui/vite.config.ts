@@ -13,7 +13,7 @@ export default defineConfig({
   server: { host: "127.0.0.1", port: 5173, strictPort: true },
   build: {
     outDir: resolve(__dirname, "../darbit/src/darbit/ui/static"),
-    emptyOutDir: false, // keeps static/.gitignore
+    emptyOutDir: true, // git-ignored; the wheel ships it (artifacts in packages/darbit/pyproject.toml)
     target: "es2022", // WebView2 and VS Code are recent Chromium
     rollupOptions: {
       input: Object.fromEntries(apps.map((app) => [app, resolve(__dirname, `src/apps/${app}/index.html`)])),
