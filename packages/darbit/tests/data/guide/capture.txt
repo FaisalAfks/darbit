@@ -1,0 +1,16 @@
+# A capture list in the old format, for the guide conversion test.
+
+[Lobby]
+Gui.Play                          # lobby: the Play button
+Gui.Bag                           # lobby: the Bag button
+region: Measure.bagMenu           # the Bag window
+
+[Character list]
+# in the order the bot plays them
+SR.Char.Naruto                    # Speed Raid list: Naruto
+SR.Char.Itadori                   # Speed Raid list: Itadori
+SR.Char.Killua                    # Speed Raid list: Killua
+SR.Char.Sakura                    # Speed Raid list: Sakura
+SR.Char.Natsu                     # Speed Raid list: Natsu
+SR.Char.Sasuke                    # Speed Raid list: Sasuke
+location: Measure.listSlider      # the list's scrollbar handle

@@ -19,7 +19,11 @@ A session, guided by a card at the top centre of the screen:
     centre. "+ Add" adds a target (and writes it to the list). Undo takes back the
     last capture; Done (or Ctrl+Alt+Q) keeps or deletes this session's captures.
 
-Targets are saved in the `images` folder next to the list or script, or in
+A setup guide (guide.toml, see capture/guide.py) walks through screens in order:
+    python -m darbit.capture --guide guide.toml      # every target in the guide not captured yet
+    python -m darbit.capture --guide capture.txt     # convert a list into guide.toml next to it, once
+
+Targets are saved in the `images` folder next to the list, guide or script, or in
 `images` here for names on the command line; --folder changes it.
 """
 
@@ -30,6 +34,7 @@ import tkinter as tk
 from pathlib import Path
 
 from ..platform import screen
+from . import guide
 from .common import Item, Result, captured, distinct, parse_item, read_list
 from .overlay import Overlay
 from .session import HOTKEYS, Session
@@ -77,7 +82,8 @@ def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m darbit.capture", description="Capture targets from the screen.")
     parser.add_argument("names", nargs="*", help="target names, e.g. Gui.Play, location:afk/spot, region:menus/bag")
     parser.add_argument("--list", dest="list_file", help="a list file of targets to capture")
-    parser.add_argument("--folder", help="where to save (default: images next to the list)")
+    parser.add_argument("--guide", dest="guide_file", help="a setup guide (guide.toml), or a list to convert into one")
+    parser.add_argument("--folder", help="where to save (default: images next to the list or guide)")
     parser.add_argument("--all", action="store_true", help="session: include targets already captured")
     parser.add_argument("--location", action="store_true", help="one target: a point instead of an image")
     parser.add_argument("--region", action="store_true", help="one target: a region instead of an image")
@@ -86,8 +92,12 @@ def _main(argv: list[str] | None = None) -> int:
     parser.add_argument("--window", help="session: window to save the size of, e.g. Roblox")
     args = parser.parse_args(argv)
 
+    if args.guide_file and Path(args.guide_file).suffix == ".txt":
+        return _convert(Path(args.guide_file))
+
     list_file = Path(args.list_file).resolve() if args.list_file else None
-    home = list_file
+    guide_file = Path(args.guide_file).resolve() if args.guide_file else None
+    home = list_file or guide_file
     folder = Path(args.folder) if args.folder else (home.parent / "images" if home else Path("images"))
 
     items = [parse_item(n) for n in args.names]
@@ -95,6 +105,13 @@ def _main(argv: list[str] | None = None) -> int:
         if not list_file.is_file():
             list_file.write_text("", encoding="utf-8")
         items += read_list(list_file)
+    if guide_file:
+        try:
+            for step in guide.steps(guide.load(guide_file)):
+                items.append(step.item)
+        except (OSError, guide.GuideError) as error:
+            print(error)
+            return 2
     if home and not args.all:
         items = [i for i in items if not captured(i, folder)]
     seen: set[tuple[str, str]] = set()
@@ -112,4 +129,15 @@ def _main(argv: list[str] | None = None) -> int:
         "Ctrl+Alt+Q to finish"
     )
     Session(items, folder, args.hotkey, args.window, list_file).run()
+    return 0
+
+
+def _convert(list_file: Path) -> int:
+    """Write guide.toml next to an old capture list."""
+    out = list_file.with_name("guide.toml")
+    if out.exists():
+        print(f"{out} already exists; delete it first to convert again")
+        return 2
+    out.write_text(guide.dump(guide.convert_list(list_file)), encoding="utf-8", newline="\n")
+    print(f"wrote {out}: check each screen's `say`, then capture with --guide {out.name}")
     return 0
