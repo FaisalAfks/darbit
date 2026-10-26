@@ -17,6 +17,7 @@ v0.3  T01 ui package ─┬─ T02 tokens and themes ── T03 components ─�
 v0.4  T14 run files (flows) ── T15 recorder ── T26 checks while recording ── T16 player and run panel
 v0.5  T17 projects ── T18 settings form ── T19 new, install, run ── T20 Studio
       T27 flow editor ── T28 flow ↔ Python ── T29 custom actions
+      T30 what a bot shows (before T20)
 later T23 VS Code extension, T24 text targets and masks, T25 docs site and installer
 ```
 
@@ -55,6 +56,7 @@ Tasks on the same line after a `──` wait for the one before it. Tasks in dif
 | [T27 Flow editor](T27-flow-editor.md) | v0.5 | #80 | T14, T16, T03 |
 | [T28 Flow ↔ Python](T28-flow-python.md) | v0.5 | #81 | T14, T27 |
 | [T29 Custom steps with `@d.action`](T29-custom-actions.md) | v0.5 | #82 | T27 |
+| [T30 What a bot shows in the Studio](T30-what-a-bot-shows.md) | v0.5 | | T17 |
 
 ## How a task page is laid out
 

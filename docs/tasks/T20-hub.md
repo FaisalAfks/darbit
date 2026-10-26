@@ -1,5 +1,7 @@
 # T20 Hub app
 
+> **Layout changed 2026-10-26** (mockups, [decision 0011](../decisions/0011-what-a-bot-shows.md)): no rail and no Bots page. A pill menu on top (bot switcher · Overview, Flows, Library, Runs, Settings · run controls · source and Studio settings), the tools in a dock at the bottom, glass over the bot's blurred last screenshot. The Overview is filled from the run report as T30 describes; Settings is the bot's own form (T18); the Studio's own settings sit behind the gear.
+
 > **Renamed 2026-10-25** ([ADR 0007](../decisions/0007-studio-flows-and-actions.md)): the hub is **darbit Studio**. It also installs bots through a wizard, launches every tool for the selected bot, and hosts the flow editor (T27).
 
 **Goal:** the desktop home of darbit: your bots, their settings, start and stop, what they're doing now, their history and their image library, with every tool one click away.

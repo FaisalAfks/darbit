@@ -261,51 +261,169 @@ dialog.palette li[aria-selected="true"] { background: var(--raised-hover); }
 .tree .step.bp::before { content: ""; position: absolute; left: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .tree .t { margin-left: auto; color: var(--faint); font-size: 10px; }
 
-/* studio */
-.studio { display: grid; grid-template-columns: 78px 1fr; height: 600px; border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg); }
-.titlebar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--size-xs); color: var(--muted); border-bottom: 1px solid var(--line); background: var(--glass); }
-.titlebar span:last-child { margin-left: auto; letter-spacing: 6px; }
-.studio { grid-template-rows: auto 1fr; }
-.rail { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px; background: var(--glass); border-right: 1px solid var(--line); }
-.rail button { border: 0; background: none; color: var(--muted); padding: 7px 4px; border-radius: var(--radius-m); font: 600 10px var(--font-strong);
-               cursor: pointer; display: grid; gap: 2px; place-items: center; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
-.rail button span { font-size: 16px; }
-.rail button:hover { background: var(--raised-hover); color: var(--text); }
-.rail button[aria-current="page"] { color: var(--accent); background: var(--raised); box-shadow: var(--glow); }
-.view { padding: 16px 18px; overflow: auto; display: none; align-content: start; gap: 14px; }
+/* more room on the overlays (2026-10-26 round): bigger targets and type, same footprint rules */
+.toolbar { gap: 4px; padding: 6px 8px 6px 18px; }
+.toolbar .name { font-size: var(--size-m); margin-right: 10px; }
+.toolbar .icon, .bar .icon, .panel .icon { width: 36px; height: 36px; font-size: 16px; }
+.toolbar .btn.primary { padding: 7px 18px; font-size: var(--size-m); }
+.toolbar .seg button { padding: 5px 12px; font-size: var(--size-s); }
+.guidecard { width: min(390px, 48%); padding: 14px 16px 12px; gap: 9px; }
+.guidecard header { font-size: var(--size-m); }
+.guidecard .slot-guide { font-size: var(--size-m); line-height: 1.45; }
+.guidecard .slot-bot { font-size: var(--size-s); }
+.thumbs i { width: 20px; height: 20px; }
+.readout { font-size: var(--size-s); padding: 2px 8px; }
+.bar { gap: 8px; padding: 6px 8px 6px 18px; font-size: var(--size-m); }
+.bar .dot { width: 11px; height: 11px; }
+.checks { width: min(440px, 100%); padding: var(--space-4); gap: 8px; }
+.checks button { grid-template-columns: 36px 1fr auto; gap: 12px; padding: 10px; }
+.checks .ic { width: 36px; height: 36px; border-radius: 10px; font-size: 16px; }
+.panel { width: 360px; font-size: var(--size-m); }
+.panel header { padding: 10px 10px 10px 16px; }
+.tree { padding: 10px; gap: 3px; max-height: 420px; }
+.tree li { padding: 6px 10px; }
+.tree .step { font-size: 13px; }
+.tree .t { font-size: 11px; }
+
+/* studio: the same language as the tools: glass pills and cards floating over the bot's own screen.
+   A pill menu on top (like the capture toolbar), a dock of tools at the bottom, a dashboard the bot fills. */
+.studio { --size-m: 15px; position: relative; display: grid; grid-template-rows: auto 1fr; height: 860px; font-size: var(--size-m);
+          width: min(1400px, calc(100vw - 32px)); margin-inline: calc(50% - min(700px, 50vw - 16px));
+          border-radius: var(--radius-l); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--bg); }
+.titlebar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: var(--size-s); color: var(--muted); border-bottom: 1px solid var(--line); background: var(--glass); position: relative; z-index: 2; }
+.titlebar span:last-child { margin-left: auto; letter-spacing: 8px; }
+.stage { position: relative; display: grid; grid-template-rows: auto 1fr; min-height: 0; isolation: isolate; }
+
+/* the bot's last screenshot, blurred, behind everything (glass themes only) */
+.backdrop { position: absolute; inset: -40px; z-index: -2; filter: blur(34px) saturate(1.25); opacity: .9; }
+.backdrop .sky { position: absolute; inset: 0; background: radial-gradient(120% 90% at 20% 10%, #3b2a6b 0%, #1b1e3a 45%, #0d1222 100%); }
+.backdrop .sky::after { content: ""; position: absolute; inset: 0; background: radial-gradient(40% 30% at 75% 80%, rgb(255 140 60 / .45), transparent 70%), radial-gradient(30% 25% at 30% 70%, rgb(90 200 250 / .25), transparent 70%); }
+.stage::before { content: ""; position: absolute; inset: 0; z-index: -1; background: color-mix(in oklab, var(--bg) 62%, transparent); }
+[data-theme="glass-light"] .stage::before { background: color-mix(in oklab, var(--bg) 78%, transparent); }
+[data-theme="midnight"] .backdrop, [data-theme="high-contrast"] .backdrop { display: none; }
+[data-theme="midnight"] .stage::before, [data-theme="high-contrast"] .stage::before { background: var(--bg); }
+
+/* the top pill: bot switcher · sections · run controls */
+.topnav { display: flex; align-items: center; gap: 12px; padding: 18px 24px 8px; position: relative; z-index: 3; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px; border-radius: var(--radius-pill); }
+.switcher { border: 0; background: none; color: var(--text); display: inline-flex; align-items: center; gap: 10px; padding: 4px 14px 4px 4px; border-radius: var(--radius-pill); cursor: pointer; font: 650 15px var(--font-strong); }
+.switcher:hover { background: var(--raised-hover); }
+.switcher .av { width: 34px; height: 34px; border-radius: 50%; font-size: 13px; }
+.rail { display: inline-flex; gap: 2px; padding: 5px; border-radius: var(--radius-pill); margin: 0 auto; }
+.rail button { border: 0; background: none; color: var(--muted); padding: 9px 18px; border-radius: var(--radius-pill); font: 600 14px var(--font-strong); cursor: pointer; white-space: nowrap;
+               display: inline-flex; gap: 8px; align-items: center; transition: background var(--fast) var(--ease), color var(--fast) var(--ease); }
+.rail button span { font-size: 15px; }
+.rail button:hover { color: var(--text); background: var(--raised-hover); }
+.rail button[aria-current="page"] { color: var(--on-accent); background: var(--accent); }
+.runpill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 5px 5px 16px; border-radius: var(--radius-pill); font-size: 14px; white-space: nowrap; }
+.runpill .icon, .topnav .icon { width: 36px; height: 36px; font-size: 15px; }
+
+/* the views scroll between the top pill and the dock */
+.view { padding: 18px 24px 110px; overflow: auto; display: none; align-content: start; gap: 20px; min-height: 0; }
 .view.on { display: grid; animation: appear var(--move) var(--ease) both; }
-.vhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.vhead h3 { margin: 0; font: 700 var(--size-l) var(--font-strong); }
+.vhead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.vhead h3 { margin: 0; font: 700 28px/1.2 var(--font-strong); letter-spacing: -.01em; }
 .vhead .grow { flex: 1; }
-.bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-.bot { border-radius: var(--radius-l); padding: 12px; display: grid; gap: 8px; transition: transform var(--fast) var(--ease); }
-.bot:hover { transform: translateY(-2px); }
-.bot .top { display: flex; align-items: center; gap: 8px; }
-.av { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; color: var(--on-bot); background: var(--a); flex: none; }
-.bot .top b { flex: 1; font-family: var(--font-strong); }
-.bot .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: var(--size-xs); flex-wrap: wrap; }
-.empty { display: grid; place-items: center; text-align: center; gap: 10px; padding: 40px 16px; border: 1px dashed var(--line); border-radius: var(--radius-l); color: var(--muted); }
-.card { border-radius: var(--radius-l); padding: 12px 14px; display: grid; gap: 8px; }
-.card h4 { margin: 0; font: 650 var(--size-s) var(--font-strong); display: flex; gap: 8px; align-items: center; }
-.tl { display: grid; grid-template-columns: 130px 1fr 44px; gap: 8px; align-items: center; font-size: var(--size-xs); }
-.tl .bar2 { height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
-.tl .bar2 i { display: block; height: 100%; border-radius: 4px; background: var(--c, var(--accent)); width: var(--w); }
+.who { display: flex; align-items: center; gap: 16px; }
+.who .av { width: 56px; height: 56px; border-radius: 16px; font-size: 20px; }
+.who p { margin: 2px 0 0; color: var(--muted); }
+.studio .btn { padding: 9px 16px; font-size: 14px; border-radius: var(--radius-m); }
+.studio .btn.small { padding: 6px 12px; font-size: 13px; }
+.studio .chip { font-size: 12px; padding: 2px 10px; }
+.studio .slot-tool { font-size: 14px; }
+.av { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-weight: 800; font-size: 16px; color: var(--on-bot); background: var(--a); flex: none; }
+
+/* the dashboard: tiles the bot fills (decision 0011) */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.tile { grid-column: span var(--span, 6); border-radius: 20px; padding: 20px 22px; display: grid; gap: 14px; align-content: start; position: relative; min-width: 0; }
+.tile > h4 { margin: 0; display: flex; align-items: center; gap: 10px; font: 650 12px var(--font-strong); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.tile > h4 .grow { flex: 1; }
+.src-hint { display: none; font: 12px/1.5 var(--mono); color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, var(--glass-strong));
+            border: 1px dashed color-mix(in oklab, var(--accent) 55%, transparent); border-radius: 10px; padding: 8px 10px; white-space: pre-wrap; }
+.studio.src .src-hint { display: block; }
+.studio.src .tile { outline: 1px dashed color-mix(in oklab, var(--accent) 40%, transparent); outline-offset: 3px; }
+.crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font: 700 26px/1.25 var(--font-strong); }
+.crumb i { font-style: normal; color: var(--faint); font-weight: 400; }
+.crumb .last { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.nowgrid { display: grid; grid-template-columns: 1fr 260px; gap: 20px; align-items: center; }
+.chain { display: flex; gap: 6px; flex-wrap: wrap; }
+.chain span { padding: 4px 12px; border-radius: var(--radius-pill); background: var(--raised); color: var(--muted); font-size: 13px; }
+.chain span.done { color: var(--ok); } .chain span.now { color: var(--on-accent); background: var(--accent); }
+.shotbox { aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; position: relative; border: 1px solid var(--line);
+           background: radial-gradient(120% 90% at 20% 10%, #3b2a6b 0%, #1b1e3a 45%, #0d1222 100%); }
+.shotbox .tag { position: absolute; left: 10px; bottom: 10px; }
+.ringrow { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
+.ring { --p: 23; width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; text-align: center;
+        background: radial-gradient(closest-side, var(--glass-strong) 78%, transparent 79%), conic-gradient(var(--accent) calc(var(--p) * 1%), var(--raised) 0); }
+.ring b { display: block; font: 700 26px var(--font-strong); } .ring span { font-size: 12px; color: var(--muted); }
+.bars { display: grid; gap: 12px; }
+.bars div { display: grid; gap: 6px; font-size: 14px; }
+.bars div span { display: flex; justify-content: space-between; } .bars div span b { font-weight: 600; }
+.bars i { display: block; height: 8px; border-radius: 4px; background: var(--raised); overflow: hidden; }
+.bars i::before { content: ""; display: block; height: 100%; width: var(--w); border-radius: 4px; background: var(--c, var(--accent)); }
+.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rows li { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 14px; align-items: center; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
+.rows li:hover { background: var(--raised); }
+.rows li b { font-weight: 600; } .rows li small { color: var(--muted); font-size: 13px; }
+.rows li.now { background: color-mix(in oklab, var(--accent) 12%, transparent); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--faint)); }
+.dot.ok { --c: var(--ok); } .dot.bad { --c: var(--danger); } .dot.now { --c: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 25%, transparent); }
+.nextlist { display: grid; gap: 10px; }
+.nextlist div { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 14px; border-radius: 14px; background: var(--raised); }
+.nextlist b { font: 650 15px var(--font-strong); } .nextlist small { color: var(--muted); font-size: 13px; } .nextlist em { font-style: normal; font: 700 18px var(--font-strong); color: var(--accent); grid-row: span 2; align-self: center; }
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.events li { display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 8px 10px; border-radius: var(--radius-m); font-size: 14px; }
+.events li:hover { background: var(--raised); }
+.events time { font: 13px var(--mono); color: var(--faint); }
+.events .ok { color: var(--ok); } .events .bad { color: var(--danger); }
+
+/* the tools dock: the same pill as the capture toolbar */
+.dock { position: absolute; left: 50%; bottom: 20px; translate: -50% 0; z-index: 3; display: flex; gap: 4px; padding: 6px; border-radius: 22px; max-width: calc(100% - 32px); overflow-x: auto; scrollbar-width: none; }
+.dock button { border: 0; background: none; color: var(--text); width: 84px; padding: 8px 4px 6px; border-radius: 16px; display: grid; gap: 4px; place-items: center; font: 600 12px var(--font-strong); cursor: pointer; flex: none;
+               transition: background var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.dock button:hover { background: var(--raised-hover); transform: translateY(-3px); }
+.dock .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; color: var(--c); background: color-mix(in oklab, var(--c) 18%, transparent); }
+.dock hr { width: 1px; align-self: stretch; margin: 10px 4px; border: 0; background: var(--line); }
+
+/* sheets that open from the top pill: the bot switcher and the app menu */
+.sheet { position: absolute; z-index: 6; top: 70px; padding: 20px; border-radius: 20px; display: grid; gap: 16px; box-shadow: var(--shadow); max-width: calc(100% - 48px); }
+.sheet h5 { margin: 0; font: 650 18px var(--font-strong); display: flex; align-items: center; gap: 10px; }
+.sheet h5 .grow { flex: 1; }
+#botSheet { left: 24px; width: 760px; }
+#appMenu { right: 24px; width: 360px; }
+.bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.bot { border-radius: 18px; padding: 18px; display: grid; gap: 10px; cursor: pointer; transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
+.bot:hover { transform: translateY(-2px); box-shadow: var(--glow); }
+.bot .top { display: flex; align-items: center; gap: 12px; }
+.bot .top b { flex: 1; font: 650 17px var(--font-strong); }
+.bot .meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+.bot.add { place-items: center; text-align: center; border: 1.5px dashed var(--line); background: none; color: var(--muted); min-height: 130px; font: inherit; }
+.bot.add b { font: 650 15px var(--font-strong); color: var(--text); }
+.empty { display: grid; place-items: center; text-align: center; gap: 12px; padding: 72px 24px; border: 1.5px dashed var(--line); border-radius: 22px; color: var(--muted); }
+.empty b { font: 650 22px var(--font-strong); color: var(--text); }
+
+/* library, runs, settings */
+.filters { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-pill); background: var(--raised); }
+.filters button { border: 0; background: none; color: var(--muted); padding: 7px 14px; border-radius: var(--radius-pill); font: 600 13px var(--font-strong); cursor: pointer; }
+.filters button[aria-pressed="true"] { color: var(--text); background: var(--glass-strong); box-shadow: var(--shadow); }
+.lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.lib div { border-radius: 16px; padding: 10px; display: grid; gap: 8px; font-size: 13px; background: var(--raised); }
+.lib i { display: block; aspect-ratio: 1.3; border-radius: 10px; background: var(--g); }
+.lib div span { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; }
+.tl { display: grid; grid-template-columns: 180px 1fr 64px; gap: 16px; align-items: center; font-size: 14px; }
+.tl .bar2 { height: 12px; border-radius: 6px; background: var(--raised); overflow: hidden; }
+.tl .bar2 i { display: block; height: 100%; border-radius: 6px; background: var(--c, var(--accent)); width: var(--w); }
 .tl .bar2 i.ok { --c: var(--ok); } .tl .bar2 i.fail { --c: var(--danger); } .tl .bar2 i.now { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
-.logline { font: 11px/1.6 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.logline b { color: var(--text); font-weight: 500; }
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
-.tabs button { border: 0; background: none; color: var(--muted); padding: 7px 12px; font: 600 var(--size-s) var(--font-strong); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
-.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
-.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-.tool { text-align: left; border-radius: var(--radius-l); padding: 12px; display: grid; gap: 6px; cursor: pointer; color: var(--text); font: inherit; border: 1px solid var(--line); background: var(--glass); }
-.tool:hover { box-shadow: var(--glow); }
-.tool .ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; background: color-mix(in oklab, var(--c, var(--accent)) 18%, transparent); color: var(--c, var(--accent)); }
-.tool b { font-family: var(--font-strong); }
-.lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-.lib div { border-radius: var(--radius-m); padding: 8px; display: grid; gap: 6px; font-size: var(--size-xs); background: var(--raised); }
-.lib i { display: block; aspect-ratio: 1.4; border-radius: 6px; background: var(--g); }
-.formgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.help { color: var(--slot-tool); font-size: var(--size-xs); }
+.setgroup { display: grid; gap: 18px; }
+.toggle { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--raised); }
+.toggle b { font: 600 15px var(--font-strong); } .toggle small { color: var(--muted); font-size: 13px; }
+.switch { width: 44px; height: 26px; border-radius: 13px; background: var(--line); position: relative; grid-row: span 2; border: 0; cursor: pointer; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--text); transition: transform var(--fast) var(--ease); }
+.switch[aria-checked="true"] { background: var(--accent); } .switch[aria-checked="true"]::after { transform: translateX(18px); background: var(--on-accent); }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px 24px; }
+.studio .field { font-size: 14px; gap: 6px; } .studio .field input, .studio .field select { padding: 10px 12px; font-size: 15px; }
+.help { color: var(--slot-tool); font-size: 13px; }
+.keyrow { display: flex; gap: 6px; } .keyrow kbd { font-size: 14px; padding: 4px 10px; }
 
 /* install wizard */
 dialog.wizard { width: min(620px, 94vw); padding: 0; border-radius: var(--radius-l); border: 1px solid var(--line); background: var(--glass-strong); color: var(--text); box-shadow: var(--shadow); }
@@ -322,25 +440,39 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
 .srcs button[aria-pressed="true"] { box-shadow: var(--glow); }
 .loglist { font: 11px/1.7 var(--mono); color: var(--muted); background: var(--raised); border-radius: var(--radius-m); padding: 8px 10px; max-height: 110px; overflow: auto; }
 
-/* flows */
-.flow { display: grid; grid-template-columns: 200px 1fr; gap: 12px; min-height: 0; }
-.palette-list { display: grid; gap: 4px; align-content: start; font-size: var(--size-s); }
-.palette-list h5 { margin: 8px 0 2px; font: 600 10px var(--font-strong); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-.palette-list button { text-align: left; border: 0; background: var(--raised); color: var(--text); padding: 6px 8px; border-radius: var(--radius-s); cursor: grab; font: inherit; display: flex; gap: 6px; align-items: center; }
-.palette-list button:hover { background: var(--raised-hover); }
-.steps-list { display: grid; gap: 4px; align-content: start; }
-.fs { display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center; padding: 7px 10px; border-radius: var(--radius-m); background: var(--raised); font-size: var(--size-s); border-left: 3px solid var(--k, transparent); }
-.fs.check { --k: var(--kind-image); } .fs.code { --k: var(--warn); } .fs.call { --k: var(--accent-2); } .fs.loop { --k: var(--info); }
-.fs.in1 { margin-left: 22px; } .fs.in2 { margin-left: 44px; }
-.fs .k { font: 600 10px var(--mono); color: var(--muted); }
-.fs .sum { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0; }
-.fs select, .fs input { font: 600 var(--size-xs) var(--mono); color: var(--text); background: var(--glass-strong); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; max-width: 150px; }
-.fs pre { margin: 0; font: 11px/1.5 var(--mono); color: var(--text); white-space: pre-wrap; }
-.fs.now { box-shadow: var(--glow); }
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.codeview { margin: 0; padding: 12px 14px; border-radius: var(--radius-l); font: 12px/1.65 var(--mono); overflow: auto; background: var(--glass-strong); border: 1px solid var(--line); white-space: pre; }
+/* flows: one action per row, a details panel for the chosen step; the step list opens from "Add step" */
+.flow { display: grid; grid-template-columns: 1fr 340px; gap: 24px; min-height: 0; align-items: start; }
+.steps-list { display: grid; gap: 6px; align-content: start; }
+.fs { display: grid; grid-template-columns: 40px 34px 1fr auto; gap: 12px; align-items: center; min-height: 54px; padding: 8px 14px 8px 10px; border-radius: 14px;
+      background: var(--raised); font-size: 15px; border: 1px solid transparent; cursor: pointer; transition: background var(--fast) var(--ease); }
+.fs:hover { background: var(--raised-hover); }
+.fs .k { font: 600 12px var(--mono); color: var(--faint); text-align: right; }
+.fs .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; color: var(--k, var(--muted));
+           background: color-mix(in oklab, var(--k, var(--muted)) 16%, transparent); }
+.fs.check { --k: var(--kind-image); } .fs.code { --k: var(--warn); } .fs.call { --k: var(--accent-2); } .fs.loop { --k: var(--info); } .fs.cp { --k: var(--ok); }
+.fs.in1 { margin-left: 46px; } .fs.in2 { margin-left: 92px; }
+.fs .sum { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
+.fs .val { font: 600 13px var(--mono); padding: 3px 10px; border-radius: 8px; background: var(--glass-strong); border: 1px solid var(--line); }
+.fs .val.t { color: var(--kind-image); }
+.fs pre { margin: 0; font: 13px/1.5 var(--mono); color: var(--text); white-space: pre-wrap; }
+.fs.now { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, var(--raised)); }
+.fs .note2 { color: var(--faint); font-size: 13px; }
+.inspector { border-radius: 18px; padding: 22px; display: grid; gap: 18px; position: sticky; top: 0; }
+.inspector h5 { margin: 0; font: 650 18px var(--font-strong); display: flex; gap: 10px; align-items: center; }
+.inspector .target { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--raised); }
+.inspector .target i { display: block; aspect-ratio: 1.3; border-radius: 8px; background: linear-gradient(180deg, #2b2f55, #1d2140); border: 2px solid #6b72c9; }
+.addsheet { position: absolute; z-index: 5; top: 96px; left: 36px; width: 600px; max-width: calc(100% - 72px); padding: 18px; border-radius: 18px; display: grid; gap: 14px; box-shadow: var(--shadow); }
+.addsheet input { font: inherit; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 10px 14px; }
+.addsheet .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+.addsheet h6 { margin: 0 0 6px; font: 650 12px var(--font-strong); color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.addsheet button { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: none; color: var(--text); padding: 8px 10px; border-radius: var(--radius-m); font: 14px var(--font); cursor: pointer; }
+.addsheet button:hover { background: var(--raised-hover); }
+.addsheet button small { color: var(--muted); margin-left: auto; font-size: 12px; }
+.view[data-view="flows"] { position: relative; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.codeview { margin: 0; padding: 20px 22px; border-radius: 18px; font: 14px/1.75 var(--mono); overflow: auto; background: var(--glass-strong); border: 1px solid var(--line); white-space: pre; }
 .codeview .kw { color: var(--accent-2); } .codeview .fn { color: var(--accent); } .codeview .st { color: var(--ok); } .codeview .cm { color: var(--faint); }
-.codeview .hl-line { background: color-mix(in oklab, var(--accent) 16%, transparent); display: inline-block; width: 100%; }
+.codeview .hl-line { background: color-mix(in oklab, var(--accent) 16%, transparent); display: inline-block; width: 100%; border-radius: 4px; }
 
 /* tokens and keys */
 .voices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -365,14 +497,30 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
   .toolbar .name, .toolbar .hide-s, .hint, .mag { display: none; }
   .guidecard { width: 92%; right: 4%; }
   .side { width: 60%; }
-  .studio { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; height: 640px; }
-  .rail { order: 3; flex-direction: row; justify-content: space-around; border-right: 0; border-top: 1px solid var(--line); padding: 4px; }
-  .rail .logo { display: none; }
-  .flow { grid-template-columns: 1fr; }
-  .palette-list { grid-template-columns: repeat(2, 1fr); }
-  .palette-list h5 { grid-column: 1 / -1; }
+  .studio { height: 780px; width: auto; margin-inline: 0; }
+  .topnav { flex-wrap: wrap; padding: 12px 12px 4px; gap: 8px; }
+  .topnav .rail { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
+  .rail button { padding: 8px 12px; }
+  .runpill > span:not(.status) { display: none; }
+  .runpill { padding-left: 12px; }
+  .topnav > .pill:last-of-type { display: none; }
+  .switcher { padding-right: 10px; }
+  .view { padding: 12px 12px 110px; gap: 16px; }
+  .vhead h3 { font-size: 22px; }
+  .bento { grid-template-columns: 1fr; }
+  .tile { grid-column: 1 / -1; padding: 16px; }
+  .nowgrid, .ringrow { grid-template-columns: 1fr; }
+  .crumb { font-size: 21px; }
+  .flow, .addsheet .groups { grid-template-columns: 1fr; }
+  .inspector { display: none; }
+  .fs { grid-template-columns: 34px 1fr auto; gap: 10px; } .fs .k { display: none; }
+  .fs.in1 { margin-left: 16px; } .fs.in2 { margin-left: 32px; }
+  .addsheet { left: 12px; max-width: calc(100% - 24px); }
+  .sheet { left: 12px !important; right: 12px !important; width: auto !important; top: 120px; }
+  .dock button { width: 64px; font-size: 11px; }
+  .dock .ic { width: 34px; height: 34px; }
   .srcs { grid-template-columns: 1fr; }
-  .tl { grid-template-columns: 96px 1fr 38px; }
+  .tl { grid-template-columns: 96px 1fr 52px; gap: 10px; }
   .hide-xs { display: none; }
 }
 </style>
@@ -517,7 +665,6 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
         <button class="icon" aria-label="Stop run" data-tip="Stop" data-keys="shift+f5">■</button></header>
       <ul class="tree" id="runTree">
         <li class="cp">Wave 1 <span class="t">Dim.Game.Left</span></li>
-        <li class="goal">Clear the left side</li>
         <li class="step done" tabindex="0">hold w <span class="t">0.0</span></li>
         <li class="step done" tabindex="0">wait 0.5 <span class="t">0.5</span></li>
         <li class="step now" tabindex="0">press q <span class="t">0.5</span></li>
@@ -525,7 +672,6 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
         <li class="step" tabindex="0">  call dodge() <span class="t">0.6</span></li>
         <li class="step" tabindex="0">turn −90° <span class="t">1.2</span></li>
         <li class="cp">Wave 2 <span class="t">Dim.Game.Next</span></li>
-        <li class="goal">Boss</li>
         <li class="step" tabindex="0">press 5 4 1 3 2 <span class="t">2.0</span></li>
       </ul>
     </div>
@@ -539,119 +685,248 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
     </div></div>
   <div class="studio reveal" id="studioWin">
     <div class="titlebar"><span class="logo" style="width:16px;height:16px;font-size:9px">d</span><span>darbit Studio</span><span aria-hidden="true">– ▢ ✕</span></div>
-    <nav class="rail" aria-label="Studio sections">
-      <span class="logo" style="width:32px;height:32px;margin:0 auto 8px;font-size:15px;border-radius:10px">d</span>
-      <button data-view="bots" aria-current="page"><span>▦</span>Bots</button>
-      <button data-view="bot"><span>▶</span>Bot</button>
-      <button data-view="tools"><span>✦</span>Tools</button>
-      <button data-view="flows"><span>⑂</span>Flows</button>
-      <button data-view="settings"><span>⚙</span>Settings</button>
-    </nav>
+    <div class="stage">
+      <div class="backdrop" aria-hidden="true"><div class="sky"></div>
+        <div class="gwin" style="left:18%;top:14%;width:52%;height:62%"></div><div class="gbtn" style="left:58%;top:66%;width:14%;height:9%"></div></div>
 
-    <section class="view on" data-view="bots" aria-label="Bots">
-      <div class="vhead"><h3>Bots</h3><span class="chip" id="botCount">2 installed</span><span class="grow"></span>
-        <button class="btn primary" id="installBtn">＋ Install a bot</button></div>
-      <div class="bots" id="botCards">
-        <div class="bot glass" style="--a:#ff7ab6"><div class="top"><span class="av">ad</span><b>ad-bot</b><span class="chip ok">v0.3.0</span><span class="status run" aria-label="running"></span></div>
-          <div class="slot-tool">Speed Raid › Sakura · 31 of 133 this week</div>
-          <div class="meta"><span>running 3 h 12 m · library 0.96</span><button class="btn small">Stop</button></div></div>
-        <div class="bot glass" style="--a:#7ad7ff"><div class="top"><span class="av">fs</span><b>fish-bot</b><span class="chip info">update v0.2.1</span><span class="status idle" aria-label="idle"></span></div>
-          <div class="slot-tool">idle · last run yesterday, ok</div>
-          <div class="meta"><span>setup 24 / 24</span><button class="btn small primary">Run</button></div></div>
-      </div>
-      <div class="empty" id="botsEmpty" hidden><span style="font-size:28px">▦</span><b>No bots yet</b>
-        <span class="slot-tool">Install one from a git link, start from a template, or open a folder.</span>
-        <button class="btn primary" onclick="openWizard()">＋ Install a bot</button></div>
-      <div class="card glass" id="liveCard">
-        <h4><span class="status run"></span> ad-bot · live <span class="grow"></span></h4>
-        <div class="tl"><span>Raid</span><span class="bar2"><i class="ok" style="--w:72%"></i></span><span class="num slot-tool">41 m</span></div>
-        <div class="tl"><span>Speed Raid › Natsu</span><span class="bar2"><i class="ok" style="--w:28%"></i></span><span class="num slot-tool">1 m</span></div>
-        <div class="tl"><span>AFK</span><span class="bar2"><i class="fail" style="--w:12%"></i></span><span class="num slot-tool">fail</span></div>
-        <div class="tl"><span>Speed Raid › Sakura</span><span class="bar2"><i class="now" style="--w:46%"></i></span><span class="num slot-tool">now</span></div>
-        <div class="logline">11:24:31 <b>picking Sakura (1.00); looks most like Sakura</b> · 11:24:40 exists Lobby.Play 0.98</div>
-      </div>
-    </section>
+      <header class="topnav">
+        <div class="pill glass"><button class="switcher" id="switcherBtn" aria-expanded="false" aria-haspopup="dialog"><span class="av" style="--a:#ff7ab6">ad</span><span id="switcherName">ad-bot</span><span aria-hidden="true" style="color:var(--muted)">▾</span></button></div>
+        <nav class="rail glass" aria-label="Studio sections">
+          <button data-view="overview" aria-current="page"><span>◉</span>Overview</button>
+          <button data-view="flows"><span>⑂</span>Flows</button>
+          <button data-view="library"><span>▣</span>Library</button>
+          <button data-view="runs"><span>≡</span>Runs</button>
+          <button data-view="settings"><span>⚙</span>Settings</button>
+        </nav>
+        <div class="runpill glass" id="runPill"><span class="status run"></span><span><b>Running</b> <span class="slot-tool">3 h 12 m</span></span>
+          <button class="icon" aria-label="Pause" data-tip="Pause" data-keys="ctrl+alt+p">❚❚</button><button class="icon" aria-label="Stop" data-tip="Stop" data-keys="ctrl+alt+q">■</button></div>
+        <div class="pill glass"><button class="icon" id="srcBtn" aria-pressed="false" aria-label="Show where each tile comes from" data-tip="Where it comes from">‹/›</button><button class="icon" id="appBtn" aria-expanded="false" aria-label="Studio settings" data-tip="Studio settings">⚙</button></div>
+      </header>
 
-    <section class="view" data-view="bot" aria-label="Bot">
-      <div class="vhead"><span class="av" style="--a:#ff7ab6">ad</span><h3>ad-bot</h3><span class="chip ok">v0.3.0 · darbit 0.2.0</span><span class="grow"></span>
-        <button class="btn">❚❚ Pause</button><button class="btn danger">■ Stop</button></div>
-      <div class="tabs" role="tablist" id="botTabs">
-        <button role="tab" aria-selected="true" data-tab="live">Live</button><button role="tab" aria-selected="false" data-tab="settings">Settings</button>
-        <button role="tab" aria-selected="false" data-tab="setup">Setup</button><button role="tab" aria-selected="false" data-tab="library">Library</button>
-        <button role="tab" aria-selected="false" data-tab="runs">Runs</button></div>
-      <div data-tab="live" class="card glass"><h4>Now: Speed Raid › Sakura <span class="chip info">fight · 0:42</span></h4>
-        <div class="logline">11:25:02 <b>Speed Raid: picking Sakura (1.00) at 497,568</b></div>
-        <div class="logline">11:25:05 vanish Start · 11:25:08 exists Dim.Game.Left 0.84 · fighting</div>
-        <div class="logline">11:25:47 exists Dim.Game.Leave 1.00 · <b>Speed Raid done: 32 of 133</b></div></div>
-      <div data-tab="settings" class="formgrid" hidden>
-        <label class="field">Speed Raid every (minutes)<input type="number" value="30"><span class="help">How often to try the next character.</span></label>
-        <label class="field">Skills<input value="54132"><span class="help">Pressed in this order; click to record keys.</span></label>
-        <label class="field">Boss Rush per day<input type="number" value="1"></label>
-        <label class="field">Private server<select><option>from AD_PS (set)</option></select><span class="help">Never stored in the repo.</span></label>
-      </div>
-      <div data-tab="setup" class="card glass" hidden><h4>Setup guide <span class="chip ok">164 / 165</span></h4>
-        <div class="strip"><i style="transform:scaleX(.99)"></i></div>
-        <span class="slot-tool">Missing: Boss.Raid.Guardian · <button class="btn small">Capture now</button></span></div>
-      <div data-tab="library" class="lib" hidden>
-        <div><i style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"></i>SR.Char.Naruto <span class="badge ok">1.00</span></div>
-        <div><i style="--g:linear-gradient(160deg,#b8ff8a,#2fbf71)"></i>SR.Char.Goku <span class="badge risky">0.82 Luffy</span></div>
-        <div><i style="--g:linear-gradient(180deg,#52e38f,#1fa35a)"></i>Bag.Equip <span class="badge ok">0.99</span></div>
-        <div><i style="--g:#333"></i>Dim.Game.Left <span class="badge risky">0.84</span></div>
-      </div>
-      <div data-tab="runs" class="card glass" hidden><h4>Today <span class="chip">8 Speed Raids · 1 failure</span></h4>
-        <div class="logline">09:12 AFK failed: no AFK rewards to claim · screenshot 09-12-04_failed_AFK.jpg</div></div>
-    </section>
+      <!-- ===== overview: the dashboard the bot fills (decision 0011) -->
+      <section class="view on" data-view="overview" aria-label="Overview">
+        <div class="vhead"><div class="who"><span class="av" style="--a:#ff7ab6">ad</span><div><h3>ad-bot</h3><p id="botSummary">Raids, Speed Raid, challenges and AFK, all day</p></div></div>
+          <span class="grow"></span><span class="chip ok">setup 165 / 165</span><span class="chip">v0.3.0 · darbit 0.2.0</span><span class="chip info">library 0.96</span></div>
+        <div class="src-hint">darbit.toml   [bot] name = "ad-bot" · version · accent = "#ff7ab6"
+             [studio] summary = "Raids, Speed Raid, challenges and AFK, all day"</div>
 
-    <section class="view" data-view="tools" aria-label="Tools">
-      <div class="vhead"><h3>Tools</h3><span class="slot-tool">for</span><select aria-label="Bot" class="btn small"><option>ad-bot</option><option>fish-bot</option></select></div>
-      <div class="tools">
-        <button class="tool" style="--c:var(--kind-image)" onclick="toast('Capture: the screen freezes in 3 s','tool')"><span class="ic">▣</span><b>Capture</b><span class="slot-tool">take an image, region or point</span></button>
-        <button class="tool" style="--c:var(--ok)" onclick="toast('Highlight: scanning 165 targets','tool')"><span class="ic">◎</span><b>Highlight</b><span class="slot-tool">see what's found, with scores</span></button>
-        <button class="tool" style="--c:var(--danger)" onclick="toast('Recording: Ctrl+Alt+R to stop','tool')"><span class="ic">●</span><b>Record</b><span class="slot-tool">a macro, with checks as you go</span></button>
-        <button class="tool" style="--c:var(--accent-2)"><span class="ic">▶</span><b>Play a flow</b><span class="slot-tool">with the run panel</span></button>
-        <button class="tool" style="--c:var(--warn)"><span class="ic">☰</span><b>Setup guide</b><span class="slot-tool">walk through what's missing</span></button>
-        <button class="tool" style="--c:var(--info)"><span class="ic">✓</span><b>Check library</b><span class="slot-tool">every picture's health</span></button>
-        <button class="tool"><span class="ic">≡</span><b>Run report</b><span class="slot-tool">a day's steps and failures</span></button>
-      </div>
-    </section>
+        <div class="bento" id="liveCard">
+          <article class="tile glass" style="--span:8">
+            <h4>Now<span class="grow"></span><span class="chip info">for 0:42</span></h4>
+            <div class="nowgrid">
+              <div style="display:grid;gap:16px">
+                <div class="crumb">Speed Raid <i>›</i> Sakura <i>›</i> <span class="last">Fight</span></div>
+                <div class="chain"><span class="done">✓ Pick</span><span class="done">✓ Start</span><span class="now">Fight</span><span>Leave</span></div>
+                <span class="slot-tool">Round 3 today · the 32nd character this week</span>
+              </div>
+              <div class="shotbox"><div class="gwin" style="left:10%;top:12%;width:56%;height:70%"><h4>SAKURA</h4></div><div class="gbtn" style="left:68%;top:70%;width:24%;height:14%">LEAVE</div><span class="tag chip">11:25:47</span></div>
+            </div>
+            <div class="src-hint">with d.step("Speed Raid"):          # nested steps make the breadcrumb
+    with d.step(name):
+        with d.step("Fight"): ...</div>
+          </article>
 
-    <section class="view" data-view="flows" aria-label="Flows">
-      <div class="vhead"><h3>Flows</h3><span class="chip">slime.flow.py</span><span class="grow"></span>
-        <button class="btn small" data-tip="Run" data-keys="f5">▶ Run</button><button class="btn small" data-tip="Step" data-keys="f10">⤼ Step</button>
-        <button class="btn small" onclick="location.hash='flow'">⇄ Python</button></div>
-      <div class="flow">
-        <div class="palette-list" aria-label="Actions">
-          <h5>Steps</h5><button>⌨ Press keys</button><button>⏱ Wait</button><button>🖱 Click</button>
-          <h5>Checks</h5><button>▣ If seen</button><button>⌛ Wait for</button><button>↻ Until gone</button><button>⟲ Retry</button>
-          <h5>Functions</h5><button>ƒ dodge()</button><button>ƒ pick_character(name)</button>
-          <h5>Python actions</h5><button>⚙ open_bag()</button><button>⚙ spam_skills(times)</button>
-          <h5>Other</h5><button>{ } Code</button>
+          <article class="tile glass" style="--span:4">
+            <h4>Progress</h4>
+            <div class="ringrow"><div style="display:grid;gap:8px;justify-items:center"><div class="ring" style="--p:24"><div><b>32</b><span>of 133</span></div></div><span class="slot-tool">Speed Raid this week</span></div>
+              <div class="bars">
+                <div><span><b>Boss Rush today</b>1 / 1</span><i style="--w:100%;--c:var(--ok)"></i></div>
+                <div><span><b>Raid Challenge today</b>0 / 1</span><i style="--w:0%"></i></div></div></div>
+            <div class="src-hint">d.progress("Speed Raid this week", state.sr_done, 133)
+d.progress("Boss Rush today", used, 1)</div>
+          </article>
+
+          <article class="tile glass" style="--span:7">
+            <h4>Today's round<span class="grow"></span><span class="slot-tool" style="text-transform:none;letter-spacing:0">round 3</span></h4>
+            <ul class="rows">
+              <li><span class="dot ok"></span><b>Raid</b><small>11:02 · 41 m</small><span class="chip ok">done</span></li>
+              <li class="now"><span class="dot now"></span><b>Speed Raid</b><small>11:24 · now</small><span class="chip info">running</span></li>
+              <li><span class="dot ok"></span><b>Boss Rush</b><small>10:20 · 6 m</small><span class="chip">1 / 1 today</span></li>
+              <li><span class="dot"></span><b>Raid Challenge</b><small>next in this round</small><span></span></li>
+              <li><span class="dot"></span><b>Dimension</b><small>12:31 last round</small><span></span></li>
+              <li><span class="dot bad"></span><b>AFK</b><small>09:12 · failed</small><span class="chip danger">no rewards</span></li>
+            </ul>
+            <div class="src-hint">ROUND = [Raid(), SpeedRaid(), BossRush(), ...]
+for mode in ROUND:
+    with d.step(mode.name): mode.play()     # top-level steps are the round</div>
+          </article>
+
+          <article class="tile glass" style="--span:5">
+            <h4>Next up</h4>
+            <div class="nextlist">
+              <div><b>Raid hour</b><em>34 m</em><small>12:00 today</small></div>
+              <div><b>Daily reset</b><em>12 h</em><small>00:00 UTC: attempts back to full</small></div>
+              <div><b>Speed Raid week</b><em>2 d 4 h</em><small>Monday 07:00 UTC: the list starts over</small></div>
+            </div>
+            <div class="src-hint">d.next("Weekly reset", reset_time)</div>
+          </article>
+
+          <article class="tile glass" style="--span:7">
+            <h4>What happened<span class="grow"></span><button class="btn small" onclick="showView('runs')">All runs ›</button></h4>
+            <ul class="events">
+              <li><time>11:25:08</time><span>Fight started (enemies left showed, 0.84)</span></li>
+              <li><time>11:25:02</time><span>Picked Sakura (1.00) at 497, 568</span></li>
+              <li><time>11:23:40</time><span class="ok">Speed Raid done: Natsu, 31 of 133</span></li>
+              <li><time>11:02:11</time><span class="ok">Raid finished in 41 m</span></li>
+              <li><time>09:12:30</time><span class="bad">AFK failed: no rewards to claim · screenshot</span></li>
+            </ul>
+            <div class="src-hint">d.record("speed raid done", character=name, done=state.sr_done)
+# failed steps and d.screenshot(...) show here too</div>
+          </article>
+
+          <article class="tile glass" style="--span:5">
+            <h4>Watching</h4>
+            <ul class="rows">
+              <li><span class="dot ok"></span><b>Disconnected</b><small>fired 0 times today</small><span class="chip ok">watching</span></li>
+              <li><span class="dot ok"></span><b>Roblox closed</b><small>fired once, 08:41 · rejoined</small><span class="chip ok">watching</span></li>
+            </ul>
+            <div class="src-hint">d.observe(img.DISCONNECTED, region=cfg.region.main_menu)
+d.observe(roblox_closed, name="Roblox closed")</div>
+          </article>
         </div>
-        <div class="steps-list">
-          <div class="fs check"><span class="k">1</span><span class="sum">wait for <select><option>▣ Dim.Game.Left</option><option>+ capture now</option></select> within <input value="30 s" style="width:52px"></span><span class="chip ok">0.84</span></div>
-          <div class="fs"><span class="k">2</span><span class="sum">hold <kbd>W</kbd> · wait <input value="0.5 s" style="width:52px"> · press <kbd>Q</kbd></span><span></span></div>
-          <div class="fs loop now"><span class="k">3</span><span class="sum">repeat until <select><option>▣ Dim.Game.Leave</option></select> is seen</span><span class="chip info">loop</span></div>
-          <div class="fs call in1"><span class="k">3.1</span><span class="sum">⚙ spam_skills(times = <input value="5" style="width:34px">)</span><span class="chip">action</span></div>
-          <div class="fs check in1"><span class="k">3.2</span><span class="sum">if seen <select><option>▣ Dim.Boss.Bar</option></select></span><span></span></div>
-          <div class="fs call in2"><span class="k">3.2.1</span><span class="sum">ƒ dodge()</span><span class="chip">function</span></div>
-          <div class="fs code in1"><span class="k">3.3</span><pre>if state.sr_done > 100:
-    d.log("almost done this week")</pre><span class="chip warn">code</span></div>
-          <div class="fs"><span class="k">4</span><span class="sum">click <select><option>▣ Dim.Game.Leave</option></select></span><span></span></div>
+
+        <div class="bento" id="botsLoading" hidden>
+          <article class="tile glass" style="--span:8;min-height:220px;place-items:center"><span class="spinner"></span></article>
+          <article class="tile glass" style="--span:4;min-height:220px;place-items:center"><span class="spinner"></span></article>
+        </div>
+        <div class="empty glass" id="botsEmpty" hidden><span style="font-size:38px">▦</span><b>No bots yet</b>
+          <span class="slot-tool">Install one from a git link, start from a template, or open a folder.</span>
+          <button class="btn primary" onclick="openWizard()">＋ Install a bot</button></div>
+      </section>
+
+      <!-- ===== flows -->
+      <section class="view" data-view="flows" aria-label="Flows">
+        <div class="vhead"><div class="filters" role="tablist" aria-label="Flows"><button aria-pressed="true">slime.py</button><button aria-pressed="false">raid.py</button><button aria-pressed="false">＋ New flow</button></div>
+          <span class="grow"></span>
+          <button class="btn" id="addStepBtn" aria-expanded="false">＋ Add step</button>
+          <button class="btn" data-tip="Run" data-keys="f5">▶ Run</button><button class="btn" data-tip="Step" data-keys="f10">⤼ Step</button>
+          <button class="btn" onclick="location.hash='flow'">⇄ Python</button></div>
+        <div class="addsheet glass" id="addSheet" hidden>
+          <input placeholder="Find a step…" aria-label="Find a step">
+          <div class="groups">
+            <div><h6>Input</h6><button>⌨ Press keys<small>press, hold</small></button><button>🖱 Click<small>a target or a spot</small></button><button>⏱ Wait<small>seconds</small></button></div>
+            <div><h6>Checks</h6><button>▣ Wait for<small>until it shows</small></button><button>⑂ If seen<small>if, else</small></button><button>↻ Repeat until<small>a loop</small></button><button>◆ Checkpoint<small>must be seen</small></button></div>
+            <div><h6>Functions in this flow</h6><button>ƒ dodge()</button><button>ƒ pick_character(name)</button></div>
+            <div><h6>Python actions</h6><button>⚙ open_bag()</button><button>⚙ spam_skills(times)</button><button>{ } Code<small>anything else</small></button></div>
+          </div>
+        </div>
+        <div class="flow">
+          <div class="steps-list">
+            <div class="fs cp glass"><span class="k">1</span><span class="ico">◆</span><span class="sum">Checkpoint <b>Wave 1</b> waits for <span class="val t">▣ Dim.Game.Left</span> up to <span class="val">30 s</span></span><span class="chip ok">0.84</span></div>
+            <div class="fs glass"><span class="k">2</span><span class="ico">⌨</span><span class="sum">Hold <kbd>W</kbd></span><span></span></div>
+            <div class="fs glass"><span class="k">3</span><span class="ico">⏱</span><span class="sum">Wait <span class="val">0.5 s</span></span><span></span></div>
+            <div class="fs glass"><span class="k">4</span><span class="ico">⌨</span><span class="sum">Release <kbd>W</kbd></span><span></span></div>
+            <div class="fs loop now glass"><span class="k">5</span><span class="ico">↻</span><span class="sum">Repeat until <span class="val t">▣ Dim.Game.Leave</span> shows</span><span class="chip info">loop</span></div>
+            <div class="fs call in1 glass"><span class="k">5.1</span><span class="ico">⚙</span><span class="sum">spam_skills, <span class="val">5 times</span></span><span class="chip">action</span></div>
+            <div class="fs check in1 glass"><span class="k">5.2</span><span class="ico">⑂</span><span class="sum">If <span class="val t">▣ Dim.Boss.Bar</span> shows</span><span></span></div>
+            <div class="fs call in2 glass"><span class="k">5.2.1</span><span class="ico">ƒ</span><span class="sum">dodge()</span><span class="chip">function</span></div>
+            <div class="fs glass"><span class="k">6</span><span class="ico">🖱</span><span class="sum">Click <span class="val t">▣ Dim.Game.Leave</span></span><span class="note2"># back to the lobby</span></div>
+          </div>
+          <aside class="inspector glass" aria-label="Step details">
+            <h5><span class="ico" style="width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in oklab, var(--info) 16%, transparent);color:var(--info)">↻</span>Repeat until</h5>
+            <div class="target"><i></i><div><b>Dim.Game.Leave</b><br><span class="slot-tool">end screen · Leave button</span><br><button class="btn small" style="margin-top:6px">Capture again</button></div></div>
+            <label class="field">Check every<select><option>0.5 s</option><option>1 s</option></select></label>
+            <label class="field">Give up after<select><option>never</option><option>5 min</option></select></label>
+            <label class="field">Note<input value="fight until the end screen"><span class="help">Shown in the run panel; saved as the comment on its line.</span></label>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ===== library -->
+      <section class="view" data-view="library" aria-label="Library">
+        <div class="vhead"><h3>Library</h3><div class="filters" role="group" aria-label="Show"><button aria-pressed="true">All 165</button><button aria-pressed="false">Risky 3</button><button aria-pressed="false">Missing 0</button></div>
+          <span class="grow"></span><button class="btn">✓ Check all</button><button class="btn primary">▣ Capture</button></div>
+        <div class="tile glass" style="--span:12">
+          <h4>Speed Raid list<span class="grow"></span><span class="slot-tool" style="text-transform:none;letter-spacing:0">from guide.toml · 133 pictures</span></h4>
+          <div class="lib">
+            <div><i style="--g:linear-gradient(160deg,#ff9a62,#ff5f8f)"></i><span>SR.Char.Naruto <span class="badge ok">1.00</span></span></div>
+            <div><i style="--g:linear-gradient(160deg,#6ee7ff,#4f7cff)"></i><span>SR.Char.Sakura <span class="badge ok">0.97</span></span></div>
+            <div><i style="--g:linear-gradient(160deg,#b8ff8a,#2fbf71)"></i><span>SR.Char.Goku <span class="badge risky">0.82</span></span></div>
+            <div><i style="--g:linear-gradient(160deg,#f7d26b,#e08a1e)"></i><span>SR.Char.Goku(MUI) <span class="badge ok">0.95</span></span></div>
+            <div><i style="--g:linear-gradient(160deg,#d8a6ff,#8a5cff)"></i><span>SR.Char.Killua <span class="badge ok">0.99</span></span></div>
+            <div><i style="--g:linear-gradient(160deg,#6ee7ff,#2fbf71)"></i><span>SR.Char.Itadori <span class="badge ok">0.98</span></span></div>
+          </div></div>
+        <div class="tile glass" style="--span:12">
+          <h4>Bag<span class="grow"></span><span class="slot-tool" style="text-transform:none;letter-spacing:0">12 pictures</span></h4>
+          <div class="lib">
+            <div><i style="--g:linear-gradient(180deg,#52e38f,#1fa35a)"></i><span>Bag.Equip <span class="badge ok">0.99</span></span></div>
+            <div><i style="--g:linear-gradient(180deg,#2b2f55,#1d2140)"></i><span>Bag.Character <span class="badge ok">0.96</span></span></div>
+            <div><i style="--g:#333"></i><span>Dim.Game.Left <span class="badge risky">0.84</span></span></div>
+          </div></div>
+      </section>
+
+      <!-- ===== runs -->
+      <section class="view" data-view="runs" aria-label="Runs">
+        <div class="vhead"><h3>Runs</h3><div class="filters" role="group" aria-label="Day"><button aria-pressed="true">Today</button><button aria-pressed="false">Yesterday</button><button aria-pressed="false">This week</button></div></div>
+        <div class="bento">
+          <article class="tile glass" style="--span:8"><h4>Today, by mode</h4>
+            <div class="tl"><span>Raid</span><span class="bar2"><i class="ok" style="--w:72%"></i></span><span class="num slot-tool">2 h 03</span></div>
+            <div class="tl"><span>Speed Raid</span><span class="bar2"><i class="ok" style="--w:46%"></i></span><span class="num slot-tool">8 runs</span></div>
+            <div class="tl"><span>Boss Rush</span><span class="bar2"><i class="ok" style="--w:12%"></i></span><span class="num slot-tool">6 m</span></div>
+            <div class="tl"><span>AFK</span><span class="bar2"><i class="fail" style="--w:8%"></i></span><span class="num slot-tool">1 fail</span></div></article>
+          <article class="tile glass" style="--span:4"><h4>Failures</h4>
+            <div class="shotbox"><div class="gwin" style="left:20%;top:16%;width:60%;height:60%"><h4>AFK</h4></div><span class="tag chip danger">09:12 · no rewards</span></div>
+            <span class="slot-tool">AFK: no AFK rewards to claim. The bot rejoined and went on.</span></article>
+        </div>
+      </section>
+
+      <!-- ===== the bot's settings, generated from its settings.toml -->
+      <section class="view" data-view="settings" aria-label="Bot settings">
+        <div class="vhead"><h3>Settings</h3><span class="slot-tool">ad-bot · saved to config.local.toml</span><span class="grow"></span><button class="btn">Restore defaults</button><button class="btn primary">Save</button></div>
+        <div class="bento">
+          <article class="tile glass" style="--span:6"><h4>Modes</h4>
+            <div class="setgroup">
+              <div class="toggle"><b>Raid</b><button class="switch" role="switch" aria-checked="true" aria-label="Raid"></button><small>Every round, at the raid hour.</small></div>
+              <div class="toggle"><b>Speed Raid</b><button class="switch" role="switch" aria-checked="true" aria-label="Speed Raid"></button><small>The next character, every 30 minutes.</small></div>
+              <div class="toggle"><b>Boss Rush</b><button class="switch" role="switch" aria-checked="true" aria-label="Boss Rush"></button><small>Once a day.</small></div>
+              <div class="toggle"><b>AFK</b><button class="switch" role="switch" aria-checked="false" aria-label="AFK"></button><small>Claim the AFK rewards.</small></div>
+            </div>
+            <div class="src-hint">[speed_raid.enabled]      # settings.toml
+type = "bool"
+default = true
+help = "The next character, every 30 minutes."</div></article>
+          <article class="tile glass" style="--span:6"><h4>Speed Raid and controls</h4>
+            <div class="formgrid">
+              <label class="field">Speed Raid every (minutes)<input type="number" value="30"><span class="help">How often to try the next character.</span></label>
+              <label class="field">Boss Rush per day<input type="number" value="1"></label>
+              <div class="field">Skills, in order<div class="keyrow"><kbd>5</kbd><kbd>4</kbd><kbd>1</kbd><kbd>3</kbd><kbd>2</kbd><button class="btn small">Record keys</button></div><span class="help">Pressed in this order in a fight.</span></div>
+              <label class="field">Private server<select><option>from AD_PS (set)</option></select><span class="help">Never stored in the repo.</span></label>
+            </div></article>
+        </div>
+      </section>
+
+      <!-- ===== the tools, one dock -->
+      <nav class="dock glass" aria-label="Tools">
+        <button style="--c:var(--kind-image)" onclick="toast('Capture: the screen freezes in 3 s','tool')" data-tip="Capture" data-keys="ctrl+alt+c"><span class="ic">▣</span>Capture</button>
+        <button style="--c:var(--ok)" onclick="toast('Highlight: scanning 165 targets','tool')" data-tip="Highlight" data-keys="ctrl+alt+h"><span class="ic">◎</span>Highlight</button>
+        <button style="--c:var(--danger)" onclick="toast('Recording: Ctrl+Alt+R to stop','tool')" data-tip="Record" data-keys="ctrl+alt+r"><span class="ic">●</span>Record</button>
+        <button style="--c:var(--accent-2)" data-tip="Play a flow"><span class="ic">▶</span>Play</button>
+        <hr>
+        <button style="--c:var(--warn)" data-tip="Setup guide"><span class="ic">☰</span>Guide</button>
+        <button style="--c:var(--info)" data-tip="Check the library"><span class="ic">✓</span>Check</button>
+      </nav>
+
+      <!-- ===== sheets from the top pill -->
+      <div class="sheet glass" id="botSheet" hidden role="dialog" aria-label="Your bots">
+        <h5>Your bots<span class="grow"></span><button class="btn primary small" id="installBtn">＋ Install a bot</button></h5>
+        <div class="bots" id="botCards">
+          <div class="bot glass" style="--a:#ff7ab6"><div class="top"><span class="av">ad</span><b>ad-bot</b><span class="status run" aria-label="running"></span></div>
+            <span class="slot-tool">Speed Raid › Sakura</span><div class="meta"><span>v0.3.0</span><span class="chip ok">running</span></div></div>
+          <div class="bot glass" style="--a:#7ad7ff"><div class="top"><span class="av">fs</span><b>fish-bot</b><span class="status idle" aria-label="idle"></span></div>
+            <span class="slot-tool">idle · last run yesterday</span><div class="meta"><span>v0.2.0</span><span class="chip info">update v0.2.1</span></div></div>
+          <button class="bot add" onclick="openWizard()"><span style="font-size:24px">＋</span><b>Install a bot</b><span class="slot-tool">a git link, a template or a folder</span></button>
         </div>
       </div>
-    </section>
-
-    <section class="view" data-view="settings" aria-label="Settings">
-      <div class="vhead"><h3>Settings</h3></div>
-      <div class="formgrid">
+      <div class="sheet glass" id="appMenu" hidden role="dialog" aria-label="Studio settings">
+        <h5>Studio</h5>
         <label class="field">Theme<select id="themeSel"><option value="glass-dark">Glass dark</option><option value="glass-light">Glass light</option><option value="midnight">Midnight</option><option value="high-contrast">High contrast</option></select></label>
-        <label class="field">darbit<select><option>0.2.0 (latest)</option><option>0.1.0</option></select><span class="help">Each bot pins its own version; this is the Studio's.</span></label>
-        <label class="field">Folders<input value="%LOCALAPPDATA%\darbit" readonly><span class="help">Bots, cache and logs. Settings: %APPDATA%\darbit.</span></label>
-        <label class="field">Keys<button class="btn small" type="button">Edit keymap…</button><span class="help">Every shortcut; conflicts are shown before saving.</span></label>
+        <label class="field">darbit<select><option>0.2.0 (latest)</option><option>0.1.0</option></select><span class="help">Each bot pins its own; this is the Studio's.</span></label>
+        <label class="field">Folders<input value="%LOCALAPPDATA%\darbit" readonly></label>
+        <button class="btn" type="button">Edit keys…</button>
       </div>
-    </section>
+    </div>
   </div>
-  <p class="note">The Studio is the only normal window. It installs bots through a wizard, launches every tool for the chosen bot, and edits flows. Built-in steps, flow functions and Python actions all appear as actions in one palette. Use the state switch above to see the empty, loading and error states.</p>
+  <p class="note">The Studio speaks the same language as the tools: glass pills and cards over the bot's own last screenshot (blurred, in the glass themes only), a pill menu like the capture toolbar, and the tools in a dock. The bot switcher replaces the Bots page. The Overview is filled by the bot itself (decision 0011): press <b>‹/›</b> in the top pill to see the line of code or <code>darbit.toml</code> behind each tile.</p>
 
   <dialog class="wizard" id="wizard" aria-label="Install a bot">
     <header><b>Install a bot</b><button class="icon" aria-label="Close" onclick="wizard.close()">✕</button></header>
@@ -663,29 +938,35 @@ dialog.wizard::backdrop { background: rgb(0 0 0 / .4); }
   <!-- ============================================================ flow and python -->
   <div class="sec-head"><h2 id="flow">Flow ↔ Python</h2><p>The same bot, in the Studio and in a code editor. Hover a step to see its line.</p></div>
   <div class="split reveal">
-    <div class="steps-list glass" style="padding:12px;border-radius:var(--radius-l)" id="flowSide">
-      <div class="fs check" data-line="4"><span class="k">1</span><span class="sum">wait for ▣ Dim.Game.Left within 30 s</span><span></span></div>
-      <div class="fs" data-line="5"><span class="k">2</span><span class="sum">hold W · wait 0.5 s · press Q</span><span></span></div>
-      <div class="fs loop" data-line="8"><span class="k">3</span><span class="sum">repeat until ▣ Dim.Game.Leave</span><span></span></div>
-      <div class="fs call in1" data-line="9"><span class="k">3.1</span><span class="sum">⚙ spam_skills(5)</span><span></span></div>
-      <div class="fs check in1" data-line="10"><span class="k">3.2</span><span class="sum">if seen ▣ Dim.Boss.Bar → ƒ dodge()</span><span></span></div>
-      <div class="fs code in1" data-line="12"><span class="k">3.3</span><span class="sum">{ } code, kept word for word</span><span></span></div>
-      <div class="fs" data-line="14"><span class="k">4</span><span class="sum">click ▣ Dim.Game.Leave</span><span></span></div>
+    <div class="steps-list glass" style="padding:16px;border-radius:18px" id="flowSide">
+      <div class="fs cp" data-line="6"><span class="k">1</span><span class="ico">◆</span><span class="sum">Checkpoint <b>Wave 1</b> waits for <span class="val t">▣ Dim.Game.Left</span></span><span></span></div>
+      <div class="fs" data-line="7"><span class="k">2</span><span class="ico">⌨</span><span class="sum">Hold <kbd>W</kbd></span><span></span></div>
+      <div class="fs" data-line="8"><span class="k">3</span><span class="ico">⏱</span><span class="sum">Wait <span class="val">0.5 s</span></span><span></span></div>
+      <div class="fs" data-line="9"><span class="k">4</span><span class="ico">⌨</span><span class="sum">Release <kbd>W</kbd></span><span></span></div>
+      <div class="fs loop" data-line="11"><span class="k">5</span><span class="ico">↻</span><span class="sum">Repeat until <span class="val t">▣ Dim.Game.Leave</span></span><span></span></div>
+      <div class="fs call in1" data-line="12"><span class="k">5.1</span><span class="ico">⚙</span><span class="sum">spam_skills, <span class="val">5 times</span></span><span></span></div>
+      <div class="fs check in1" data-line="13"><span class="k">5.2</span><span class="ico">⑂</span><span class="sum">If <span class="val t">▣ Dim.Boss.Bar</span> shows</span><span></span></div>
+      <div class="fs call in2" data-line="14"><span class="k">5.2.1</span><span class="ico">ƒ</span><span class="sum">dodge()</span><span></span></div>
+      <div class="fs code in1" data-line="15"><span class="k">5.3</span><span class="ico">{ }</span><span class="sum">Code, kept word for word</span><span></span></div>
+      <div class="fs" data-line="17"><span class="k">6</span><span class="ico">🖱</span><span class="sum">Click <span class="val t">▣ Dim.Game.Leave</span></span><span></span></div>
     </div>
 <pre class="codeview" id="codeSide"><span data-l="1"><span class="kw">import</span> darbit <span class="kw">as</span> d</span>
 <span data-l="2"></span>
-<span data-l="3"><span class="fn">@d.flow</span></span>
-<span data-l="4"><span class="kw">def</span> <span class="fn">slime</span>():                       <span class="cm"># d.wait("Dim.Game.Left", 30)</span></span>
-<span data-l="5">    d.wait(<span class="st">"Dim.Game.Left"</span>, timeout=30)</span>
-<span data-l="6">    d.hold(<span class="st">"w"</span>); d.sleep(0.5); d.press(<span class="st">"q"</span>)</span>
-<span data-l="7"></span>
-<span data-l="8">    <span class="kw">while not</span> d.exists(<span class="st">"Dim.Game.Leave"</span>):</span>
-<span data-l="9">        spam_skills(times=5)</span>
-<span data-l="10">        <span class="kw">if</span> d.exists(<span class="st">"Dim.Boss.Bar"</span>):</span>
-<span data-l="11">            dodge()</span>
-<span data-l="12">        <span class="kw">if</span> state.sr_done > 100:          <span class="cm"># a Code step</span></span>
-<span data-l="13">            d.log(<span class="st">"almost done this week"</span>)</span>
-<span data-l="14">    d.click(<span class="st">"Dim.Game.Leave"</span>)</span></pre>
+<span data-l="3"></span>
+<span data-l="4"><span class="fn">@d.flow</span>(window=<span class="st">"Roblox"</span>)</span>
+<span data-l="5"><span class="kw">def</span> <span class="fn">slime</span>():</span>
+<span data-l="6">    d.checkpoint(<span class="st">"Wave 1"</span>, wait_for=<span class="st">"Dim.Game.Left"</span>)</span>
+<span data-l="7">    d.hold(<span class="st">"w"</span>)</span>
+<span data-l="8">    d.sleep(0.5)</span>
+<span data-l="9">    d.release(<span class="st">"w"</span>)</span>
+<span data-l="10"></span>
+<span data-l="11">    <span class="kw">while not</span> d.exists(<span class="st">"Dim.Game.Leave"</span>):</span>
+<span data-l="12">        spam_skills(times=5)</span>
+<span data-l="13">        <span class="kw">if</span> d.exists(<span class="st">"Dim.Boss.Bar"</span>):</span>
+<span data-l="14">            dodge()</span>
+<span data-l="15">        total = len(d.find_all(<span class="st">"Enemy"</span>))</span>
+<span data-l="16"></span>
+<span data-l="17">    d.click(<span class="st">"Dim.Game.Leave"</span>)  <span class="cm"># back to the lobby</span></span></pre>
   </div>
   <p class="note">Export writes plain darbit code, one statement per step. Python reads back as a flow with no decompiler: inside <code>@d.flow</code>, Python's own <code>ast</code> parser maps known statements to steps, and anything else becomes a Code step, kept word for word.</p>
 
@@ -902,20 +1183,32 @@ function showView(v) {
   $$(".view").forEach((s) => s.classList.toggle("on", s.dataset.view === v));
 }
 $$(".rail button").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
-$$("#botTabs button").forEach((b) => b.addEventListener("click", () => {
-  $$("#botTabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
-  $$('.view[data-view="bot"] > [data-tab]').forEach((p) => p.hidden = p.dataset.tab !== b.dataset.tab);
-}));
+function toggleSheet(button, sheet) {
+  const open = sheet.hidden;
+  $$(".sheet").forEach((s) => s.hidden = true);
+  $$("#switcherBtn, #appBtn").forEach((b) => b.setAttribute("aria-expanded", false));
+  sheet.hidden = !open; button.setAttribute("aria-expanded", open);
+}
+$("#switcherBtn").addEventListener("click", () => toggleSheet($("#switcherBtn"), $("#botSheet")));
+$("#appBtn").addEventListener("click", () => toggleSheet($("#appBtn"), $("#appMenu")));
+$("#srcBtn").addEventListener("click", () => {
+  const on = !$("#studioWin").classList.contains("src");
+  $("#studioWin").classList.toggle("src", on); $("#srcBtn").setAttribute("aria-pressed", on);
+});
+$$("#botSheet .bot:not(.add)").forEach((b) => b.addEventListener("click", () => $("#botSheet").hidden = true));
 $("#states").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   $$("#states button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-  const s = b.dataset.state; showView("bots");
-  $("#botCards").hidden = s === "empty" || s === "loading"; $("#botsEmpty").hidden = s !== "empty"; $("#liveCard").hidden = s !== "normal";
-  $("#botCount").textContent = s === "empty" ? "none" : s === "loading" ? "loading…" : "2 installed";
+  const s = b.dataset.state; showView("overview");
+  $("#botsEmpty").hidden = s !== "empty"; $("#botsLoading").hidden = s !== "loading"; $("#liveCard").hidden = s !== "normal";
+  $("#runPill").hidden = s !== "normal"; $("#switcherName").textContent = s === "empty" ? "No bot" : "ad-bot";
   if (s === "loading") toast("Reading installed bots…", "tool");
   if (s === "error") { openWizard(); wizardStep = 2; wizardError = true; renderWizard(); }
 });
 
+$("#addStepBtn").addEventListener("click", () => {
+  const open = $("#addSheet").hidden; $("#addSheet").hidden = !open; $("#addStepBtn").setAttribute("aria-expanded", open);
+});
 // ---------------------------------------------------------------- install wizard
 const wizard = $("#wizard");
 let wizardStep = 0, wizardError = false;
@@ -965,8 +1258,8 @@ addEventListener("keyup", (e) => lightKeys(e, false));
 // ---------------------------------------------------------------- command palette (Ctrl+K)
 const COMMANDS = [
   ["Go to Capture", "", () => location.hash = "capture"], ["Go to Highlight", "ctrl+alt+h", () => location.hash = "highlight"],
-  ["Go to Recorder", "ctrl+alt+r", () => location.hash = "recorder"], ["Open Studio: Bots", "", () => { location.hash = "studio"; showView("bots"); }],
-  ["Open Studio: Tools", "", () => { location.hash = "studio"; showView("tools"); }], ["Open Studio: Flows", "", () => { location.hash = "studio"; showView("flows"); }],
+  ["Go to Recorder", "ctrl+alt+r", () => location.hash = "recorder"], ["Open Studio: Overview", "", () => { location.hash = "studio"; showView("overview"); }],
+  ["Open Studio: Library", "", () => { location.hash = "studio"; showView("library"); }], ["Open Studio: Flows", "", () => { location.hash = "studio"; showView("flows"); }],
   ["Install a bot", "", openWizard], ["Theme: glass dark", "", () => setTheme("glass-dark")], ["Theme: glass light", "", () => setTheme("glass-light")],
   ["Theme: midnight", "", () => setTheme("midnight")], ["Theme: high contrast", "", () => setTheme("high-contrast")],
 ];
@@ -1004,6 +1297,8 @@ if (q.get("shot")) {
   }
   $$(".reveal").forEach((el) => el.classList.add("in"));
   if (q.get("view")) showView(q.get("view"));
+  if (q.get("src")) $("#srcBtn").click();
+  if (q.get("sheet")) $(q.get("sheet") === "app" ? "#appBtn" : "#switcherBtn").click();
   if (q.get("state")) $(`#states [data-state="${q.get("state")}"]`)?.click();
   if (q.get("paused")) $("#recPause").click();
   if (q.get("wizard")) { openWizard(); wizardStep = +q.get("wizard"); renderWizard(); }

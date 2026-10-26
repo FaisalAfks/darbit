@@ -13,6 +13,5 @@ Architecture decision records: one short file per decision, with its context, th
 | [0007](0007-studio-flows-and-actions.md) | The hub becomes darbit Studio: flows, actions, two-way with Python | 2026-10-25 |
 | [0008](0008-readable-python.md) | Plain, readable Python | 2026-10-25 |
 | [0009](0009-public-darbit.md) | darbit public from v0.2.0, ad-bot private | 2026-10-25 |
-| [0010](0010-flows-are-python.md) | Run files and flows are saved as `@d.flow` Python | 2026-10-26 |
 
 The full plan these came from: [plan-2026-10-25.md](../plan-2026-10-25.md).

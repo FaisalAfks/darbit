@@ -98,4 +98,25 @@ Found while reviewing the mockups (and in a second pass by Gemini). Every compon
 - **States:** every list and view designs its empty, loading and error states, not only the full one (see the Studio's state switch in the mockups).
 - **`[hidden]` always hides,** even on elements with their own `display`.
 
+## Room (2026-10-26 round)
+
+Some screens felt cramped and hard to read, so the Studio and the overlays got more room:
+
+- **Studio type:** 15 px body, 28 px view titles, 16–18 px card titles; buttons at least 36 px high.
+- **Labelled navigation:** a 224 px sidebar with icons and names, and the running bot's status at its foot. On a phone it becomes a bottom tab bar.
+- **The running bot first:** Home opens on a large card with what the bot is doing, its week (a ring) and its controls, then today's timeline, then every installed bot.
+- **One action per row** in a flow, 54 px high, with an icon per kind. The chosen step's details open in a panel on the right, instead of editing everything inline.
+- **Lists on demand:** the steps you can add open from an **Add step** button, not a column that is always there.
+- **Overlays:** the capture toolbar, recorder bar and run panel use 36 px buttons and 14–15 px text; the guide card is up to 390 px wide.
+
 The mockups are rendered to images with `python scripts/render_mockups.py` (into `docs/ui/images/`).
+
+## The Studio shell (2026-10-26)
+
+The Studio uses the same language as the tools, so it feels like one product:
+
+- **Over the bot's own screen:** glass panels float over the bot's last screenshot, blurred and tinted. Midnight and high-contrast use a solid background instead.
+- **A pill menu on top,** shaped like the capture toolbar: the bot switcher (which replaces a Bots page), the sections (Overview, Flows, Library, Runs, Settings), the run controls, and two buttons: **‹/›** shows where each tile's data comes from, the gear opens the Studio's own settings.
+- **A dock at the bottom** with every tool (Capture, Highlight, Record, Play, Guide, Check), the same pill as the recorder bar.
+- **The Overview is a grid of tiles the bot fills** ([decision 0011](../../decisions/0011-what-a-bot-shows.md)): Now (the step breadcrumb and last screenshot), Progress (rings and bars), Today's round, Next up, What happened, Watching. A tile with nothing to show isn't drawn.
+- **Sheets, not pages,** for things you open and close: the bot switcher, the Studio settings, Add step.
