@@ -22,16 +22,30 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "settings.set": ("req", {"key": "str", "value": "any"}, "save a UI setting"),
     "log": ("evt", {"line": "str", "time": "str"}, "a log line from a running script"),
     "record": ("evt", {"event": "str", "fields": "dict"}, "a run report event (steps, searches)"),
-    # T09/T10 capture
-    "capture.freeze": ("req", {"monitors": "list[int] | None"}, "grab and send frames, then lines"),
-    "capture.lines": ("evt", {"monitor": "int", "lines": "Lines"}, "snap lines for a frozen frame"),
+    # T09/T10 capture (decision 0013, round 7): a session for one bot, on one frozen shot
+    "capture.open": (
+        "req",
+        {"path": "str", "mode": "str", "name": "str | None", "kind": "Kind | None"},
+        "hide the Studio, freeze, show Capture",
+    ),
+    "capture.session": ("req", {}, "the items still to take"),
+    "capture.frame": ("req", {}, "the frozen shot as a frame"),
     "capture.candidates": ("req", {"x": "int", "y": "int", "kind": "Kind"}, "boxes around a point, smallest first"),
-    "capture.targets": ("req", {}, "the project's saved targets"),
-    "capture.save": ("req", {"draft": "Draft"}, "write the target's files"),
-    "capture.undo": ("req", {}, "undo the last save, rename or delete"),
-    "capture.redo": ("req", {}, "redo it"),
-    "capture.rename": ("req", {"from": "str", "to": "str"}, "rename a target's files and links"),
-    "capture.delete": ("req", {"name": "str"}, "delete a target's files"),
+    "capture.test": (
+        "req",
+        {"box": "Box | None", "name": "str | None", "region": "Box | None", "similarity": "float"},
+        "every match in the region, with scores",
+    ),
+    "capture.save": (
+        "req",
+        {"name": "str", "kind": "Kind", "image": "Box | None", "region": "Box | None", "point": "list[float] | None"},
+        "write the target's files",
+    ),
+    "capture.close": ("req", {}, "leave Capture and show the Studio"),
+    "capture.next": ("req", {}, "hide Capture until the next guide screen is frozen"),
+    "capture.refreeze": ("req", {}, "grab the screen again"),
+    "capture.frozen": ("evt", {}, "a new shot is ready"),
+    "capture.waiting": ("evt", {}, "the bar between guide items is showing again"),
     # T11 highlight
     "highlight.scan": ("req", {"targets": "list[str] | None", "context": "str | None"}, "start a scan"),
     "highlight.hit": (

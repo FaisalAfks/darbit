@@ -8,7 +8,7 @@ opens there again if that spot is still on a screen. Closing hides it instead of
 import threading
 
 from ..server import hub, ui_settings
-from . import pill, tray
+from . import capture_window, pill, tray
 from .windows import Window, open_window
 
 PLACE = "studio.window"  # ui setting: {"x", "y", "width", "height"} the Studio was last left at
@@ -96,6 +96,7 @@ def open_studio() -> Window:
     studio.native.events.moved += remember.moved
     studio.native.events.resized += remember.resized
     run_pill = pill.register(studio)
+    capture_window.register(studio)
     icon = tray.Tray(studio, run_pill)
     quitting = threading.Event()
 

@@ -30,7 +30,11 @@
     lines: { file: string; line: number; before: string; after: string }[];
   }
 
-  let { path, editing, oncapture }: { path: string; editing: boolean; oncapture: () => void } = $props();
+  let {
+    path,
+    editing,
+    oncapture,
+  }: { path: string; editing: boolean; oncapture: (name?: string, kind?: string) => void } = $props();
 
   const NEEDS = 0.8; // the similarity an image needs when it doesn't say
   const FILTERS = [
@@ -158,6 +162,12 @@
       plan = null;
     }
   });
+  function score(value: number | null | undefined): string {
+    if (value === null || value === undefined) return "";
+    if (value >= 0.995) return "1.00";
+    return value.toFixed(2).slice(1); // .97
+  }
+
 </script>
 
 <div class="library" class:has-current={!!current}>
@@ -173,7 +183,7 @@
       </div>
       <span class="grow"></span>
       {#if editing}
-        <button class="action primary" onclick={oncapture}>▣ Capture</button>
+        <button class="action primary" onclick={() => oncapture()}>▣ Capture</button>
       {:else}
         <span class="hint">✎ Edit to add, retake or rename</span>
       {/if}
@@ -205,7 +215,7 @@
               <span class="meter" style:--tone={m.tone}><i style:width="{m.width}%"></i><b style:left="{m.tick}%"></b></span>
             {/if}
             <span class="meta">
-              {#if asset.missing}<span class="bad">in the guide</span>{:else if asset.kind === "image"}<span>{last(asset) !== null ? last(asset)?.toFixed(2).slice(1) : "not checked"}</span>{:else}<span class="kind" data-kind={asset.kind}>{asset.kind}</span>{/if}
+              {#if asset.missing}<span class="bad">in the guide</span>{:else if asset.kind === "image"}<span>{last(asset) !== null ? score(last(asset)) : "not checked"}</span>{:else}<span class="kind" data-kind={asset.kind}>{asset.kind}</span>{/if}
               <span class="grow"></span><span>{asset.uses ? `used ${asset.uses}×` : "unused"}</span>
             </span>
           </button>
@@ -222,8 +232,8 @@
       <h2>{current.name}<span class="kind" data-kind={current.kind}>{current.missing ? "missing" : current.kind}</span></h2>
       <dl>
         {#if current.size}<dt>Size</dt><dd>{current.size[0]} × {current.size[1]}</dd>{/if}
-        {#if current.kind === "image"}<dt>Needs</dt><dd>{needs(current).toFixed(2).slice(1)}</dd>{/if}
-        {#if last(current) !== null}<dt>Last score</dt><dd class:bad={weak(current)}>{last(current)?.toFixed(2).slice(1)}</dd>{/if}
+        {#if current.kind === "image"}<dt>Needs</dt><dd>{score(needs(current))}</dd>{/if}
+        {#if last(current) !== null}<dt>Last score</dt><dd class:bad={weak(current)}>{score(last(current))}</dd>{/if}
         {#if current.region}<dt>Searched in</dt><dd>{current.region.join(", ")}</dd>{/if}
         {#if current.location}<dt>Point</dt><dd>{current.location.join(", ")}</dd>{/if}
       </dl>
@@ -235,7 +245,7 @@
 
       {#if editing}
         <div class="actions">
-          <button class="action" onclick={oncapture}>▣ {current.missing ? "Take it" : "Retake"}</button>
+          <button class="action" onclick={() => oncapture(current?.name, current?.kind)}>▣ {current.missing ? "Take it" : "Retake"}</button>
           {#if !current.missing}<button class="action" class:on={renaming} onclick={() => { renaming = !renaming; newName = current?.name ?? ""; plan = null; planError = ""; }}>✎ Rename</button>{/if}
         </div>
       {/if}

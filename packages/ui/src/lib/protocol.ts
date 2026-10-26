@@ -18,22 +18,24 @@ export interface Requests {
   "settings.get": { key: string };
   /** save a UI setting */
   "settings.set": { key: string; value: unknown };
-  /** grab and send frames, then lines */
-  "capture.freeze": { monitors: number[] | null };
+  /** hide the Studio, freeze, show Capture */
+  "capture.open": { path: string; mode: string; name: string | null; kind: Kind | null };
+  /** the items still to take */
+  "capture.session": Record<string, never>;
+  /** the frozen shot as a frame */
+  "capture.frame": Record<string, never>;
   /** boxes around a point, smallest first */
   "capture.candidates": { x: number; y: number; kind: Kind };
-  /** the project's saved targets */
-  "capture.targets": Record<string, never>;
+  /** every match in the region, with scores */
+  "capture.test": { box: Box | null; name: string | null; region: Box | null; similarity: number };
   /** write the target's files */
-  "capture.save": { draft: Draft };
-  /** undo the last save, rename or delete */
-  "capture.undo": Record<string, never>;
-  /** redo it */
-  "capture.redo": Record<string, never>;
-  /** rename a target's files and links */
-  "capture.rename": { from: string; to: string };
-  /** delete a target's files */
-  "capture.delete": { name: string };
+  "capture.save": { name: string; kind: Kind; image: Box | null; region: Box | null; point: number[] | null };
+  /** leave Capture and show the Studio */
+  "capture.close": Record<string, never>;
+  /** hide Capture until the next guide screen is frozen */
+  "capture.next": Record<string, never>;
+  /** grab the screen again */
+  "capture.refreeze": Record<string, never>;
   /** start a scan */
   "highlight.scan": { targets: string[] | null; context: string | null };
   /** show the guide card */
@@ -97,8 +99,10 @@ export interface Events {
   "log": { line: string; time: string };
   /** a run report event (steps, searches) */
   "record": { event: string; fields: Record<string, unknown> };
-  /** snap lines for a frozen frame */
-  "capture.lines": { monitor: number; lines: Lines };
+  /** a new shot is ready */
+  "capture.frozen": Record<string, never>;
+  /** the bar between guide items is showing again */
+  "capture.waiting": Record<string, never>;
   /** one target found */
   "highlight.hit": { name: string; box: Box; score: number; elsewhere: number; verdict: string };
   /** the scan finished */

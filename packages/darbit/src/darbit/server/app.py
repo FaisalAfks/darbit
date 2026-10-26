@@ -197,9 +197,10 @@ def create_app(token: str, port: int = 0) -> Starlette:
         Route("/theme", guarded(theme_get)),
     ]
     from ..ui import static_dir
-    from . import hub
+    from . import capture_api, hub
 
     hub.register()
+    capture_api.register()
 
     static = static_dir()
     if static.is_dir():

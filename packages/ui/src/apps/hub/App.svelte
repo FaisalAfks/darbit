@@ -117,12 +117,15 @@
     form = await request("project.settings", { path });
   }
 
-  async function openTool(tool: string): Promise<void> {
+  async function openCapture(mode: "guide" | "one" | "new", name = "", kind = "image"): Promise<void> {
     if (!bot) return;
-    await request("tools.open", { path: bot.path, tool })
-      .then(() => toast(`Opening ${tool} for ${bot?.name}`))
-      .catch(failed);
+    const reply = await request("capture.open", { path: bot.path, mode, name, kind }).catch((error: Error) => {
+      toast(error.message.includes("unknown request") ? "Capture opens from the desktop Studio (darbit app)" : error.message);
+      return null;
+    });
+    if (reply && !reply.open) toast("Every picture in the setup guide is already taken");
   }
+
 
   async function addFolder(path: string): Promise<void> {
     const added = await request<Bot>("project.add", { path }).catch(failed);
@@ -241,11 +244,11 @@
         {:else if !bot}
           <p class="empty">No bots yet. Install one with <code>darbit install &lt;link&gt;</code>, or add a bot folder from the bot menu.</p>
         {:else if page === "overview"}
-          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openTool("guide")} onretake={() => openTool("capture")} />
+          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={() => openCapture("new")} />
         {:else if page === "library"}
-          <LibraryPage path={bot.path} {editing} oncapture={() => openTool("capture")} />
+          <LibraryPage path={bot.path} {editing} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} />
         {:else if page === "results"}
-          <ResultsPage path={bot.path} onretake={() => openTool("capture")} />
+          <ResultsPage path={bot.path} onretake={() => openCapture("new")} />
         {:else if page === "settings"}
           {#if form.error}
             <p class="empty bad">{form.error}</p>
