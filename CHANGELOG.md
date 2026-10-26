@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Docs
+
+- darbit Studio's redesign (decision 0013): structure, look, every page, Capture and the Recorder, chosen from rendered options in `docs/ui/redesign/`
+
 ### New
 
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it

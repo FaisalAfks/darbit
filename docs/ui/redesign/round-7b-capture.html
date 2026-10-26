@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capture, refined</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+.shot { position: relative; height: 640px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); cursor: crosshair; user-select: none;
+        background: radial-gradient(500px 300px at 80% 90%, rgb(251 146 60 / .25), transparent 60%), linear-gradient(160deg, #233049 0%, #141a28 60%, #241a33 100%); }
+.game { position: absolute; inset: 0; }
+.game .menu { position: absolute; left: 16%; top: 18%; width: 52%; height: 64%; border-radius: 10px; background: #121620; border: 1px solid rgb(255 255 255 / .08); }
+.game .menu b { position: absolute; left: 14px; top: 10px; font: 700 11px var(--font-strong); color: #c9a46b; letter-spacing: .06em; }
+.game .slot { position: absolute; width: 11%; height: 16%; border-radius: 8px; border: 1px solid rgb(255 255 255 / .12); }
+.game .equip { position: absolute; width: 15%; height: 8%; border-radius: 8px; background: linear-gradient(180deg, #5ee08f, #36b36a); display: grid; place-items: center; font: 800 13px var(--font-strong); color: #fff; box-shadow: 0 3px 0 #23824b; }
+.game .equip.dull { background: linear-gradient(180deg, #4fae7a, #2f8a58); box-shadow: 0 3px 0 #1d5e3a; }
+.game .side { position: absolute; left: 72%; top: 18%; width: 22%; height: 64%; border-radius: 10px; background: #121620cc; border: 1px solid rgb(255 255 255 / .08); }
+.game .side .equip { left: 14%; width: 72%; height: 12%; }
+.dimmer { position: absolute; inset: 0; background: rgb(0 0 0 / .58); pointer-events: none; transition: opacity .25s; }
+.sel { position: absolute; border: 2px solid var(--kind-image); border-radius: 4px; pointer-events: none; box-shadow: 0 0 0 1px rgb(0 0 0 / .4); }
+.sel i { position: absolute; width: 9px; height: 9px; background: #fff; border: 1.5px solid var(--kind-image); border-radius: 2px; }
+.sel .pt { position: absolute; left: 62%; top: 50%; width: 16px; height: 16px; translate: -50% -50%; border: 2px solid var(--kind-point); border-radius: 50%; }
+.sel .pt::before, .sel .pt::after { content: ""; position: absolute; background: var(--kind-point); }
+.sel .pt::before { left: 50%; top: -6px; bottom: -6px; width: 2px; translate: -50% 0; } .sel .pt::after { top: 50%; left: -6px; right: -6px; height: 2px; translate: 0 -50%; }
+.regionbox { position: absolute; border: 2px dashed var(--kind-region); border-radius: 10px; pointer-events: none; }
+.tag { /* overrides rounds.css .tag only inside the shot */ }
+.lbl2 { position: absolute; display: flex; gap: 6px; pointer-events: none; white-space: nowrap; }
+.lbl2 span { padding: 1px 7px; border-radius: 6px; font: 600 11px var(--mono); }
+.l-img { background: var(--kind-image); color: var(--on-accent); }
+.l-reg { background: var(--kind-region); color: #160b2e; }
+.l-ok { color: var(--ok) !important; background: rgb(74 222 128 / .15); border: 1px solid rgb(74 222 128 / .35); font-family: var(--font-strong) !important; }
+.glass2 { background: rgb(22 25 33 / .8); border: 1px solid rgb(255 255 255 / .12); box-shadow: 0 12px 40px rgb(0 0 0 / .45); backdrop-filter: blur(18px); }
+/* guide card */
+.guide { position: absolute; right: 18px; top: 18px; width: 340px; padding: 14px 14px 12px; border-radius: 16px; display: grid; gap: 8px; font-size: 13px; transition: translate .3s var(--ease); }
+.guide .t { display: flex; justify-content: space-between; align-items: center; font: 700 14px var(--font-strong); }
+.guide .t small { color: var(--muted); font: 600 12px var(--mono); }
+.guide p { margin: 0; }
+.guide .bot { color: var(--slot-bot); }
+.guide .bot b { padding: 0 6px; border-radius: 999px; background: color-mix(in oklab, var(--slot-bot) 18%, transparent); font-size: 11px; margin-right: 4px; }
+.guide .ref { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; font-size: 11.5px; color: var(--muted); }
+.guide .ref span { height: 34px; border-radius: 6px; background: linear-gradient(180deg, #5ee08f, #36b36a); display: grid; place-items: center; font: 800 10px var(--font-strong); color: #fff; }
+.dots { display: flex; gap: 3px; }
+.dots i { flex: 1; height: 5px; border-radius: 999px; background: rgb(255 255 255 / .1); }
+.dots i.d { background: var(--accent); } .dots i.n { background: var(--warn); }
+/* toolbar */
+.tb { position: absolute; left: 50%; bottom: 18px; translate: -50% 0; display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.tb .nm { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgb(0 0 0 / .25); border: 1px solid var(--line); font: 700 13px var(--mono); }
+.tb .nm small { font: 600 10px var(--font-strong); color: var(--kind-region); }
+.seg3 { display: flex; padding: 2px; border-radius: 999px; background: var(--raised); }
+.seg3 span { padding: 5px 12px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); display: flex; gap: 5px; align-items: center; }
+.seg3 span.on { background: var(--accent); color: var(--on-accent); }
+.ib { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.ib:hover { background: var(--raised-hover); color: var(--text); }
+.ib.on { background: var(--raised-hover); color: var(--text); }
+.vline { width: 1px; height: 20px; background: var(--line); margin: 0 2px; }
+.btn-test { position: relative; display: flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 999px; border: 1px solid rgb(74 222 128 / .45); background: rgb(74 222 128 / .14);
+            color: var(--ok); font: 700 13px var(--font-strong); cursor: pointer; }
+.btn-test::before { content: ""; position: absolute; inset: -4px; border-radius: 999px; border: 2px solid rgb(74 222 128 / .55); animation: ring 1.8s ease-out infinite; }
+@keyframes ring { from { opacity: .9; transform: scale(.92); } to { opacity: 0; transform: scale(1.18); } }
+.btn-test.running::before { animation: none; opacity: 0; }
+.btn-save { padding: 7px 18px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 13px var(--font-strong); }
+.hint { position: absolute; left: 18px; top: 18px; padding: 6px 12px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+.hint kbd { font: 600 10px var(--font-strong); padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); }
+/* magnifier that follows the mouse */
+.mag { position: absolute; left: 0; top: 0; width: 140px; height: 140px; border-radius: 14px 14px 0 0; overflow: hidden; pointer-events: none; z-index: 6; will-change: transform;
+       border: 1px solid rgb(255 255 255 / .3); border-bottom: 0; box-shadow: 0 14px 34px rgb(0 0 0 / .55); background: #0e1117; }
+.sel { position: absolute; border: 2px solid var(--kind-image); border-radius: 4px; cursor: move; box-shadow: 0 0 0 1px rgb(0 0 0 / .4); z-index: 3; }
+.sel:focus { outline: none; }
+.sel i { position: absolute; width: 10px; height: 10px; background: #fff; border: 1.5px solid var(--kind-image); border-radius: 2px; translate: -50% -50%; transition: transform .12s; }
+.sel i:hover { transform: scale(1.35); }
+.sel .pt { cursor: grab; }
+.keys { position: absolute; left: 18px; bottom: 80px; width: 330px; padding: 12px 14px; border-radius: 14px; font-size: 12px; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; z-index: 5;
+        opacity: 0; translate: 0 8px; pointer-events: none; transition: opacity .2s, translate .2s var(--ease); }
+.keys.on { opacity: 1; translate: 0 0; }
+.keys h6 { grid-column: 1 / -1; margin: 0 0 2px; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.keys span:nth-child(odd) { color: var(--muted); }
+.keys kbd { font: 600 10px var(--font-strong); padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); white-space: nowrap; }
+.mag .zoomed { position: absolute; transform-origin: 0 0; }
+.mag::before, .mag::after { content: ""; position: absolute; z-index: 2; background: rgb(255 255 255 / .9); }
+.mag::before { left: calc(50% - 6px); top: calc(50% - 6px); width: 12px; height: 12px; background: none; border: 1.5px solid #fff; border-radius: 2px; box-shadow: 0 0 0 1px rgb(0 0 0 / .6); }
+.mag::after { display: none; }
+.mag .grid { position: absolute; inset: 0; z-index: 1; background: repeating-linear-gradient(0deg, transparent 0 9px, rgb(0 0 0 / .18) 9px 10px), repeating-linear-gradient(90deg, transparent 0 9px, rgb(0 0 0 / .18) 9px 10px); }
+.magtag { position: absolute; left: 0; top: 0; z-index: 7; pointer-events: none; width: 140px; box-sizing: border-box; justify-content: center; padding: 4px 0; border-radius: 0 0 14px 14px;
+          border: 1px solid rgb(255 255 255 / .3); border-top: 0; font: 600 10.5px var(--mono); background: rgb(14 17 23 / .95); display: flex; gap: 6px; align-items: center; will-change: transform; }
+.magtag i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid #fff; }
+/* test */
+.scan { position: absolute; pointer-events: none; overflow: hidden; border-radius: 10px; opacity: 0; }
+.scan::before { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; left: -30%; background: linear-gradient(90deg, transparent, rgb(90 200 250 / .25), rgb(90 200 250 / .5)); border-right: 2px solid rgb(140 220 255 / .9); }
+.scan.go { opacity: 1; }
+.scan.go::before { animation: sweep .7s cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes sweep { to { left: 100%; } }
+.hit { position: absolute; pointer-events: none; opacity: 0; transform: scale(1.25); transition: opacity .25s, transform .35s cubic-bezier(.34,1.4,.64,1); }
+.hit.on { opacity: 1; transform: none; }
+.hit b { position: absolute; width: 14px; height: 14px; border-color: var(--c); border-style: solid; }
+.hit b:nth-child(1) { left: -3px; top: -3px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.hit b:nth-child(2) { right: -3px; top: -3px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.hit b:nth-child(3) { left: -3px; bottom: -3px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.hit b:nth-child(4) { right: -3px; bottom: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+.hit .fill { position: absolute; inset: 0; border-radius: 4px; background: color-mix(in oklab, var(--c) 16%, transparent); box-shadow: 0 0 22px color-mix(in oklab, var(--c) 55%, transparent); animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 34px color-mix(in oklab, var(--c) 75%, transparent); } }
+.hit .score { position: absolute; left: 50%; top: -30px; translate: -50% 0; padding: 2px 9px; border-radius: 999px; background: var(--c); color: #071016; font: 800 12px var(--mono); white-space: nowrap; box-shadow: 0 4px 12px rgb(0 0 0 / .4); }
+.hit .score small { font: 600 10px var(--font-strong); margin-left: 4px; }
+.hit.out { opacity: .35; filter: grayscale(.7); }
+.result { position: absolute; left: 50%; top: 16px; translate: -50% -140%; display: flex; gap: 10px; align-items: center; padding: 7px 8px 7px 14px; border-radius: 999px; font-size: 12.5px; transition: translate .35s cubic-bezier(.34,1.4,.64,1); white-space: nowrap; }
+.result.on { translate: -50% 0; }
+.result b { font: 700 13px var(--font-strong); }
+.result .slider { width: 150px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--danger), var(--warn) 60%, var(--ok)); position: relative; cursor: pointer; }
+.result .slider i { position: absolute; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .4); translate: -50% 0; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+.changes ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.changes li { margin: 4px 0; } .changes b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 7b: <span>Capture, refined</span></h1>
+  <p class="lead">K1, refined. <b>Open the HTML</b> and move the mouse over the screen: the magnifier follows it and moves out of the way near the edges. The <b>Test</b> button glows because an image is selected. Press it: darbit sweeps the image's region, draws a bracket box on every match with its score, and fades the ones under the similarity line. Drag the slider to move the line.</p>
+
+  <div class="shot" id="shot">
+    <div class="game" id="game">
+      <div class="menu"><b>BAG · CHARACTERS</b></div>
+      <div class="slot" style="left:19%;top:27%;background:linear-gradient(135deg,#7a3b3b,#4d2733)"></div><div class="slot" style="left:32%;top:27%;background:linear-gradient(135deg,#2f5f73,#273a52)"></div><div class="slot" style="left:45%;top:27%;background:linear-gradient(135deg,#3c6b3a,#24452c)"></div>
+      <div class="slot" style="left:19%;top:47%;background:linear-gradient(135deg,#7a6b2b,#4d3b1a)"></div><div class="slot" style="left:32%;top:47%;background:linear-gradient(135deg,#5b3b7a,#3a2552)"></div>
+      <div class="equip" style="left:50%;top:70%">EQUIP</div>
+      <div class="equip dull" style="left:20%;top:70%">EQUIP</div>
+      <div class="side"><div class="equip" style="top:72%">EQUIP</div></div>
+    </div>
+    <div class="dimmer" id="dimmer" style="clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 0,50% 70%,50% 78%,65% 78%,65% 70%,50% 70%)"></div>
+    <div class="regionbox" style="left:15.4%;top:17.4%;width:53.2%;height:66%"></div>
+    <div class="lbl2" style="left:15.4%;top:calc(17.4% - 22px)"><span class="l-reg">▭ Bag.Menu</span><span class="l-reg" style="opacity:.8">344, 243 · 1515 × 1082</span></div>
+    <div class="sel" id="sel" tabindex="0" style="left:50%;top:70%;width:15%;height:8%">
+      <i data-h="nw" style="left:0;top:0;cursor:nwse-resize"></i><i data-h="n" style="left:50%;top:0;cursor:ns-resize"></i><i data-h="ne" style="left:100%;top:0;cursor:nesw-resize"></i>
+      <i data-h="w" style="left:0;top:50%;cursor:ew-resize"></i><i data-h="e" style="left:100%;top:50%;cursor:ew-resize"></i>
+      <i data-h="sw" style="left:0;top:100%;cursor:nesw-resize"></i><i data-h="s" style="left:50%;top:100%;cursor:ns-resize"></i><i data-h="se" style="left:100%;top:100%;cursor:nwse-resize"></i>
+      <span class="pt" id="pt"></span></div>
+    <div class="lbl2" id="readout" style="left:50%;top:calc(78% + 6px)"><span class="l-img" id="size">435 × 130</span><span class="l-ok" id="inside">inside ✓</span><span class="l-img" id="ptv" style="background:var(--kind-point);color:#071016">✛ +20, 0</span></div>
+    <div class="keys glass2" id="keys">
+      <h6>The selected box</h6>
+      <span><kbd>drag</kbd></span><span>move it</span>
+      <span><kbd>drag</kbd> a handle</span><span>resize from that side</span>
+      <span><kbd>wheel</kbd></span><span>grow or shrink around the centre</span>
+      <span><kbd>←↑→↓</kbd></span><span>move 1 px (<kbd>Shift</kbd> 10 px)</span>
+      <span><kbd>Ctrl</kbd>+<kbd>←↑→↓</kbd></span><span>resize 1 px (<kbd>Shift</kbd> 10 px)</span>
+      <span><kbd>drag</kbd> ✛</span><span>move the click point (<kbd>C</kbd> centres it)</span>
+      <span><kbd>click</kbd> again</span><span>pick the next bigger thing</span>
+      <span><kbd>Alt</kbd></span><span>no snapping while dragging</span>
+      <span><kbd>T</kbd> · <kbd>↵</kbd> · <kbd>Esc</kbd></span><span>test · save · cancel</span>
+      <span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span><span>undo</span>
+    </div>
+    <div class="scan" id="scan" style="left:15.4%;top:17.4%;width:53.2%;height:66%"></div>
+    <div class="hit" id="h1" style="left:50%;top:70%;width:15%;height:8%;--c:var(--ok)"><b></b><b></b><b></b><b></b><span class="fill"></span><span class="score">.97<small>Bag.Equip</small></span></div>
+    <div class="hit" id="h2" style="left:20%;top:70%;width:15%;height:8%;--c:var(--warn)"><b></b><b></b><b></b><b></b><span class="fill"></span><span class="score">.82<small>look-alike</small></span></div>
+    <div class="hint glass2">hold <kbd>?</kbd> for keys</div>
+    <div class="guide glass2" id="guide">
+      <div class="t">Bag, Characters tab <small>7 / 24</small></div>
+      <p>Open the Bag and go to the Characters tab.</p>
+      <p class="bot"><b>ad-bot</b>The green Equip button, without the shadow under it.</p>
+      <div class="ref"><span>EQUIP</span>How it looked for the bot's author</div>
+      <div class="dots"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="result glass2" id="result"><b>2 matches</b><span style="color:var(--muted)">in Bag.Menu · 41 ms</span><span class="slider" id="slider"><i id="knob" style="left:85%"></i></span><b id="simv">.85</b><span class="ib" id="close">✕</span></div>
+    <div class="tb glass2">
+      <span class="nm">Bag.Equip <small>▭ Bag.Menu</small></span>
+      <div class="seg3"><span class="on">▣ Image</span><span>▭ Region</span><span>✛ Point</span></div>
+      <div class="vline"></div>
+      <span class="ib on" title="Snap">⌗</span><span class="ib" title="Magnifier">⌕</span><span class="ib" title="Undo">↶</span><span class="ib" title="Freeze again">⟳</span>
+      <div class="vline"></div>
+      <button class="btn-test" id="test">◎ Test</button><span class="btn-save">Save</span>
+    </div>
+    <div class="mag" id="mag"><div class="zoomed" id="zoomed"></div><div class="grid"></div></div>
+    <div class="magtag" id="magtag"><i id="swatch"></i><span id="coords">1430, 1118 · #52e38f</span></div>
+  </div>
+
+  <section class="changes" style="margin-top:22px">
+    <h2>What changed from K1</h2>
+    <ul>
+      <li><b>Magnifier:</b> a rounded square that follows the mouse again, with no lag. It shows a 4× zoom with a pixel grid and a pixel marker, with the position and colour attached under it. It moves to the other side near an edge.</li><li><b>The selected box:</b> drag it to move, drag any of 8 handles to resize, use the wheel to scale it around its centre, arrows to nudge it (Shift for 10 px), Ctrl+arrows to resize, drag the ✛ to move the click point (C centres it), and Ctrl+Z to undo. Hold ? for every key.</li>
+      <li><b>Test:</b> only for the selected image. Its button glows while there's something to test. It searches the image's own region; the sweep shows where it looked. Matches get bracket boxes that snap in with their score, and matches under the line fade.</li>
+      <li><b>The name chip</b> on the toolbar shows the region it belongs to. Type icons are on the type switch.</li>
+      <li><b>The guide card</b> shows how the target looked for the bot's author, so you box the same thing.</li>
+      <li><b>The hint</b> at the top left lists the keys, and fades once you've used them.</li>
+    </ul>
+  </section>
+</main>
+<script>
+const shot = document.getElementById("shot"), game = document.getElementById("game"), mag = document.getElementById("mag"), zoomed = document.getElementById("zoomed");
+const tag = document.getElementById("magtag"), coords = document.getElementById("coords"), swatch = document.getElementById("swatch");
+const ZOOM = 4, SIZE = 140;
+zoomed.appendChild(game.cloneNode(true));
+zoomed.style.width = shot.clientWidth + "px"; zoomed.style.height = shot.clientHeight + "px";
+zoomed.firstChild.style.position = "absolute"; zoomed.firstChild.style.inset = "0";
+zoomed.style.background = getComputedStyle(shot).background;
+// the magnifier is moved with transforms, at most once per frame, so it keeps up with the mouse
+let mouse = null, queued = false;
+function drawMag() {
+  queued = false;
+  const x = mouse.x, y = mouse.y, w = shot.clientWidth, h = shot.clientHeight;
+  let left = x + 24, top = y + 24;
+  if (left + SIZE > w - 8) left = x - SIZE - 24;
+  if (top + SIZE + 24 > h - 8) top = y - SIZE - 48;
+  mag.style.transform = `translate(${left}px, ${top}px)`;
+  tag.style.transform = `translate(${left}px, ${top + SIZE}px)`;
+  zoomed.style.transform = `translate(${SIZE / 2 - x * ZOOM}px, ${SIZE / 2 - y * ZOOM}px) scale(${ZOOM})`;
+  const onButton = x / w > box.x && x / w < box.x + box.w && y / h > box.y && y / h < box.y + box.h;
+  const colour = onButton ? "#52e38f" : "#1a2030";
+  coords.textContent = `${Math.round(x / w * 2560)}, ${Math.round(y / h * 1600)} · ${colour}`;
+  swatch.style.background = colour;
+}
+shot.addEventListener("pointermove", (event) => {
+  const r = shot.getBoundingClientRect();
+  mouse = { x: event.clientX - r.left, y: event.clientY - r.top };
+  if (!queued) { queued = true; requestAnimationFrame(drawMag); }
+});
+
+// the selected box: drag to move, 8 handles to resize, wheel to scale, arrows to nudge, Ctrl+arrows to resize, drag the click point
+const sel = document.getElementById("sel"), dim = document.getElementById("dimmer"), readout = document.getElementById("readout");
+const sizeTag = document.getElementById("size"), insideTag = document.getElementById("inside"), pt = document.getElementById("pt"), ptv = document.getElementById("ptv");
+const REGION = { x: .154, y: .174, w: .532, h: .66 };
+const box = { x: .5, y: .7, w: .15, h: .08 }, point = { x: .62, y: .5 };
+const undo = [];
+function px(share, total) { return Math.round(share * total); }
+function drawBox() {
+  sel.style.left = box.x * 100 + "%"; sel.style.top = box.y * 100 + "%"; sel.style.width = box.w * 100 + "%"; sel.style.height = box.h * 100 + "%";
+  const a = box.x * 100, b = box.y * 100, c = (box.x + box.w) * 100, d = (box.y + box.h) * 100;
+  dim.style.clipPath = `polygon(0 0,100% 0,100% 100%,0 100%,0 0,${a}% ${b}%,${a}% ${d}%,${c}% ${d}%,${c}% ${b}%,${a}% ${b}%)`;
+  readout.style.left = box.x * 100 + "%"; readout.style.top = `calc(${(box.y + box.h) * 100}% + 8px)`;
+  sizeTag.textContent = `${px(box.w, 2560)} × ${px(box.h, 1600)}`;
+  const inside = box.x >= REGION.x && box.y >= REGION.y && box.x + box.w <= REGION.x + REGION.w && box.y + box.h <= REGION.y + REGION.h;
+  insideTag.textContent = inside ? "inside ✓" : "outside ✕";
+  insideTag.style.color = inside ? "var(--ok)" : "var(--danger)";
+  pt.style.left = point.x * 100 + "%"; pt.style.top = point.y * 100 + "%";
+  ptv.textContent = `✛ ${px((point.x - .5) * box.w, 2560)}, ${px((point.y - .5) * box.h, 1600)}`;
+}
+function remember() { undo.push({ ...box }); if (undo.length > 50) undo.shift(); }
+let drag = null;
+sel.addEventListener("pointerdown", (event) => {
+  event.preventDefault(); sel.focus(); remember();
+  let handle = "move";
+  if (event.target.dataset.h) handle = event.target.dataset.h;
+  if (event.target === pt) handle = "point";
+  drag = { handle, x: event.clientX, y: event.clientY, start: { ...box }, point: { ...point } };
+  sel.setPointerCapture(event.pointerId);
+});
+sel.addEventListener("pointermove", (event) => {
+  if (!drag) return;
+  const r = shot.getBoundingClientRect();
+  const dx = (event.clientX - drag.x) / r.width, dy = (event.clientY - drag.y) / r.height, s0 = drag.start, h = drag.handle;
+  if (h === "move") { box.x = s0.x + dx; box.y = s0.y + dy; }
+  else if (h === "point") { point.x = Math.min(1, Math.max(0, drag.point.x + dx / box.w)); point.y = Math.min(1, Math.max(0, drag.point.y + dy / box.h)); }
+  else {
+    if (h.includes("w")) { box.x = s0.x + dx; box.w = Math.max(.01, s0.w - dx); }
+    if (h.includes("e")) box.w = Math.max(.01, s0.w + dx);
+    if (h.includes("n")) { box.y = s0.y + dy; box.h = Math.max(.01, s0.h - dy); }
+    if (h.includes("s")) box.h = Math.max(.01, s0.h + dy);
+  }
+  drawBox();
+});
+sel.addEventListener("pointerup", () => (drag = null));
+sel.addEventListener("wheel", (event) => {
+  event.preventDefault(); remember();
+  const grow = event.deltaY < 0 ? 1.04 : 1 / 1.04, cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+  box.w *= grow; box.h *= grow; box.x = cx - box.w / 2; box.y = cy - box.h / 2;
+  drawBox();
+}, { passive: false });
+const keys = document.getElementById("keys");
+const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+document.addEventListener("keydown", (event) => {
+  if (event.key === "?") { keys.classList.add("on"); return; }
+  if (ARROWS[event.key]) {
+    event.preventDefault(); remember();
+    const step = event.shiftKey ? 10 : 1, ax = ARROWS[event.key][0], ay = ARROWS[event.key][1];
+    if (event.ctrlKey) { box.w = Math.max(.005, box.w + ax * step / 2560); box.h = Math.max(.005, box.h + ay * step / 1600); }
+    else { box.x += ax * step / 2560; box.y += ay * step / 1600; }
+    drawBox();
+  }
+  if (event.key.toLowerCase() === "c" && !event.ctrlKey) { point.x = .5; point.y = .5; drawBox(); }
+  if (event.key.toLowerCase() === "z" && event.ctrlKey && undo.length) { Object.assign(box, undo.pop()); drawBox(); }
+});
+document.addEventListener("keyup", (event) => { if (event.key === "?") keys.classList.remove("on"); });
+drawBox();
+mouse = { x: shot.clientWidth * .45, y: shot.clientHeight * .55 };
+drawMag();
+if (location.hash.includes("keys")) keys.classList.add("on");
+
+const test = document.getElementById("test"), scan = document.getElementById("scan"), result = document.getElementById("result");
+const hits = [{ el: document.getElementById("h1"), score: .97 }, { el: document.getElementById("h2"), score: .82 }];
+const dimmer = document.getElementById("dimmer");
+let similarity = .85;
+function judge() { for (const hit of hits) hit.el.classList.toggle("out", hit.score < similarity); }
+function runTest() {
+  test.classList.add("running");
+  dimmer.style.opacity = ".4";
+  hits.forEach((hit) => hit.el.classList.remove("on", "out"));
+  scan.classList.remove("go"); void scan.offsetWidth; scan.classList.add("go");
+  hits.forEach((hit, index) => setTimeout(() => hit.el.classList.add("on"), 480 + index * 160));
+  setTimeout(() => { result.classList.add("on"); judge(); }, 820);
+}
+test.addEventListener("click", runTest);
+document.addEventListener("keydown", (event) => { if (event.key.toLowerCase() === "t") runTest(); if (event.key === "Escape") closeTest(); });
+function closeTest() { result.classList.remove("on"); hits.forEach((hit) => hit.el.classList.remove("on", "out")); scan.classList.remove("go"); test.classList.remove("running"); dimmer.style.opacity = "1"; }
+document.getElementById("close").addEventListener("click", closeTest);
+const slider = document.getElementById("slider"), knob = document.getElementById("knob"), simv = document.getElementById("simv");
+function setSim(event) {
+  const r = slider.getBoundingClientRect();
+  const share = Math.min(1, Math.max(0, (event.clientX - r.left) / r.width));
+  similarity = Math.round((.5 + share * .5) * 100) / 100;
+  knob.style.left = ((similarity - .5) / .5 * 100) + "%";
+  simv.textContent = similarity.toFixed(2).slice(1);
+  judge();
+}
+let sliding = false;
+slider.addEventListener("pointerdown", (event) => { sliding = true; setSim(event); });
+window.addEventListener("pointermove", (event) => { if (sliding) setSim(event); });
+window.addEventListener("pointerup", () => (sliding = false));
+knob.style.left = ((similarity - .5) / .5 * 100) + "%";
+if (location.hash.includes("test")) runTest();
+</script>
+</body>
+</html>

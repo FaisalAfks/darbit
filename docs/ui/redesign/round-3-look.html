@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio look</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+/* three looks for the same screen */
+.s-glass {
+  --w-bg: radial-gradient(700px 380px at 75% 10%, rgb(90 200 250 / .22), transparent 60%), radial-gradient(600px 400px at 10% 90%, rgb(167 139 250 / .2), transparent 60%),
+          linear-gradient(135deg, #1a2333, #0f1420 60%, #1d1530);
+  --w-panel: rgb(22 25 33 / .55); --w-panel-2: rgb(255 255 255 / .06); --w-line: rgb(255 255 255 / .12); --w-blur: 18px;
+  --w-text: #eef1f6; --w-muted: #9aa1ad; --w-accent: #5ac8fa; --w-accent-2: #a78bfa; --w-on: #06121c; --w-radius: 16px;
+  --w-shadow: 0 10px 30px rgb(0 0 0 / .35); --w-font: var(--font-strong);
+}
+.s-mica {
+  --w-bg: linear-gradient(180deg, #202020, #1c1c1c);
+  --w-panel: #2b2b2b; --w-panel-2: #323232; --w-line: rgb(255 255 255 / .07); --w-blur: 0px;
+  --w-text: #ffffff; --w-muted: #c5c5c5; --w-accent: #60cdff; --w-accent-2: #60cdff; --w-on: #000; --w-radius: 8px;
+  --w-shadow: 0 2px 4px rgb(0 0 0 / .25); --w-font: var(--font);
+}
+.s-arcade {
+  --w-bg: linear-gradient(180deg, #0c0a14, #0c0a14);
+  --w-panel: #15121f; --w-panel-2: #1e1a2c; --w-line: rgb(167 139 250 / .18); --w-blur: 0px;
+  --w-text: #f5f3ff; --w-muted: #a5a0bd; --w-accent: #f472b6; --w-accent-2: #fbbf24; --w-on: #1a0610; --w-radius: 20px;
+  --w-shadow: 0 0 0 1px rgb(244 114 182 / .12), 0 18px 40px rgb(0 0 0 / .5); --w-font: var(--font-strong);
+}
+.look { margin-top: 48px; }
+.look .about { margin-bottom: 14px; }
+.look .about p { max-width: 90ch; }
+.app { position: relative; height: 470px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--w-bg); color: var(--w-text);
+       display: flex; flex-direction: column; font-family: var(--font); }
+.app .title { border-bottom: 1px solid var(--w-line); background: transparent; color: var(--w-muted); }
+.panel { background: var(--w-panel); border: 1px solid var(--w-line); border-radius: var(--w-radius); box-shadow: var(--w-shadow);
+         backdrop-filter: blur(var(--w-blur)); -webkit-backdrop-filter: blur(var(--w-blur)); }
+.bar3 { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
+.bar3 .grow { flex: 1; }
+.picker { display: flex; align-items: center; gap: 9px; padding: 5px 12px 5px 5px; border-radius: 999px; font: 650 13px var(--w-font); }
+.picker .av { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--slot-bot); color: var(--on-bot); font: 800 11px var(--font-strong); }
+.picker .car { color: var(--w-muted); }
+.nav { display: flex; gap: 2px; padding: 4px; border-radius: 999px; }
+.nav span { padding: 6px 15px; border-radius: 999px; font: 600 13px var(--w-font); color: var(--w-muted); }
+.nav span.on { background: var(--w-accent); color: var(--w-on); }
+.s-mica .nav span.on { background: var(--w-panel-2); color: var(--w-text); box-shadow: inset 0 -2px 0 var(--w-accent); border-radius: 6px; }
+.s-mica .nav, .s-mica .ctl, .s-mica .picker { border-radius: 8px; }
+.ctl { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; }
+.ctl .b { height: 32px; min-width: 32px; padding: 0 10px; border-radius: 999px; display: grid; place-items: center; font: 650 12px var(--w-font); color: var(--w-text); background: var(--w-panel-2); }
+.s-mica .ctl .b { border-radius: 6px; }
+.ctl .b.go { background: var(--w-accent); color: var(--w-on); }
+.ctl .sep { width: 1px; height: 20px; background: var(--w-line); margin: 0 4px; }
+.page { flex: 1; padding: 6px 18px 18px; display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: min-content; gap: 14px; align-content: start; }
+.t { padding: 16px; display: grid; gap: 8px; align-content: start; }
+.t h5 { margin: 0; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--w-muted); }
+.now { font: 700 26px/1.2 var(--w-font); }
+.now em { font-style: normal; color: var(--w-accent); }
+.muted { color: var(--w-muted); font-size: 13px; }
+.ringwrap { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+.ring { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
+        background: conic-gradient(var(--w-accent) 0 24%, var(--w-panel-2) 24% 100%); }
+.ring::after { content: "32"; width: 74px; height: 74px; border-radius: 50%; background: var(--w-panel); display: grid; place-items: center; font: 800 24px var(--w-font); }
+.s-glass .ring::after { background: #161b26; }
+.line { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--w-line); }
+.line:last-child { border: 0; }
+.line b { font-weight: 650; }
+.ok { color: var(--ok); } .bad { color: var(--danger); } .run { color: var(--w-accent); }
+.big { font: 800 30px var(--w-font); }
+.hero { grid-column: span 12; position: relative; padding: 22px; min-height: 130px; display: flex; align-items: end; overflow: hidden; }
+.hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, rgb(244 114 182 / .35), rgb(251 191 36 / .15) 50%, transparent),
+               repeating-linear-gradient(90deg, rgb(255 255 255 / .03) 0 2px, transparent 2px 40px); }
+.hero > * { position: relative; }
+.prob { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; font-size: 13px; }
+.prob .shot { height: 36px; border-radius: 6px; background: linear-gradient(135deg, #3a2328, #1f1a24); }
+.prob .btnw { padding: 6px 12px; border-radius: 999px; background: var(--w-panel-2); font: 650 12px var(--w-font); }
+.s-mica .prob .btnw { border-radius: 6px; }
+
+/* motion demo */
+.motion { margin-top: 64px; }
+.stage { position: relative; height: 380px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background:
+         radial-gradient(700px 380px at 75% 10%, rgb(90 200 250 / .18), transparent 60%), linear-gradient(135deg, #1a2333, #0f1420 60%, #1d1530); margin-top: 14px; }
+.demo-win { position: absolute; left: 50%; top: 40px; width: 560px; height: 300px; translate: -50% 0; border-radius: 14px; background: rgb(22 25 33 / .8);
+            border: 1px solid rgb(255 255 255 / .12); box-shadow: var(--shadow); overflow: hidden; transform-origin: 50% 0;
+            transition: transform .32s cubic-bezier(.2,.8,.2,1), opacity .32s cubic-bezier(.2,.8,.2,1), top .32s cubic-bezier(.2,.8,.2,1); }
+.demo-win.collapsed { transform: scale(.3, .14); opacity: 0; }
+.demo-nav { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgb(255 255 255 / .06); width: max-content; margin: 14px auto 0; position: relative; }
+.demo-nav span { position: relative; z-index: 1; padding: 5px 14px; font: 600 12px var(--font-strong); color: var(--muted); cursor: pointer; transition: color .2s; }
+.demo-nav span.on { color: var(--on-accent); }
+.demo-nav i { position: absolute; top: 4px; bottom: 4px; border-radius: 999px; background: var(--accent); transition: left .25s cubic-bezier(.2,.8,.2,1), width .25s cubic-bezier(.2,.8,.2,1); }
+.demo-page { padding: 18px 22px; display: grid; gap: 10px; }
+.demo-page.enter { animation: enter .22s cubic-bezier(.2,.8,.2,1); }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } }
+.demo-card { padding: 12px; border-radius: 12px; background: rgb(255 255 255 / .06); font-size: 13px; }
+.demo-card b { font: 700 22px var(--font-strong); display: block; }
+.demo-pill { position: absolute; left: 50%; top: 0; translate: -50% -100%; display: flex; gap: 8px; align-items: center; padding: 6px 8px 6px 14px; border-radius: 0 0 16px 16px;
+             background: rgb(22 25 33 / .9); border: 1px solid rgb(255 255 255 / .12); border-top: 0; font: 600 12px var(--font-strong); box-shadow: var(--shadow);
+             transition: translate .28s cubic-bezier(.34,1.4,.64,1); }
+.demo-pill.on { translate: -50% 0; }
+.demo-pill.peek { translate: -50% calc(-100% + 4px); transition: translate .3s cubic-bezier(.2,.8,.2,1); }
+.demo-pill .b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 3: <span>the look</span></h1>
+  <p class="lead">The same Overview page in three looks. The layout follows round 2: the bot dropdown on the left (a sidebar is a setting), the page bar in the centre, and the bot's controls on the right (Play, Pause, Stop, then Edit). Motion is at the bottom: open the HTML and press the buttons.</p>
+
+  <!-- GLASS -->
+  <section class="look">
+    <div class="about"><h2><span class="tag">1</span>Glass</h2><p>The look of the approved mockup: see-through panels over a soft colour wash (later, the bot's last screenshot, blurred). It's the most "wow". Blur costs while resizing, so it's kept to the panels and never put on the whole page; that also fixes the resize lag.</p></div>
+    <div class="app s-glass">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3">
+        <div class="picker panel"><span class="av">ad</span>ad-bot<span class="car">▾</span></div>
+        <span class="grow"></span>
+        <div class="nav panel"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+        <span class="grow"></span>
+        <div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div>
+      </div>
+      <div class="page">
+        <div class="t panel" style="grid-column:span 7"><h5>Now</h5><div class="now">Speed Raid › <em>Sakura</em></div><span class="muted">wave 3 · since 11:24</span></div>
+        <div class="t panel" style="grid-column:span 5"><h5>This week</h5><div class="ringwrap"><span class="ring"></span><div><b>Speed Raid</b><div class="muted">32 of 133 characters</div><div class="muted" style="margin-top:6px">Boss Rush 1/1 · Raid Challenge 0/1</div></div></div></div>
+        <div class="t panel" style="grid-column:span 7"><h5>Today's round</h5><div class="line"><b>Raid</b><span class="ok">done · 41 m</span></div><div class="line"><b>Speed Raid</b><span class="run">running</span></div><div class="line"><b>Boss Rush</b><span class="ok">done · 6 m</span></div><div class="line"><b>AFK</b><span class="bad">no rewards</span></div></div>
+        <div class="t panel" style="grid-column:span 5"><h5>Needs you</h5><div class="prob"><span class="shot"></span><div><b>Leave button not found</b><div class="muted">6 times since Thu</div></div><span class="btnw">Retake</span></div><h5 style="margin-top:8px">Next up</h5><div class="line"><b>Daily reset</b><span class="run">7 h 25 m</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MICA -->
+  <section class="look">
+    <div class="about"><h2><span class="tag">2</span>Windows 11</h2><p>It feels like a native Windows app (Settings, the new Outlook): solid layered greys, square-ish corners, the accent only where it matters. It's calm and the fastest to draw, but the least distinctive.</p></div>
+    <div class="app s-mica">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3">
+        <div class="picker panel"><span class="av">ad</span>ad-bot<span class="car">▾</span></div>
+        <span class="grow"></span>
+        <div class="nav panel"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+        <span class="grow"></span>
+        <div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div>
+      </div>
+      <div class="page">
+        <div class="t panel" style="grid-column:span 7"><h5>Now</h5><div class="now">Speed Raid › <em>Sakura</em></div><span class="muted">wave 3 · since 11:24</span></div>
+        <div class="t panel" style="grid-column:span 5"><h5>This week</h5><div class="ringwrap"><span class="ring"></span><div><b>Speed Raid</b><div class="muted">32 of 133 characters</div><div class="muted" style="margin-top:6px">Boss Rush 1/1 · Raid Challenge 0/1</div></div></div></div>
+        <div class="t panel" style="grid-column:span 7"><h5>Today's round</h5><div class="line"><b>Raid</b><span class="ok">done · 41 m</span></div><div class="line"><b>Speed Raid</b><span class="run">running</span></div><div class="line"><b>Boss Rush</b><span class="ok">done · 6 m</span></div><div class="line"><b>AFK</b><span class="bad">no rewards</span></div></div>
+        <div class="t panel" style="grid-column:span 5"><h5>Needs you</h5><div class="prob"><span class="shot"></span><div><b>Leave button not found</b><div class="muted">6 times since Thu</div></div><span class="btnw">Retake</span></div><h5 style="margin-top:8px">Next up</h5><div class="line"><b>Daily reset</b><span class="run">7 h 25 m</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCADE -->
+  <section class="look">
+    <div class="about"><h2><span class="tag">3</span>Launcher</h2><p>Bold, like a game launcher: a banner for the bot (its game art or last screenshot), big numbers, rounder shapes and warmer colours. It's the most fun and suits a gaming bot, but it's loud for long sessions.</p></div>
+    <div class="app s-arcade">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3">
+        <div class="picker panel"><span class="av">ad</span>ad-bot<span class="car">▾</span></div>
+        <span class="grow"></span>
+        <div class="nav panel"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+        <span class="grow"></span>
+        <div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div>
+      </div>
+      <div class="page">
+        <div class="hero panel"><div><h5 style="margin:0 0 6px;font:700 11px var(--font-strong);letter-spacing:.08em;color:var(--w-muted)">NOW PLAYING</h5><div class="now" style="font-size:32px">Speed Raid › <em>Sakura</em></div><span class="muted">wave 3 · since 11:24</span></div></div>
+        <div class="t panel" style="grid-column:span 4"><h5>This week</h5><div class="big">32<span class="muted" style="font-size:16px"> / 133</span></div><div class="muted">Speed Raid characters</div></div>
+        <div class="t panel" style="grid-column:span 4"><h5>Today's round</h5><div class="line"><b>Raid</b><span class="ok">✓</span></div><div class="line"><b>Speed Raid</b><span class="run">●</span></div><div class="line"><b>AFK</b><span class="bad">✕</span></div></div>
+        <div class="t panel" style="grid-column:span 4"><h5>Next up</h5><div class="big" style="color:var(--w-accent-2)">7 h 25 m</div><div class="muted">Daily reset</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOTION -->
+  <section class="motion">
+    <h2>Motion (the same in every look)</h2>
+    <p class="lead">Short and quiet: 120–320 ms, only movement and fading. Reduced-motion turns all of it into plain fades.</p>
+    <div class="controls">
+      <button class="btn primary" id="run">▶ Run (collapse to the pill)</button>
+      <button class="btn" id="hide">Mouse leaves → pill slides up</button>
+      <button class="btn" id="reveal">Mouse at the top edge → pill comes back</button>
+      <button class="btn" id="expand">Expand / bot stops → Studio returns</button>
+    </div>
+    <div class="stage">
+      <div class="demo-pill" id="pill"><span class="dot run"></span><b>ad-bot</b><span style="color:var(--muted)">Speed Raid › Sakura</span><span class="b">❚❚</span><span class="b">■</span><span class="b">⤢</span></div>
+      <div class="demo-win" id="win">
+        <div class="demo-nav" id="nav"><i></i><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+        <div class="demo-page" id="page"><div class="demo-card"><span style="color:var(--muted)">Overview</span><b>Speed Raid › Sakura</b></div><div class="demo-card">Click the page bar above: the highlight glides and the page fades up.</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const nav = document.getElementById("nav"), mark = nav.querySelector("i"), page = document.getElementById("page");
+function place(tab) { mark.style.left = tab.offsetLeft + "px"; mark.style.width = tab.offsetWidth + "px"; }
+const tabs = [...nav.querySelectorAll("span")];
+place(tabs[0]);
+for (const tab of tabs) {
+  tab.addEventListener("click", () => {
+    tabs.forEach((each) => each.classList.toggle("on", each === tab));
+    place(tab);
+    page.querySelector("span").textContent = tab.textContent;
+    page.classList.remove("enter"); void page.offsetWidth; page.classList.add("enter");
+  });
+}
+const win = document.getElementById("win"), pill = document.getElementById("pill");
+document.getElementById("run").onclick = () => { win.classList.add("collapsed"); setTimeout(() => pill.classList.add("on"), 200); };
+document.getElementById("hide").onclick = () => pill.classList.add("peek");
+document.getElementById("reveal").onclick = () => pill.classList.remove("peek");
+document.getElementById("expand").onclick = () => { pill.classList.remove("on", "peek"); setTimeout(() => win.classList.remove("collapsed"), 120); };
+</script>
+</body>
+</html>

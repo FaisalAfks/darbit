@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recorder layouts</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.shot { position: relative; height: 520px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow);
+        background: radial-gradient(500px 300px at 30% 80%, rgb(74 222 128 / .18), transparent 60%), linear-gradient(160deg, #2b3a52 0%, #18202f 60%, #2a1f38 100%); }
+.shot .world { position: absolute; inset: 0; }
+.shot .world i { position: absolute; border-radius: 10px; background: rgb(255 255 255 / .06); }
+.glass2 { background: rgb(22 25 33 / .82); border: 1px solid rgb(255 255 255 / .12); box-shadow: 0 12px 40px rgb(0 0 0 / .45); backdrop-filter: blur(18px); }
+.recdot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 0 rgb(248 113 113 / .6); animation: rec 1.4s ease-out infinite; flex: none; }
+@keyframes rec { 70% { box-shadow: 0 0 0 9px rgb(248 113 113 / 0); } }
+.recdot.paused { background: var(--warn); animation: none; }
+.topbar2 { position: absolute; left: 50%; top: 0; translate: -50% 0; display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 16px; border-radius: 0 0 18px 18px; border-top: 0; font-size: 13px; white-space: nowrap; }
+.topbar2 .time { font: 700 15px var(--mono); }
+.topbar2 .nm { font: 700 13px var(--font-strong); }
+.topbar2 small { color: var(--muted); }
+.ib { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); color: var(--text); font-size: 13px; }
+.ib.primary { background: var(--accent); color: var(--on-accent); }
+.ib.stop { background: rgb(248 113 113 / .2); color: var(--danger); }
+.addck { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; background: rgb(90 200 250 / .16); color: var(--accent); border: 1px solid rgb(90 200 250 / .4); font: 700 12.5px var(--font-strong); }
+.vline { width: 1px; height: 20px; background: var(--line); }
+.checks { position: absolute; left: 50%; top: 62px; translate: -50% 0; width: 420px; padding: 12px; border-radius: 16px; display: grid; gap: 6px; font-size: 13px; }
+.checks h6 { margin: 0 0 4px 4px; font: 600 12px var(--font); color: var(--muted); }
+.ck { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; padding: 8px; border-radius: 12px; }
+.ck:hover { background: var(--raised); }
+.ck .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in oklab, var(--c) 18%, transparent); color: var(--c); font-size: 16px; }
+.ck b { font: 650 13.5px var(--font-strong); display: block; }
+.ck small { color: var(--muted); font-size: 11.5px; }
+.ck kbd { font: 600 10px var(--font-strong); padding: 0 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised); }
+.ck.off { opacity: .45; }
+.live { position: absolute; right: 14px; top: 14px; bottom: 14px; width: 290px; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+.live .head { display: flex; align-items: center; gap: 10px; }
+.live .head .time { font: 700 16px var(--mono); }
+.live .head .grow { flex: 1; }
+.steps { display: grid; gap: 3px; overflow: hidden; flex: 1; align-content: start; }
+.st { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 9px; font: 12.5px var(--mono); animation: pop .3s var(--ease) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } }
+.st span:first-child { color: var(--faint); font-family: var(--font-strong); font-size: 11px; }
+.st small { color: var(--faint); }
+.st.check { background: rgb(90 200 250 / .1); box-shadow: inset 2px 0 0 var(--accent); }
+.st.wait { color: var(--muted); }
+.st.now { background: rgb(248 113 113 / .1); }
+.live .acts { display: flex; gap: 6px; }
+.live .acts > * { flex: 1; justify-content: center; }
+.tiny { position: absolute; right: 18px; bottom: 18px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; font: 700 13px var(--mono); }
+.keyhint { position: absolute; left: 50%; bottom: 18px; translate: -50% 0; padding: 6px 14px; border-radius: 999px; font-size: 12px; color: var(--muted); opacity: .9; }
+.keyhint kbd { font: 600 10px var(--font-strong); padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised); color: var(--text); }
+.trail { position: absolute; border: 2px dashed rgb(255 255 255 / .35); border-radius: 50%; }
+.click { position: absolute; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--danger); translate: -50% -50%; }
+.click::after { content: attr(data-n); position: absolute; left: 16px; top: -14px; font: 700 10px var(--font-strong); padding: 0 5px; border-radius: 6px; background: var(--danger); color: #160606; }
+.keyfloat { position: absolute; display: flex; gap: 4px; }
+.keyfloat kbd { font: 700 12px var(--font-strong); padding: 3px 8px; border: 1px solid rgb(255 255 255 / .3); border-bottom-width: 3px; border-radius: 7px; background: rgb(22 25 33 / .85); color: var(--text); }
+/* the action editor (after recording) */
+.app { height: 600px; }
+.page { overflow: hidden; }
+.editor { flex: 1; display: grid; grid-template-columns: 1fr 300px; gap: 12px; min-width: 0; }
+.flow { padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.flowhead { display: flex; align-items: center; gap: 8px; }
+.flowhead h4 { margin: 0; font: 700 17px var(--font-strong); }
+.flowhead .grow { flex: 1; }
+.lane2 { position: relative; height: 46px; border-radius: 10px; background: rgb(255 255 255 / .04); overflow: hidden; }
+.lane2 i { position: absolute; top: 8px; bottom: 8px; border-radius: 5px; }
+.lane2 .k { background: rgb(167 139 250 / .6); } .lane2 .m { background: rgb(90 200 250 / .6); } .lane2 .c { background: rgb(74 222 128 / .7); top: 4px; bottom: 4px; } .lane2 .w { background: rgb(255 255 255 / .12); }
+.lane2 .ph { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); left: 38%; box-shadow: 0 0 8px var(--danger); }
+.rows2 { display: grid; gap: 3px; overflow: hidden; }
+.row2 { display: grid; grid-template-columns: 30px 22px 1fr auto auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 9px; font-size: 12.5px; }
+.row2:hover { background: rgb(255 255 255 / .05); }
+.row2.on { background: rgb(90 200 250 / .12); box-shadow: inset 2px 0 0 var(--accent); }
+.row2 .n { color: var(--faint); font: 600 11px var(--mono); }
+.row2 .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; background: color-mix(in oklab, var(--c) 20%, transparent); color: var(--c); }
+.row2 code { background: none; padding: 0; color: var(--text); }
+.row2 small { color: var(--faint); font: 11px var(--mono); }
+.row2 .bp { width: 9px; height: 9px; border-radius: 50%; background: transparent; border: 1.5px solid var(--faint); }
+.row2 .bp.on { background: var(--danger); border-color: var(--danger); }
+.row2.ind { padding-left: 28px; }
+.insp { padding: 14px; display: grid; gap: 10px; align-content: start; font-size: 12.5px; }
+.insp h5 { margin: 0; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.insp .f { display: grid; gap: 4px; }
+.insp .f span { color: var(--muted); font-size: 11.5px; }
+.insp .f b { padding: 6px 10px; border-radius: 8px; background: rgb(255 255 255 / .06); font: 600 12.5px var(--font-strong); }
+.insp .shotmini { height: 90px; border-radius: 10px; background: linear-gradient(160deg, #3b4560, #232b3c); position: relative; }
+.insp .shotmini::after { content: ""; position: absolute; left: 32%; top: 34%; width: 32%; height: 22%; border: 2px solid var(--ok); border-radius: 4px; box-shadow: 0 0 10px rgb(74 222 128 / .5); }
+.py { font: 11.5px/1.6 var(--mono); padding: 10px 12px; border-radius: 10px; background: #0d1018; color: var(--muted); white-space: pre; }
+.py .f { color: var(--accent); } .py .s { color: var(--ok); }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 8: <span>the Recorder</span></h1>
+  <p class="lead">The Recorder turns what you do into an <b>action</b>, a step-by-step macro saved in the open bot. You open it from the Library with Edit on (● Record). While recording, you can pause at any moment and <b>add a check</b>: wait for a picture, branch if it shows, or repeat until it's gone. The Studio steps aside while you play. Three ways to show the recorder while you play, then the editor you land in afterwards.</p>
+
+  <!-- RA -->
+  <section class="look" style="margin-top:34px">
+    <div class="about"><h2><span class="tag">RA</span>A pill at the top</h2><p>Like the run pill: the time, the action's name, the steps so far, and Pause, Add check, Stop. Pausing drops the check menu down from the pill. It hides itself like the run pill when the mouse is away.</p></div>
+    <div class="shot">
+      <div class="world"><i style="left:8%;top:30%;width:30%;height:40%"></i><i style="left:60%;top:20%;width:28%;height:55%"></i></div>
+      <div class="topbar2 glass2"><span class="recdot paused"></span><span class="time">01:42</span><span class="nm">dodge</span><small>14 steps · 2 checks</small><div class="vline"></div><span class="addck">＋ Add check</span><span class="ib primary">▶</span><span class="ib stop">■</span></div>
+      <div class="checks glass2">
+        <h6>Paused at 01:42. Add a check here:</h6>
+        <div class="ck" style="--c:var(--kind-image)"><span class="ic">▣</span><div><b>Picture</b><small>wait for it · if seen · if not seen · until gone</small></div><kbd>I</kbd></div>
+        <div class="ck" style="--c:var(--kind-point)"><span class="ic">◉</span><div><b>Colour at a point</b><small>a pixel matches a colour</small></div><kbd>P</kbd></div>
+        <div class="ck" style="--c:var(--kind-region)"><span class="ic">⬚</span><div><b>Area changes</b><small>anything in a region changes or stops changing</small></div><kbd>R</kbd></div>
+        <div class="ck" style="--c:var(--warn)"><span class="ic">⏱</span><div><b>Wait</b><small>a fixed or random pause</small></div><kbd>W</kbd></div>
+        <div class="ck off" style="--c:var(--muted)"><span class="ic">T</span><div><b>Text</b><small>later</small></div><kbd></kbd></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RB -->
+  <section class="look" style="margin-top:44px">
+    <div class="about"><h2><span class="tag">RB</span>Live steps on the side</h2><p>A narrow panel on the right lists each step as it's recorded: clicks with their target, keys, waits and checks. You see straight away what was caught, and can delete a wrong step without stopping. It covers part of the game, so it can be dragged to any edge, made smaller, or made see-through.</p></div>
+    <div class="shot">
+      <div class="world" style="right:304px"><i style="left:10%;top:30%;width:40%;height:40%"></i></div>
+      <div class="click" data-n="12" style="left:34%;top:56%"></div>
+      <div class="keyfloat" style="left:12%;top:20%"><kbd>Shift</kbd><kbd>E</kbd></div>
+      <div class="live glass2">
+        <div class="head"><span class="recdot"></span><span class="time">01:42</span><span class="grow"></span><span class="ib">❚❚</span><span class="ib stop">■</span></div>
+        <div style="color:var(--muted)">dodge · recording into ad-bot</div>
+        <div class="steps">
+          <div class="st"><span>1</span>hold W<small>0.0</small></div>
+          <div class="st wait"><span>2</span>wait 0.5 s<small>0.5</small></div>
+          <div class="st"><span>3</span>release W<small>1.0</small></div>
+          <div class="st check"><span>4</span>if seen Dim.Boss.Bar<small>check</small></div>
+          <div class="st"><span>5</span>press Q<small>1.4</small></div>
+          <div class="st"><span>6</span>press Shift+E<small>1.6</small></div>
+          <div class="st now"><span>7</span>click Fight.Skill2 (812, 440)<small>1.9</small></div>
+        </div>
+        <div class="acts"><span class="addck">＋ Check</span><span class="btn">⌫ Last step</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RC -->
+  <section class="look" style="margin-top:44px">
+    <div class="about"><h2><span class="tag">RC</span>Almost invisible</h2><p>Only a small timer in a corner, and keys: <kbd>Ctrl+Alt+P</kbd> pause, <kbd>Ctrl+Alt+C</kbd> add a check, <kbd>Ctrl+Alt+R</kbd> stop. Clicks and keys flash briefly where they happen, so you know they were caught. Everything else waits for the editor. It's best for fast games, but you have to know the keys.</p></div>
+    <div class="shot">
+      <div class="world"><i style="left:8%;top:30%;width:30%;height:40%"></i><i style="left:60%;top:20%;width:28%;height:55%"></i></div>
+      <div class="click" data-n="7" style="left:44%;top:46%"></div>
+      <div class="keyfloat" style="left:46%;top:56%"><kbd>Q</kbd></div>
+      <div class="tiny glass2"><span class="recdot"></span>01:42 <small style="color:var(--muted);font-family:var(--font)">7 steps</small></div>
+      <div class="keyhint glass2" style="opacity:.6"><kbd>Ctrl+Alt+P</kbd> pause · <kbd>Ctrl+Alt+C</kbd> check · <kbd>Ctrl+Alt+R</kbd> stop</div>
+    </div>
+  </section>
+
+  <!-- EDITOR -->
+  <section class="look" style="margin-top:56px">
+    <div class="about"><h2>Afterwards: the action editor (in every option)</h2><p>Stopping opens the action in the Studio, under Library › Actions. A timeline shows keys, mouse moves and checks. Below it is the step list, with breakpoints, and an inspector for the chosen step. The action is saved as plain Python in the bot (decision 0010), so it also opens in VS Code.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div></div>
+      <div class="page">
+        <div class="editor">
+          <div class="flow panel">
+            <div class="flowhead"><span style="color:var(--muted)">Library › Actions ›</span><h4>dodge</h4><span class="k act">action</span><span class="grow"></span><button class="btn">▶ Play</button><button class="btn">⤼ Step</button><button class="btn">● Record more</button></div>
+            <div class="lane2"><i class="k" style="left:2%;width:24%"></i><i class="w" style="left:27%;width:6%"></i><i class="c" style="left:34%;width:3%"></i><i class="k" style="left:38%;width:4%"></i><i class="k" style="left:43%;width:5%"></i><i class="m" style="left:49%;width:8%"></i><i class="c" style="left:60%;width:3%"></i><i class="k" style="left:65%;width:12%"></i><span class="ph"></span></div>
+            <div class="rows2">
+              <div class="row2"><span class="n">1</span><span class="ic" style="--c:var(--accent-2)">⌨</span><code>hold W</code><small>0.0</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">2</span><span class="ic" style="--c:var(--muted)">⏱</span><code>wait 0.5 s</code><small>0.5</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">3</span><span class="ic" style="--c:var(--accent-2)">⌨</span><code>release W</code><small>1.0</small><span class="bp"></span></div>
+              <div class="row2 on"><span class="n">4</span><span class="ic" style="--c:var(--ok)">▣</span><code>if seen Dim.Boss.Bar</code><small>check</small><span class="bp on"></span></div>
+              <div class="row2 ind"><span class="n">4.1</span><span class="ic" style="--c:var(--accent)">⤷</span><code>call jump_back()</code><small>action</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">5</span><span class="ic" style="--c:var(--accent-2)">⌨</span><code>press Q</code><small>1.4</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">6</span><span class="ic" style="--c:var(--accent-2)">⌨</span><code>press Shift+E</code><small>1.6</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">7</span><span class="ic" style="--c:var(--accent)">🖱</span><code>click Fight.Skill2</code><small>1.9</small><span class="bp"></span></div>
+              <div class="row2"><span class="n">8</span><span class="ic" style="--c:var(--warn)">↻</span><code>repeat until Dim.Game.Leave shows</code><small>loop</small><span class="bp"></span></div>
+            </div>
+          </div>
+          <div class="insp panel">
+            <h5>Step 4 · check</h5>
+            <div class="shotmini"></div>
+            <div class="f"><span>When</span><b>if Dim.Boss.Bar is seen ▾</b></div>
+            <div class="f"><span>Look for up to</span><b>0.5 s</b></div>
+            <div class="f"><span>Then</span><b>call jump_back() ▾</b></div>
+            <div class="py"><span class="f">if</span> d.exists(img.Dim.Boss.Bar, <span class="s">0.5</span>):
+    jump_back()</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Record more</b> continues recording from the selected step. A red dot sets a <b>breakpoint</b>, so Play stops there and Step goes on one step at a time. Each check shows the screenshot from the moment it was added.</p>
+  </section>
+</main>
+</body>
+</html>

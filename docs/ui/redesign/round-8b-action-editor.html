@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action editor</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 780px; }
+.page { overflow: hidden; gap: 0; padding-bottom: 12px; }
+.ed { flex: 1; display: grid; grid-template-columns: var(--outline, 200px) 6px 1fr 6px var(--insp, 300px); grid-template-rows: auto 1fr; min-width: 0; min-height: 0; gap: 0; }
+.split { cursor: col-resize; border-radius: 3px; margin: 0 1px; }
+.split:hover { background: rgb(90 200 250 / .35); }
+.edhead { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; }
+.edhead h4 { margin: 0; font: 700 17px var(--font-strong); }
+.edhead .grow { flex: 1; }
+.edhead .meta { color: var(--muted); font-size: 12px; }
+.outline { padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; overflow: auto; font-size: 12.5px; min-height: 0; }
+.outline h5, .insp h5 { margin: 2px 6px 6px; font: 700 10.5px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.oi { display: grid; grid-template-columns: 14px 1fr auto; gap: 6px; align-items: center; padding: 5px 8px; border-radius: 8px; cursor: pointer; color: var(--muted); }
+.oi:hover { background: rgb(255 255 255 / .05); color: var(--text); }
+.oi.on { background: rgb(90 200 250 / .12); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.oi small { color: var(--faint); font: 11px var(--mono); }
+.oi.sub { padding-left: 22px; }
+.center { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+.tlbox { padding: 8px 10px; display: grid; gap: 5px; }
+.tlbar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.tlbar .grow { flex: 1; }
+.zoom { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(255 255 255 / .06); }
+.zoom button { border: 0; background: none; color: var(--text); width: 24px; height: 22px; border-radius: 999px; cursor: pointer; font: 700 13px var(--font-strong); }
+.zoom span { padding: 0 8px; font: 600 11px var(--font-strong); display: grid; place-items: center; }
+.view { position: relative; overflow: hidden; border-radius: 8px; cursor: grab; user-select: none; }
+.canvas { position: relative; height: 92px; }
+.secband { position: absolute; top: 0; height: 16px; border-radius: 4px; font: 700 9.5px var(--font-strong); color: var(--text); padding: 2px 6px; white-space: nowrap; overflow: hidden; background: rgb(255 255 255 / .07); border-left: 2px solid var(--c); }
+.lanekind { position: absolute; left: 0; right: 0; height: 16px; }
+.blk { position: absolute; height: 12px; top: 2px; border-radius: 3px; background: var(--c); opacity: .75; }
+.blk.sel { opacity: 1; box-shadow: 0 0 0 1.5px #fff, 0 0 10px var(--c); }
+.ph { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+.mini { position: relative; height: 16px; border-radius: 6px; background: rgb(255 255 255 / .04); overflow: hidden; cursor: pointer; }
+.mini i { position: absolute; top: 5px; height: 6px; border-radius: 3px; opacity: .6; }
+.mini .win { position: absolute; top: 0; bottom: 0; border: 1.5px solid #fff; border-radius: 6px; background: rgb(255 255 255 / .07); }
+.listbox { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 8px; }
+.tools { display: flex; gap: 6px; align-items: center; padding: 0 2px 8px; flex-wrap: wrap; }
+.tools .search { min-width: 200px; }
+.tools .grow { flex: 1; }
+.tools .sel-info { font: 600 12px var(--font-strong); color: var(--accent); }
+.dens { display: flex; padding: 2px; border-radius: 999px; background: rgb(255 255 255 / .06); }
+.dens span { padding: 3px 9px; border-radius: 999px; font: 600 11px var(--font-strong); color: var(--muted); cursor: pointer; }
+.dens span.on { background: rgb(255 255 255 / .14); color: var(--text); }
+.list { flex: 1; overflow: auto; min-height: 0; position: relative; }
+.r { display: grid; grid-template-columns: 16px 44px 22px 1fr auto 14px; gap: 8px; align-items: center; padding: 0 8px; height: var(--rh, 30px); border-radius: 7px; font-size: 12.5px; cursor: default; }
+.r:hover { background: rgb(255 255 255 / .04); }
+.r:hover .add { opacity: 1; }
+.r.on { background: rgb(90 200 250 / .14); }
+.r.cur { box-shadow: inset 2px 0 0 var(--accent); }
+.r .grip { color: var(--faint); cursor: grab; opacity: .6; font-size: 11px; }
+.r .n { color: var(--faint); font: 600 11px var(--mono); text-align: right; }
+.r .ic { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; font-size: 10px; background: color-mix(in oklab, var(--c) 20%, transparent); color: var(--c); }
+.r code { background: none; padding: 0; color: var(--text); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r small { color: var(--faint); font: 11px var(--mono); }
+.r .bp { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid transparent; }
+.r:hover .bp { border-color: var(--faint); }
+.r .bp.on { background: var(--danger); border-color: var(--danger); }
+.r.grp { font-weight: 700; background: rgb(255 255 255 / .03); margin-top: 4px; }
+.r.grp code { font: 700 12.5px var(--font-strong); }
+.r.grp .fold { cursor: pointer; color: var(--muted); }
+.r .add { position: absolute; right: 8px; opacity: 0; font-size: 11px; color: var(--accent); }
+.indent { display: inline-block; width: calc(var(--d) * 16px); }
+.insp { padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow: auto; font-size: 12.5px; min-height: 0; }
+.tabs3 { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(255 255 255 / .06); }
+.tabs3 span { flex: 1; text-align: center; padding: 4px 8px; border-radius: 999px; font: 600 11.5px var(--font-strong); color: var(--muted); cursor: pointer; }
+.tabs3 span.on { background: rgb(255 255 255 / .14); color: var(--text); }
+.f { display: grid; gap: 4px; }
+.f span { color: var(--muted); font-size: 11.5px; }
+.f b { padding: 6px 10px; border-radius: 8px; background: rgb(255 255 255 / .06); font: 600 12.5px var(--font-strong); }
+.bulk { display: grid; gap: 6px; padding: 10px; border-radius: 12px; background: rgb(90 200 250 / .08); border: 1px solid rgb(90 200 250 / .3); }
+.bulk .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.shotmini { height: 110px; border-radius: 10px; background: linear-gradient(160deg, #3b4560, #232b3c); position: relative; }
+.shotmini::after { content: ""; position: absolute; left: 32%; top: 34%; width: 32%; height: 22%; border: 2px solid var(--ok); border-radius: 4px; box-shadow: 0 0 10px rgb(74 222 128 / .5); }
+.py { font: 11.5px/1.6 var(--mono); padding: 10px 12px; border-radius: 10px; background: #0d1018; color: var(--muted); white-space: pre; overflow: auto; }
+.py .k { color: var(--accent); } .py .s { color: var(--ok); }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+.changes ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.changes li { margin: 4px 0; } .changes b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 8b: <span>an action editor for long actions</span></h1>
+  <p class="lead">This is built for an action the size of ad-bot's: here, 400 steps in sections, waves and loops. <b>Open the HTML</b> and try it:
+    <ul style="margin:6px 0 0;color:var(--muted)">
+      <li>click a section in the outline to jump to it;</li>
+      <li>fold a group with ▾;</li>
+      <li>search steps;</li>
+      <li>Shift- or Ctrl-click to select many, then edit them together;</li>
+      <li>zoom the timeline with − / + (or Ctrl+wheel) and drag it, or its minimap;</li>
+      <li>drag the pane edges to resize them, and switch the list between compact and comfortable.</li>
+    </ul></p>
+
+  <section class="look" style="margin-top:20px">
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div></div>
+      <div class="page">
+        <div class="ed" id="ed">
+          <div class="edhead"><span style="color:var(--muted)">Library › Actions ›</span><h4>speed_raid_fight</h4><span class="k act">action</span><span class="meta" id="meta"></span><span class="grow"></span><button class="btn">▶ Play from here</button><button class="btn">⤼ Step</button><button class="btn">● Record more</button><button class="btn">⤢ Focus</button></div>
+          <div class="outline panel" id="outline"><h5>Outline</h5></div>
+          <div class="split" data-split="outline"></div>
+          <div class="center">
+            <div class="tlbox panel">
+              <div class="tlbar"><b style="color:var(--text)">Timeline</b><span id="tlinfo"></span><span class="grow"></span><span style="display:flex;gap:10px"><span style="color:#a78bfa">■ keys</span><span style="color:#5ac8fa">■ mouse</span><span style="color:#4ade80">■ checks</span><span style="color:#6b7280">■ waits</span></span><div class="zoom"><button id="zout">−</button><span id="zl">All</span><button id="zin">+</button></div></div>
+              <div class="view" id="view"><div class="canvas" id="canvas"></div></div>
+              <div class="mini" id="mini"><div class="win" id="win"></div></div>
+            </div>
+            <div class="listbox panel">
+              <div class="tools"><span class="search" style="display:flex"><input id="q" placeholder="⌕ Search steps, e.g. Leave or press" style="all:unset;width:100%;font-size:12px;color:var(--text)"></span><span class="sel-info" id="selinfo"></span><span class="grow"></span><span class="dens" id="dens"><span data-d="24">Compact</span><span class="on" data-d="30">Comfortable</span></span><button class="btn">＋ Step</button></div>
+              <div class="list" id="list"></div>
+            </div>
+          </div>
+          <div class="split" data-split="insp"></div>
+          <div class="insp panel" id="insp"></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">The list only draws the rows on screen, so 5 000 steps scroll as smoothly as 50. Sections are <code>with d.step("Wave 1"):</code> blocks in the saved Python, so the outline is the code's own structure.</p>
+  </section>
+
+  <section class="changes" style="margin-top:22px">
+    <h2>What changed from round 8</h2>
+    <ul>
+      <li><b>Outline</b> on the left: sections and loops with their step counts. Click to jump; the current one is highlighted while you scroll.</li>
+      <li><b>Timeline:</b> lanes for keys, mouse, checks and waits, with the sections as bands on top. Zoom from the whole action down to single steps, drag to pan, and use the minimap to see where you are. Selected steps glow on it.</li>
+      <li><b>Step list:</b> foldable groups, search, Shift/Ctrl multi-select, a drag grip to reorder, ＋ between rows to insert, compact or comfortable rows, breakpoints on hover. Only the rows on screen are drawn.</li>
+      <li><b>Inspector:</b> tabs for Step, When (the screenshot from the moment it was recorded) and Python. With many steps selected it turns into <b>bulk edit</b>: speed up waits, wrap in a group or loop, turn into a reusable action, delete.</li>
+      <li><b>Panes resize</b> by dragging their edges, and <b>Focus</b> hides the Studio's bars for the most room.</li>
+    </ul>
+  </section>
+</main>
+<script>
+// ---- a long, made-up action: sections > waves > steps
+const KINDS = {
+  key: { c: "#a78bfa", ic: "⌨" }, mouse: { c: "#5ac8fa", ic: "🖱" }, check: { c: "#4ade80", ic: "▣" }, wait: { c: "#6b7280", ic: "⏱" },
+  loop: { c: "#fbbf24", ic: "↻" }, call: { c: "#5ac8fa", ic: "⤷" },
+};
+const SECTIONS = ["Enter the raid", "Wave 1", "Wave 2", "Wave 3", "Boss", "Collect rewards", "Leave"];
+const steps = [];
+let t = 0, n = 0;
+function add(kind, text, depth, group) { n += 1; const dur = kind === "wait" ? 0.3 + Math.random() : 0.15; steps.push({ id: n, kind, text, depth, group, t, dur }); t += dur; }
+const keysPool = ["press Q", "press E", "press R", "press Shift+E", "hold W", "release W", "press Space", "press 1", "press 2"];
+SECTIONS.forEach((name, si) => {
+  steps.push({ id: "g" + si, kind: "group", text: name, depth: 0, section: si, t });
+  const count = si === 0 || si === 6 ? 18 : si === 4 ? 110 : 60;
+  for (let i = 0; i < count; i++) {
+    const r = Math.random();
+    if (i % 25 === 12) { steps.push({ id: "l" + si + i, kind: "loop", text: "repeat until Dim.Boss.Bar is gone", depth: 1, group: si, t, isLoop: true }); continue; }
+    if (r < .45) add("key", keysPool[Math.floor(Math.random() * keysPool.length)], 1, si);
+    else if (r < .65) add("wait", `wait ${(0.2 + Math.random()).toFixed(1)} s`, 1, si);
+    else if (r < .85) add("mouse", `click Fight.Skill${1 + Math.floor(Math.random() * 4)}`, 1, si);
+    else add("check", ["if seen Dim.Boss.Bar", "wait for Dim.Game.Left", "until gone Dim.Loading"][Math.floor(Math.random() * 3)], 1, si);
+  }
+});
+const total = t;
+document.getElementById("meta").textContent = `${n} steps · ${Math.round(total / 60)} min ${Math.round(total % 60)} s`;
+
+// ---- state
+const folded = new Set(), selected = new Set();
+let current = null, lastClicked = null, query = "", rowH = 30;
+
+// ---- outline
+const outline = document.getElementById("outline");
+SECTIONS.forEach((name, si) => {
+  const count = steps.filter((s) => s.group === si && s.kind !== "loop").length;
+  const el = document.createElement("div");
+  el.className = "oi"; el.dataset.s = si;
+  el.innerHTML = `<span>▸</span><span>${name}</span><small>${count}</small>`;
+  el.onclick = () => { folded.delete(si); render(); const idx = visible().findIndex((s) => s.id === "g" + si); list.scrollTop = idx * rowH; };
+  outline.appendChild(el);
+});
+
+// ---- the list (only rows on screen are drawn)
+const list = document.getElementById("list");
+const spacer = document.createElement("div"); spacer.style.position = "relative"; list.appendChild(spacer);
+function visible() {
+  const q = query.toLowerCase();
+  return steps.filter((s) => {
+    if (s.kind !== "group" && folded.has(s.group)) return false;
+    if (q && s.kind !== "group" && !s.text.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function rowHtml(s, i) {
+  if (s.kind === "group") {
+    const count = steps.filter((x) => x.group === s.section && x.kind !== "loop").length;
+    return `<div class="r grp" style="position:absolute;left:0;right:0;top:${i * rowH}px" data-i="${i}"><span class="fold" data-fold="${s.section}">${folded.has(s.section) ? "▸" : "▾"}</span><span class="n"></span><span class="ic" style="--c:#a78bfa">§</span><code>with d.step("${s.text}")</code><small>${count} steps</small><span></span></div>`;
+  }
+  const k = KINDS[s.kind];
+  const on = selected.has(s.id) ? " on" : "", cur = current === s.id ? " cur" : "";
+  return `<div class="r${on}${cur}" style="position:absolute;left:0;right:0;top:${i * rowH}px" data-i="${i}" data-id="${s.id}"><span class="grip">⋮⋮</span><span class="n">${s.isLoop ? "" : s.id}</span><span class="ic" style="--c:${k.c}">${k.ic}</span><code><span class="indent" style="--d:${s.depth - 1}"></span>${s.text}</code><small>${s.isLoop ? "loop" : s.t.toFixed(1)}</small><span class="bp${s.id % 37 === 0 ? " on" : ""}"></span><span class="add">＋</span></div>`;
+}
+function render() {
+  const rows = visible();
+  spacer.style.height = rows.length * rowH + "px";
+  const first = Math.max(0, Math.floor(list.scrollTop / rowH) - 5), last = Math.min(rows.length, first + Math.ceil(list.clientHeight / rowH) + 10);
+  let html = "";
+  for (let i = first; i < last; i++) html += rowHtml(rows[i], i);
+  spacer.innerHTML = html;
+  // the outline follows the scroll
+  const top = rows[Math.floor(list.scrollTop / rowH)];
+  const section = top ? (top.kind === "group" ? top.section : top.group) : 0;
+  outline.querySelectorAll(".oi").forEach((el) => el.classList.toggle("on", Number(el.dataset.s) === section));
+  document.getElementById("selinfo").textContent = selected.size > 1 ? `${selected.size} selected` : "";
+  drawTimeline();
+  drawInspector();
+}
+list.addEventListener("scroll", () => requestAnimationFrame(render));
+spacer.addEventListener("click", (event) => {
+  const fold = event.target.dataset.fold;
+  if (fold !== undefined) { const s = Number(fold); if (folded.has(s)) folded.delete(s); else folded.add(s); render(); return; }
+  const row = event.target.closest(".r[data-id]");
+  if (!row) return;
+  const id = Number(row.dataset.id) || row.dataset.id;
+  const rows = visible();
+  if (event.shiftKey && lastClicked !== null) {
+    const a = rows.findIndex((s) => s.id === lastClicked), b = rows.findIndex((s) => s.id === id);
+    for (let i = Math.min(a, b); i <= Math.max(a, b); i++) if (rows[i].kind !== "group") selected.add(rows[i].id);
+  } else if (event.ctrlKey || event.metaKey) {
+    if (selected.has(id)) selected.delete(id); else selected.add(id);
+  } else { selected.clear(); selected.add(id); }
+  current = id; lastClicked = id;
+  render();
+});
+document.getElementById("q").addEventListener("input", (event) => { query = event.target.value; list.scrollTop = 0; render(); });
+document.getElementById("dens").addEventListener("click", (event) => {
+  const d = event.target.dataset.d; if (!d) return;
+  rowH = Number(d); list.style.setProperty("--rh", rowH + "px");
+  document.querySelectorAll("#dens span").forEach((el) => el.classList.toggle("on", el.dataset.d === d));
+  render();
+});
+
+// ---- timeline: zoom, pan, minimap
+const view = document.getElementById("view"), canvas = document.getElementById("canvas"), mini = document.getElementById("mini"), win = document.getElementById("win");
+const ZOOMS = [1, 2, 4, 8, 16, 32, 64], ZNAMES = ["All", "×2", "×4", "×8", "×16", "×32", "×64"];
+let z = 0;
+const LANES = { key: 22, mouse: 40, check: 58, wait: 76 };
+let built = false;
+function buildTimeline() {
+  let html = "";
+  SECTIONS.forEach((name, si) => {
+    const inSec = steps.filter((s) => s.group === si && s.dur);
+    if (!inSec.length) return;
+    const a = inSec[0].t / total * 100, b = (inSec[inSec.length - 1].t + inSec[inSec.length - 1].dur) / total * 100;
+    html += `<span class="secband" style="left:${a}%;width:${b - a}%;--c:${["#5ac8fa","#a78bfa","#4ade80","#fbbf24","#f87171","#f0abfc","#9aa1ad"][si]}">${name}</span>`;
+  });
+  for (const s of steps) {
+    if (!s.dur) continue;
+    html += `<i class="blk" data-id="${s.id}" style="left:${s.t / total * 100}%;width:max(2px, ${s.dur / total * 100}%);top:${LANES[s.kind]}px;--c:${KINDS[s.kind].c}"></i>`;
+  }
+  html += `<span class="ph" style="left:31%"></span>`;
+  canvas.innerHTML = html;
+  let mhtml = "";
+  for (const s of steps) if (s.dur && s.kind !== "wait") mhtml += `<i style="left:${s.t / total * 100}%;width:2px;background:${KINDS[s.kind].c}"></i>`;
+  mini.insertAdjacentHTML("afterbegin", mhtml);
+  built = true;
+}
+function drawTimeline() {
+  if (!built) buildTimeline();
+  canvas.querySelectorAll(".blk.sel").forEach((el) => el.classList.remove("sel"));
+  for (const id of selected) { const el = canvas.querySelector(`.blk[data-id="${id}"]`); if (el) el.classList.add("sel"); }
+  win.style.width = (view.clientWidth / canvas.scrollWidth * 100) + "%";
+  win.style.left = (view.scrollLeft / canvas.scrollWidth * 100) + "%";
+  document.getElementById("tlinfo").textContent = `· ${Math.round(total / ZOOMS[z])} s shown`;
+}
+function setZoom(next) {
+  const centre = (view.scrollLeft + view.clientWidth / 2) / canvas.scrollWidth;
+  z = Math.max(0, Math.min(ZOOMS.length - 1, next));
+  canvas.style.width = ZOOMS[z] * 100 + "%";
+  document.getElementById("zl").textContent = ZNAMES[z];
+  view.scrollLeft = centre * canvas.scrollWidth - view.clientWidth / 2;
+  drawTimeline();
+}
+document.getElementById("zin").onclick = () => setZoom(z + 1);
+document.getElementById("zout").onclick = () => setZoom(z - 1);
+view.addEventListener("wheel", (event) => { if (!event.ctrlKey) return; event.preventDefault(); setZoom(z + (event.deltaY < 0 ? 1 : -1)); }, { passive: false });
+let pan = null;
+view.addEventListener("pointerdown", (event) => { pan = { x: event.clientX, left: view.scrollLeft, from: view }; view.setPointerCapture(event.pointerId); });
+mini.addEventListener("pointerdown", (event) => { const r = mini.getBoundingClientRect(); view.scrollLeft = (event.clientX - r.left) / r.width * canvas.scrollWidth - view.clientWidth / 2; pan = { x: event.clientX, left: view.scrollLeft, from: mini }; mini.setPointerCapture(event.pointerId); drawTimeline(); });
+window.addEventListener("pointermove", (event) => {
+  if (!pan) return;
+  const moved = event.clientX - pan.x;
+  view.scrollLeft = pan.from === view ? pan.left - moved : pan.left + moved * canvas.scrollWidth / mini.clientWidth;
+  drawTimeline();
+});
+window.addEventListener("pointerup", () => (pan = null));
+canvas.addEventListener("click", (event) => {
+  const id = event.target.dataset && event.target.dataset.id; if (!id) return;
+  selected.clear(); selected.add(Number(id)); current = Number(id);
+  const idx = visible().findIndex((s) => s.id === Number(id)); list.scrollTop = Math.max(0, idx * rowH - list.clientHeight / 2);
+  render();
+});
+
+// ---- inspector
+const insp = document.getElementById("insp");
+let tab = "Step";
+function drawInspector() {
+  if (selected.size > 1) {
+    const ids = [...selected], waits = steps.filter((s) => selected.has(s.id) && s.kind === "wait").length;
+    insp.innerHTML = `<h5>${ids.length} steps selected</h5>
+      <div class="bulk"><b>Edit them together</b>
+        <div class="row"><button class="btn">⏱ Waits × 0.8</button><button class="btn">⏱ Waits × 1.2</button></div>
+        <div class="row"><button class="btn">§ Wrap in a section</button><button class="btn">↻ Wrap in a loop</button></div>
+        <div class="row"><button class="btn">⤷ Make a reusable action</button></div>
+        <div class="row"><button class="btn">⧉ Duplicate</button><button class="btn" style="color:var(--danger)">⌫ Delete</button></div>
+        <small style="color:var(--muted)">${waits} of them are waits</small></div>`;
+    return;
+  }
+  const s = steps.find((x) => x.id === current);
+  if (!s) { insp.innerHTML = `<h5>Inspector</h5><div style="color:var(--muted)">Pick a step, on the list or the timeline.</div>`; return; }
+  const tabs = `<div class="tabs3">${["Step", "When", "Python"].map((name) => `<span class="${name === tab ? "on" : ""}" data-tab="${name}">${name}</span>`).join("")}</div>`;
+  let body = "";
+  if (tab === "Step") body = `<div class="f"><span>Step ${s.id}</span><b>${s.text}</b></div><div class="f"><span>At</span><b>${s.t.toFixed(2)} s</b></div><div class="f"><span>Kind</span><b>${s.kind}</b></div>${s.kind === "check" ? `<div class="f"><span>Look for up to</span><b>0.5 s</b></div><div class="f"><span>Then</span><b>call jump_back() ▾</b></div>` : ""}<div class="f"><span>Note</span><b style="font-weight:400;color:var(--muted)">add a note…</b></div>`;
+  if (tab === "When") body = `<div class="shotmini"></div><div style="color:var(--muted)">The screen when this step was recorded, at ${s.t.toFixed(1)} s.</div>`;
+  if (tab === "Python") body = `<div class="py"><span class="k">with</span> d.step(<span class="s">"${SECTIONS[s.group]}"</span>):\n    ...\n    ${s.kind === "key" ? `d.press(<span class="s">"${s.text.replace("press ", "")}"</span>)` : s.kind === "wait" ? `d.sleep(${s.text.split(" ")[1]})` : s.kind === "mouse" ? `d.click(img.${s.text.replace("click ", "")})` : `<span class="k">if</span> d.exists(img.Dim.Boss.Bar, <span class="s">0.5</span>): ...`}</div>`;
+  insp.innerHTML = tabs + body;
+}
+insp.addEventListener("click", (event) => { if (event.target.dataset.tab) { tab = event.target.dataset.tab; drawInspector(); } });
+
+// ---- resizable panes
+const ed = document.getElementById("ed");
+document.querySelectorAll(".split").forEach((bar) => {
+  bar.addEventListener("pointerdown", (event) => {
+    const which = bar.dataset.split, startX = event.clientX;
+    const start = parseInt(getComputedStyle(ed).getPropertyValue(which === "outline" ? "--outline" : "--insp")) || (which === "outline" ? 200 : 300);
+    bar.setPointerCapture(event.pointerId);
+    function move(e) { const d = e.clientX - startX; const v = Math.max(140, Math.min(420, which === "outline" ? start + d : start - d)); ed.style.setProperty(which === "outline" ? "--outline" : "--insp", v + "px"); }
+    function up() { bar.removeEventListener("pointermove", move); bar.removeEventListener("pointerup", up); }
+    bar.addEventListener("pointermove", move); bar.addEventListener("pointerup", up);
+  });
+});
+
+// start with a few steps selected, to show bulk edit in the picture
+current = 6; selected.add(6);
+setZoom(2);
+render();
+if (location.hash.includes("bulk")) { [5, 6, 7, 8, 9, 10].forEach((id) => selected.add(id)); render(); }
+</script>
+</body>
+</html>

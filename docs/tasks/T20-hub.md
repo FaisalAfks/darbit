@@ -1,5 +1,7 @@
 # T20 Hub app
 
+> **Redesigned 2026-10-26** ([decision 0013](../decisions/0013-studio-redesign.md)): the layout below is replaced by the design in [docs/ui/redesign/](../ui/redesign/README.md).
+
 > **First usable version 2026-10-26** (#53): `darbit app` opens the Studio in a desktop window (T06). It lists installed bots and added project folders, runs, pauses and stops one as a child process, and shows its Overview (live from the run report), Library (thumbnails and last scores), Runs (any day of the report) and Settings (its `settings.toml` form, saved to `config.toml`). The dock opens Capture, Guide and Check for the open bot. Still to come: the install wizard, the Flows section (T27) and the keymap editor.
 >
 > **How pause and stop reach the bot:** the Studio starts the bot with `DARBIT_CONTROL` set to `<bot>/.darbit/control`. A `pause` file there pauses it at its next `d.check()` (held keys are released); a `stop` file stops it like the stop hotkey. The bot's darbit looks every 0.25 s. If it hasn't stopped after 10 s, the process is ended.

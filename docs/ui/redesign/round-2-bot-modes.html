@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en" data-theme="glass-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio bot modes</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+.win { height: 560px; }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px 0; }
+.topbar .grow { flex: 1; }
+.centerbar { margin: 0 auto; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line);
+             box-shadow: 0 6px 20px rgb(0 0 0 / .3); }
+.centerbar span { padding: 5px 13px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); white-space: nowrap; transition: background .15s var(--ease), color .15s var(--ease); }
+.centerbar span:hover { color: var(--text); background: var(--raised); }
+.centerbar span.on { background: var(--accent); color: var(--on-accent); }
+.runpill { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); font: 600 12px var(--font-strong); }
+.runpill .ib { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); font-size: 11px; }
+.runpill .ib.go { background: var(--accent); color: var(--on-accent); }
+.modeseg { display: flex; padding: 3px; border-radius: 999px; background: var(--raised); }
+.modeseg span { padding: 4px 11px; border-radius: 999px; font: 650 11px var(--font-strong); color: var(--muted); }
+.modeseg span.on { background: var(--text); color: var(--bg); }
+.banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+          background: linear-gradient(90deg, rgb(251 191 36 / .14), rgb(251 191 36 / .04)); border: 1px solid rgb(251 191 36 / .3); }
+.banner b { font: 650 13px var(--font-strong); }
+.banner small { color: var(--muted); display: block; font-size: 12px; }
+.banner .grow { flex: 1; }
+.assets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.asset { padding: 8px; border-radius: 10px; background: var(--raised); display: grid; gap: 6px; font-size: 11px; transition: transform .2s var(--ease); }
+.asset:hover { transform: translateY(-2px); }
+.asset .pic { height: 44px; border-radius: 6px; background: linear-gradient(135deg, #253041, #1a2130); display: grid; place-items: center; color: var(--faint); font-size: 10px; }
+.asset .pic.missing { background: repeating-linear-gradient(45deg, rgb(248 113 113 / .12) 0 6px, transparent 6px 12px); color: var(--danger); border: 1px dashed rgb(248 113 113 / .5); }
+.asset .row { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+.toolrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.filter { display: flex; gap: 4px; }
+.filter span { padding: 3px 10px; border-radius: 999px; font: 600 11px var(--font-strong); color: var(--muted); background: var(--raised); }
+.filter span.on { color: var(--text); background: var(--raised-hover); }
+.k { --c: var(--muted); font: 700 9px var(--font-strong); text-transform: uppercase; letter-spacing: .05em; color: var(--c); }
+.side .group { padding: 10px 8px 4px; }
+.mode { font: 700 9px var(--font-strong); padding: 1px 6px; border-radius: 999px; text-transform: uppercase; letter-spacing: .05em; }
+.mode.use { color: var(--ok); background: rgb(74 222 128 / .12); }
+.mode.build { color: var(--accent-2); background: rgb(167 139 250 / .15); }
+.pair { display: grid; grid-template-columns: 1fr; gap: 32px; margin-top: 18px; }
+@media (max-width: 1100px) { .pair { grid-template-columns: 1fr; } }
+.caption { margin: 10px 2px 0; color: var(--muted); font-size: 13px; }
+.caption b { color: var(--text); }
+.strip { border-radius: 12px; border: 1px solid var(--line); background: #0e1117; padding: 12px; display: flex; gap: 12px; align-items: center; min-height: 64px; }
+.decide { margin-top: 56px; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+@media (max-width: 1100px) { .choices { grid-template-columns: 1fr; } }
+.choice { border-radius: 14px; border: 1px solid var(--line); background: var(--glass); padding: 14px; display: grid; gap: 10px; align-content: start; }
+.choice h4 { margin: 0; font: 650 16px var(--font-strong); display: flex; gap: 10px; align-items: center; }
+.choice p { margin: 0; color: var(--muted); font-size: 13px; }
+.mini { border-radius: 10px; background: #0e1117; border: 1px solid var(--line); padding: 12px; display: grid; gap: 8px; min-height: 210px; align-content: start; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 70px; }
+.days i { display: block; border-radius: 4px 4px 2px 2px; background: linear-gradient(180deg, var(--accent), rgb(90 200 250 / .3)); }
+.days i.bad { background: linear-gradient(180deg, var(--danger), rgb(248 113 113 / .3)); }
+.stat { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.stat b { color: var(--text); font: 650 13px var(--font-strong); }
+.problem { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; background: var(--raised); font-size: 12px; }
+.problem .shot { height: 32px; border-radius: 6px; background: linear-gradient(135deg, #3a2328, #1f1a24); }
+.problem small { color: var(--muted); display: block; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal i { aspect-ratio: 1; border-radius: 5px; background: var(--raised); display: grid; place-items: center; font: 600 9px var(--font-strong); color: var(--faint); font-style: normal; }
+.cal i.g { background: rgb(74 222 128 / .35); color: var(--text); } .cal i.y { background: rgb(251 191 36 / .35); color: var(--text); } .cal i.r { background: rgb(248 113 113 / .35); color: var(--text); }
+.timeline { display: grid; gap: 4px; font-size: 11px; }
+.timeline div { display: grid; grid-template-columns: 38px 1fr; gap: 8px; color: var(--muted); }
+.timeline b { color: var(--text); font-weight: 600; }
+.storage { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 1000px) { .storage { grid-template-columns: 1fr; } }
+.box { border-radius: 14px; border: 1px solid var(--line); background: var(--glass); padding: 16px; }
+.box h4 { margin: 0 0 4px; font: 650 16px var(--font-strong); display: flex; gap: 8px; align-items: center; }
+.box p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.tree { font: 12.5px/1.75 var(--mono); color: var(--muted); }
+.tree b { color: var(--text); font-weight: 600; }
+.tree em { font-style: normal; color: var(--faint); font-family: var(--font); font-size: 12px; }
+.arrow { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--raised); font-size: 13px; color: var(--muted); }
+.arrow b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 2: <span>a bot you use, a bot you build</span></h1>
+  <p class="lead">Tools now belong to the open bot; there's no separate Tools menu. The sidebar picks the bot and the centred bar picks its page. Run controls sit on the right. The difference is the mode. A bot you <b>use</b> guides you: take its missing pictures, fix a broken one. A bot you <b>build</b> is open: add assets, record actions. Three things to choose on this page.</p>
+
+  <div class="pair">
+    <!-- USE -->
+    <div>
+      <div class="win">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="body">
+          <nav class="side">
+            <div class="item"><span>⌂</span>Home</div>
+            <div class="label">Bots</div>
+            <div class="item on"><span class="avatar">ad</span><span class="grow">ad-bot</span><span class="dot"></span></div>
+            <div class="item"><span class="avatar b3">my</span><span class="grow">my-bot</span><span class="dot"></span></div>
+            <div class="item" style="color:var(--faint)"><span style="width:22px;text-align:center">＋</span>Add a bot</div>
+            <span class="grow"></span>
+            <div class="item"><span>⚙</span>Studio</div>
+          </nav>
+          <div class="main">
+            <div class="topbar">
+              <span class="grow"></span>
+              <div class="centerbar"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+              <span class="grow"></span>
+              <div class="runpill"><span class="dot"></span>Stopped<span class="ib go">▶</span></div>
+            </div>
+            <div class="content">
+              <div class="pagehead"><span class="avatar">ad</span><h3>ad-bot</h3><span class="mode use">use</span><span class="chip">v0.4.0</span></div>
+              <div class="banner"><span style="font-size:20px">📷</span><div class="grow"><b>7 pictures to take before the first run</b><small>The guide shows each screen to open and what to box.</small></div><button class="btn primary">Start setup</button></div>
+              <div class="cards">
+                <div class="card"><small>Last run</small><b>Yesterday, 6 h 12 m</b><small>ended by you</small></div>
+                <div class="card"><small>Speed Raid this week</small><span class="big">32<small> / 133</small></span><div class="bar"><i style="width:24%"></i></div></div>
+                <div class="card"><small>Next up</small><b>Daily reset</b><small>in 7 h 25 m</small></div>
+              </div>
+              <div class="card"><small>A picture stopped matching</small><b>Dim.Game.Leave · found at 0.71 (needs 0.80)</b><div class="toolrow"><button class="btn">◎ Show me where</button><button class="btn">▣ Retake</button></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption"><b>Use mode</b> (ad-bot, installed from GitHub). Tools come to you when needed: <b>Start setup</b> opens the guided capture, and a picture that stopped matching offers <b>Show me where</b> (highlight) and <b>Retake</b>. You can't add new assets here, because the bot's code wouldn't use them.</p>
+    </div>
+
+    <!-- BUILD -->
+    <div>
+      <div class="win">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="body">
+          <nav class="side">
+            <div class="item"><span>⌂</span>Home</div>
+            <div class="label">Bots</div>
+            <div class="item"><span class="avatar">ad</span><span class="grow">ad-bot</span><span class="dot"></span></div>
+            <div class="item on"><span class="avatar b3">my</span><span class="grow">my-bot</span><span class="dot"></span></div>
+            <div class="item" style="color:var(--faint)"><span style="width:22px;text-align:center">＋</span>Add a bot</div>
+            <span class="grow"></span>
+            <div class="item"><span>⚙</span>Studio</div>
+          </nav>
+          <div class="main">
+            <div class="topbar">
+              <span class="grow"></span>
+              <div class="centerbar"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Actions</span><span>Settings</span></div>
+              <span class="grow"></span>
+              <div class="runpill"><span class="dot"></span>Stopped<span class="ib go">▶</span></div>
+            </div>
+            <div class="content">
+              <div class="pagehead"><span class="avatar b3">my</span><h3>Library</h3><span class="mode build">build</span><span class="grow"></span><button class="btn primary">▣ Capture</button><button class="btn">● Record action</button></div>
+              <div class="toolrow"><div class="filter"><span class="on">All 14</span><span>Images 9</span><span>Regions 3</span><span>Points 2</span><span>Actions 3</span></div></div>
+              <div class="assets">
+                <div class="asset"><div class="pic">Play</div><div class="row"><span>Gui.Play</span><span class="k" style="--c:var(--kind-image)">img</span></div></div>
+                <div class="asset"><div class="pic">Shop</div><div class="row"><span>Gui.Shop</span><span class="k" style="--c:var(--kind-image)">img</span></div></div>
+                <div class="asset"><div class="pic" style="background:rgb(167 139 250 / .14)">▭</div><div class="row"><span>Lobby.Area</span><span class="k" style="--c:var(--kind-region)">region</span></div></div>
+                <div class="asset"><div class="pic" style="background:rgb(74 222 128 / .1)">✛</div><div class="row"><span>Pond.Cast</span><span class="k" style="--c:var(--kind-point)">point</span></div></div>
+                <div class="asset"><div class="pic">Bait</div><div class="row"><span>Gui.Bait</span><span class="k" style="--c:var(--kind-image)">img</span></div></div>
+                <div class="asset"><div class="pic missing">missing</div><div class="row"><span>Gui.Close</span><span class="k" style="--c:var(--kind-image)">img</span></div></div>
+                <div class="asset"><div class="pic" style="background:rgb(248 113 113 / .1)">● 12 steps</div><div class="row"><span>cast_line</span><span class="k" style="--c:var(--danger)">action</span></div></div>
+                <div class="asset"><div class="pic" style="background:rgb(248 113 113 / .1)">● 4 steps</div><div class="row"><span>sell_all</span><span class="k" style="--c:var(--danger)">action</span></div></div>
+              </div>
+              <div class="card" style="grid-template-columns:1fr auto;align-items:center"><div><small>Selected</small><br><b>Gui.Play</b> <small>· used in bot.py line 12, 40</small></div><div class="toolrow"><button class="btn">✎ Rename</button><button class="btn">◎ Test on screen</button></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="caption"><b>Build mode</b> (my-bot, your own project). The Library is the workshop: <b>Capture</b> and <b>Record action</b> add to it. <b>Rename</b> also updates the bot's code. <b>Test on screen</b> highlights the asset live. <b>Actions</b> is where recorded macros and flows are edited.</p>
+    </div>
+  </div>
+
+  <section class="decide">
+    <h2>Choice 1: how a bot gets its mode</h2>
+    <div class="choices" style="grid-template-columns:1fr 1fr">
+      <div class="choice">
+        <h4><span class="tag">A</span>A Use / Build switch</h4>
+        <div class="strip"><span class="avatar">ad</span><b>ad-bot</b><span style="flex:1"></span><div class="modeseg"><span class="on">Use</span><span>Build</span></div></div>
+        <p>Every bot has the switch in its header, and you can flip any bot to Build. Editing an installed bot changes your copy only; an update then asks what to keep.</p>
+      </div>
+      <div class="choice">
+        <h4><span class="tag">B</span>Decided by where the bot came from</h4>
+        <div class="strip" style="display:grid;gap:4px"><span class="label">Installed</span><div style="display:flex;gap:8px;align-items:center"><span class="avatar">ad</span>ad-bot <span class="mode use">use</span></div><span class="label">My projects</span><div style="display:flex;gap:8px;align-items:center"><span class="avatar b3">my</span>my-bot <span class="mode build">build</span></div></div>
+        <p>Installed bots are always Use, and your own project folders are always Build. To change an installed bot, <b>Make my own copy</b> turns it into a project. Updates never clash with your edits.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="decide">
+    <h2>Choice 2: what replaces "Runs"</h2>
+    <p class="lead">Logs alone aren't a goal. Each option answers a different question; the raw log stays one click away in all of them.</p>
+    <div class="choices">
+      <div class="choice">
+        <h4><span class="tag">1</span>Results</h4>
+        <p>Goal: <b>is the bot getting me what I want?</b> Shows what it achieved per day and how reliably.</p>
+        <div class="mini">
+          <div class="stat"><span>Last 7 days</span><b>91% rounds finished</b></div>
+          <div class="days"><i style="height:60%"></i><i style="height:80%"></i><i style="height:72%"></i><i class="bad" style="height:30%"></i><i style="height:90%"></i><i style="height:85%"></i><i style="height:66%"></i></div>
+          <div class="stat"><span>Speed Raids</span><b>126</b></div>
+          <div class="stat"><span>Time running</span><b>41 h</b></div>
+          <div class="stat"><span>Worst day</span><b style="color:var(--danger)">Thu · 4 failures</b></div>
+        </div>
+      </div>
+      <div class="choice">
+        <h4><span class="tag">2</span>Health</h4>
+        <p>Goal: <b>is anything breaking, and how do I fix it?</b> Failures grouped by cause, each with its screenshot and a fix.</p>
+        <div class="mini">
+          <div class="problem"><span class="shot"></span><div><b>Dim.Game.Leave not found</b><small>6 times · since Thu</small></div><button class="btn">▣ Retake</button></div>
+          <div class="problem"><span class="shot"></span><div><b>Roblox closed</b><small>2 times · rejoined</small></div><button class="btn">Details</button></div>
+          <div class="problem"><span class="shot" style="background:linear-gradient(135deg,#2a3323,#1a2318)"></span><div><b>All good since</b><small>Fri 09:12</small></div><span class="chip ok">ok</span></div>
+        </div>
+      </div>
+      <div class="choice">
+        <h4><span class="tag">3</span>Results + Health in one</h4>
+        <p>Goal: <b>how is the bot doing?</b> Achievements on top, problems with fixes underneath, and a day picker for the detailed timeline.</p>
+        <div class="mini">
+          <div class="stat"><span>This week</span><b>126 Speed Raids · 91%</b></div>
+          <div class="days" style="height:44px"><i style="height:60%"></i><i style="height:80%"></i><i style="height:72%"></i><i class="bad" style="height:30%"></i><i style="height:90%"></i><i style="height:85%"></i><i style="height:66%"></i></div>
+          <div class="problem"><span class="shot"></span><div><b>Dim.Game.Leave not found</b><small>6 times · since Thu</small></div><button class="btn">▣ Retake</button></div>
+          <div class="timeline"><div><span>11:24</span><b>Speed Raid › Sakura ✓ 6 m</b></div><div><span>11:30</span><b>Speed Raid › Itachi ✕ Leave not found</b></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="decide">
+    <h2>Choice 3: the line between Studio and bot</h2>
+    <p class="lead">Two owners, never mixed. Tools keep nothing of their own: what they make goes into the bot, and how they behave is a Studio setting.</p>
+    <div class="storage">
+      <div class="box">
+        <h4><span class="kind app">studio</span> Yours, on this PC</h4>
+        <p>How the Studio and its tools behave, for every bot. Open from ⚙ Studio.</p>
+        <div class="tree">
+          <b>%APPDATA%\darbit\</b><br>
+          &nbsp;ui.json &nbsp;<em>theme, hide on Run, tray, window size</em><br>
+          &nbsp;keymap.toml &nbsp;<em>your keys</em><br>
+          &nbsp;tools.toml &nbsp;<em>capture snap, zoom, recorder delays</em><br>
+          <b>%LOCALAPPDATA%\darbit\</b><br>
+          &nbsp;bots\ &nbsp;<em>installed bots</em><br>
+          &nbsp;Cache\ &nbsp;<em>thumbnails, safe to delete</em>
+        </div>
+      </div>
+      <div class="box">
+        <h4><span class="kind bot">bot</span> The bot's, in its folder</h4>
+        <p>Everything the bot needs and everything it produced. Copy the folder and the bot goes with it.</p>
+        <div class="tree">
+          <b>ad-bot\</b><br>
+          &nbsp;darbit.toml &nbsp;<em>name, version, what the Studio shows</em><br>
+          &nbsp;settings.toml &nbsp;<em>what can be set (the author's)</em><br>
+          &nbsp;config.toml &nbsp;<em>what you set (Settings page, not in git)</em><br>
+          &nbsp;assets\images\ regions.toml points.toml &nbsp;<em>Library: Capture writes here</em><br>
+          &nbsp;actions\ &nbsp;<em>recorded and edited actions: Recorder writes here</em><br>
+          &nbsp;guide.toml &nbsp;<em>the setup guide</em><br>
+          &nbsp;.darbit\ &nbsp;<em>runs, logs, screenshots, state (Results page, not in git)</em>
+        </div>
+        <div class="arrow"><b>Capture / Recorder / Highlight</b> → write only into the open bot's folder. Their settings (snap, zoom) are in <b>tools.toml</b>, which belongs to the Studio.</div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action editor, calm</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 760px; }
+.page { overflow: hidden; }
+.ed { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; max-width: 980px; margin: 0 auto; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); padding: 0 4px 8px; flex-wrap: wrap; }
+.crumbs a { color: var(--muted); cursor: pointer; text-decoration: none; padding: 2px 8px; border-radius: 999px; }
+.crumbs a:hover { background: rgb(255 255 255 / .06); color: var(--text); }
+.crumbs b { color: var(--text); font: 700 17px var(--font-strong); padding: 0 4px; }
+.crumbs .back { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / .06); color: var(--text); cursor: pointer; }
+.head { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; flex-wrap: wrap; }
+.head .meta { color: var(--muted); font-size: 12.5px; }
+.head .grow { flex: 1; }
+.usedby { font-size: 12px; color: var(--muted); }
+.usedby a { color: var(--accent); cursor: pointer; }
+.box { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 6px; }
+.bar2 { display: flex; gap: 8px; align-items: center; padding: 4px 6px 8px; }
+.bar2 .search { flex: 1; max-width: 360px; display: flex; }
+.bar2 .grow { flex: 1; }
+.jump { position: relative; }
+.jump .btn { gap: 6px; }
+.jumpmenu { position: absolute; right: 0; top: 34px; width: 220px; padding: 6px; border-radius: 12px; display: none; z-index: 5; }
+.jumpmenu.on { display: grid; gap: 1px; }
+.jumpmenu div { padding: 6px 10px; border-radius: 8px; font-size: 12.5px; display: flex; justify-content: space-between; cursor: pointer; }
+.jumpmenu div:hover { background: rgb(255 255 255 / .07); }
+.jumpmenu small { color: var(--faint); }
+.list { flex: 1; overflow: auto; min-height: 0; position: relative; padding: 0 2px; scroll-behavior: smooth; }
+.sec { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-top: 6px; border-radius: 10px; font: 700 13px var(--font-strong);
+       background: rgb(26 31 44 / .97); border: 1px solid var(--line); cursor: pointer; }
+.sec .fold { color: var(--muted); width: 12px; }
+.sec small { color: var(--faint); font: 600 11px var(--font-strong); }
+.sec .grow { flex: 1; }
+.r { display: grid; grid-template-columns: 40px 22px 1fr auto 14px; gap: 10px; align-items: center; padding: 0 10px; height: 32px; border-radius: 8px; font-size: 13px; cursor: pointer; position: relative; }
+.r:hover { background: rgb(255 255 255 / .04); }
+.r.on { background: rgb(90 200 250 / .12); box-shadow: inset 2px 0 0 var(--accent); }
+.r .n { color: var(--faint); font: 600 11px var(--mono); text-align: right; }
+.r .ic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; background: color-mix(in oklab, var(--c) 20%, transparent); color: var(--c); }
+.r code { background: none; padding: 0; color: var(--text); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r small { color: var(--faint); font: 11px var(--mono); }
+.r .bp { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid transparent; }
+.r:hover .bp { border-color: var(--faint); }
+.r .bp.on { background: var(--danger); border-color: var(--danger); }
+.r .between { position: absolute; left: 50px; right: 10px; bottom: -3px; height: 6px; display: none; z-index: 1; }
+.r:hover .between { display: block; }
+.r .between::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; height: 2px; border-radius: 2px; background: rgb(90 200 250 / .5); }
+.r .between::after { content: "＋"; position: absolute; left: -16px; top: -7px; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 800 10px var(--font-strong); }
+.loop { margin: 2px 0 2px 26px; padding-left: 12px; border-left: 2px solid rgb(251 191 36 / .45); }
+.loophead { display: flex; align-items: center; gap: 8px; height: 30px; font-size: 12.5px; color: var(--warn); font-weight: 600; }
+/* calls */
+.call code { display: flex; align-items: center; gap: 8px; }
+.callchip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 10px; border-radius: 999px; background: rgb(240 171 252 / .12); border: 1px solid rgb(240 171 252 / .35); color: var(--slot-bot); font: 700 12px var(--font-strong); }
+.callchip .peek, .callchip .open { padding: 1px 7px; border-radius: 999px; background: rgb(255 255 255 / .08); color: var(--text); font: 600 11px var(--font-strong); cursor: pointer; }
+.callchip .peek:hover, .callchip .open:hover { background: rgb(255 255 255 / .18); }
+.peekbox { margin: 2px 0 6px 52px; border-radius: 12px; border: 1px solid rgb(240 171 252 / .3); background: rgb(240 171 252 / .05); padding: 6px; display: none; }
+.peekbox.on { display: block; animation: drop .2s var(--ease); }
+@keyframes drop { from { opacity: 0; transform: translateY(-4px); } }
+.peekbox .ph { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 6px; font-size: 12px; color: var(--muted); }
+.peekbox .ph b { color: var(--slot-bot); }
+.peekbox .r { height: 28px; font-size: 12.5px; }
+/* inline editor */
+.inline { margin: 2px 0 6px 52px; padding: 12px; border-radius: 12px; background: rgb(255 255 255 / .04); border: 1px solid var(--line); display: none; gap: 10px; grid-template-columns: 1fr 1fr 1fr; }
+.inline.on { display: grid; animation: drop .2s var(--ease); }
+.inline .f { display: grid; gap: 4px; font-size: 12px; }
+.inline .f span { color: var(--muted); }
+.inline .f b { padding: 6px 10px; border-radius: 8px; background: rgb(255 255 255 / .07); font: 600 12.5px var(--font-strong); }
+.inline .wide { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; }
+.inline .wide .grow { flex: 1; }
+.inline .shotmini { width: 120px; height: 64px; border-radius: 8px; background: linear-gradient(160deg, #3b4560, #232b3c); position: relative; flex: none; }
+.inline .shotmini::after { content: ""; position: absolute; left: 32%; top: 34%; width: 32%; height: 26%; border: 2px solid var(--ok); border-radius: 3px; }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+.changes ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.changes li { margin: 4px 0; } .changes b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 8c: <span>a calmer action editor</span></h1>
+  <p class="lead">One wide list and nothing else on screen. <b>Open the HTML</b> and try it:
+    <ul style="margin:6px 0 0;color:var(--muted)">
+      <li>section headers stick to the top while you scroll, and fold when clicked;</li>
+      <li><b>Jump to</b> lists every section;</li>
+      <li>click a step to open its settings under it, and click again to close them;</li>
+      <li>hover between two rows for ＋ to insert a step;</li>
+      <li>a call to another action (pink) has <b>Peek</b>, which shows its steps right there, and <b>Open</b>, which goes into it with a breadcrumb back. The header says which actions use this one.</li>
+    </ul></p>
+
+  <section class="look" style="margin-top:20px">
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div></div>
+      <div class="page">
+        <div class="ed">
+          <div class="crumbs" id="crumbs"></div>
+          <div class="head"><span class="meta" id="meta"></span><span class="usedby" id="usedby"></span><span class="grow"></span><button class="btn">▶ Play</button><button class="btn">● Record more</button></div>
+          <div class="box panel">
+            <div class="bar2"><span class="search"><input id="q" placeholder="⌕ Search steps" style="all:unset;width:100%;font-size:12px;color:var(--text)"></span><span class="grow"></span><span class="jump"><button class="btn" id="jumpbtn">Jump to ▾</button><div class="jumpmenu glass2" id="jumpmenu" style="background:rgb(28 31 41 / .98);border:1px solid var(--line)"></div></span></div>
+            <div class="list" id="list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Only the open action's steps are on screen. Calls stay one line until you peek into them. Settings appear only for the step you're working on. Multi-select (Shift/Ctrl) and bulk edits from 8b stay: the bulk buttons show in the header while several steps are selected.</p>
+  </section>
+
+  <section class="changes" style="margin-top:22px">
+    <h2>What changed from 8b</h2>
+    <ul>
+      <li><b>No timeline</b> (it can come back later as an optional view if it earns its place).</li>
+      <li><b>No outline column:</b> sticky section headers plus a <b>Jump to</b> menu.</li>
+      <li><b>No inspector column:</b> a step's settings open in place under it.</li>
+      <li><b>Calls between actions:</b> a pink chip with Peek (expand in place, read-only) and Open (go in, with a breadcrumb trail back). The header shows "Used by", so you know who you affect when you change it.</li>
+      <li><b>Loops</b> are an indented block with a yellow rule, so nesting reads at a glance.</li>
+    </ul>
+  </section>
+</main>
+<script>
+const KINDS = { key: { c: "#a78bfa", ic: "⌨" }, mouse: { c: "#5ac8fa", ic: "🖱" }, check: { c: "#4ade80", ic: "▣" }, wait: { c: "#6b7280", ic: "⏱" }, call: { c: "#f0abfc", ic: "⤷" } };
+const ACTIONS = {
+  speed_raid_fight: { usedBy: ["speed_raid", "raid_challenge"], sections: ["Enter the raid", "Wave 1", "Wave 2", "Wave 3", "Boss", "Collect rewards", "Leave"] },
+  dodge: { usedBy: ["speed_raid_fight", "boss_rush_fight", "raid_fight"], sections: ["Dodge"] },
+  spam_skills: { usedBy: ["speed_raid_fight", "afk_farm"], sections: ["Skills"] },
+};
+const POOL = ["press Q", "press E", "press R", "press Shift+E", "hold W", "release W", "press Space", "click Fight.Skill2", "wait 0.4 s", "wait for Dim.Game.Left", "if seen Dim.Boss.Bar"];
+function kindOf(text) { if (text.startsWith("press") || text.startsWith("hold") || text.startsWith("release")) return "key"; if (text.startsWith("click")) return "mouse"; if (text.startsWith("wait ") && text.endsWith(" s")) return "wait"; return "check"; }
+function makeSteps(name) {
+  const out = []; let n = 0;
+  ACTIONS[name].sections.forEach((sec, si) => {
+    const count = name === "speed_raid_fight" ? (si === 4 ? 40 : 22) : 9;
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      n += 1;
+      if (name === "speed_raid_fight" && i === 5) { items.push({ n, kind: "call", text: "dodge" }); continue; }
+      if (name === "speed_raid_fight" && i === 11) { items.push({ n, kind: "call", text: "spam_skills" }); continue; }
+      if (name === "speed_raid_fight" && i === 14) { const inner = []; for (let k = 0; k < 4; k++) { n += 1; inner.push({ n, kind: "key", text: POOL[k] }); } items.push({ loop: "repeat until Dim.Boss.Bar is gone", items: inner }); continue; }
+      const text = POOL[(i * 7 + si * 3) % POOL.length];
+      items.push({ n, kind: kindOf(text), text });
+    }
+    out.push({ section: sec, items });
+  });
+  return out;
+}
+const stack = ["speed_raid_fight"];
+const folded = new Set(), peeks = new Set();
+let openStep = null, query = "";
+const list = document.getElementById("list");
+function rowHtml(s) {
+  if (s.loop !== undefined) {
+    return `<div class="loop"><div class="loophead">↻ ${s.loop}</div>${s.items.map(rowHtml).join("")}</div>`;
+  }
+  if (query && !s.text.toLowerCase().includes(query)) return "";
+  const k = KINDS[s.kind];
+  let body = `<code>${s.text}</code>`;
+  if (s.kind === "call") {
+    const steps = makeSteps(s.text).reduce((sum, sec) => sum + sec.items.length, 0);
+    body = `<code><span class="callchip">⤷ ${s.text}<span class="peek" data-peek="${s.n}">${peeks.has(s.n) ? "Hide" : "Peek"}</span><span class="open" data-open="${s.text}">Open ›</span></span><small>${steps} steps</small></code>`;
+  }
+  let html = `<div class="r${openStep === s.n ? " on" : ""}${s.kind === "call" ? " call" : ""}" data-step="${s.n}"><span class="n">${s.n}</span><span class="ic" style="--c:${k.c}">${k.ic}</span>${body}<small>${s.kind === "call" ? "action" : ""}</small><span class="bp${s.n % 29 === 0 ? " on" : ""}"></span><span class="between"></span></div>`;
+  if (s.kind === "call") {
+    const inner = makeSteps(s.text)[0].items.slice(0, 6);
+    html += `<div class="peekbox${peeks.has(s.n) ? " on" : ""}"><div class="ph"><span>Inside <b>${s.text}</b>, read-only</span><span class="btn" data-open="${s.text}" style="padding:2px 10px">Open to edit ›</span></div>${inner.map((x) => `<div class="r"><span class="n">${x.n}</span><span class="ic" style="--c:${KINDS[x.kind].c}">${KINDS[x.kind].ic}</span><code>${x.text}</code><small></small><span></span></div>`).join("")}<div style="padding:4px 10px;color:var(--faint);font-size:12px">… 3 more</div></div>`;
+  }
+  if (openStep === s.n && s.kind !== "call") {
+    html += `<div class="inline on">
+      <div class="f"><span>Step</span><b>${s.text}</b></div>
+      <div class="f"><span>${s.kind === "wait" ? "How long" : s.kind === "check" ? "Look for up to" : "Hold for"}</span><b>${s.kind === "wait" ? "0.4 s" : s.kind === "check" ? "0.5 s" : "a tap"}</b></div>
+      <div class="f"><span>${s.kind === "check" ? "Then" : "Note"}</span><b>${s.kind === "check" ? "call dodge ▾" : "—"}</b></div>
+      <div class="wide"><span class="shotmini"></span><span style="color:var(--muted);font-size:12px">The screen when it was recorded.</span><span class="grow"></span><button class="btn">⧉ Duplicate</button><button class="btn" style="color:var(--danger)">⌫ Delete</button></div>
+    </div>`;
+  }
+  return html;
+}
+function render() {
+  const name = stack[stack.length - 1], data = makeSteps(name);
+  const total = data.reduce((sum, sec) => sum + sec.items.length, 0);
+  let html = "";
+  data.forEach((sec, si) => {
+    html += `<div class="sec" data-sec="${si}" id="sec${si}"><span class="fold">${folded.has(si) ? "▸" : "▾"}</span>with d.step("${sec.section}")<span class="grow"></span><small>${sec.items.length} steps</small></div>`;
+    if (!folded.has(si)) html += sec.items.map(rowHtml).join("");
+  });
+  list.innerHTML = html;
+  document.getElementById("crumbs").innerHTML = (stack.length > 1 ? `<span class="back" data-back="1">←</span>` : "") +
+    `<a data-crumb="-1" style="padding-left:0">Library › Actions</a>` +
+    stack.map((each, i) => i === stack.length - 1 ? `› <b>${each}</b>` : `› <a data-crumb="${i}">${each}</a>`).join(" ") + ` <span class="k act">action</span>`;
+  document.getElementById("meta").textContent = `${total} steps`;
+  document.getElementById("usedby").innerHTML = `· used by ${ACTIONS[name].usedBy.map((u) => `<a>${u}</a>`).join(", ")}`;
+  document.getElementById("jumpmenu").innerHTML = data.map((sec, si) => `<div data-jump="${si}">${sec.section}<small>${sec.items.length}</small></div>`).join("");
+}
+list.addEventListener("click", (event) => {
+  const peek = event.target.dataset.peek, open = event.target.dataset.open;
+  if (peek) { const n = Number(peek); if (peeks.has(n)) peeks.delete(n); else peeks.add(n); render(); return; }
+  if (open) { stack.push(open); openStep = null; peeks.clear(); folded.clear(); render(); list.scrollTop = 0; return; }
+  const sec = event.target.closest(".sec");
+  if (sec) { const si = Number(sec.dataset.sec); if (folded.has(si)) folded.delete(si); else folded.add(si); render(); return; }
+  const row = event.target.closest(".r[data-step]");
+  if (row) { const n = Number(row.dataset.step); openStep = openStep === n ? null : n; render(); }
+});
+document.getElementById("crumbs").addEventListener("click", (event) => {
+  const c = event.target.dataset.crumb, back = event.target.dataset.back;
+  if (back) { stack.pop(); render(); return; }
+  if (c !== undefined && Number(c) >= 0) { stack.length = Number(c) + 1; render(); }
+});
+const jumpmenu = document.getElementById("jumpmenu");
+document.getElementById("jumpbtn").addEventListener("click", () => jumpmenu.classList.toggle("on"));
+jumpmenu.addEventListener("click", (event) => { const j = event.target.closest("[data-jump]"); if (!j) return; jumpmenu.classList.remove("on"); const el = document.getElementById("sec" + j.dataset.jump); list.scrollTop = el.offsetTop - list.offsetTop; });
+document.getElementById("q").addEventListener("input", (event) => { query = event.target.value.toLowerCase(); render(); });
+if (location.hash.includes("demo")) { openStep = 3; peeks.add(6); }
+render();
+</script>
+</body>
+</html>
