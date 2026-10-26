@@ -12,10 +12,10 @@
     --c: var(--muted);
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
-    padding: 2px 10px;
+    gap: var(--space-xs);
+    padding: var(--space-xxs) var(--space-m-nudge);
     border-radius: var(--radius-pill);
-    font: 600 var(--size-xs) / 1.6 var(--font-strong);
+    font: 600 var(--size-caption) / 1.6 var(--font-strong);
     white-space: nowrap;
     color: var(--c);
     background: color-mix(in oklab, var(--c) 14%, transparent);

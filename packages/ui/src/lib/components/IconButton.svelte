@@ -44,8 +44,8 @@
 
 <style>
   .icon-button {
-    width: 36px;
-    height: 36px;
+    width: var(--control-m);
+    height: var(--control-m);
     flex: none;
     display: inline-grid;
     place-items: center;
@@ -53,11 +53,11 @@
     border-radius: var(--radius-pill);
     background: transparent;
     color: var(--muted);
-    font-size: var(--size-m);
+    font-size: var(--size-body);
     cursor: pointer;
     transition:
-      background var(--fast) var(--ease),
-      color var(--fast) var(--ease);
+      background var(--duration-fast) var(--curve-easy-ease),
+      color var(--duration-fast) var(--curve-easy-ease);
   }
   .icon-button:hover {
     background: var(--raised-hover);

@@ -13,12 +13,12 @@
 <style>
   .keys {
     display: inline-flex;
-    gap: 3px;
+    gap: var(--space-xxs);
   }
   kbd {
-    font: 600 var(--size-xs) / 1.6 var(--font-strong);
-    padding: 0 6px;
-    min-width: 20px;
+    font: 600 var(--size-caption) / 1.6 var(--font-strong);
+    padding: 0 var(--space-s-nudge);
+    min-width: var(--space-xl);
     text-align: center;
     border: 1px solid var(--line);
     border-bottom-width: 2px;
@@ -26,8 +26,8 @@
     background: var(--raised);
     color: var(--text);
     transition:
-      transform var(--fast) var(--ease),
-      background var(--fast) var(--ease);
+      transform var(--duration-fast) var(--curve-easy-ease),
+      background var(--duration-fast) var(--curve-easy-ease);
   }
   .down kbd {
     background: var(--accent);

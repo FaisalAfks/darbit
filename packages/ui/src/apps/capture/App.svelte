@@ -55,12 +55,12 @@
 <style>
   .stage { position: fixed; inset: 0; cursor: crosshair; }
   .mag { position: fixed; pointer-events: none; }
-  .name { font: 600 var(--size-s) var(--font-strong); padding: 0 var(--space-2); white-space: nowrap; }
+  .name { font: 600 var(--size-caption) var(--font-strong); padding: 0 var(--space-s); white-space: nowrap; }
   .kinds { display: flex; background: var(--raised); border-radius: var(--radius-pill); padding: 2px; }
   .kinds button {
-    border: 0; background: none; color: var(--muted); padding: 4px 10px; border-radius: var(--radius-pill);
-    font: 600 var(--size-xs) var(--font-strong); cursor: pointer; text-transform: capitalize;
-    transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+    border: 0; background: none; color: var(--muted); padding: var(--space-xs) var(--space-m-nudge); border-radius: var(--radius-pill);
+    font: 600 var(--size-caption) var(--font-strong); cursor: pointer; text-transform: capitalize;
+    transition: background var(--duration-fast) var(--curve-easy-ease), color var(--duration-fast) var(--curve-easy-ease);
   }
   .kinds button[aria-checked="true"] { color: var(--on-accent); background: var(--k); }
   [data-kind="image"] { --k: var(--kind-image); }

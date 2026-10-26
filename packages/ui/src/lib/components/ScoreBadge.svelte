@@ -26,11 +26,11 @@
 <style>
   .badge {
     display: inline-flex;
-    gap: var(--space-1);
+    gap: var(--space-xs);
     align-items: baseline;
-    padding: 0 8px;
+    padding: 0 var(--space-s);
     border-radius: var(--radius-pill);
-    font: 700 var(--size-xs) / 1.6 var(--mono);
+    font: 700 var(--size-caption) / 1.6 var(--mono);
     color: var(--on-status);
   }
   [data-verdict="ok"] {

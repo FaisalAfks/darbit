@@ -151,18 +151,18 @@
 <style>
   .studio {
     position: relative;
-    width: min(1280px, 96vw);
-    min-height: 760px;
+    width: min(calc(40 * var(--space-xxxl)), 96vw);
+    min-height: calc(19 * var(--control-l));
     display: grid;
     grid-template-rows: auto 1fr;
-    gap: var(--space-4);
-    padding: var(--space-5) var(--space-5) 120px;
-    font-size: var(--size-m);
+    gap: var(--space-l);
+    padding: var(--space-xxl) var(--space-xxl) calc(3 * var(--control-l));
+    font-size: var(--size-body);
   }
   .top {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-m);
     position: relative;
     z-index: 5;
   }
@@ -175,25 +175,25 @@
   .switcher {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 4px 14px 4px 4px;
+    gap: var(--space-m-nudge);
+    padding: var(--space-xs) var(--space-m) var(--space-xs) var(--space-xs);
     border: 0;
     border-radius: var(--radius-pill);
     background: none;
     color: var(--text);
-    font: 650 var(--size-m) / 1 var(--font-strong);
+    font: 650 var(--size-body) / 1 var(--font-strong);
     cursor: pointer;
   }
   .switcher:hover {
     background: var(--raised-hover);
   }
   .avatar {
-    width: 34px;
-    height: 34px;
+    width: var(--control-m);
+    height: var(--control-m);
     display: grid;
     place-items: center;
     border-radius: 50%;
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
     font-weight: 800;
     color: var(--on-bot);
     background: var(--slot-bot);
@@ -204,9 +204,9 @@
   .running {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 6px 0 12px;
-    font-size: var(--size-s);
+    gap: var(--space-s-nudge);
+    padding: 0 var(--space-s-nudge) 0 var(--space-m);
+    font-size: var(--size-caption);
     color: var(--muted);
     white-space: nowrap;
   }
@@ -214,58 +214,58 @@
     color: var(--text);
   }
   .dot {
-    width: 8px;
-    height: 8px;
+    width: var(--space-s);
+    height: var(--space-s);
     border-radius: 50%;
     background: var(--ok);
   }
   .bots {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   .bot {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-s);
     justify-items: start;
-    padding: var(--space-4);
-    border-radius: 16px;
+    padding: var(--space-l);
+    border-radius: var(--radius-xl);
     background: var(--raised);
   }
   .bot span {
     color: var(--muted);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   .bento {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: 18px;
+    gap: var(--space-l);
     align-content: start;
   }
   .row {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: var(--space-5);
+    gap: var(--space-xxl);
     align-items: center;
   }
   .bars {
     display: grid;
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   .flow {
     display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: var(--space-5);
+    grid-template-columns: 1fr var(--width-inspector);
+    gap: var(--space-xxl);
     align-items: start;
   }
   .steps {
     display: grid;
-    gap: 6px;
+    gap: var(--space-s-nudge);
   }
   .dock {
     position: absolute;
     left: 50%;
-    bottom: var(--space-5);
+    bottom: var(--space-xxl);
     translate: -50% 0;
     z-index: 5;
   }

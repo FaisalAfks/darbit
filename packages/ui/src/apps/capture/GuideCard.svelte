@@ -34,16 +34,16 @@
 
 <style>
   .guide {
-    position: fixed; top: var(--space-3); left: 50%; translate: -50% 0; width: min(420px, 92vw);
-    display: grid; gap: var(--space-2); padding: var(--space-3);
+    position: fixed; top: var(--space-m); left: 50%; translate: -50% 0; width: min(calc(13 * var(--space-xxxl)), 92vw);
+    display: grid; gap: var(--space-s); padding: var(--space-m);
     background: var(--glass); backdrop-filter: blur(var(--blur)); border: 1px solid var(--line);
-    border-radius: var(--radius-l); box-shadow: var(--shadow);
-    transition: translate var(--move) var(--spring), opacity var(--fast) var(--ease);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow);
+    transition: translate var(--duration-normal) var(--curve-decelerate), opacity var(--duration-fast) var(--curve-easy-ease);
   }
-  .hidden { translate: -50% calc(-100% + 10px); }
-  header { display: flex; justify-content: space-between; font: 600 var(--size-s) var(--font-strong); }
-  header span, .list { color: var(--muted); font-size: var(--size-xs); }
-  .item { display: flex; align-items: center; gap: var(--space-2); }
+  .hidden { translate: -50% calc(-100% + var(--space-m-nudge)); }
+  header { display: flex; justify-content: space-between; font: 600 var(--size-caption) var(--font-strong); }
+  header span, .list { color: var(--muted); font-size: var(--size-caption); }
+  .item { display: flex; align-items: center; gap: var(--space-s); }
   .name { font-weight: 600; }
-  footer { display: flex; gap: var(--space-2); }
+  footer { display: flex; gap: var(--space-s); }
 </style>

@@ -8,10 +8,10 @@
 </div>
 
 <style>
-  .strip { width: 100%; min-width: 160px; height: 6px; border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
+  .strip { width: 100%; min-width: calc(5 * var(--space-xxxl)); height: var(--space-s-nudge); border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
   i {
     display: block; height: 100%; transform-origin: left;
     background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    transition: transform var(--move) var(--ease);
+    transition: transform var(--duration-normal) var(--curve-easy-ease);
   }
 </style>

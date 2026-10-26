@@ -33,15 +33,8 @@ for (const line of spec.split("\n")) {
   if (COLOUR_GROUPS.includes(row[1].trim())) colour.push(...tokens);
   else other.push(...tokens);
 }
-// the Type, Space, Shape and Motion rows name a range ("--space-1 4 … --space-6 32"); list them in full
-const RANGES: Record<string, string[]> = {
-  "--size-xs": ["--size-xs", "--size-s", "--size-m", "--size-l", "--size-xl"],
-  "--space-1": ["--space-1", "--space-2", "--space-3", "--space-4", "--space-5", "--space-6"],
-};
 const shared_expected: string[] = [];
-for (const token of other) {
-  for (const name of RANGES[token] ?? [token]) shared_expected.push(name);
-}
+for (const token of other) shared_expected.push(token);
 
 const problems: string[] = [];
 if (colour.length < 20) problems.push(`only ${colour.length} colour tokens read from the design system: is the table there?`);
@@ -74,6 +67,27 @@ for (const file of filesUnder(new URL("../src/", here))) {
   lines.forEach((line, index) => {
     if (/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(line)) {
       problems.push(`${file.pathname.split("/src/")[1]}:${index + 1}: a colour outside the token files`);
+    }
+  });
+}
+
+// no raw pixel sizes in components: they use the scales. Allowed: 1-2 px hairlines and offsets, media
+// queries, and a component's own named sizes (a line that declares `--name: 44px`).
+const RAW_PX = /(?<![\w.-])(\d+(?:\.\d+)?)px/g;
+for (const file of filesUnder(new URL("../src/", here))) {
+  if (file.href.startsWith(tokenFolder) || !/\.(svelte|css)$/.test(file.pathname)) continue;
+  let text = readFileSync(file, "utf8");
+  if (file.pathname.endsWith(".svelte")) {
+    const style = text.indexOf("<style>");
+    if (style < 0) continue;
+    text = text.slice(style);
+  }
+  text.split("\n").forEach((line, index) => {
+    if (/^\s*--[a-z0-9-]+\s*:/.test(line) || line.includes("@media")) return;
+    for (const match of line.matchAll(RAW_PX)) {
+      if (Number(match[1]) > 2) {
+        problems.push(`${file.pathname.split("/src/")[1]}: ${match[0]} in a style; use a token (docs/style/ui/design-system.md)`);
+      }
     }
   });
 }

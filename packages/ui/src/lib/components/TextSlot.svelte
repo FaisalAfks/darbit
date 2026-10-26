@@ -13,7 +13,7 @@
   .slot {
     margin: 0;
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-s);
     align-items: baseline;
     min-width: 0;
   }
@@ -28,20 +28,20 @@
   }
   [data-slot="tool"] {
     color: var(--slot-tool);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   [data-slot="guide"] {
     color: var(--slot-guide);
-    font-size: var(--size-m);
+    font-size: var(--size-body);
   }
   [data-slot="bot"] {
     color: var(--slot-bot);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   b {
     flex: none;
-    font: 600 var(--size-xs) / 1.6 var(--font-strong);
-    padding: 0 8px;
+    font: 600 var(--size-caption) / 1.6 var(--font-strong);
+    padding: 0 var(--space-s);
     border-radius: var(--radius-pill);
     background: color-mix(in oklab, var(--slot-bot) 18%, transparent);
   }

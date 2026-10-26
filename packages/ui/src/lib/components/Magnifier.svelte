@@ -96,7 +96,7 @@
 <style>
   .mag {
     margin: 0;
-    padding: 5px;
+    padding: var(--space-xs);
     border-radius: var(--radius-m);
     background: var(--glass-strong);
     border: 1px solid var(--line);
@@ -111,9 +111,9 @@
   figcaption {
     display: flex;
     justify-content: space-between;
-    gap: var(--space-2);
-    padding: 3px 2px 0;
-    font: var(--size-xs) / 1.4 var(--mono);
+    gap: var(--space-s);
+    padding: var(--space-xs) var(--space-xxs) 0;
+    font: var(--size-caption) / 1.4 var(--mono);
     color: var(--muted);
   }
 </style>

@@ -50,9 +50,9 @@
   .bar {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
-    padding: 6px var(--space-2) 6px 18px;
-    max-width: min(640px, calc(100vw - 32px));
+    gap: var(--space-xs);
+    padding: var(--space-s-nudge) var(--space-s) var(--space-s-nudge) var(--space-l);
+    max-width: min(calc(20 * var(--space-xxxl)), calc(100vw - 2 * var(--space-l)));
     overflow-x: auto;
     scrollbar-width: none;
     background: var(--glass);
@@ -68,17 +68,17 @@
     z-index: 10;
   }
   .floating[data-edge="bottom"] {
-    bottom: var(--space-5);
+    bottom: var(--space-xxl);
   }
   .floating[data-edge="top"] {
-    top: var(--space-5);
+    top: var(--space-xxl);
   }
   .bar :global(hr) {
     width: 1px;
-    height: 20px;
+    height: var(--space-xl);
     flex: none;
     border: 0;
     background: var(--line);
-    margin: 0 var(--space-1);
+    margin: 0 var(--space-xs);
   }
 </style>

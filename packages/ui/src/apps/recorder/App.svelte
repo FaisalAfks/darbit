@@ -29,12 +29,12 @@
 
 <style>
   .bar {
-    display: inline-flex; align-items: center; gap: var(--space-2); padding: 4px 6px 4px 14px; max-width: 360px;
+    display: inline-flex; align-items: center; gap: var(--space-s); padding: var(--space-xs) var(--space-s-nudge) var(--space-xs) var(--space-m); max-width: calc(9 * var(--control-l));
     background: var(--glass); backdrop-filter: blur(var(--blur)); border: 1px solid var(--line);
-    border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: var(--size-s);
+    border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: var(--size-caption);
   }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
+  .dot { width: var(--space-m-nudge); height: var(--space-m-nudge); border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
   .paused .dot { background: var(--warn); animation: none; }
   .name { font-weight: 600; }
-  .cp { color: var(--muted); font-size: var(--size-xs); }
+  .cp { color: var(--muted); font-size: var(--size-caption); }
 </style>
