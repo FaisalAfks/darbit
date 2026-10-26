@@ -14,6 +14,7 @@ from pathlib import Path
 
 import cv2
 
+from ..events import publish
 from ..platform import screen
 from ..settings import settings
 
@@ -41,7 +42,8 @@ def _handler() -> None:
 
 
 def log(message: str) -> None:
-    """Write a line to today's log file."""
+    """Write a line to today's log file, and send it to any open darbit window."""
+    publish("log", {"line": message, "time": datetime.now().strftime("%H:%M:%S")})
     if not settings.log:
         return
     try:
@@ -55,10 +57,11 @@ _report_lock = threading.Lock()
 
 
 def record(event: str, **fields: object) -> None:
-    """Add an event to today's run report."""
+    """Add an event to today's run report, and send it to any open darbit window."""
+    line = {"time": datetime.now().isoformat(timespec="milliseconds"), "event": event, **fields}
+    publish("record", {"event": event, "fields": line})
     if not settings.log:
         return
-    line = {"time": datetime.now().isoformat(timespec="milliseconds"), "event": event, **fields}
     try:
         settings.logs.mkdir(parents=True, exist_ok=True)
         with _report_lock, (settings.logs / f"report-{datetime.now():%Y-%m-%d}.jsonl").open("a", encoding="utf-8") as f:

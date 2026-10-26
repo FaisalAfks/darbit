@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # darbit Studio and its tools: the local server and the desktop windows (docs/tasks/T05, T06)
-app = ["starlette>=0.40", "uvicorn>=0.30", "pywebview>=5.3"]
+app = ["starlette>=0.40", "uvicorn>=0.30", "websockets>=13", "pywebview>=5.3"]
 
 [project.scripts]
 darbit = "darbit.cli:main"

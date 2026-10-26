@@ -13,7 +13,6 @@ MODULES = [
     "darbit.cli",
     "darbit.ui",
     "darbit.server",
-    "darbit.server.app",
     "darbit.server.events",
     "darbit.server.protocol",
     "darbit.server.hub",

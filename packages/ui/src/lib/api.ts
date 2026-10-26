@@ -4,8 +4,15 @@
 type Listener = (data: any) => void;
 
 export interface Frame {
-  header: { type: string; id?: number; w: number; h: number; format: string };
+  header: { type: string; id?: number; w: number; h: number; format: "rgba" | "png"; [extra: string]: unknown };
   bytes: ArrayBuffer;
+}
+
+/** A frame as a picture to draw: screens come as raw RGBA, small images as PNG (server/frames.py). */
+export function frameImage(frame: Frame): Promise<ImageBitmap> {
+  const { w, h, format } = frame.header;
+  if (format === "rgba") return createImageBitmap(new ImageData(new Uint8ClampedArray(frame.bytes), w, h));
+  return createImageBitmap(new Blob([frame.bytes], { type: "image/png" }));
 }
 
 let socket: WebSocket | null = null;

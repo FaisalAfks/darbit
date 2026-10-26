@@ -20,7 +20,7 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "theme.changed": ("evt", {"name": "str", "tokens": "dict | None"}, "every window switches"),
     "settings.get": ("req", {"key": "str"}, "a UI setting"),
     "settings.set": ("req", {"key": "str", "value": "any"}, "save a UI setting"),
-    "log": ("evt", {"line": "str"}, "a log line from a running script"),
+    "log": ("evt", {"line": "str", "time": "str"}, "a log line from a running script"),
     "record": ("evt", {"event": "str", "fields": "dict"}, "a run report event (steps, searches)"),
     # T09/T10 capture
     "capture.freeze": ("req", {"monitors": "list[int] | None"}, "grab and send frames, then lines"),
@@ -67,9 +67,64 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
 }
 
 
+# the named types used in MESSAGES, as TypeScript
+NAMED = {
+    "Keymap": "Record<string, Record<string, string>>",
+    "Kind": '"image" | "region" | "point"',
+    "Box": "{ x: number; y: number; w: number; h: number }",
+    "Lines": "{ h: [number, number, number][]; v: [number, number, number][] }",
+    "Draft": "Record<string, unknown>",
+}
+SIMPLE = {"str": "string", "int": "number", "float": "number", "bool": "boolean", "dict": "Record<string, unknown>"}
+
+
+def ts_type(text: str) -> str:
+    """A field's type from MESSAGES in TypeScript: "list[int] | None" -> "number[] | null"."""
+    parts = []
+    for part in text.split("|"):
+        part = part.strip()
+        if part.startswith("list[") and part.endswith("]"):
+            parts.append(f"{ts_type(part[5:-1])}[]")
+        elif part in SIMPLE:
+            parts.append(SIMPLE[part])
+        elif part == "None":
+            parts.append("null")
+        elif part == "any":
+            parts.append("unknown")
+        elif part in NAMED:
+            parts.append(part)
+        else:
+            parts.append(f'"{part}"')  # a word that's one of the values: "continue | stop"
+    return " | ".join(parts)
+
+
+def _fields(fields: dict[str, str]) -> str:
+    if not fields:
+        return "Record<string, never>"
+    inside = []
+    for name, kind in fields.items():
+        inside.append(f"{name}: {ts_type(kind)}")
+    return "{ " + "; ".join(inside) + " }"
+
+
 def typescript() -> str:
-    """The message names as a TypeScript union, for packages/ui/src/lib/protocol.ts."""
-    raise NotImplementedError("TODO(T05): generate types for every message and its fields")
+    """Every message and its fields as TypeScript, for packages/ui/src/lib/protocol.ts."""
+    lines = [
+        "// Generated from packages/darbit/src/darbit/server/protocol.py; don't edit by hand:",
+        "//   uv run python -m darbit.server.protocol --ts > packages/ui/src/lib/protocol.ts",
+        "",
+    ]
+    for name, kind in NAMED.items():
+        lines.append(f"export type {name} = {kind};")
+    for group, wanted in (("Requests", "req"), ("Events", "evt")):
+        lines += ["", f"export interface {group} {{"]
+        for name, (kind, fields, does) in MESSAGES.items():
+            if kind == wanted:
+                lines.append(f"  /** {does} */")
+                lines.append(f'  "{name}": {_fields(fields)};')
+        lines.append("}")
+    lines += ["", "export type RequestType = keyof Requests;", "export type EventType = keyof Events;", ""]
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

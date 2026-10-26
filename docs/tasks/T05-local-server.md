@@ -1,5 +1,7 @@
 # T05 Local server and events
 
+> **Done 2026-10-26.** Two changes from this page, from measuring: screens go as **raw RGBA**, not lossless WebP (2560 x 1600: 1.4 s as WebP, 258 ms as PNG, about 12 ms raw; through the real server about 65 ms from request to pixels, with WebSocket compression off). Small images go as PNG. Events go to every window, which picks the ones it wants with `on()`; per-topic subscriptions can come later. The event bus moved to `darbit/events.py` so the runtime publishes without importing the server. A bot started outside the Studio doesn't connect to it; the Studio follows its run report files instead (decision 0011, T20).
+
 **Goal:** one small server on `127.0.0.1` that every window, the hub and the VS Code extension talk to, over one WebSocket, with screenshots sent as binary.
 
 **Depends on:** nothing. **Issue:** #46. **Milestone:** v0.3.
