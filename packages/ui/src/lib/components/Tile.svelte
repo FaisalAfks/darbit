@@ -31,11 +31,11 @@
   .tile {
     grid-column: span var(--span);
     display: grid;
-    gap: var(--space-4);
+    gap: var(--space-l);
     align-content: start;
     min-width: 0;
-    padding: var(--space-5);
-    border-radius: 20px;
+    padding: var(--space-xxl);
+    border-radius: var(--radius-xl);
     background: var(--glass);
     backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
@@ -43,14 +43,14 @@
   }
   .showing {
     outline: 1px dashed color-mix(in oklab, var(--accent) 45%, transparent);
-    outline-offset: 3px;
+    outline-offset: var(--space-xxs);
   }
   h4 {
     margin: 0;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    font: 650 var(--size-xs) / 1.4 var(--font-strong);
+    gap: var(--space-s);
+    font: 650 var(--size-caption) / 1.4 var(--font-strong);
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -60,12 +60,12 @@
   }
   .source {
     margin: 0;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-s) var(--space-m);
     border-radius: var(--radius-m);
     border: 1px dashed color-mix(in oklab, var(--accent) 55%, transparent);
     background: color-mix(in oklab, var(--accent) 10%, var(--glass-strong));
     color: var(--accent);
-    font: var(--size-xs) / 1.6 var(--mono);
+    font: var(--size-caption) / 1.6 var(--mono);
     white-space: pre-wrap;
   }
 </style>

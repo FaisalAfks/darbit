@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "check": "node scripts/check-tokens.ts && svelte-check --tsconfig ./tsconfig.json",
+    "check": "node scripts/check-tokens.ts && node scripts/check-contrast.ts && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "storybook": "storybook dev --port 6006 --host 127.0.0.1 --no-open",
     "build-storybook": "storybook build --output-dir storybook-static"

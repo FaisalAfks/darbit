@@ -49,18 +49,18 @@
 
 <style>
   .panel {
-    position: fixed; top: 0; right: 0; bottom: 0; width: 300px; display: flex; flex-direction: column;
+    position: fixed; top: 0; right: 0; bottom: 0; width: calc(30 * var(--space-m-nudge)); display: flex; flex-direction: column;
     background: var(--glass); backdrop-filter: blur(var(--blur)); border-left: 1px solid var(--line);
-    transition: translate var(--move) var(--ease);
+    transition: translate var(--duration-normal) var(--curve-easy-ease);
   }
-  .collapsed { translate: 260px 0; }
-  header { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); }
+  .collapsed { translate: calc(30 * var(--space-m-nudge) - var(--control-l)) 0; }
+  header { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-s) var(--space-m); border-bottom: 1px solid var(--line); }
   header b { flex: 1; }
-  .tree, .tree ol { list-style: none; margin: 0; padding-left: var(--space-3); }
-  .tree { overflow: auto; padding: var(--space-2); font-size: var(--size-s); }
-  .cp { font-weight: 600; margin-top: var(--space-2); }
+  .tree, .tree ol { list-style: none; margin: 0; padding-left: var(--space-m); }
+  .tree { overflow: auto; padding: var(--space-s); font-size: var(--size-caption); }
+  .cp { font-weight: 600; margin-top: var(--space-s); }
   .goal { color: var(--muted); font-weight: 400; }
-  .step { color: var(--text); font-size: var(--size-xs); padding: 2px 6px; border-radius: var(--radius-s); }
+  .step { color: var(--text); font-size: var(--size-caption); padding: var(--space-xxs) var(--space-s-nudge); border-radius: var(--radius-s); }
   .step.now { background: var(--raised-hover); box-shadow: var(--glow); }
-  .step.bp::before { content: "●"; color: var(--danger); margin-right: 4px; }
+  .step.bp::before { content: "●"; color: var(--danger); margin-right: var(--space-xs); }
 </style>

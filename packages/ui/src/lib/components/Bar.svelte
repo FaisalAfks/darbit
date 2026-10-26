@@ -23,13 +23,13 @@
 <style>
   .bar {
     display: grid;
-    gap: var(--space-2);
-    font-size: var(--size-s);
+    gap: var(--space-s);
+    font-size: var(--size-caption);
   }
   .line {
     display: flex;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   b {
     font-weight: 600;
@@ -40,7 +40,7 @@
   }
   .track {
     display: block;
-    height: 8px;
+    height: var(--space-s);
     border-radius: var(--radius-pill);
     background: var(--raised);
     overflow: hidden;
@@ -50,7 +50,7 @@
     height: 100%;
     transform-origin: left;
     background: var(--accent);
-    transition: transform var(--move) var(--ease);
+    transition: transform var(--duration-normal) var(--curve-easy-ease);
   }
   .full i {
     background: var(--ok);

@@ -15,26 +15,27 @@
 <style>
   .field {
     display: grid;
-    gap: 6px;
+    gap: var(--space-s-nudge);
     min-width: 0;
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   .name {
     font-weight: 600;
   }
   small {
     color: var(--slot-tool);
-    font-size: var(--size-xs);
+    font-size: var(--size-caption);
   }
   .field :global(input),
   .field :global(select),
   .field :global(textarea) {
-    font: var(--size-m) / 1.3 var(--font);
+    font: var(--size-body) / 1.3 var(--font);
     color: var(--text);
     background: var(--raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-m);
-    padding: 10px 12px;
+    min-height: var(--control-l);
+    padding: var(--space-s) var(--space-m);
     min-width: 0;
   }
 </style>

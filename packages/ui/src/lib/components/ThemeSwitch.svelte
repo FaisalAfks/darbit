@@ -11,7 +11,7 @@
 <style>
   button {
     border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--raised);
-    color: var(--muted); padding: 3px 10px; font-size: var(--size-xs); cursor: pointer;
+    color: var(--muted); min-height: var(--control-s); padding: var(--space-xxs) var(--space-m-nudge); font-size: var(--size-caption); cursor: pointer;
   }
   button:hover { color: var(--text); }
 </style>

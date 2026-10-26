@@ -54,7 +54,12 @@ def shoot(server: str, story: str, theme: str, backdrop: str, width: int, height
         f"--screenshot={target}",
         url,
     ]
-    subprocess.run(command, capture_output=True, timeout=90, check=False)  # Edge's exit code isn't reliable
+    for attempt in range(2):  # the first story can time out while Storybook is still compiling
+        try:
+            subprocess.run(command, capture_output=True, timeout=90, check=False)  # Edge's exit code isn't reliable
+            break
+        except subprocess.TimeoutExpired:
+            print(f"{story}: timed out, trying again")
     shutil.rmtree(profile, ignore_errors=True)
     if backdrop == "plain":
         crop_to_content(target)  # a plain background shows where the component ends

@@ -12,8 +12,8 @@
   .pill {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
-    padding: 5px;
+    gap: var(--space-xs);
+    padding: var(--space-xs);
     border-radius: var(--radius-pill);
     background: var(--glass);
     backdrop-filter: blur(var(--blur));
@@ -23,8 +23,8 @@
   }
   .pill :global(hr) {
     width: 1px;
-    height: 20px;
-    margin: 0 var(--space-1);
+    height: var(--space-xl);
+    margin: 0 var(--space-xs);
     border: 0;
     background: var(--line);
     flex: none;

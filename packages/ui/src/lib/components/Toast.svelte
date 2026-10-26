@@ -15,15 +15,15 @@
   .toasts {
     position: fixed;
     z-index: 60;
-    right: var(--space-4);
-    bottom: var(--space-4);
+    right: var(--space-l);
+    bottom: var(--space-l);
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-s);
     pointer-events: none;
   }
   .toast {
-    max-width: 380px;
-    padding: var(--space-3) var(--space-4);
+    max-width: var(--width-toast);
+    padding: var(--space-m) var(--space-l);
     border-radius: var(--radius-m);
     background: var(--glass-strong);
     backdrop-filter: blur(var(--blur));

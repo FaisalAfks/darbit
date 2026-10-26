@@ -55,12 +55,12 @@
   .sheet {
     position: absolute;
     z-index: 20;
-    top: calc(100% + var(--space-2));
-    width: min(var(--width), calc(100vw - 32px));
+    top: calc(100% + var(--space-s));
+    width: min(var(--width), calc(100vw - 2 * var(--space-l)));
     display: grid;
-    gap: var(--space-4);
-    padding: var(--space-5);
-    border-radius: 20px;
+    gap: var(--space-l);
+    padding: var(--space-xxl);
+    border-radius: var(--radius-xl);
     background: var(--glass-strong);
     backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
@@ -76,10 +76,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   h2 {
     margin: 0;
-    font: 650 var(--size-l) / 1.2 var(--font-strong);
+    font: 650 var(--size-subtitle) / 1.2 var(--font-strong);
   }
 </style>

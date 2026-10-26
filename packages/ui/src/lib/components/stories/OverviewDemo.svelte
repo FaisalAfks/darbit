@@ -44,41 +44,41 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: var(--space-4);
-    width: min(1100px, 92vw);
+    gap: var(--space-l);
+    width: min(calc(34 * var(--space-xxxl)), 92vw);
   }
   .row {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: var(--space-5);
+    gap: var(--space-xxl);
     align-items: center;
   }
   .bars {
     display: grid;
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   ul {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-xs);
   }
   li {
     display: grid;
     grid-template-columns: 1fr auto auto;
-    gap: var(--space-3);
+    gap: var(--space-m);
     align-items: center;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-s) var(--space-m);
     border-radius: var(--radius-m);
   }
   li span {
     color: var(--muted);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   .actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--space-2);
+    gap: var(--space-s);
   }
 </style>

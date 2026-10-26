@@ -50,22 +50,22 @@
 <style>
   .step {
     --k: var(--muted);
-    width: calc(100% - var(--depth) * 46px);
-    margin-left: calc(var(--depth) * 46px);
-    min-height: 54px;
+    width: calc(100% - var(--depth) * var(--indent));
+    margin-left: calc(var(--depth) * var(--indent));
+    min-height: var(--row);
     display: grid;
-    grid-template-columns: 40px 34px 1fr auto auto;
-    gap: var(--space-3);
+    grid-template-columns: var(--control-l) var(--control-m) 1fr auto auto;
+    gap: var(--space-m);
     align-items: center;
-    padding: var(--space-2) 14px var(--space-2) 10px;
+    padding: var(--space-s) var(--space-m) var(--space-s) var(--space-m-nudge);
     border: 1px solid transparent;
-    border-radius: 14px;
+    border-radius: var(--radius-l);
     background: var(--raised);
     color: var(--text);
-    font: var(--size-m) / 1.3 var(--font);
+    font: var(--size-content) / var(--line-content) var(--font);
     text-align: left;
     cursor: pointer;
-    transition: background var(--fast) var(--ease);
+    transition: background var(--duration-fast) var(--curve-easy-ease);
   }
   .step:hover {
     background: var(--raised-hover);
@@ -90,17 +90,17 @@
     --k: var(--ok);
   }
   .number {
-    font: 600 var(--size-xs) / 1 var(--mono);
+    font: 600 var(--size-caption) / 1 var(--mono);
     color: var(--faint);
     text-align: right;
   }
   .icon {
-    width: 34px;
-    height: 34px;
+    width: var(--control-m);
+    height: var(--control-m);
     display: grid;
     place-items: center;
-    border-radius: 10px;
-    font-size: var(--size-m);
+    border-radius: var(--radius-m);
+    font-size: var(--size-body);
     color: var(--k);
     background: color-mix(in oklab, var(--k) 16%, transparent);
   }
@@ -108,26 +108,26 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-s);
     min-width: 0;
   }
   .note {
     color: var(--faint);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   .chip {
-    padding: 2px 10px;
+    padding: var(--space-xxs) var(--space-m-nudge);
     border-radius: var(--radius-pill);
-    font: 600 var(--size-xs) / 1.6 var(--font-strong);
+    font: 600 var(--size-caption) / 1.6 var(--font-strong);
     color: var(--k);
     background: color-mix(in oklab, var(--k) 14%, transparent);
     border: 1px solid color-mix(in oklab, var(--k) 32%, transparent);
   }
   @media (max-width: 760px) {
     .step {
-      grid-template-columns: 34px 1fr auto;
-      width: calc(100% - var(--depth) * 16px);
-      margin-left: calc(var(--depth) * 16px);
+      grid-template-columns: var(--control-m) 1fr auto;
+      width: calc(100% - var(--depth) * var(--space-l));
+      margin-left: calc(var(--depth) * var(--space-l));
     }
     .number,
     .note {

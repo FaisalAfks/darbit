@@ -52,9 +52,9 @@
 <style>
   .dock {
     display: flex;
-    gap: var(--space-1);
-    padding: 6px;
-    border-radius: 22px;
+    gap: var(--space-xs);
+    padding: var(--space-s-nudge);
+    border-radius: var(--radius-xl);
     background: var(--glass);
     backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
@@ -65,38 +65,39 @@
   }
   button {
     flex: none;
-    width: 84px;
+    --tool-width: 84px; /* a tool's name fits under its icon */
+    width: var(--tool-width);
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-xs);
     place-items: center;
-    padding: var(--space-2) var(--space-1) 6px;
+    padding: var(--space-s) var(--space-xs) var(--space-s-nudge);
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--radius-l);
     background: none;
     color: var(--text);
-    font: 600 var(--size-xs) / 1.2 var(--font-strong);
+    font: 600 var(--size-caption) / 1.2 var(--font-strong);
     cursor: pointer;
     transition:
-      background var(--fast) var(--ease),
-      transform var(--fast) var(--ease);
+      background var(--duration-fast) var(--curve-easy-ease),
+      transform var(--duration-fast) var(--curve-easy-ease);
   }
   button:hover {
     background: var(--raised-hover);
-    transform: translateY(-3px);
+    transform: translateY(calc(-1 * var(--space-xs)));
   }
   .icon {
-    width: 40px;
-    height: 40px;
+    width: var(--control-l);
+    height: var(--control-l);
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    font-size: var(--size-l);
+    border-radius: var(--radius-l);
+    font-size: var(--size-subtitle);
     color: var(--c);
     background: color-mix(in oklab, var(--c) 18%, transparent);
   }
   hr {
     width: 1px;
-    margin: 10px var(--space-1);
+    margin: var(--space-m-nudge) var(--space-xs);
     border: 0;
     background: var(--line);
   }

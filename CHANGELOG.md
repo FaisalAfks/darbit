@@ -12,6 +12,7 @@
 - The web UI package builds: `npm install`, `npm run build` puts every window's page into the package, and the wheel ships it; CI checks and builds it
 - UI themes: glass-dark, glass-light, midnight and high-contrast with every token, a theme chosen in one window shows in the others, and `npm run check` fails on a missing token or a colour outside the token files
 - UI components for every window, in Storybook (`npm run storybook`): buttons, chips, pills, the tools dock, sheets, the command palette, toasts, settings fields and switches, dashboard tiles with progress rings and bars, flow step rows, and capture's readout and magnifier
+- The UI follows Fluent 2's scales (type, spacing, corners, control heights, motion) and WCAG 2.2 AA (contrast, 24 px targets, focus); `npm run check` fails on a raw pixel size in a component or a colour pair below the contrast line
 
 ## 0.2.0 - 2026-10-25
 

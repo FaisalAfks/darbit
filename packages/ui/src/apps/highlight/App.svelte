@@ -26,22 +26,22 @@
 <style>
   .hit {
     position: fixed; border: 2px solid var(--c); border-radius: var(--radius-s); pointer-events: none;
-    box-shadow: 0 0 12px color-mix(in srgb, var(--c) 50%, transparent);
-    animation: pop var(--move) var(--spring) both;
+    box-shadow: 0 0 var(--space-m) color-mix(in oklab, var(--c) 50%, transparent);
+    animation: pop var(--duration-normal) var(--curve-decelerate) both;
   }
   [data-verdict="ok"] { --c: var(--ok); }
   [data-verdict="risky"] { --c: var(--warn); }
   [data-verdict="missing"] { --c: var(--danger); }
   .label {
-    position: absolute; bottom: calc(100% + 4px); left: -2px; white-space: nowrap;
-    display: inline-flex; gap: var(--space-1); align-items: center; padding: 1px 6px;
-    font: 600 var(--size-xs) var(--font-strong); color: var(--text);
+    position: absolute; bottom: calc(100% + var(--space-xs)); left: -2px; white-space: nowrap;
+    display: inline-flex; gap: var(--space-xs); align-items: center; padding: 1px var(--space-s-nudge);
+    font: 600 var(--size-caption) var(--font-strong); color: var(--text);
     background: var(--glass-strong); border-radius: var(--radius-s);
   }
   .missing {
-    position: fixed; right: var(--space-4); top: var(--space-4); display: grid; max-width: 260px;
-    padding: var(--space-2) var(--space-3); background: var(--glass); backdrop-filter: blur(var(--blur));
-    border: 1px solid var(--line); border-radius: var(--radius-m); color: var(--danger); font-size: var(--size-s);
+    position: fixed; right: var(--space-l); top: var(--space-l); display: grid; max-width: var(--width-tooltip);
+    padding: var(--space-s) var(--space-m); background: var(--glass); backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--line); border-radius: var(--radius-m); color: var(--danger); font-size: var(--size-caption);
   }
   small { color: var(--muted); }
 </style>

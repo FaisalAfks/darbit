@@ -64,16 +64,16 @@
 <style>
   .stage {
     display: grid;
-    gap: var(--space-5);
+    gap: var(--space-xxl);
     justify-items: center;
   }
   .labels {
     display: flex;
-    gap: var(--space-3);
+    gap: var(--space-m);
   }
   .name {
-    font: 600 var(--size-m) / 1 var(--font-strong);
-    margin-right: var(--space-2);
+    font: 600 var(--size-body) / 1 var(--font-strong);
+    margin-right: var(--space-s);
     white-space: nowrap;
   }
 </style>

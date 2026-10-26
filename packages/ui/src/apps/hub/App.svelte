@@ -30,23 +30,23 @@
 <CommandPalette bind:open={palette} />
 
 <style>
-  .hub { display: grid; grid-template-columns: 88px 1fr; height: 100vh; background: var(--bg); }
+  .hub { display: grid; grid-template-columns: calc(11 * var(--space-s)) 1fr; height: 100vh; background: var(--bg); }
   .rail {
-    display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-2);
+    display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-m) var(--space-s);
     background: var(--glass); border-right: 1px solid var(--line);
   }
   .logo {
-    width: 32px; height: 32px; margin: 0 auto var(--space-3); display: grid; place-items: center; border-radius: 10px;
+    width: var(--control-m); height: var(--control-m); margin: 0 auto var(--space-m); display: grid; place-items: center; border-radius: var(--radius-m);
     background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); font-weight: 800;
   }
   .rail button {
-    border: 0; background: none; color: var(--muted); padding: 6px; border-radius: var(--radius-m);
-    font: 600 var(--size-xs) var(--font-strong); cursor: pointer; transition: background var(--fast) var(--ease);
+    border: 0; background: none; color: var(--muted); padding: var(--space-s-nudge); border-radius: var(--radius-m);
+    font: 600 var(--size-caption) var(--font-strong); cursor: pointer; transition: background var(--duration-fast) var(--curve-easy-ease);
   }
   .rail button:hover { background: var(--raised-hover); color: var(--text); }
   .rail button.on { background: var(--raised); color: var(--accent); box-shadow: var(--glow); }
   .grow { flex: 1; }
-  main { padding: var(--space-5); overflow: auto; }
-  h1 { font: 600 var(--size-xl) var(--font-strong); margin: 0 0 var(--space-3); }
+  main { padding: var(--space-xxl); overflow: auto; }
+  h1 { font: 600 var(--size-title3) var(--font-strong); margin: 0 0 var(--space-m); }
   .todo { color: var(--muted); }
 </style>

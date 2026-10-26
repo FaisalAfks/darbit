@@ -46,7 +46,7 @@
   .segmented {
     display: inline-flex;
     gap: 2px;
-    padding: 4px;
+    padding: var(--space-xs);
     border-radius: var(--radius-pill);
     background: var(--raised);
     max-width: 100%;
@@ -54,7 +54,7 @@
     scrollbar-width: none;
   }
   [data-variant="nav"] {
-    padding: 5px;
+    padding: var(--space-xs);
     background: var(--glass);
     backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
@@ -63,22 +63,24 @@
   button {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: 7px 14px;
+    gap: var(--space-s);
+    min-height: var(--control-m);
+    padding: 0 var(--space-m);
     border: 0;
     border-radius: var(--radius-pill);
     background: none;
     color: var(--muted);
-    font: 600 var(--size-s) / 1.2 var(--font-strong);
+    font: 600 var(--size-caption) / 1.2 var(--font-strong);
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background var(--fast) var(--ease),
-      color var(--fast) var(--ease);
+      background var(--duration-fast) var(--curve-easy-ease),
+      color var(--duration-fast) var(--curve-easy-ease);
   }
   [data-variant="nav"] button {
-    padding: 9px 18px;
-    font-size: var(--size-m);
+    min-height: var(--control-l);
+    padding: 0 var(--space-l);
+    font-size: var(--size-body);
   }
   button:hover {
     color: var(--text);

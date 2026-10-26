@@ -14,8 +14,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
+    gap: var(--space-l);
+    padding: var(--space-m) var(--space-l);
     border-radius: var(--radius-m);
     background: var(--raised);
     cursor: pointer;
@@ -26,40 +26,42 @@
     min-width: 0;
   }
   b {
-    font: 600 var(--size-m) / 1.3 var(--font-strong);
+    font: 600 var(--size-content) / var(--line-content) var(--font-strong);
   }
   small {
     color: var(--muted);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
   }
   .switch {
     position: relative;
     flex: none;
-    width: 44px;
-    height: 26px;
+    --track-width: 44px; /* a thumb and its travel */
+    --thumb: var(--space-xl);
+    width: var(--track-width);
+    height: calc(var(--thumb) + 2 * var(--space-xxs) + 2px);
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
     background: var(--raised);
     cursor: pointer;
-    transition: background var(--fast) var(--ease);
+    transition: background var(--duration-fast) var(--curve-easy-ease);
   }
   .switch::after {
     content: "";
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 20px;
-    height: 20px;
+    width: var(--thumb);
+    height: var(--thumb);
     border-radius: 50%;
     background: var(--muted);
-    transition: transform var(--fast) var(--ease);
+    transition: transform var(--duration-fast) var(--curve-easy-ease);
   }
   [aria-checked="true"] {
     background: var(--accent);
     border-color: var(--accent);
   }
   [aria-checked="true"]::after {
-    transform: translateX(18px);
+    transform: translateX(calc(var(--track-width) - var(--thumb) - 2 * var(--space-xxs) - 2px));
     background: var(--on-accent);
   }
 </style>

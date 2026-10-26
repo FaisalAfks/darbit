@@ -26,7 +26,7 @@
     margin: 0;
     display: grid;
     justify-items: center;
-    gap: var(--space-2);
+    gap: var(--space-s);
   }
   .ring {
     width: var(--size);
@@ -41,14 +41,14 @@
   }
   b {
     display: block;
-    font: 700 var(--size-xl) / 1.1 var(--font-strong);
+    font: 700 var(--size-title3) / 1.1 var(--font-strong);
   }
   span {
-    font-size: var(--size-xs);
+    font-size: var(--size-caption);
     color: var(--muted);
   }
   figcaption {
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
     color: var(--muted);
     text-align: center;
   }

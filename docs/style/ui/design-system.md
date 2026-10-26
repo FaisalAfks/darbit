@@ -22,6 +22,13 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 
 `ctrl+alt+t` cycles themes; the hub's Settings picks one. A theme is a `[data-theme="..."]` block of CSS variables in `themes.css`.
 
+## Standards (decision 0012)
+
+- **Sizes follow Fluent 2,** Microsoft's design system for Windows apps: its type ramp ([typography](https://fluent2.microsoft.design/typography)) and its spacing, corner, duration and curve tokens (`microsoft/fluentui`, `packages/tokens/src/global`). Windows users already know these proportions.
+- **Text in the Studio's content is 16 px** (Fluent's Subtitle 2); controls and the overlays over the game use 14 px (Body 1); chips, keys and hints 12 px (Caption 1).
+- **Accessibility follows WCAG 2.2 AA:** text 4.5:1 against what it sits on, hint text and indicators 3:1, nothing clickable smaller than 24 × 24 px, a visible focus outline, and focus never hidden behind a sheet.
+- **Checked on every build** (`npm run check`): `scripts/check-tokens.ts` refuses a missing token, a colour outside the token files, and a raw pixel size in a component (only 1–2 px hairlines and a component's own named sizes, `--track-width: 44px`, are allowed); `scripts/check-contrast.ts` measures every text and control pair in all four themes, with glass mixed over the background as it shows on screen.
+
 ## Tokens
 
 | Group | Tokens |
@@ -33,10 +40,11 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 | Target kinds | `--kind-image`, `--kind-region`, `--kind-point`, `--handle-fill` (resize handles) |
 | Capture | `--screen-dim`: the frozen screen outside the selection, 42% brightness, the **same in every theme** (a light theme must not wash the game out) |
 | Text slots | `--slot-tool`, `--slot-bot`, `--slot-guide`, `--on-bot` (text on a bot's accent) |
-| Type | `--font`, `--font-strong`, `--mono`; sizes `--size-xs` 11, `--size-s` 12, `--size-m` 14, `--size-l` 18, `--size-xl` 24 |
-| Space | `--space-1` 4 … `--space-6` 32 |
-| Shape | `--radius-s` 6, `--radius-m` 10, `--radius-l` 16, `--radius-pill` |
-| Motion | `--fast` 120 ms, `--move` 200 ms, `--spring` (an overshooting curve for things that appear), `--ease` |
+| Type | `--font`, `--font-strong`, `--mono`; Fluent 2's ramp, size with line height: `--size-caption` 12 / `--line-caption` 16, `--size-body` 14 / `--line-body` 20, `--size-content` 16 / `--line-content` 22, `--size-subtitle` 20 / `--line-subtitle` 26, `--size-title3` 24 / `--line-title3` 32, `--size-title` 28 / `--line-title` 36 |
+| Space | Fluent 2's spacing ramp: `--space-xxs` 2, `--space-xs` 4, `--space-s-nudge` 6, `--space-s` 8, `--space-m-nudge` 10, `--space-m` 12, `--space-l` 16, `--space-xl` 20, `--space-xxl` 24, `--space-xxxl` 32 |
+| Shape | `--radius-s` 4, `--radius-m` 8, `--radius-l` 12, `--radius-xl` 16, `--radius-pill` |
+| Size | `--control-s` 24, `--control-m` 32, `--control-l` 40 (control heights), `--row` 52 (a step or list row), `--indent` 40 (one level of nesting); widths `--width-tooltip`, `--width-toast`, `--width-sheet`, `--width-inspector`, `--width-palette` |
+| Motion | Fluent 2's durations `--duration-faster` 100, `--duration-fast` 150, `--duration-normal` 200, `--duration-slow` 300 ms; curves `--curve-decelerate` (things appearing), `--curve-accelerate` (things leaving), `--curve-easy-ease` (things moving) |
 
 ## Text slots
 
@@ -71,7 +79,7 @@ The `TextSlot` component takes `{slot, text, from?, image?}`. Text is cut at one
 
 | What | How |
 |---|---|
-| A panel appears | from 8 px away and 96% size to its place, `--spring`, 200 ms |
+| A panel appears | from 8 px away and 96% size to its place, `--curve-decelerate`, 200 ms |
 | A panel hides | opacity and 8 px, 120 ms |
 | Focus, current item | the accent glow grows in, 120 ms |
 | Progress | the strip's fill slides; no counting animations |

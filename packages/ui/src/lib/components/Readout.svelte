@@ -68,11 +68,12 @@
     --k: var(--accent);
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    padding: 2px 8px;
+    gap: var(--space-xxs);
+    min-height: var(--control-s); /* WCAG 2.2: 24 px targets */
+    padding: var(--space-xxs) var(--space-s);
     border: 0;
     border-radius: var(--radius-s);
-    font: 600 var(--size-s) / 1.5 var(--mono);
+    font: 600 var(--size-caption) / 1.5 var(--mono);
     color: var(--on-accent);
     background: var(--k);
     white-space: nowrap;
@@ -88,10 +89,10 @@
     --k: var(--kind-point);
   }
   input {
-    width: 56px;
-    padding: 0 4px;
+    width: calc(7 * var(--space-s));
+    padding: 0 var(--space-xs);
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-s);
     font: inherit;
     color: var(--text);
     background: var(--glass-strong);

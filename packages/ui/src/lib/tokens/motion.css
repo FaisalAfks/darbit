@@ -1,5 +1,5 @@
-/* Shared motion: transform and opacity only, 200 ms at most. Every keyframe states its end values, so an
-   element never ends up invisible. Reduced motion turns movement into 80 ms fades.
+/* Shared motion, on Fluent 2 durations and curves: transform and opacity only, 200 ms at most.
+   Every keyframe states its end values, so an element never ends up invisible. Reduced motion turns movement into 80 ms fades.
    Spec: docs/style/ui/design-system.md (Motion) */
 
 @keyframes appear {
@@ -64,15 +64,15 @@
 }
 
 .appear {
-  animation: appear var(--move) var(--spring) both;
+  animation: appear var(--duration-normal) var(--curve-decelerate) both;
 }
 
 .hiding {
-  animation: hide var(--fast) var(--ease) both;
+  animation: hide var(--duration-fast) var(--curve-accelerate) both;
 }
 
 .pop {
-  animation: pop var(--move) var(--ease) both;
+  animation: pop var(--duration-normal) var(--curve-decelerate) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

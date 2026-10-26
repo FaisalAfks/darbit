@@ -30,16 +30,17 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-xs);
   }
   li {
     display: grid;
-    grid-template-columns: 14px auto 1fr auto;
-    gap: 14px;
+    grid-template-columns: var(--space-m) auto 1fr auto;
+    gap: var(--space-m);
     align-items: center;
-    padding: 10px var(--space-3);
+    min-height: var(--control-l);
+    padding: var(--space-s) var(--space-m);
     border-radius: var(--radius-m);
-    font-size: var(--size-m);
+    font-size: var(--size-content);
   }
   li:hover {
     background: var(--raised);
@@ -52,7 +53,7 @@
   }
   small {
     color: var(--muted);
-    font-size: var(--size-s);
+    font-size: var(--size-caption);
     text-align: right;
     min-width: 0;
     overflow: hidden;
@@ -60,8 +61,8 @@
     white-space: nowrap;
   }
   .dot {
-    width: 10px;
-    height: 10px;
+    width: var(--space-m-nudge);
+    height: var(--space-m-nudge);
     border-radius: 50%;
     background: var(--faint);
   }
@@ -73,6 +74,6 @@
   }
   [data-status="now"] {
     background: var(--accent);
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 25%, transparent);
+    box-shadow: 0 0 0 var(--space-xs) color-mix(in oklab, var(--accent) 25%, transparent);
   }
 </style>
