@@ -1,16 +1,14 @@
-"""The smallest darbit bot: wait for a button, click it, and repeat until stopped (Ctrl+Alt+Q).
+"""{name}: wait for a button, click it, and repeat until stopped (Ctrl+Alt+Q).
 
-Capture the button first:  python -m darbit.capture Hello.Button
+Take the button's picture first:  darbit guide --folder assets/images
 """
 
 import darbit as d
 
-d.settings.timeout = 10  # how long a click waits for its target
-
 
 def press_the_button() -> bool:
     """Click the button if it shows within the timeout. True if it was clicked."""
-    clicked = d.click("Hello.Button")
+    clicked = d.click("Hello.Button", timeout=10)
     if not clicked:
         d.log("the button didn't show")
     return clicked

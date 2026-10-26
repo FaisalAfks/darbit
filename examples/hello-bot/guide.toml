@@ -1,0 +1,10 @@
+title = "hello-bot setup"
+say = "Open the screen with the button first."
+
+[[screen]]
+name = "Main screen"
+say = "The screen where the button shows."
+
+  [[screen.take]]
+  image = "Hello.Button"
+  say = "The button to click."

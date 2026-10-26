@@ -2,10 +2,11 @@
 [bot]
 name = "hello-bot"
 version = "0.1.0"
-darbit = ">=0.2"
+darbit = ">=0.3"
+entry = "hello_bot.bot:main"
 
 [settings]
 similarity = 0.85
 
 [images]
-folders = ["images"]
+folders = ["assets/images"]

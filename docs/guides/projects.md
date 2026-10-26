@@ -7,7 +7,7 @@ A bot is a folder with a `darbit.toml`. When a script imports darbit, darbit loo
 name = "ad-bot"
 version = "0.4.0"
 darbit = ">=0.3,<0.4"            # the darbit it needs; another version gives a warning, not an error
-entry = "bot.py"                 # or "ad_bot.main:main"
+entry = "ad_bot.main:main"       # a function, a module ("ad_bot"), or a script ("bot.py")
 window = "Roblox"                # the app it plays: brought to the front before any input
 accent = "#ff7ab6"               # its colour in Studio and on its texts
 captured_at = { size = [2560, 1600], scale = 1.5 }
