@@ -98,4 +98,15 @@ Found while reviewing the mockups (and in a second pass by Gemini). Every compon
 - **States:** every list and view designs its empty, loading and error states, not only the full one (see the Studio's state switch in the mockups).
 - **`[hidden]` always hides,** even on elements with their own `display`.
 
+## Room (2026-10-26 round)
+
+Some screens felt cramped and hard to read, so the Studio and the overlays got more room:
+
+- **Studio type:** 15 px body, 28 px view titles, 16–18 px card titles; buttons at least 36 px high.
+- **Labelled navigation:** a 224 px sidebar with icons and names, and the running bot's status at its foot. On a phone it becomes a bottom tab bar.
+- **The running bot first:** Home opens on a large card with what the bot is doing, its week (a ring) and its controls, then today's timeline, then every installed bot.
+- **One action per row** in a flow, 54 px high, with an icon per kind. The chosen step's details open in a panel on the right, instead of editing everything inline.
+- **Lists on demand:** the steps you can add open from an **Add step** button, not a column that is always there.
+- **Overlays:** the capture toolbar, recorder bar and run panel use 36 px buttons and 14–15 px text; the guide card is up to 390 px wide.
+
 The mockups are rendered to images with `python scripts/render_mockups.py` (into `docs/ui/images/`).
