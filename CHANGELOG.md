@@ -11,6 +11,7 @@
 - Setup guides: `guide.toml` lists the screens to open and the targets to take on each, in order; `python -m darbit.capture --guide guide.toml` walks through it, and `--guide capture.txt` converts a list once
 - The web UI package builds: `npm install`, `npm run build` puts every window's page into the package, and the wheel ships it; CI checks and builds it
 - UI themes: glass-dark, glass-light, midnight and high-contrast with every token, a theme chosen in one window shows in the others, and `npm run check` fails on a missing token or a colour outside the token files
+- UI components for every window, in Storybook (`npm run storybook`): buttons, chips, pills, the tools dock, sheets, the command palette, toasts, settings fields and switches, dashboard tiles with progress rings and bars, flow step rows, and capture's readout and magnifier
 
 ## 0.2.0 - 2026-10-25
 
