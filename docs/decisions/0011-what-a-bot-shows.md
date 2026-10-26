@@ -1,6 +1,6 @@
 # 0011 What a bot shows in the Studio
 
-Proposed, 2026-10-26.
+Accepted, 2026-10-26.
 
 ## Context
 
