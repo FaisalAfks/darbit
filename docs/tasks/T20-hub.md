@@ -1,6 +1,6 @@
 # T20 Hub app
 
-> **First usable version 2026-10-26** (#53): `darbit app` opens the Studio in a desktop window (T06). It lists installed bots and added project folders, runs, pauses and stops one as a child process, and shows its Overview (live from the run report), Library (thumbnails and last scores), Runs (any day of the report) and Settings (its `settings.toml` form, saved to `config.toml`). The dock opens Capture, Guide and Check for the open bot. Still to come: the run pill that the Studio collapses into while a bot runs, the install wizard, the Flows section (T27) and the keymap editor.
+> **First usable version 2026-10-26** (#53): `darbit app` opens the Studio in a desktop window (T06). It lists installed bots and added project folders, runs, pauses and stops one as a child process, and shows its Overview (live from the run report), Library (thumbnails and last scores), Runs (any day of the report) and Settings (its `settings.toml` form, saved to `config.toml`). The dock opens Capture, Guide and Check for the open bot. Still to come: the install wizard, the Flows section (T27) and the keymap editor.
 >
 > **How pause and stop reach the bot:** the Studio starts the bot with `DARBIT_CONTROL` set to `<bot>/.darbit/control`. A `pause` file there pauses it at its next `d.check()` (held keys are released); a `stop` file stops it like the stop hotkey. The bot's darbit looks every 0.25 s. If it hasn't stopped after 10 s, the process is ended.
 
@@ -25,6 +25,8 @@ A `normal` window, 960 × 640 (down to 720 × 480). A slim rail on the left with
 | **Settings** | theme, keymap editor (T04 KeyEditor), folders, start with Windows |
 
 ## Compact mode
+
+> **Built as the run pill** (issue 130, `desktop/pill.py`, `apps/hub/RunPill.svelte`): Run hides the Studio and shows a 460 × 64 `bar` window at the top centre of the Studio's monitor. It slides up after 3 s without the mouse on it, leaving 4 px showing; a real mouse move to the top edge above it brings it back. Real means not injected: a WH_MOUSE_LL hook skips events flagged `LLMHF_INJECTED`, which is everything darbit sends. Expand, or the bot ending, shows the Studio again. The `studio.collapse_on_run` UI setting turns it off.
 
 `ctrl+.` turns the hub into a 300 × 48 pill (a `bar` window, on top, no focus): bot name, status, current step in one line, Run/Pause/Stop. Again to restore.
 

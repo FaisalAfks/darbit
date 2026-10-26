@@ -5,6 +5,7 @@
 ### New
 
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it
+- The run pill: pressing Run shrinks the Studio to a bar at the top of the screen with the bot's current step, Pause, Stop and a way back. It slides away after 3 s; moving the mouse to the top edge brings it back, but the bot's own mouse moves never do. It can be turned off in the Studio's settings
 - Bots started from the Studio can be paused and stopped without ending the process: darbit watches a control folder given in `DARBIT_CONTROL`
 
 ## 0.3.0 - 2026-10-26

@@ -47,6 +47,7 @@ class Window:
         self.native = native  # the pywebview window
         self.kind = kind
         self.closed = threading.Event()
+        self.opened = threading.Event()  # set once the real window exists
 
     def close(self) -> None:
         self.native.destroy()
@@ -62,6 +63,10 @@ class Window:
 
     def wait(self) -> None:
         self.closed.wait()
+
+    def handle(self) -> int:
+        """The Win32 window handle (once `opened` is set)."""
+        return self.native.native.Handle.ToInt64()
 
 
 def page_url(app: str, query: dict | None = None) -> str:
@@ -106,6 +111,7 @@ def open_window(app: str, kind: Kind = "normal", monitor: int | None = None, que
             _add_styles(native, kind)
         except (AttributeError, OSError):
             pass  # without the styles the window still works; it may take focus when clicked
+        window.opened.set()
 
     native.events.shown += shown
     return window

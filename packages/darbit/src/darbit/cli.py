@@ -120,11 +120,14 @@ def _app(argv: list[str]) -> int:
     except ImportError:
         print('darbit Studio needs the app extra: pip install "darbit[app]"')
         return 2
+    from .desktop import pill
+
     try:
-        open_window("hub")
+        studio = open_window("hub")
     except ImportError:
         print('darbit Studio needs the app extra: pip install "darbit[app]"')
         return 2
+    pill.register(studio)
     run(args.debug)
     return 0
 

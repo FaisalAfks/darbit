@@ -69,6 +69,8 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "library.list": ("req", {"path": "str"}, "pictures with thumbnails and last scores"),
     "reports.days": ("req", {"path": "str"}, "days with a run report"),
     "tools.open": ("req", {"path": "str", "tool": "str"}, "open capture, guide or check for a bot"),
+    "studio.collapse": ("req", {"path": "str"}, "hide the Studio behind the run pill while the bot runs"),
+    "studio.expand": ("req", {}, "bring the Studio back from the run pill"),
 }
 
 

@@ -14,6 +14,7 @@
   import Segmented from "$lib/components/Segmented.svelte";
   import SettingsForm, { type Section } from "$lib/components/SettingsForm.svelte";
   import Sheet from "$lib/components/Sheet.svelte";
+  import Switch from "$lib/components/Switch.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { toast } from "$lib/toasts.svelte";
   import { chooseTheme, currentTheme, THEMES, type ThemeName } from "$lib/theme";
@@ -66,6 +67,7 @@
   let theme: ThemeName = $state(currentTheme());
   let folderToAdd = $state("");
   let problem = $state("");
+  let collapseOnRun = $state(true); // the Studio hides behind the run pill while a bot runs (issue 130)
   let ready = $state(false); // the bots list arrived
   let loading = $state(false); // no "nothing here" while a section is still on its way
 
@@ -136,8 +138,19 @@
 
   async function control(type: "project.run" | "project.pause" | "project.stop"): Promise<void> {
     if (!bot) return;
-    const reply = await request(type, { path: bot.path }).catch(failed);
-    if (reply) bot = { ...bot, status: reply.status };
+    const path = bot.path;
+    const reply = await request(type, { path }).catch(failed);
+    if (!reply) return;
+    bot = { ...bot, status: reply.status };
+    if (type === "project.run" && collapseOnRun) {
+      request("studio.collapse", { path }).catch(() => {
+        // no desktop window (opened in a browser): the Studio stays as it is
+      });
+    }
+  }
+
+  function pickCollapse(checked: boolean): void {
+    request("settings.set", { key: "studio.collapse_on_run", value: checked }).catch(failed);
   }
 
   async function saveSettings(values: Record<string, unknown>): Promise<void> {
@@ -169,6 +182,7 @@
 
   $effect(() => {
     if (!connected) return;
+    request("settings.get", { key: "studio.collapse_on_run" }).then((value) => (collapseOnRun = value !== false));
     loadBots()
       .catch((error: Error) => (problem = error.message))
       .finally(() => (ready = true));
@@ -253,6 +267,7 @@
             {#each THEMES as name (name)}<option value={name}>{THEME_LABELS[name]}</option>{/each}
           </select>
         </Field>
+        <Switch label="Hide while a bot runs" help="Run shrinks the Studio to a bar at the top of the screen. It slides away; move the mouse to the top edge to bring it back." bind:checked={collapseOnRun} onchange={pickCollapse} />
       </Sheet>
     </div>
   </header>

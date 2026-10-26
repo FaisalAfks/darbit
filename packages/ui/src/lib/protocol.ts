@@ -74,6 +74,10 @@ export interface Requests {
   "reports.days": { path: string };
   /** open capture, guide or check for a bot */
   "tools.open": { path: string; tool: string };
+  /** hide the Studio behind the run pill while the bot runs */
+  "studio.collapse": { path: string };
+  /** bring the Studio back from the run pill */
+  "studio.expand": Record<string, never>;
 }
 
 export interface Events {
