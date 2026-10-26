@@ -136,6 +136,23 @@ def status(folder: Path) -> str:
     return "running"
 
 
+def running() -> list[Path]:
+    """The bots this Studio started that are still running or paused."""
+    with _lock:
+        runs = list(_runs.values())
+    found = []
+    for run in runs:
+        if run.process.poll() is None:
+            found.append(run.folder)
+    return found
+
+
+def stop_all() -> None:
+    """Stop every bot this Studio started (quitting darbit)."""
+    for folder in running():
+        project_stop({"path": str(folder)})
+
+
 def project_run(data: dict) -> dict:
     """Start a bot as its own process, in its environment, with the Studio's control folder."""
     folder = _folder(data)

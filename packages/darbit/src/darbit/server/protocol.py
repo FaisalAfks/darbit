@@ -71,6 +71,7 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "tools.open": ("req", {"path": "str", "tool": "str"}, "open capture, guide or check for a bot"),
     "studio.collapse": ("req", {"path": "str"}, "hide the Studio behind the run pill while the bot runs"),
     "studio.expand": ("req", {}, "bring the Studio back from the run pill"),
+    "studio.page": ("evt", {"page": "str"}, "the tray asks the Studio to show a page (studio-settings)"),
 }
 
 

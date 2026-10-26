@@ -116,18 +116,13 @@ def _app(argv: list[str]) -> int:
     parser.add_argument("--debug", action="store_true", help="with the browser's developer tools")
     args = parser.parse_args(argv)
     try:
-        from .desktop import open_window, run
-    except ImportError:
-        print('darbit Studio needs the app extra: pip install "darbit[app]"')
-        return 2
-    from .desktop import pill
+        from .desktop import run
+        from .desktop.studio import open_studio
 
-    try:
-        studio = open_window("hub")
+        open_studio()
     except ImportError:
         print('darbit Studio needs the app extra: pip install "darbit[app]"')
         return 2
-    pill.register(studio)
     run(args.debug)
     return 0
 

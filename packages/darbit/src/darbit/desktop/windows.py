@@ -92,12 +92,19 @@ def _add_styles(native: object, kind: Kind) -> None:
     user32.SetWindowLongPtrW(ctypes.c_void_p(handle), GWL_EXSTYLE, current | extra)
 
 
-def open_window(app: str, kind: Kind = "normal", monitor: int | None = None, query: dict | None = None) -> Window:
-    """Open packages/ui/src/apps/<app> as a desktop window. pywebview is imported here, not at the top."""
+def open_window(
+    app: str, kind: Kind = "normal", monitor: int | None = None, query: dict | None = None, extra: dict | None = None
+) -> Window:
+    """Open packages/ui/src/apps/<app> as a desktop window. pywebview is imported here, not at the top.
+
+    `extra` holds more pywebview options (a place, a size, a background colour) and wins over the defaults.
+    """
     import webview
 
     width, height = SIZES[kind]
     options = {"width": width, "height": height}
+    if extra:
+        options.update(extra)
     if kind != "normal":
         options.update({"frameless": True, "on_top": True, "easy_drag": True, "focus": False, "transparent": True})
     if kind in ("overlay", "clickthrough"):

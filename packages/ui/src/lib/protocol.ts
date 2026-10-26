@@ -107,6 +107,8 @@ export interface Events {
   "project.status": { path: string; status: string; code: number | null };
   /** a running bot's report changed */
   "project.changed": { path: string };
+  /** the tray asks the Studio to show a page (studio-settings) */
+  "studio.page": { page: string };
 }
 
 export type RequestType = keyof Requests;
