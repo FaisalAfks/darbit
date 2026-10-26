@@ -8,7 +8,7 @@
 </div>
 
 <style>
-  .strip { height: 6px; border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
+  .strip { width: 100%; min-width: 160px; height: 6px; border-radius: var(--radius-pill); background: var(--raised); overflow: hidden; }
   i {
     display: block; height: 100%; transform-origin: left;
     background: linear-gradient(90deg, var(--accent), var(--accent-2));
