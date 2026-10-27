@@ -49,6 +49,15 @@ def ping(data: dict) -> dict:
     return {"darbit": __version__}
 
 
+def studio_show(data: dict) -> dict:
+    """Bring the Studio of this process forward, so a second `darbit app` doesn't open another one."""
+    show = HANDLERS.get("studio.show")
+    if show is None:
+        return {"shown": False}
+    show({})
+    return {"shown": True}
+
+
 @handles("keymap.get")
 def keymap_get(data: dict) -> dict:
     return keymap.load()
@@ -149,6 +158,7 @@ def create_app(token: str, port: int = 0) -> Starlette:
     GET /ping      is it there (token as a Bearer header or in the query)
     GET /keymap    the merged keymap (T04)
     GET /theme     the theme and custom tokens (T02)
+    GET /studio    bring the open Studio forward ({"shown": false} if this process has none)
     /              the built UI from darbit.ui.static_dir(), when it's there
     """
 
@@ -195,6 +205,7 @@ def create_app(token: str, port: int = 0) -> Starlette:
         Route("/ping", guarded(ping)),
         Route("/keymap", guarded(keymap_get)),
         Route("/theme", guarded(theme_get)),
+        Route("/studio", guarded(studio_show)),
     ]
     from ..ui import static_dir
     from . import actions_api, capture_api, hub, record_api

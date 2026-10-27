@@ -44,10 +44,7 @@ def _screens() -> list[tuple[int, int, int, int]]:
     import webview
 
     found = []
-    screens = webview.screens
-    if callable(screens):
-        screens = screens()
-    for screen in screens:
+    for screen in webview.screens:  # a list behind a lazy proxy, filled on first use
         found.append((screen.x, screen.y, screen.width, screen.height))
     return found
 
@@ -120,7 +117,14 @@ def open_studio() -> Window:
         else:
             studio.hide()
 
+    from ..server.app import HANDLERS
+
     studio.native.events.closing += closing
     icon.on_quit = quitting.set
+
+    def show(data: dict) -> None:
+        icon.show_studio()
+
+    HANDLERS["studio.show"] = show  # a second `darbit app` brings this one forward
     studio.native.events.shown += icon.start
     return studio

@@ -8,6 +8,7 @@ changes the files and every one of those lines together, or nothing at all. Deci
 
 import base64
 import json
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +22,7 @@ from ..project.manifest import Project
 THUMB = 160  # px, the longer side of a card's thumbnail
 HISTORY = 14  # last scores kept per asset for its small chart
 SKIP_DIRS = {".venv", "venv", ".darbit", ".git", "node_modules", "__pycache__", "build", "dist"}
+TOKEN = re.compile(r"[A-Za-z_][\w.\-]*")  # a dotted name in code: img.Lobby.Play, "Lobby.Play.png"
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.\-]*$")
 
 
@@ -45,6 +47,18 @@ def _folders(project: Project) -> list[Path]:
 
 
 def _thumbnail(path: Path) -> tuple[str | None, list[int] | None]:
+    """A card's thumbnail and the picture's size, made once per version of the file."""
+    stat = path.stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _thumbnails:
+        _thumbnails[key] = _make_thumbnail(path)
+    return _thumbnails[key]
+
+
+_thumbnails: dict[tuple[str, int, int], tuple[str | None, list[int] | None]] = {}
+
+
+def _make_thumbnail(path: Path) -> tuple[str | None, list[int] | None]:
     pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
     if pixels is None:
         return None, None
@@ -186,14 +200,17 @@ def _pattern(name: str) -> re.Pattern:
 
 
 def _source_files(project: Project) -> list[Path]:
+    """The bot's Python files and guide.toml, without walking into its environment, logs or git."""
     found = []
-    for path in project.folder.rglob("*"):
-        if not path.is_file():
-            continue
-        if _skipped(path.relative_to(project.folder)):
-            continue
-        if path.suffix == ".py" or path.name == "guide.toml":
-            found.append(path)
+    for folder, subfolders, files in os.walk(project.folder):
+        kept = []
+        for name in subfolders:
+            if name not in SKIP_DIRS and not name.startswith("."):
+                kept.append(name)
+        subfolders[:] = kept  # os.walk only goes into these
+        for name in files:
+            if name.endswith(".py") or name == "guide.toml":
+                found.append(Path(folder) / name)
     return found
 
 
@@ -233,13 +250,28 @@ def _use_counts(project: Project, names: list[str]) -> dict[str, int]:
             texts.append(_read(path))
         except (OSError, UnicodeDecodeError):
             continue
+    wanted = set(names)
     for name in names:
-        pattern = _pattern(name)
-        total = 0
-        for text in texts:
-            total += len(pattern.findall(text))
-        counts[name] = total
+        counts[name] = 0
+    for text in texts:
+        for token in TOKEN.findall(text):
+            for name in _names_in(token, wanted):
+                counts[name] += 1
     return counts
+
+
+def _names_in(token: str, wanted: set[str]) -> list[str]:
+    """The asset names a dotted token holds, the way _pattern matches them: "img.Lobby.Play" holds
+    "Lobby.Play" (and "Play" if that's an asset), and "Lobby.Play.png" holds "Lobby.Play"."""
+    parts = token.split(".")
+    if len(parts) > 1 and parts[-1] in ("png", "json"):
+        parts = parts[:-1]
+    found = []
+    for start in range(len(parts)):
+        name = ".".join(parts[start:])
+        if name in wanted:
+            found.append(name)
+    return found
 
 
 def _asset_files(project: Project, name: str) -> list[Path]:

@@ -65,7 +65,7 @@
       {/if}
     </div>
     {#if loaded && !actions.length}
-      <p class="empty">No actions yet. Turn on Edit and press ● Record: play, and every key and click becomes a step.</p>
+      <p class="empty">No actions yet. {editing ? "Press" : "Turn on Edit and press"} ● Record: play, and every key and click becomes a step.</p>
     {/if}
     <div class="grid">
       {#each actions as entry (entry.name)}

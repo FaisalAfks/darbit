@@ -59,6 +59,16 @@ def answers(server: Running) -> bool:
         return False
 
 
+def show_studio(server: Running) -> bool:
+    """Ask the running server to bring its Studio forward. False if it has no Studio open."""
+    request = urllib.request.Request(f"{server.url}/studio", headers={"Authorization": f"Bearer {server.token}"})
+    try:
+        with urllib.request.urlopen(request, timeout=2) as response:
+            return json.loads(response.read()).get("shown") is True
+    except (OSError, urllib.error.URLError, ValueError):
+        return False
+
+
 def running() -> Running | None:
     """The server that's running for this user, if it answers."""
     server = _read_info()

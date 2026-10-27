@@ -302,7 +302,8 @@
     position: relative;
     z-index: 0;
     display: flex;
-    min-height: 100vh;
+    height: 100vh; /* the window doesn't scroll: only the page under the top bar does */
+    overflow: hidden;
     color: var(--text);
     font-size: var(--size-content);
   }
@@ -310,9 +311,9 @@
     flex: 1;
     min-width: 0;
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     gap: var(--space-l);
-    padding: var(--space-l) var(--space-xxl) var(--space-xxl);
+    padding: var(--space-l) 0 0;
   }
   .top {
     display: grid;
@@ -420,8 +421,14 @@
     background: var(--accent-2);
     color: var(--on-accent);
   }
+  .top {
+    padding: 0 var(--space-xxl);
+  }
   main {
     min-width: 0;
+    overflow-y: auto;
+    padding: var(--space-xs) var(--space-xxl) var(--space-xxl);
+    contain: content; /* scrolling the page never repaints the top bar */
   }
   .page-in {
     animation: page-in var(--duration-normal) var(--curve-decelerate);

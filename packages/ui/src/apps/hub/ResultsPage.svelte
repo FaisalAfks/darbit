@@ -599,6 +599,9 @@
     top: var(--space-xs);
     translate: calc(-1 * var(--space-s)) 0;
   }
+  .hours span:first-child {
+    translate: none; /* 00:00 sits at the edge, so it isn't cut off */
+  }
   .track {
     position: relative;
     border-radius: var(--radius-s);

@@ -6,6 +6,15 @@
 
 - Smoother Studio, Capture and recorder: real input now comes through Raw Input instead of low-level hooks, so a busy darbit can never make the mouse or the game's keys lag; blur only on the small top bars; glowing and pulsing effects animate opacity and transform instead of repainting shadows; the background is its own fixed layer; Capture dims the shot with four panels and reads the magnifier's colour from a CPU copy of the shot
 
+### Fixed
+
+- `darbit app` failed to start (`'list' object is not callable` while reading the screens)
+- Only the page scrolls now; the top bar stays put
+- Dragging on Capture moved the whole overlay instead of drawing a box, and Esc and the other keys didn't reach it
+- A second `darbit app` while the Studio is in the tray brings it back instead of opening another Studio and tray icon
+- The Library opens faster: it skips the bot's environment and git folders, counts uses in one pass and keeps thumbnails until the file changes
+- The first hour on the Results timeline was cut off
+
 ### Docs
 
 - darbit Studio's redesign (decision 0013): structure, look, every page, Capture and the Recorder, chosen from rendered options in `docs/ui/redesign/`

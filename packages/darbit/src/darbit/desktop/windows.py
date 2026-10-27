@@ -106,9 +106,13 @@ def open_window(
     if extra:
         options.update(extra)
     if kind != "normal":
-        options.update({"frameless": True, "on_top": True, "easy_drag": True, "focus": False, "transparent": True})
+        options.update({"frameless": True, "on_top": True, "easy_drag": False, "focus": False, "transparent": True})
+    if kind == "bar":
+        options["easy_drag"] = True  # a bar is moved by dragging it anywhere
+    if kind == "overlay":
+        options["focus"] = True  # Capture's keys (Esc, Enter, arrows) need the keyboard
     if kind in ("overlay", "clickthrough"):
-        options["fullscreen"] = True
+        options["fullscreen"] = True  # never easy_drag: a drag on the overlay draws a box, it mustn't move the window
     native = webview.create_window(TITLES.get(app, f"darbit {app}"), page_url(app, query), **options)
     window = Window(native, kind)
     native.events.closed += window.closed.set

@@ -115,6 +115,12 @@ def _app(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="darbit app", description="Open darbit Studio.")
     parser.add_argument("--debug", action="store_true", help="with the browser's developer tools")
     args = parser.parse_args(argv)
+    from . import server
+
+    current = server.running()
+    if current is not None and server.show_studio(current):
+        print("darbit Studio is already open (it was in the tray).")
+        return 0
     try:
         from .desktop import run
         from .desktop.studio import open_studio
