@@ -56,3 +56,9 @@ def step(name: str) -> Iterator[None]:
         end("ok")
     finally:
         path.pop()
+
+
+def flow(function):
+    """Mark a function as an action (decision 0010): the Studio opens it as steps, and calling it plays it."""
+    function.darbit_flow = True
+    return function

@@ -41,7 +41,7 @@ from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
 from .runtime.show import Record, next_up, plan, progress
 from .runtime.state import State, Timer
-from .runtime.steps import step
+from .runtime.steps import flow, step
 from .settings import settings
 
 next = next_up  # d.next("Weekly reset", when): shown in darbit Studio (decision 0011)
@@ -85,6 +85,7 @@ __all__ = [
     "drag",
     "exists",
     "find_all",
+    "flow",
     "hold",
     "hover",
     "log",
