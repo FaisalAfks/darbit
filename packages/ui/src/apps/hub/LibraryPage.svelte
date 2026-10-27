@@ -480,6 +480,13 @@
     box-shadow:
       0 0 0 100vmax color-mix(in oklab, var(--bg) 45%, transparent),
       0 0 var(--space-l) color-mix(in oklab, var(--kind-image) 70%, transparent);
+  }
+  .inplace .glow::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--space-xs));
+    border-radius: var(--radius-m);
+    box-shadow: 0 0 var(--space-xl) var(--kind-image);
     animation: breathe 1.6s ease-in-out infinite;
   }
   .inplace small {
@@ -498,9 +505,7 @@
   }
   @keyframes breathe {
     50% {
-      box-shadow:
-        0 0 0 100vmax color-mix(in oklab, var(--bg) 45%, transparent),
-        0 0 var(--space-xxl) color-mix(in oklab, var(--kind-image) 90%, transparent);
+      opacity: 0.35;
     }
   }
   @keyframes page-in {

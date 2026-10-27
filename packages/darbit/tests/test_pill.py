@@ -1,7 +1,6 @@
 """The run pill's show and hide rules, without windows or a mouse hook."""
 
 from darbit.desktop.pill import EDGE, HIDE_AFTER, MARGIN, PEEK, Peek
-from darbit.platform.hooks import LLMHF_INJECTED, LLMHF_LOWER_IL_INJECTED, is_real
 
 
 def bar() -> Peek:
@@ -36,13 +35,6 @@ def test_only_the_top_edge_above_the_bar_brings_it_back():
 
 def test_hidden_leaves_a_sliver_showing():
     assert bar().hidden_top() == -64 + PEEK
-
-
-def test_injected_moves_are_not_real():
-    assert is_real(0)
-    assert not is_real(LLMHF_INJECTED)
-    assert not is_real(LLMHF_INJECTED | LLMHF_LOWER_IL_INJECTED)
-    assert not is_real(LLMHF_LOWER_IL_INJECTED)
 
 
 def test_a_bar_set_to_never_hide_stays():

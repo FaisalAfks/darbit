@@ -167,22 +167,34 @@
     animation: drop var(--duration-normal) var(--curve-decelerate);
   }
   .rec {
+    position: relative;
     width: var(--space-m-nudge);
     height: var(--space-m-nudge);
+    border-radius: 50%;
+    background: var(--danger);
+  }
+  .rec::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     border-radius: 50%;
     background: var(--danger);
     animation: rec 1.4s ease-out infinite;
   }
   .paused .rec {
     background: var(--warn);
-    animation: none;
+  }
+  .paused .rec::after {
+    display: none;
   }
   @keyframes rec {
-    70% {
-      box-shadow: 0 0 0 var(--space-s) color-mix(in oklab, var(--danger) 0%, transparent);
+    from {
+      opacity: 0.6;
+      transform: scale(1);
     }
-    0% {
-      box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger) 60%, transparent);
+    to {
+      opacity: 0;
+      transform: scale(2.4);
     }
   }
   .time {

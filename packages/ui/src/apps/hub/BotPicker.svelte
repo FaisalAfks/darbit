@@ -247,8 +247,16 @@
     background: var(--faint);
   }
   .dot[data-status="running"] {
+    position: relative;
     background: var(--ok);
-    animation: beat 2s ease-in-out infinite;
+  }
+  .dot[data-status="running"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: beat 2s ease-out infinite;
   }
   .dot[data-status="paused"] {
     background: var(--warn);
@@ -258,8 +266,13 @@
     background: var(--danger);
   }
   @keyframes beat {
-    50% {
-      box-shadow: 0 0 0 var(--space-xs) color-mix(in oklab, var(--ok) 25%, transparent);
+    from {
+      opacity: 0.5;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(2.6);
     }
   }
   .add input {

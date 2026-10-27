@@ -276,11 +276,19 @@
 <style>
   :global(html body) {
     margin: 0;
+    background: var(--bg);
+  }
+  /* the colour wash: its own fixed layer, painted once, never repainted while scrolling or resizing */
+  .studio::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background:
       radial-gradient(60vw 40vh at 80% -10%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%),
-      radial-gradient(50vw 40vh at 0% 100%, color-mix(in oklab, var(--accent-2) 14%, transparent), transparent 70%),
-      var(--bg);
-    background-attachment: fixed;
+      radial-gradient(50vw 40vh at 0% 100%, color-mix(in oklab, var(--accent-2) 14%, transparent), transparent 70%);
+    transform: translateZ(0);
   }
   /* "Smooth effects" off: no blur and no motion, for slower PCs */
   :global(html[data-effects="off"] *),
@@ -291,6 +299,8 @@
     transition: none !important;
   }
   .studio {
+    position: relative;
+    z-index: 0;
     display: flex;
     min-height: 100vh;
     color: var(--text);

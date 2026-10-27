@@ -73,13 +73,18 @@
     return `left:${view(target[0])}px;top:${view(target[1])}px;width:${view(target[2])}px;height:${view(target[3])}px`;
   }
 
-  function dimPath(target: Box | null): string {
-    if (!target) return "none";
-    const a = (target[0] / shotW) * 100;
-    const b = (target[1] / shotH) * 100;
-    const c = ((target[0] + target[2]) / shotW) * 100;
-    const d = ((target[1] + target[3]) / shotH) * 100;
-    return `polygon(0 0,100% 0,100% 100%,0 100%,0 0,${a}% ${b}%,${a}% ${d}%,${c}% ${d}%,${c}% ${b}%,${a}% ${b}%)`;
+  /** The screen outside the box, as four plain panels: moving the box repaints only their edges. */
+  function dimParts(target: Box): string[] {
+    const left = view(target[0]);
+    const top = view(target[1]);
+    const right = view(target[0] + target[2]);
+    const bottom = view(target[1] + target[3]);
+    return [
+      `left:0;top:0;right:0;height:${top}px`,
+      `left:0;top:${bottom}px;right:0;bottom:0`,
+      `left:0;top:${top}px;width:${left}px;height:${bottom - top}px`,
+      `left:${right}px;top:${top}px;right:0;height:${bottom - top}px`,
+    ];
   }
 
   async function loadFrame(): Promise<void> {
@@ -97,11 +102,18 @@
     draw();
   }
 
+  let pixels: CanvasRenderingContext2D | null = null; // a CPU copy of the shot, to read colours without a GPU stall
+
   function draw(): void {
     if (!canvas || !shot) return;
     canvas.width = shotW;
     canvas.height = shotH;
     canvas.getContext("2d")!.drawImage(shot, 0, 0);
+    const copy = document.createElement("canvas");
+    copy.width = shotW;
+    copy.height = shotH;
+    pixels = copy.getContext("2d", { willReadFrequently: true });
+    pixels?.drawImage(shot, 0, 0);
   }
 
   let testName = $state(""); // opened from the Library to test this saved picture
@@ -156,7 +168,7 @@
     context.clearRect(0, 0, MAG, MAG);
     const span = MAG / ZOOM;
     context.drawImage(shot, sx - span / 2, sy - span / 2, span, span, 0, 0, MAG, MAG);
-    const pixel = context.getImageData(MAG / 2, MAG / 2, 1, 1).data;
+    const pixel = pixels ? pixels.getImageData(Math.round(sx), Math.round(sy), 1, 1).data : [0, 0, 0];
     colour = "#" + [pixel[0], pixel[1], pixel[2]].map((part) => part.toString(16).padStart(2, "0")).join("");
     place = `${Math.round(sx)}, ${Math.round(sy)}`;
     let left = mouse.x + 24;
@@ -428,7 +440,12 @@
     onpointerup={stageUp}
     oncontextmenu={stageMenu}
   ></div>
-  <div class="dim" class:testing style:clip-path={dimPath(box)}></div>
+  {#if box}
+    {@const dim = dimParts(box)}
+    {#each dim as part, index (index)}<div class="dim" style={part}></div>{/each}
+  {:else}
+    <div class="dim" style="inset:0"></div>
+  {/if}
 
   {#if region}
     <div class="region" style={css(region)}></div>
@@ -570,7 +587,6 @@
   }
   .dim {
     position: absolute;
-    inset: 0;
     background: var(--screen-dim);
     pointer-events: none;
   }
@@ -578,7 +594,6 @@
     background: var(--glass-strong);
     border: 1px solid var(--line);
     box-shadow: var(--shadow);
-    backdrop-filter: blur(var(--blur));
   }
   .region,
   .drawing {
@@ -671,8 +686,9 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: -30%;
+    left: 0;
     width: 30%;
+    transform: translateX(-100%);
     background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--accent) 25%, transparent), color-mix(in oklab, var(--accent) 50%, transparent));
     border-right: 2px solid var(--accent);
   }
@@ -681,7 +697,7 @@
   }
   @keyframes sweep {
     to {
-      left: 100%;
+      transform: translateX(340%);
     }
   }
   .hit {
@@ -716,6 +732,7 @@
     background: color-mix(in oklab, var(--c) 16%, transparent);
     box-shadow: 0 0 var(--space-xl) color-mix(in oklab, var(--c) 55%, transparent);
     animation: breathe 1.6s ease-in-out infinite;
+    will-change: opacity;
   }
   .hit .score {
     position: absolute;
@@ -745,7 +762,7 @@
   }
   @keyframes breathe {
     50% {
-      box-shadow: 0 0 var(--space-xxxl) color-mix(in oklab, var(--c) 75%, transparent);
+      opacity: 0.55;
     }
   }
   .hint {

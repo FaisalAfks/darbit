@@ -37,7 +37,6 @@
     padding: var(--space-xxl);
     border-radius: var(--radius-xl);
     background: var(--glass);
-    backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
     box-shadow: var(--shadow);
   }

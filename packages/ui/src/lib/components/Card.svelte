@@ -9,7 +9,7 @@
 
 <style>
   .card {
-    background: var(--glass); backdrop-filter: blur(var(--blur)); border: 1px solid var(--line);
+    background: var(--glass); border: 1px solid var(--line);
     border-radius: var(--radius-xl); box-shadow: var(--shadow); padding: var(--space-m) var(--space-l);
   }
 </style>

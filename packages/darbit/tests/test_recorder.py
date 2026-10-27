@@ -1,6 +1,5 @@
 """Recording: fake keyboard and mouse events into steps (presses, combos, holds, clicks, waits)."""
 
-from darbit.platform import hooks
 from darbit.runs.flowfile import Step
 from darbit.runs.recorder import RawEvent, Recorder, key_name
 
@@ -86,8 +85,3 @@ def test_key_codes_have_keymap_names():
     assert key_name(0xA0) == "shift"
     assert key_name(0x70) == "f1"
     assert key_name(0xFF) == ""
-
-
-def test_injected_keys_are_not_recorded():
-    assert hooks.key_is_real(0)
-    assert not hooks.key_is_real(hooks.LLKHF_INJECTED)
