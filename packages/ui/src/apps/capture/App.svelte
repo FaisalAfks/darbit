@@ -104,8 +104,11 @@
     canvas.getContext("2d")!.drawImage(shot, 0, 0);
   }
 
+  let testName = $state(""); // opened from the Library to test this saved picture
+
   async function loadSession(): Promise<void> {
     const found = await request("capture.session");
+    testName = found.test ?? "";
     items = found.items;
     if (!total) total = items.length;
     if (current) {
@@ -128,6 +131,10 @@
   async function begin(): Promise<void> {
     reset();
     await Promise.all([loadSession(), loadFrame()]);
+    if (testName) {
+      name = testName;
+      await runTest();
+    }
   }
 
   function setBox(next: Box | null): void {
@@ -285,12 +292,13 @@
 
   // ---- Test, Save, close
   async function runTest(): Promise<void> {
-    if (!testable || !box) return;
+    if (!testName && (!testable || !box)) return;
     testing = true;
     scanning = false;
     hits = [];
     requestAnimationFrame(() => (scanning = true));
-    const result = await request("capture.test", { box, region, similarity }).catch((error: Error) => {
+    const asked = testName && !box ? { name: testName, similarity } : { box, region, similarity };
+    const result = await request("capture.test", asked).catch((error: Error) => {
       message = error.message;
       return null;
     });
@@ -332,6 +340,10 @@
 
   function close(): void {
     if (testing) {
+      if (testName) {
+        request("capture.close");
+        return;
+      }
       testing = false;
       hits = [];
       return;
@@ -481,6 +493,7 @@
 
   {#if testing}
     <div class="result glass">
+      {#if testName}<b class="testing-name">{testName}</b>{/if}
       <b>{hits.length} match{hits.length === 1 ? "" : "es"}</b>
       <span class="muted">{region ? "in its region" : "on the whole screen"} · {testMs} ms</span>
       <input type="range" min="0.5" max="1" step="0.01" bind:value={similarity} aria-label="Similarity" />
@@ -825,6 +838,10 @@
     border-radius: var(--radius-pill);
     font-size: var(--size-body);
     animation: drop var(--duration-normal) var(--curve-decelerate);
+  }
+  .testing-name {
+    font-family: var(--mono);
+    color: var(--kind-image);
   }
   .result input {
     width: calc(5 * var(--control-m));

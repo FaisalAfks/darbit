@@ -111,6 +111,7 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "project.settings": ("req", {"path": "str"}, "a bot's settings form and values"),
     "project.settings.save": ("req", {"path": "str", "values": "dict"}, "save a bot's settings"),
     "library.list": ("req", {"path": "str"}, "pictures with thumbnails and last scores"),
+    "library.screens": ("req", {"path": "str"}, "each screen's last shot with its assets in place"),
     "library.uses": ("req", {"path": "str", "name": "str"}, "every line in the bot that names an asset"),
     "library.rename.plan": ("req", {"path": "str", "name": "str", "to": "str"}, "what renaming an asset would change"),
     "library.rename": ("req", {"path": "str", "name": "str", "to": "str"}, "rename an asset and every line naming it"),

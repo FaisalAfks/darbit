@@ -285,6 +285,11 @@ def library_uses(data: dict) -> list[dict]:
     return found
 
 
+def library_screens(data: dict) -> list[dict]:
+    """Each screen's last shot with its assets in place."""
+    return library.screens(load(_folder(data)))
+
+
 def library_rename_plan(data: dict) -> dict:
     """What renaming an asset would change, without changing anything."""
     return library.rename_plan(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
@@ -341,6 +346,7 @@ def register() -> None:
     HANDLERS["project.settings.save"] = settings_save
     HANDLERS["library.list"] = library_list
     HANDLERS["library.uses"] = library_uses
+    HANDLERS["library.screens"] = library_screens
     HANDLERS["library.rename.plan"] = library_rename_plan
     HANDLERS["library.rename"] = library_rename
     HANDLERS["results.days"] = results_days

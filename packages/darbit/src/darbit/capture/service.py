@@ -10,12 +10,15 @@ Coordinates are pixels of the frozen shot. server/capture_api.py turns these int
 the server. See docs/tasks/T09-capture-overlay.md.
 """
 
+import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import cv2
 import numpy as np
 
+from .. import paths
 from ..core.geometry import Location, Region
 from ..core.matching import every
 from ..core.targets import Target, read_image
@@ -27,6 +30,7 @@ from .store import save_result
 
 LOOK_ALIKE = 0.5  # Test shows matches down to this score, so look-alikes under the line show too
 MOST_MATCHES = 12
+SCREEN_QUALITY = 82  # JPEG quality of the kept screen shots
 KINDS = {"image": "image", "region": "region", "point": "location", "location": "location"}
 
 
@@ -42,20 +46,22 @@ class Session:
     shot: np.ndarray | None = None
     origin: Region | None = None
     prepared: Prepared | None = None
+    test: str | None = None  # opened to test this saved picture
 
 
 _session: Session | None = None
 
 
-def start(project: Path, images: Path, items: list[Item]) -> dict:
-    """Begin a capture session for a bot. Items already taken are left out."""
+def start(project: Path, images: Path, items: list[Item], test: str | None = None) -> dict:
+    """Begin a capture session for a bot. Items already taken are left out. With `test`, the session opens
+    straight into Test for that saved picture."""
     global _session
     waiting = []
     for item in items:
         if not captured(item, images):
             waiting.append(item)
-    _session = Session(project, images, waiting)
-    return {"items": describe(waiting)}
+    _session = Session(project, images, waiting, test=test)
+    return {"items": describe(waiting), "test": test}
 
 
 def describe(items: list[Item]) -> list[dict]:
@@ -126,6 +132,8 @@ def test(box: list[int] | None, name: str | None, region: list[int] | None, simi
         if not path.is_file():
             raise CaptureError(f"no picture called {name}")
         pixels = read_image(path)
+        if region is None:
+            region = _saved_region(session, name)
     else:
         raise CaptureError("box something first")
     area = Region(0, 0, shot.shape[1], shot.shape[0])
@@ -144,6 +152,21 @@ def test(box: list[int] | None, name: str | None, region: list[int] | None, simi
         "ms": milliseconds,
         "searched": [area.x, area.y, area.w, area.h],
     }
+
+
+def _saved_region(session: Session, name: str) -> list[int] | None:
+    """A saved picture's search region, moved into the shot's pixels."""
+    settings_file = session.images / (name + ".json")
+    if not settings_file.is_file() or session.origin is None:
+        return None
+    try:
+        saved = json.loads(settings_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    area = saved.get("region") if isinstance(saved, dict) else None
+    if not isinstance(area, list) or len(area) != 4:
+        return None
+    return [area[0] - session.origin.x, area[1] - session.origin.y, area[2], area[3]]
 
 
 def save(name: str, kind: str, image: list[int] | None, region: list[int] | None, point: list[float] | None) -> dict:
@@ -172,12 +195,50 @@ def save(name: str, kind: str, image: list[int] | None, region: list[int] | None
         raise CaptureError("click the point first")
     item = Item(name, capture_kind)
     saved = save_result(session.images, item, result, shot, origin, None)
+    remember_screen(session.project, name, capture_kind, shot, image, region, point)
     remaining = []
     for waiting in session.items:
         if waiting.name != name:
             remaining.append(waiting)
     session.items = remaining
     return {"message": saved.message, "risky": saved.risky, "items": describe(remaining)}
+
+
+def screens_folder(project: Path) -> Path:
+    """Where the last shot of each screen is kept, for the Library's Screen view."""
+    return paths.project_dir(project) / "screens"
+
+
+def remember_screen(
+    project: Path,
+    name: str,
+    kind: str,
+    shot: np.ndarray,
+    image: list[int] | None,
+    region: list[int] | None,
+    point: list[float] | None,
+) -> None:
+    """Keep the shot an asset was taken on, and where the asset sits in it, under the asset's screen
+    ("Lobby" for "Lobby.Play"). Other assets already placed on that screen keep their places."""
+    group = name.split(".")[0] if "." in name else "Other"
+    folder = screens_folder(project)
+    folder.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(folder / f"{group}.jpg"), shot, [cv2.IMWRITE_JPEG_QUALITY, SCREEN_QUALITY])
+    places_file = folder / f"{group}.json"
+    places: dict = {}
+    if places_file.is_file():
+        try:
+            places = json.loads(places_file.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            places = {}
+    boxes = places.get("assets", {})
+    box = image or region
+    if kind == "location" and point is not None:
+        box = [round(point[0]) - 6, round(point[1]) - 6, 12, 12]
+    if box is not None:
+        boxes[name] = {"kind": kind, "box": [int(value) for value in box]}
+    places = {"w": int(shot.shape[1]), "h": int(shot.shape[0]), "assets": boxes}
+    places_file.write_text(json.dumps(places, indent=1), encoding="utf-8")
 
 
 def stop() -> None:

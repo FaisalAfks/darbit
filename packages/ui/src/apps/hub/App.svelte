@@ -119,7 +119,7 @@
     form = await request("project.settings", { path });
   }
 
-  async function openCapture(mode: "guide" | "one" | "new", name = "", kind = "image"): Promise<void> {
+  async function openCapture(mode: "guide" | "one" | "new" | "test", name = "", kind = "image"): Promise<void> {
     if (!bot) return;
     const reply = await request("capture.open", { path: bot.path, mode, name, kind }).catch((error: Error) => {
       toast(error.message.includes("unknown request") ? "Capture opens from the desktop Studio (darbit app)" : error.message);
@@ -254,7 +254,7 @@
         {:else if page === "overview"}
           <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={() => openCapture("new")} />
         {:else if page === "library"}
-          <LibraryPage path={bot.path} {editing} bind:tab={libraryTab} bind:opened={openedAction} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} />
+          <LibraryPage path={bot.path} {editing} bind:tab={libraryTab} bind:opened={openedAction} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} ontest={(name) => openCapture("test", name)} />
         {:else if page === "results"}
           <ResultsPage path={bot.path} onretake={() => openCapture("new")} />
         {:else if page === "settings"}

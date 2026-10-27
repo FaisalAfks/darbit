@@ -90,6 +90,8 @@ export interface Requests {
   "project.settings.save": { path: string; values: Record<string, unknown> };
   /** pictures with thumbnails and last scores */
   "library.list": { path: string };
+  /** each screen's last shot with its assets in place */
+  "library.screens": { path: string };
   /** every line in the bot that names an asset */
   "library.uses": { path: string; name: string };
   /** what renaming an asset would change */

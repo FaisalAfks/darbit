@@ -36,12 +36,14 @@
     path,
     editing,
     oncapture,
+    ontest,
     tab = $bindable("assets"),
     opened = $bindable(""),
   }: {
     path: string;
     editing: boolean;
     oncapture: (name?: string, kind?: string) => void;
+    ontest: (name: string) => void;
     tab?: string;
     opened?: string;
   } = $props();
@@ -61,7 +63,18 @@
     { value: "weak", label: "Weak" },
   ];
 
+  interface ScreenShot {
+    screen: string;
+    picture: string;
+    w: number;
+    h: number;
+    assets: Record<string, { kind: string; box: number[] }>;
+  }
+
   let assets: Asset[] = $state([]);
+  let screens: ScreenShot[] = $state([]);
+  let view = $state("grid"); // grid or screen
+  let screenName = $state("");
   let loaded = $state(false);
   let filter = $state("all");
   let query = $state("");
@@ -73,6 +86,8 @@
   let planError = $state("");
 
   const current = $derived(assets.find((asset) => asset.name === chosen) ?? null);
+  const shownScreen = $derived(screens.find((each) => each.screen === screenName) ?? screens[0] ?? null);
+  const currentPlace = $derived(placeOf(current));
   const thumbnails = $derived(Object.fromEntries(assets.filter((asset) => asset.thumbnail).map((asset) => [asset.name, asset.thumbnail as string])));
   const shown = $derived(assets.filter(keep));
   const groups = $derived(groupAssets(shown));
@@ -120,7 +135,21 @@
     return found;
   }
 
+  function placeOf(asset: Asset | null): { shot: ScreenShot; box: number[] } | null {
+    if (!asset) return null;
+    for (const shot of screens) {
+      const place = shot.assets[asset.name];
+      if (place) return { shot, box: place.box };
+    }
+    return null;
+  }
+
+  function pct(value: number, total: number): string {
+    return `${(value / total) * 100}%`;
+  }
+
   async function load(): Promise<void> {
+    screens = await request<ScreenShot[]>("library.screens", { path }).catch(() => []);
     assets = await request<Asset[]>("library.list", { path });
     loaded = true;
     if (chosen && !assets.some((asset) => asset.name === chosen)) chosen = null;
@@ -196,6 +225,10 @@
 <div class="library" class:has-current={!!current}>
   <div class="main">
     <div class="bar">
+      <div class="views" role="radiogroup" aria-label="View">
+        <button role="radio" aria-checked={view === "grid"} class:on={view === "grid"} onclick={() => (view = "grid")}>▦ Grid</button>
+        <button role="radio" aria-checked={view === "screen"} class:on={view === "screen"} onclick={() => (view = "screen")} disabled={!screens.length} title={screens.length ? "" : "Screens show up once pictures are taken with Capture"}>▣ Screen</button>
+      </div>
       <input class="search" bind:value={query} placeholder="⌕ Search {assets.length} assets" aria-label="Search assets" />
       <div class="filters" role="radiogroup" aria-label="Show">
         {#each FILTERS as item (item.value)}
@@ -216,6 +249,27 @@
       <p class="empty">{assets.length ? "Nothing matches." : "No assets yet. Turn on Edit and use Capture, or the setup guide."}</p>
     {/if}
 
+    {#if view === "screen" && shownScreen}
+      <div class="screenpick">
+        {#each screens as shot (shot.screen)}<button class:on={shot.screen === shownScreen.screen} onclick={() => (screenName = shot.screen)}>{shot.screen}</button>{/each}
+      </div>
+      <div class="screen">
+        <img src={shownScreen.picture} alt="The {shownScreen.screen} screen, when its pictures were taken" />
+        {#each Object.entries(shownScreen.assets) as [assetName, place] (assetName)}
+          <button
+            class="placed"
+            class:chosen={assetName === chosen}
+            data-kind={place.kind}
+            style:left={pct(place.box[0], shownScreen.w)}
+            style:top={pct(place.box[1], shownScreen.h)}
+            style:width={pct(place.box[2], shownScreen.w)}
+            style:height={pct(place.box[3], shownScreen.h)}
+            onclick={() => choose(assetName)}
+            title={assetName}
+          ><span>{assetName.slice(shownScreen.screen.length + 1) || assetName}</span></button>
+        {/each}
+      </div>
+    {:else}
     {#each groups as group (group.name)}
       <h3>{group.name}<small>{group.assets.length}</small></h3>
       <div class="grid">
@@ -245,10 +299,18 @@
         {/each}
       </div>
     {/each}
+    {/if}
   </div>
 
   {#if current}
     <aside class="inspector">
+      {#if currentPlace}
+        <div class="inplace" style:aspect-ratio="{currentPlace.shot.w} / {currentPlace.shot.h}">
+          <img src={currentPlace.shot.picture} alt="" />
+          <span class="glow" style:left={pct(currentPlace.box[0], currentPlace.shot.w)} style:top={pct(currentPlace.box[1], currentPlace.shot.h)} style:width={pct(currentPlace.box[2], currentPlace.shot.w)} style:height={pct(currentPlace.box[3], currentPlace.shot.h)}></span>
+          <small>{currentPlace.shot.screen}</small>
+        </div>
+      {/if}
       <div class="big" data-kind={current.kind}>
         {#if current.thumbnail}<img src={current.thumbnail} alt="" />{:else if current.missing}not taken yet{:else if current.kind === "region"}▭{:else}✛{/if}
       </div>
@@ -266,6 +328,9 @@
         </div>
       {/if}
 
+      {#if current.kind === "image" && !current.missing}
+        <div class="actions"><button class="action test" onclick={() => ontest(current?.name ?? "")}>◎ Test on screen</button></div>
+      {/if}
       {#if editing}
         <div class="actions">
           <button class="action" onclick={() => oncapture(current?.name, current?.kind)}>▣ {current.missing ? "Take it" : "Retake"}</button>
@@ -304,6 +369,146 @@
 {/if}
 
 <style>
+  .views {
+    display: flex;
+    padding: var(--space-xxs);
+    border-radius: var(--radius-pill);
+    background: var(--raised);
+  }
+  .views button,
+  .screenpick button {
+    height: calc(var(--control-m) - 2 * var(--space-xxs));
+    padding: 0 var(--space-m);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--muted);
+    font: 600 var(--size-caption) / 1 var(--font-strong);
+    cursor: pointer;
+  }
+  .views button.on,
+  .screenpick button.on {
+    background: var(--raised-hover);
+    color: var(--text);
+  }
+  .views button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .screenpick {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+  .screenpick button {
+    height: var(--control-m);
+    background: var(--raised);
+  }
+  .screen {
+    position: relative;
+    border-radius: var(--radius-l);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    animation: page-in var(--duration-normal) var(--curve-decelerate);
+  }
+  .screen img {
+    display: block;
+    width: 100%;
+  }
+  .placed {
+    position: absolute;
+    padding: 0;
+    border: 2px solid color-mix(in oklab, var(--kind-image) 70%, transparent);
+    border-radius: var(--radius-s);
+    background: color-mix(in oklab, var(--kind-image) 8%, transparent);
+    cursor: pointer;
+    transition:
+      box-shadow var(--duration-normal) var(--curve-decelerate),
+      background var(--duration-fast) var(--curve-easy-ease);
+  }
+  .placed span {
+    position: absolute;
+    left: calc(-1 * var(--space-xxs));
+    bottom: 100%;
+    padding: 0 var(--space-s);
+    border-radius: var(--radius-s) var(--radius-s) var(--radius-s) 0;
+    background: var(--kind-image);
+    color: var(--on-accent);
+    font: 700 var(--size-caption) / 1.5 var(--font-strong);
+    white-space: nowrap;
+  }
+  .placed[data-kind="region"] {
+    border-style: dashed;
+    border-color: var(--kind-region);
+    background: none;
+  }
+  .placed[data-kind="region"] span {
+    background: var(--kind-region);
+  }
+  .placed[data-kind="location"] {
+    border-color: var(--kind-point);
+    border-radius: 50%;
+  }
+  .placed[data-kind="location"] span {
+    background: var(--kind-point);
+  }
+  .placed:hover {
+    background: color-mix(in oklab, var(--kind-image) 18%, transparent);
+  }
+  .placed.chosen {
+    z-index: 1;
+    border-color: var(--kind-image);
+    box-shadow:
+      0 0 0 100vmax color-mix(in oklab, var(--bg) 45%, transparent),
+      0 0 var(--space-xl) color-mix(in oklab, var(--kind-image) 60%, transparent);
+  }
+  .inplace {
+    position: relative;
+    border-radius: var(--radius-m);
+    overflow: hidden;
+  }
+  .inplace img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .inplace .glow {
+    position: absolute;
+    border: 2px solid var(--kind-image);
+    border-radius: var(--radius-s);
+    box-shadow:
+      0 0 0 100vmax color-mix(in oklab, var(--bg) 45%, transparent),
+      0 0 var(--space-l) color-mix(in oklab, var(--kind-image) 70%, transparent);
+    animation: breathe 1.6s ease-in-out infinite;
+  }
+  .inplace small {
+    position: absolute;
+    left: var(--space-s);
+    bottom: var(--space-s);
+    padding: 0 var(--space-s);
+    border-radius: var(--radius-pill);
+    background: color-mix(in oklab, var(--bg) 70%, transparent);
+    font-size: var(--size-caption);
+  }
+  .action.test {
+    border: 1px solid color-mix(in oklab, var(--ok) 40%, transparent);
+    background: color-mix(in oklab, var(--ok) 14%, transparent);
+    color: var(--ok);
+  }
+  @keyframes breathe {
+    50% {
+      box-shadow:
+        0 0 0 100vmax color-mix(in oklab, var(--bg) 45%, transparent),
+        0 0 var(--space-xxl) color-mix(in oklab, var(--kind-image) 90%, transparent);
+    }
+  }
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--space-s));
+    }
+  }
   .tabs {
     margin-bottom: var(--space-m);
   }

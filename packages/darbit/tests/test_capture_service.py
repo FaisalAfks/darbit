@@ -136,3 +136,31 @@ def test_hotkeys_read_like_the_keymap():
         parse("ctrl+alt")
     with pytest.raises(ValueError):
         parse("a+b")
+
+
+def test_saving_keeps_the_screen_with_its_assets(frozen, tmp_path):
+    from darbit.project.manifest import load
+    from darbit.server import library
+
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)
+    service.save("Bag.Slot", "point", None, None, [100, 120])
+    screens = service.screens_folder(tmp_path)
+    assert (screens / "Bag.jpg").is_file()
+    places = json.loads((screens / "Bag.json").read_text(encoding="utf-8"))
+    assert places["w"] == 900
+    assert places["assets"]["Bag.Equip"] == {"kind": "image", "box": [500, 400, 150, 50]}
+    assert places["assets"]["Bag.Slot"]["kind"] == "location"
+    (tmp_path / "darbit.toml").write_text(
+        '[bot]\nname = "test-bot"\n[images]\nfolders = ["assets/images"]\n', encoding="utf-8"
+    )
+    listed = library.screens(load(tmp_path))
+    assert listed[0]["screen"] == "Bag"
+    assert listed[0]["picture"].startswith("data:image/jpeg;base64,")
+    assert set(listed[0]["assets"]) == {"Bag.Equip", "Bag.Slot"}
+
+
+def test_a_saved_picture_is_tested_in_its_own_region(frozen):
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], [450, 350, 300, 150], None)
+    result = service.test(None, "Bag.Equip", None, 0.9)
+    assert result["searched"] == [450, 350, 300, 150]  # its saved region, back in the shot's pixels
+    assert len(result["matches"]) == 1

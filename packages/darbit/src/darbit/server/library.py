@@ -306,3 +306,34 @@ def rename(project: Project, old: str, new: str) -> dict:
             after.rename(before)
         raise LibraryError(f"couldn't rename {old}: {error}; nothing was changed") from error
     return plan
+
+
+SCREEN_WIDTH = 1280  # px, the kept screen shots are sent at most this wide
+
+
+def screens(project: Project) -> list[dict]:
+    """Each screen's last shot (from Capture) with the assets placed on it, for the Library's Screen view."""
+    from ..capture.service import screens_folder
+
+    folder = screens_folder(project.folder)
+    if not folder.is_dir():
+        return []
+    found = []
+    for path in sorted(folder.glob("*.jpg")):
+        places = _settings(path.with_suffix(".json"))
+        pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
+        if pixels is None:
+            continue
+        height, width = pixels.shape[:2]
+        if width > SCREEN_WIDTH:
+            pixels = cv2.resize(
+                pixels, (SCREEN_WIDTH, round(height * SCREEN_WIDTH / width)), interpolation=cv2.INTER_AREA
+            )
+        ok, data = cv2.imencode(".jpg", pixels, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        if not ok:
+            continue
+        picture = "data:image/jpeg;base64," + base64.b64encode(data.tobytes()).decode("ascii")
+        found.append(
+            {"screen": path.stem, "picture": picture, "w": width, "h": height, "assets": places.get("assets", {})}
+        )
+    return found

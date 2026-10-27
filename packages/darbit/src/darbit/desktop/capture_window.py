@@ -69,7 +69,8 @@ class CaptureWindow:
             images.mkdir(parents=True, exist_ok=True)
             mode = str(data.get("mode", "new"))
             items = items_for(folder, mode, str(data.get("name", "")), str(data.get("kind", "image")))
-            started = service.start(folder, images, items)
+            test = str(data.get("name", "")) if mode == "test" else None
+            started = service.start(folder, images, items, test)
             if mode == "guide" and not started["items"]:
                 return {"open": False, "items": []}  # every picture is already taken
             self.studio.hide()

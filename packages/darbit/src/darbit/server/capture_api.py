@@ -17,7 +17,7 @@ on_refreeze: Callable[[], None] | None = None  # hide, grab the screen again, sh
 def session(data: dict) -> dict:
     """What this capture is for: the items still to take."""
     current = service._current()
-    return {"items": service.describe(current.items), "folder": current.images.name}
+    return {"items": service.describe(current.items), "folder": current.images.name, "test": current.test}
 
 
 def frame(data: dict) -> Frame:
