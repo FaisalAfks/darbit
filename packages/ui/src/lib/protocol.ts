@@ -40,14 +40,32 @@ export interface Requests {
   "highlight.scan": { targets: string[] | null; context: string | null };
   /** show the guide card */
   "guide.open": { path: string; say: string | null; only: string[] | null };
-  /** start recording */
-  "record.start": { name: string; window: string };
-  /** add a checkpoint */
-  "record.mark": Record<string, never>;
-  /** pause or resume recording */
+  /** hide the Studio and record into actions/<name>.py */
+  "record.start": { path: string; name: string };
+  /** pause or go on */
   "record.pause": Record<string, never>;
-  /** stop and save */
-  "record.stop": Record<string, never>;
+  /** while paused: add a wait or a picture check */
+  "record.check": { kind: string; seconds: number | null; target: string | null; gone: boolean | null; timeout: number | null };
+  /** forget the last thing recorded */
+  "record.undo": Record<string, never>;
+  /** stop; keep writes the action */
+  "record.stop": { keep: boolean | null };
+  /** time, counts and the last steps */
+  "record.status": Record<string, never>;
+  /** make the recorder bar taller for its panel, or back */
+  "record.size": { open: boolean };
+  /** the bot's actions, with their size and who uses them */
+  "actions.list": { path: string };
+  /** an action's sections and steps */
+  "actions.read": { path: string; name: string };
+  /** write an action */
+  "actions.save": { path: string; name: string; sections: Record<string, unknown>[]; docstring: string | null };
+  /** an action's breakpoints */
+  "actions.breakpoints": { path: string; name: string; lines: number[] };
+  /** play an action, following its lines */
+  "actions.play": { path: string; name: string; stepping: boolean | null };
+  /** resume, step or stop the action playing */
+  "actions.control": { what: string };
   /** the run's tree */
   "run.load": { path: string };
   /** drive the player */
@@ -109,8 +127,14 @@ export interface Events {
   "highlight.done": { missing: string[] };
   /** guide progress */
   "guide.progress": { done: number; total: number; current: string | null };
-  /** the bar's clock */
-  "record.tick": { seconds: number; checkpoints: number; paused: boolean };
+  /** the recording's time, counts and last steps */
+  "record.tick": { recording: boolean };
+  /** the line an action is on */
+  "action.line": { action: string; line: number };
+  /** stopped at a breakpoint or a step */
+  "action.paused": { action: string; line: number };
+  /** done, stopped or failed */
+  "action.ended": { action: string; status: string; reason: string };
   /** the step being played */
   "run.at": { checkpoint: number; goal: number; step: number };
   /** stopped at a breakpoint or by pause */
