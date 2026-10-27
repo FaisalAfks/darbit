@@ -114,7 +114,7 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
   - calls to other actions as a pink chip with Peek (read-only, in place) and Open (with a breadcrumb back); the header shows "used by";
   - Play walks a glowing playhead through the steps, and breakpoints stop it;
   - no timeline, outline column or inspector column.
-- Actions are saved as plain Python (`with d.step(...)` sections), so they also open in VS Code.
+- Actions are saved as plain Python in the bot's `actions/` folder (`with d.step(...)` sections), so they also open in VS Code. Play calls the function and follows it with a line trace (runs/player.py).
 
 ## Also to fix (from the first Studio)
 

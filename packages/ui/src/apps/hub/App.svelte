@@ -33,6 +33,8 @@
   let form: { sections: Section[]; values: Record<string, unknown>; error: string | null } = $state({ sections: [], values: {}, error: null });
   let palette = $state(false);
   let editing = $state(false); // Edit unlocks adding and changing the bot's things
+  let libraryTab = $state("assets");
+  let openedAction = $state(""); // an action open in the editor (Library › Actions)
   let problem = $state("");
   let ready = $state(false); // the bots list arrived
   let loading = $state(false); // no "nothing here" while a page is still on its way
@@ -184,6 +186,12 @@
     });
     const stopPage = on("studio.page", (data) => {
       if (data.page === "studio-settings" && page !== "studio") toggleStudio();
+      if (data.page === "action") {
+        page = "library";
+        libraryTab = "actions";
+        openedAction = data.name;
+        editing = true;
+      }
     });
     return () => {
       stopStatus();
@@ -246,7 +254,7 @@
         {:else if page === "overview"}
           <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={() => openCapture("new")} />
         {:else if page === "library"}
-          <LibraryPage path={bot.path} {editing} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} />
+          <LibraryPage path={bot.path} {editing} bind:tab={libraryTab} bind:opened={openedAction} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} />
         {:else if page === "results"}
           <ResultsPage path={bot.path} onretake={() => openCapture("new")} />
         {:else if page === "settings"}

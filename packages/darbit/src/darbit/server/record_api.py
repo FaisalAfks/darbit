@@ -132,6 +132,7 @@ def status() -> dict:
     return {
         "recording": True,
         "name": recording.name,
+        "path": str(recording.project),
         "seconds": round(recording.seconds(), 1),
         "paused": recording.recorder.paused,
         "count": len(steps),

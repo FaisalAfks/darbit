@@ -3,7 +3,9 @@
      Edit on, Retake and a Rename that previews every line it changes before changing them all at once. -->
 <script lang="ts">
   import { request } from "$lib/api";
+  import Segmented from "$lib/components/Segmented.svelte";
   import { toast } from "$lib/toasts.svelte";
+  import ActionsTab from "./ActionsTab.svelte";
 
   interface Asset {
     name: string;
@@ -34,7 +36,20 @@
     path,
     editing,
     oncapture,
-  }: { path: string; editing: boolean; oncapture: (name?: string, kind?: string) => void } = $props();
+    tab = $bindable("assets"),
+    opened = $bindable(""),
+  }: {
+    path: string;
+    editing: boolean;
+    oncapture: (name?: string, kind?: string) => void;
+    tab?: string;
+    opened?: string;
+  } = $props();
+
+  const TABS = [
+    { value: "assets", label: "Assets" },
+    { value: "actions", label: "Actions" },
+  ];
 
   const NEEDS = 0.8; // the similarity an image needs when it doesn't say
   const FILTERS = [
@@ -58,6 +73,7 @@
   let planError = $state("");
 
   const current = $derived(assets.find((asset) => asset.name === chosen) ?? null);
+  const thumbnails = $derived(Object.fromEntries(assets.filter((asset) => asset.thumbnail).map((asset) => [asset.name, asset.thumbnail as string])));
   const shown = $derived(assets.filter(keep));
   const groups = $derived(groupAssets(shown));
   const counts = $derived(countKinds(assets));
@@ -170,6 +186,13 @@
 
 </script>
 
+{#if !opened}
+  <div class="tabs"><Segmented items={TABS} bind:value={tab} label="Library" /></div>
+{/if}
+
+{#if tab === "actions"}
+  <ActionsTab {path} {editing} {thumbnails} bind:opened />
+{:else}
 <div class="library" class:has-current={!!current}>
   <div class="main">
     <div class="bar">
@@ -278,7 +301,12 @@
   {/if}
 </div>
 
+{/if}
+
 <style>
+  .tabs {
+    margin-bottom: var(--space-m);
+  }
   .library {
     display: grid;
     grid-template-columns: 1fr;
