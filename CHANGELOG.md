@@ -14,6 +14,8 @@
 - A second `darbit app` while the Studio is in the tray brings it back instead of opening another Studio and tray icon
 - The Library opens faster: it skips the bot's environment and git folders, counts uses in one pass and keeps thumbnails until the file changes
 - The first hour on the Results timeline was cut off
+- Playing an action from the Studio clicked on the Studio itself: it now hides while the action plays and comes back at a breakpoint or the end
+- The recorder takes each click's place from when it happened, not when it was handled
 
 ### Docs
 

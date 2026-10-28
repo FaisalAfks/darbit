@@ -175,8 +175,9 @@ class _Listener:
         )
         if got in (0, 0xFFFFFFFF):
             return
-        point = wintypes.POINT()
-        user32.GetCursorPos(ctypes.byref(point))
+        # where the mouse was when this input happened, not now: by the time it's handled the mouse may have moved on
+        position = user32.GetMessagePos()
+        point = wintypes.POINT(ctypes.c_short(position & 0xFFFF).value, ctypes.c_short((position >> 16) & 0xFFFF).value)
         now = time.perf_counter_ns()
         with self.lock:
             subscribers = list(self.subscribers)

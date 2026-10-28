@@ -6,6 +6,7 @@ opens there again if that spot is still on a screen. Closing hides it instead of
 """
 
 import threading
+import time
 
 from ..server import hub, ui_settings
 from . import capture_window, pill, record_window, tray
@@ -17,6 +18,7 @@ MIN_SIZE = (900, 600)
 BACKGROUND = "#0b0d12"  # shown before the page draws, so the window never flashes white
 SAVE_AFTER = 0.5  # seconds of no moving before the place is saved
 OFF_SCREEN = -10000  # Windows parks minimised windows at -32000
+GIVE_BACK_FOCUS = 0.3  # seconds for Windows to hand the keyboard back to the game after the Studio hides
 
 
 def saved_place(saved: object, screens: list[tuple[int, int, int, int]]) -> dict | None:
@@ -127,4 +129,42 @@ def open_studio() -> Window:
 
     HANDLERS["studio.show"] = show  # a second `darbit app` brings this one forward
     studio.native.events.shown += icon.start
+    hide_while_playing(studio)
     return studio
+
+
+def hide_while_playing(studio: Window) -> None:
+    """Playing an action hides the Studio, so its clicks and keys reach the game; it comes back when the
+    action stops at a breakpoint or ends."""
+    from .. import events
+    from ..server.app import HANDLERS
+
+    play = HANDLERS.get("actions.play")
+    control = HANDLERS.get("actions.control")
+    if play is None or control is None:
+        return  # the server runs in another process, which plays its actions itself
+
+    def get_out_of_the_way() -> None:
+        studio.hide()
+        time.sleep(GIVE_BACK_FOCUS)
+
+    def play_hidden(data: dict) -> object:
+        get_out_of_the_way()
+        try:
+            return play(data)
+        except Exception:
+            studio.show()
+            raise
+
+    def control_hidden(data: dict) -> object:
+        if data.get("what") in ("resume", "step"):
+            get_out_of_the_way()
+        return control(data)
+
+    def on_event(topic: str, data: dict) -> None:
+        if topic in ("action.paused", "action.ended"):
+            studio.show()
+
+    HANDLERS["actions.play"] = play_hidden
+    HANDLERS["actions.control"] = control_hidden
+    events.listen(on_event)

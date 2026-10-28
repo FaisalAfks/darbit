@@ -50,3 +50,43 @@ def test_the_place_is_saved_after_moving_stops(tmp_path, monkeypatch):
 def test_no_running_bots_to_stop():
     assert hub.running() == []
     hub.stop_all()
+
+
+class FakeWindow:
+    def __init__(self) -> None:
+        self.seen = []
+
+    def hide(self) -> None:
+        self.seen.append("hide")
+
+    def show(self) -> None:
+        self.seen.append("show")
+
+
+def test_playing_an_action_hides_the_studio_until_it_stops(monkeypatch):
+    from darbit import events
+    from darbit.server import app as server_app
+
+    played = []
+
+    def play(data):
+        played.append(data)
+        return {"playing": True}
+
+    def control(data):
+        return {"playing": True}
+
+    monkeypatch.setitem(server_app.HANDLERS, "actions.play", play)
+    monkeypatch.setitem(server_app.HANDLERS, "actions.control", control)
+    monkeypatch.setattr(studio, "GIVE_BACK_FOCUS", 0)
+    monkeypatch.setattr(events, "_listeners", [])  # the listener goes when the test ends
+    window = FakeWindow()
+    studio.hide_while_playing(window)
+
+    server_app.HANDLERS["actions.play"]({"name": "dodge"})
+    assert window.seen == ["hide"]  # hidden before the first click is sent
+    assert played == [{"name": "dodge"}]
+    events.publish("action.paused", {"action": "dodge", "line": 9})
+    server_app.HANDLERS["actions.control"]({"what": "resume"})
+    events.publish("action.ended", {"action": "dodge", "status": "done", "reason": ""})
+    assert window.seen == ["hide", "show", "hide", "show"]
