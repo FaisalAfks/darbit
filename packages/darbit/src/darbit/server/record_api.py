@@ -12,7 +12,7 @@ the recorder bar itself.
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from .. import __version__
@@ -28,6 +28,7 @@ from .events import publish
 
 TICK = 0.25  # seconds between record.tick events
 TAIL = 0.05  # seconds kept after the last event
+MARK_GAP = 0.2  # a second checkpoint this soon after one is the same one
 SHOWN_STEPS = 14  # steps sent with each tick, newest last
 BUTTONS = {0: "left", 1: "right", 2: "middle"}
 
@@ -51,9 +52,16 @@ class Recording:
     held: set[str] = field(default_factory=set)  # keys down right now
     hotkey_keys: set[str] = field(default_factory=set)  # keys of a darbit hotkey: their ups are dropped too
     running: threading.Event = field(default_factory=threading.Event)
+    marks: list[float] = field(default_factory=list)  # checkpoints: each one ends a part, saved as its own action
+    paused_since: float | None = None  # perf_counter when the pause began
+    paused_for: float = 0.0  # seconds paused so far, left out of the recording's clock
 
     def seconds(self) -> float:
-        return time.perf_counter() - self.started
+        """The recording's clock: time since it started, without the time it was paused."""
+        now = time.perf_counter()
+        if self.paused_since is not None:
+            now = self.paused_since
+        return now - self.started - self.paused_for
 
 
 _recording: Recording | None = None
@@ -73,7 +81,7 @@ def _on_event(kind: str, code: int, x: int, y: int, time_ns: int) -> None:
     recording = _recording
     if recording is None:
         return
-    t = time_ns / 1e9 - recording.started
+    t = time_ns / 1e9 - recording.started - recording.paused_for
     if kind in ("key_down", "key_up"):
         _on_key(recording, kind, key_name(code), t)
     elif kind in ("mouse_down", "mouse_up"):
@@ -121,13 +129,15 @@ def _drop_hotkey(recording: Recording) -> None:
     recording.recorder.events = kept
 
 
-def start(project: Path, name: str) -> dict:
-    """Start recording into actions/<name>.py."""
+def start(project: Path, name: str, replace: bool = False) -> dict:
+    """Start recording into actions/<name>.py; an existing action is only replaced with `replace` (Re-record)."""
     global _recording
     if not name.isidentifier():
         raise ValueError(f"{name!r} can't be an action's name: use letters, digits and _")
     if _recording is not None:
         raise ValueError("already recording")
+    if not replace and (project / "actions" / f"{name}.py").exists():
+        raise ValueError(f"{name} already exists: open it and use Re-record to replace it")
     recording = Recording(project, name)
     manifest.setup(settings, __version__, project)  # the bot's settings.window: places are kept relative to it
     recording.window = tape._window_now()
@@ -160,6 +170,7 @@ def status() -> dict:
         "paused": recording.recorder.paused,
         "count": len(steps),
         "checks": checks,
+        "parts": len(recording.marks) + 1,
         "steps": shown,
     }
 
@@ -171,8 +182,28 @@ def _tick(recording: Recording) -> None:
 
 
 def pause() -> dict:
+    """Pause or go on. Keys held when pausing are let go on the tape then, and paused time is left out."""
     recording = _current()
-    recording.recorder.paused = not recording.recorder.paused
+    if recording.paused_since is None:
+        t = recording.seconds()
+        for name in sorted(recording.held - recording.hotkey_keys):
+            recording.recorder.add(RawEvent(t, "key_up", name))
+        recording.recorder.paused = True
+        recording.paused_since = time.perf_counter()
+    else:
+        recording.paused_for += time.perf_counter() - recording.paused_since
+        recording.paused_since = None
+        recording.recorder.paused = False
+    publish("record.tick", status())
+    return status()
+
+
+def mark() -> dict:
+    """A checkpoint: everything since the last one becomes its own action (decision 0014)."""
+    recording = _current()
+    t = recording.seconds()
+    if not recording.marks or t - recording.marks[-1] > MARK_GAP:
+        recording.marks.append(t)
     publish("record.tick", status())
     return status()
 
@@ -236,33 +267,70 @@ def stop(keep: bool = True) -> dict:
         recording.slow_again()
     result: dict = {"saved": False}
     if keep:
-        events = recording.recorder.tape(recording.screen, device.position())
-        length = recording.seconds()
-        if events:
-            length = min(length, events[-1].t + TAIL)
-        folder = recording.project / "actions"
-        folder.mkdir(parents=True, exist_ok=True)
-        tape.save(
-            tape.path_for(folder / f"{recording.name}.py"),
-            tape.Tape(events, recording.window, recording.screen),
-        )
-        steps = recording.recorder.parts(length)
-        step_dicts = []
-        for step in steps:
-            step_dicts.append(to_dict(step))
-        title = recording.name.replace("_", " ").capitalize()
-        actions_api.save(
-            recording.project,
-            recording.name,
-            [{"name": title, "steps": step_dicts}],
-            "Recorded with darbit Studio.",
-            timed=True,
-        )
-        result = {"saved": True, "name": recording.name, "steps": len(steps)}
+        result = _save(recording)
     publish("record.tick", {"recording": False})
     if on_end is not None:
         on_end(recording.name if keep else None)
     return result
+
+
+def _save(recording: Recording) -> dict:
+    """Write the action: one tape and file, or with checkpoints, one action per part and one that plays them all."""
+    events = recording.recorder.tape(recording.screen, device.position())
+    length = recording.seconds()
+    if events:
+        length = min(length, events[-1].t + TAIL)
+    edges = [0.0]
+    for t in recording.marks:
+        if 0 < t < length:
+            edges.append(t)
+    edges.append(length)
+    if len(edges) == 2:
+        steps = _write_part(recording, recording.name, events, 0.0, length)
+        return {"saved": True, "name": recording.name, "steps": steps}
+    calls = []
+    for index in range(len(edges) - 1):
+        part = f"{recording.name}_{index + 1}"
+        _write_part(recording, part, events, edges[index], edges[index + 1])
+        calls.append(to_dict(Step("call", {"name": part, "action": True})))
+    old_tape = tape.path_for(recording.project / "actions" / f"{recording.name}.py")
+    if old_tape.exists():
+        old_tape.unlink()  # the parts have the tapes now
+    actions_api.save(
+        recording.project,
+        recording.name,
+        [{"name": _title(recording.name), "steps": calls}],
+        "Recorded with darbit Studio: its parts in order.",
+        timed=True,
+    )
+    return {"saved": True, "name": recording.name, "steps": len(calls), "parts": len(calls)}
+
+
+def _write_part(recording: Recording, name: str, events: list, start: float, end: float) -> int:
+    """One action and its own tape from `start` to `end` seconds of the recording (its tape starts at 0)."""
+    kept = []
+    for event in events:
+        if start <= event.t < end:
+            kept.append(replace(event, t=round(event.t - start, 4)))
+    folder = recording.project / "actions"
+    folder.mkdir(parents=True, exist_ok=True)
+    tape.save(tape.path_for(folder / f"{name}.py"), tape.Tape(kept, recording.window, recording.screen))
+    steps = recording.recorder.parts(end - start, start)
+    step_dicts = []
+    for step in steps:
+        step_dicts.append(to_dict(step))
+    actions_api.save(
+        recording.project,
+        name,
+        [{"name": _title(name), "steps": step_dicts}],
+        "Recorded with darbit Studio.",
+        timed=True,
+    )
+    return len(steps)
+
+
+def _title(name: str) -> str:
+    return name.replace("_", " ").capitalize()
 
 
 def _current() -> Recording:
@@ -277,6 +345,9 @@ def register() -> None:
     def pause_request(data: dict) -> dict:
         return pause()
 
+    def mark_request(data: dict) -> dict:
+        return mark()
+
     def check_request(data: dict) -> dict:
         return add_check(data)
 
@@ -290,6 +361,7 @@ def register() -> None:
         return status()
 
     HANDLERS["record.pause"] = pause_request
+    HANDLERS["record.mark"] = mark_request
     HANDLERS["record.check"] = check_request
     HANDLERS["record.undo"] = undo_request
     HANDLERS["record.stop"] = stop_request

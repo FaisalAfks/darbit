@@ -8,6 +8,7 @@ opens there again if that spot is still on a screen. Closing hides it instead of
 import threading
 import time
 
+from ..platform import windows
 from ..server import hub, ui_settings
 from . import capture_window, pill, record_window, tray
 from .windows import Window, open_window
@@ -126,6 +127,8 @@ def open_studio() -> Window:
 
     def show(data: dict) -> None:
         icon.show_studio()
+        if not run_pill.collapsed.is_set():
+            windows.bring_to_front(studio.handle())  # shown isn't enough: it must come in front of the game
 
     HANDLERS["studio.show"] = show  # a second `darbit app` brings this one forward
     studio.native.events.shown += icon.start

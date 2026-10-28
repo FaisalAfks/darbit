@@ -1,5 +1,5 @@
 <!-- The recorder bar (decision 0013, round 8): a pill at the top with the time, the action's name, its steps and
-     checks, Pause, Add check, the live steps and Stop. While paused, the check menu adds a wait or a picture
+     checks, Pause, Add check, Checkpoint (each part becomes its own action, decision 0014), the live steps and Stop. While paused, the check menu adds a wait or a picture
      check at that moment. The live steps panel lists what's been caught, newest last. -->
 <script lang="ts">
   import { on, request } from "$lib/api";
@@ -17,6 +17,7 @@
     paused?: boolean;
     count?: number;
     checks?: number;
+    parts?: number;
     steps?: Shown[];
   }
 
@@ -89,9 +90,10 @@
     <span class="rec" aria-hidden="true"></span>
     <span class="time">{clock}</span>
     <b class="name">{status.name ?? "…"}</b>
-    <small>{status.count ?? 0} steps · {status.checks ?? 0} checks{status.paused ? " · paused" : ""}</small>
+    <small>{(status.parts ?? 1) > 1 ? `part ${status.parts} · ` : ""}{status.count ?? 0} steps · {status.checks ?? 0} checks{status.paused ? " · paused" : ""}</small>
     <span class="sep"></span>
     <button class="check" class:on={menu} onclick={openChecks} title="Pause and add a check here">＋ Check</button>
+    <button class="icon" aria-label="Checkpoint" title="Checkpoint: what's recorded so far becomes its own action (Ctrl+Alt+M)" onclick={() => request("record.mark").then((found) => (status = found))}>⚑</button>
     <button class="icon" class:on={live} aria-label="Live steps" title="Live steps" onclick={toggleLive}>≡</button>
     <button class="icon" aria-label="Forget the last step" title="Forget the last step" onclick={() => request("record.undo").then((found) => (status = found))}>↶</button>
     <button class="icon go" aria-label={status.paused ? "Go on" : "Pause"} title="{status.paused ? 'Go on' : 'Pause'} (Ctrl+Alt+P)" onclick={togglePause}>{status.paused ? "▶" : "❚❚"}</button>
@@ -206,6 +208,10 @@
   small {
     color: var(--muted);
     font-size: var(--size-caption);
+  }
+  .pill > small {
+    min-width: calc(7 * var(--control-l)); /* the buttons don't shift when "part 2" appears */
+    font-variant-numeric: tabular-nums;
   }
   .sep {
     width: 1px;

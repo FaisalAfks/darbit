@@ -19,6 +19,8 @@ A recording is saved as a tape, `actions/<name>.tape.json`, next to its action. 
 - **Held or free**, judged from the recording in 30 ms buckets: a hidden cursor, or one that snaps back against the movement, or one that goes less than a quarter as far as the mouse moved, is held by the game. A cursor pushed against the edge of the screen is free.
 - **Playing:** one clock for every event, sleeping until just before each one and waiting the last 1.5 ms in a tight loop. A held packet sends the same counts; a free one puts the cursor where it went, so Windows' mouse settings don't matter. Clicks put the cursor in place first.
 - **Places follow the game window** (`settings.window`): the window's client area is kept with the tape, and places are scaled to where the window is now.
+- **Checkpoints** (Ctrl+Alt+M, or the bar's ⚑) split a recording into parts, and each part is saved as its own action with its own tape (`Dim_Run_1`, `Dim_Run_2`…), its times starting from 0. The recorded action (`Dim_Run`) calls them in order. Re-record replaces one action and its tape, so one part can be done again while the rest stay; Rename updates the files and every caller. A key held across a checkpoint stays down into the next part.
+- **Pausing** lets go of held keys on the tape and leaves the paused time out of it.
 - **The editor** shows each part as a block: its time range, counts, a mini path of the cursor and marks for keys, clicks and the wheel. A part can be trimmed and split, and checks go between parts.
 
 Recorded actions stay `@d.flow(timed=True)`. The steps the recorder bar shows while recording (presses, clicks, scrolls, checks) are only for the bar.

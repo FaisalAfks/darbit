@@ -137,3 +137,20 @@ def test_play_can_be_stopped(project):
     finally:
         stop_listening()
     assert ended[1]["status"] == "stopped"
+
+
+def test_renaming_an_action_follows_it_everywhere(project):
+    actions_api.set_breakpoints(project, "helper", [6])
+    (project / "actions" / "helper.tape.json").write_text("{}", encoding="utf-8")
+    renamed = actions_api.rename(project, "helper", "go_to_boss")
+    assert renamed["name"] == "go_to_boss"
+    folder = project / "actions"
+    assert not (folder / "helper.py").exists()
+    assert (folder / "go_to_boss.tape.json").exists()
+    assert "def go_to_boss():" in (folder / "go_to_boss.py").read_text(encoding="utf-8")
+    caller = (folder / "count.py").read_text(encoding="utf-8")
+    assert "from .go_to_boss import go_to_boss" in caller
+    assert "go_to_boss()" in caller and "helper" not in caller
+    assert actions_api.breakpoints(project)["go_to_boss"] == [6]
+    with pytest.raises(ValueError):
+        actions_api.rename(project, "go_to_boss", "count")  # taken

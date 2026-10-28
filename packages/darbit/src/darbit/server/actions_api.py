@@ -7,6 +7,7 @@ darbit settings, so its target names resolve to the bot's pictures, and sends `a
 """
 
 import json
+import re
 from pathlib import Path
 
 from .. import __version__, paths
@@ -166,6 +167,45 @@ def _calls_in(steps: list, known: set[str], found: list[str]) -> None:
         _calls_in(step.children, known, found)
 
 
+def rename(project: Path, name: str, to: str) -> dict:
+    """Rename an action: its file, its tape, its function, its breakpoints, and every action that calls it."""
+    if not to.isidentifier():
+        raise ValueError(f"{to!r} can't be an action's name: use letters, digits and _")
+    folder = _folder(project)
+    old_file = folder / f"{name}.py"
+    new_file = folder / f"{to}.py"
+    if not old_file.exists():
+        raise ValueError(f"there's no action called {name}")
+    if new_file.exists():
+        raise ValueError(f"{to} already exists")
+    text = old_file.read_text(encoding="utf-8")
+    renamed = re.sub(rf"^def {name}\(", f"def {to}(", text, flags=re.MULTILINE)
+    new_file.write_text(renamed, encoding="utf-8", newline="\n")
+    old_file.unlink()
+    old_tape = tape.path_for(old_file)
+    if old_tape.exists():
+        old_tape.rename(tape.path_for(new_file))
+    for other in folder.glob("*.py"):
+        _rename_calls(other, name, to)
+    found = breakpoints(project)
+    if name in found:
+        found[to] = found.pop(name)
+        path = _breakpoints_file(project)
+        path.write_text(json.dumps(found, indent=2), encoding="utf-8")
+    return read(project, to)
+
+
+def _rename_calls(path: Path, name: str, to: str) -> None:
+    """`from .name import name` and `name()` in another action become `to`."""
+    text = path.read_text(encoding="utf-8")
+    importing = f"from .{name} import {name}"
+    if importing not in text:
+        return
+    text = text.replace(importing, f"from .{to} import {to}")
+    text = re.sub(rf"(?<![\w.]){name}\(\)", f"{to}()", text)
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
 def set_breakpoints(project: Path, name: str, lines: list[int]) -> dict:
     found = breakpoints(project)
     found[name] = sorted(set(lines))
@@ -249,6 +289,9 @@ def register() -> None:
     def control_request(data: dict) -> dict:
         return control(str(data.get("what", "")))
 
+    def rename_request(data: dict) -> dict:
+        return rename(_project(data), str(data.get("name", "")), str(data.get("to", "")).strip())
+
     def tape_request(data: dict) -> dict:
         end = data.get("end")
         if end is not None:
@@ -262,3 +305,4 @@ def register() -> None:
     HANDLERS["actions.play"] = play_request
     HANDLERS["actions.control"] = control_request
     HANDLERS["actions.tape"] = tape_request
+    HANDLERS["actions.rename"] = rename_request

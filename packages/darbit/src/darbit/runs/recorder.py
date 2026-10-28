@@ -126,16 +126,20 @@ class Recorder:
         mark_held(found, screen)
         return found
 
-    def parts(self, length: float) -> list[Step]:
-        """The action's steps: the tape played in parts, with each check added while paused between them."""
+    def parts(self, length: float, offset: float = 0.0) -> list[Step]:
+        """The steps for `length` seconds of the recording from `offset`: the tape played in parts, with each check
+        added while paused between them. Times are from `offset`, where this part's own tape starts."""
         found: list[Step] = []
         start = 0.0
         checks = sorted(self.added, key=_when)
         for check in checks:
-            if check.t > start:
-                found.append(Step("tape", {"start": round(start, 3), "end": round(check.t, 3)}))
+            at = check.t - offset
+            if at < 0 or at >= length:
+                continue  # another part's check
+            if at > start:
+                found.append(Step("tape", {"start": round(start, 3), "end": round(at, 3)}))
             found.append(check.step)
-            start = max(start, check.t)
+            start = max(start, at)
         if length > start:
             found.append(Step("tape", {"start": round(start, 3), "end": round(length, 3)}))
         return found

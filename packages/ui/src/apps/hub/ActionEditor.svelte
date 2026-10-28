@@ -30,7 +30,17 @@
     breakpoints: number[];
   }
 
-  let { path, name, thumbnails, onback }: { path: string; name: string; thumbnails: Record<string, string>; onback: () => void } = $props();
+  let {
+    path,
+    name,
+    thumbnails,
+    editing = false,
+    onback,
+    onrenamed,
+  }: { path: string; name: string; thumbnails: Record<string, string>; editing?: boolean; onback: () => void; onrenamed?: (to: string) => void } = $props();
+  let renaming = $state(false);
+  let renameTo = $state("");
+  let replacing = $state(false); // Re-record asks once more before replacing
 
   const KINDS: Record<string, { icon: string; tone: string }> = {
     key: { icon: "⌨", tone: "var(--accent-2)" },
@@ -122,6 +132,36 @@
     const listed = await request("actions.list", { path }).catch(() => []);
     others = listed.map((entry: { name: string }) => entry.name).filter((each: string) => each !== current);
     loadTapes();
+  }
+
+  // ---- renaming and recording again
+  async function rename(): Promise<void> {
+    const to = renameTo.trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(to)) {
+      toast("Name it with letters, digits and _, like go_to_boss");
+      return;
+    }
+    try {
+      await request("actions.rename", { path, name: current, to });
+      renaming = false;
+      toast(`Renamed to ${to}`);
+      if (stack.length === 1) onrenamed?.(to);
+      else {
+        stack = [...stack.slice(0, -1), to]; // a part opened from the action that calls it
+        await load();
+      }
+    } catch (error) {
+      toast((error as Error).message);
+    }
+  }
+
+  async function recordAgain(): Promise<void> {
+    if (!replacing) {
+      replacing = true;
+      return;
+    }
+    replacing = false;
+    await request("record.start", { path, name: current, replace: true }).catch((error: Error) => toast(error.message));
   }
 
   // ---- the tape: recorded input played in parts
@@ -574,6 +614,18 @@
         {/if}
         <button class="tool bad" onclick={() => control("stop")}>■ Stop</button>
       {:else}
+        {#if editing}
+          {#if renaming}
+            <form class="rename" onsubmit={(event) => { event.preventDefault(); rename(); }}>
+              <input bind:value={renameTo} spellcheck="false" aria-label="The action's new name" />
+              <button class="tool" type="submit">Rename</button>
+              <button class="tool" type="button" onclick={() => (renaming = false)}>Cancel</button>
+            </form>
+          {:else}
+            <button class="tool" onclick={() => { renameTo = current; renaming = true; }} title="Rename it, and every action that calls it">✎ Rename</button>
+          {/if}
+          <button class="tool bad" onclick={recordAgain} onblur={() => (replacing = false)} title="Record this action again; the actions that call it keep calling it">{replacing ? `Replace ${current}? ● Yes` : "● Re-record"}</button>
+        {/if}
         <button class="tool" onclick={() => play(true)} title="Run one line at a time">⤼ Step through</button>
         <button class="play" onclick={() => play(false)}>▶ Play</button>
       {/if}
@@ -644,6 +696,18 @@
     margin: 0 auto;
     width: 100%;
     padding-bottom: calc(2 * var(--control-l));
+  }
+  .rename {
+    display: flex;
+    gap: var(--space-xs);
+  }
+  .rename input {
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--raised);
+    color: var(--text);
+    font: var(--size-caption) / 1 var(--mono);
   }
   .crumbs {
     display: flex;

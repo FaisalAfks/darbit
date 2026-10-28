@@ -44,7 +44,7 @@
 </script>
 
 {#if opened}
-  {#key opened}<ActionEditor {path} name={opened} {thumbnails} onback={() => (opened = "")} />{/key}
+  {#key opened}<ActionEditor {path} name={opened} {thumbnails} {editing} onback={() => (opened = "")} onrenamed={(to) => (opened = to)} />{/key}
 {:else}
   <div class="actions">
     <div class="bar">

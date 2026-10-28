@@ -118,3 +118,56 @@ def test_a_cancelled_recording_writes_nothing(recording):
     assert not (recording / "actions" / "dodge.py").exists()
     with pytest.raises(ValueError):
         record_api.pause()
+
+
+def test_checkpoints_make_one_action_per_part(recording):
+    event("key_down", 0x57, at=1.0)  # w, held across the checkpoint
+    record_api._recording.started = 0.0
+    record_api._recording.marks.append(2.0)
+    event("key_up", 0x57, at=3.0)
+    event("key_down", 0x45, at=4.0)  # e
+    event("key_up", 0x45, at=4.05)
+    saved = record_api.stop(True)
+    assert saved["parts"] == 2
+    folder = recording / "actions"
+    main = flowfile.read(folder / "dodge.py")
+    assert [step.args["name"] for step in main.sections[0].steps] == ["dodge_1", "dodge_2"]
+    assert not (folder / "dodge.tape.json").exists()  # the parts have the tapes
+    first = tape.load(folder / "dodge_1.tape.json")
+    second = tape.load(folder / "dodge_2.tape.json")
+    assert [(event.t, event.name, event.up) for event in first.events] == [(1.0, "w", False)]
+    assert [(event.t, event.name, event.up) for event in second.events] == [
+        (1.0, "w", True),
+        (2.0, "e", False),
+        (2.05, "e", True),
+    ]
+    part = flowfile.read(folder / "dodge_2.py")
+    assert part.sections[0].steps[0].args == {"start": 0, "end": 2.1}
+
+
+def test_an_existing_action_is_only_replaced_on_purpose(recording):
+    record_api.stop(True)
+    with pytest.raises(ValueError, match="Re-record"):
+        record_api.start(recording, "dodge")
+    record_api.start(recording, "dodge", replace=True)
+
+
+def test_pausing_lets_go_of_held_keys_and_leaves_the_pause_out(recording, monkeypatch):
+    clock = [10.0]
+
+    def now():
+        return clock[0]
+
+    monkeypatch.setattr(record_api.time, "perf_counter", now)
+    session = record_api._recording
+    session.started = 10.0
+    event("key_down", 0x57, at=11.0)  # w down at 1 s
+    clock[0] = 12.0
+    record_api.pause()  # at 2 s, still holding w
+    clock[0] = 20.0
+    record_api.pause()  # 8 s later
+    event("key_down", 0x45, at=21.0)  # e: 11 s on the wall clock, 3 s on the recording's
+    found = []
+    for raw in session.recorder.events:
+        found.append((raw.t, raw.kind, raw.key))
+    assert found == [(1.0, "key_down", "w"), (2.0, "key_up", "w"), (3.0, "key_down", "e")]

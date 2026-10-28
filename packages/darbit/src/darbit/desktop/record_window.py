@@ -28,6 +28,7 @@ def _keys() -> dict[str, str]:
     return {
         "run.pause": found.get("run.pause", "ctrl+alt+p"),
         "record.toggle": found.get("record.toggle", "ctrl+alt+r"),
+        "record.mark": found.get("record.mark", "ctrl+alt+m"),
     }
 
 
@@ -55,9 +56,21 @@ class RecordWindow:
             pill._place(self.bar.handle(), self.left, self.top)
             record_api.ignore_area = self.area
             record_api.on_end = self.ended
-            handlers = {"run.pause": record_api.pause, "record.toggle": self.stop_from_key}
+            handlers = {
+                "run.pause": record_api.pause,
+                "record.toggle": self.stop_from_key,
+                "record.mark": record_api.mark,
+            }
             self.hotkey = hotkeys.register(_keys(), handlers)
-            return record_api.start(folder, str(data.get("name", "")))
+            try:
+                return record_api.start(folder, str(data.get("name", "")), bool(data.get("replace")))
+            except ValueError:
+                self.hotkey.stop()  # it didn't start (a name in use): back to the Studio
+                self.hotkey = None
+                self.bar.close()
+                self.bar = None
+                self.studio.show()
+                raise
 
     def stop_from_key(self) -> None:
         record_api.stop(True)

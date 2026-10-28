@@ -118,6 +118,10 @@ def _app(argv: list[str]) -> int:
     from . import server
 
     current = server.running()
+    if current is not None:
+        import ctypes
+
+        ctypes.windll.user32.AllowSetForegroundWindow(-1)  # this launch may come to the front; let the Studio instead
     if current is not None and server.show_studio(current):
         print("darbit Studio is already open (it was in the tray).")
         return 0

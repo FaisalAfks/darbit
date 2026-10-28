@@ -14,6 +14,8 @@
 - A second `darbit app` while the Studio is in the tray brings it back instead of opening another Studio and tray icon
 - The Library opens faster: it skips the bot's environment and git folders, counts uses in one pass and keeps thumbnails until the file changes
 - The first hour on the Results timeline was cut off
+- Pausing a recording kept held keys down for the rest of the tape and kept the paused time in it: pausing now lets go of held keys on the tape and leaves the pause out
+- Recording with the name of an existing action replaced it without asking: it now has to be Re-record
 - The recorder lost mouse counts and bunched events whenever darbit Studio was busy (38 of 200 counts caught in a test): Python only switched threads every 5 ms. While recording or playing a tape, threads now switch every 0.5 ms, and every count arrives on time
 - Playing an action from the Studio clicked on the Studio itself: it now hides while the action plays and comes back at a breakpoint or the end
 - The recorder takes each click's place from when it happened, not when it was handled
@@ -30,6 +32,8 @@
 - Recorded actions keep their timing: the recorder writes `@d.flow(timed=True)` and waits to 0.01 s, and in a timed action each wait ends on the recorded schedule, with the time the steps took taken out of it; clicks glide 0.03 s instead of 0.5 s
 - Recordings are tapes (decision 0014): every mouse packet, key, button and wheel notch with its time, played on one clock by `d.replay(__file__, start, end)`. While a game holds the cursor (Roblox's shift lock, a right-drag) the same counts are sent, so the camera turns the same; otherwise the cursor goes exactly where it went, whatever Windows' mouse settings. Places follow the game window. Checks added while recording split the tape into parts, and the editor shows each part with a mini path and marks, to trim or split
 - `d.move_by`, `d.mouse_down`, `d.mouse_up` and a sideways wheel for hand-written actions
+- Checkpoints while recording (Ctrl+Alt+M, or ⚑ on the bar): each part becomes its own action with its own tape (Dim_Run_1, Dim_Run_2…), and the recorded action plays them in order. Re-record (with Edit on) replaces one action, so a single part can be done again without touching the rest; Rename renames an action, its tape and every action that calls it
+- A second `darbit app` brings the Studio in front of the game, not just out of the tray
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it
 - darbit Studio's new frame (decision 0013): a bot dropdown or sidebar, a centred page bar (Overview, Results, Library, Settings) with a gliding highlight, Play, Pause, Stop and Edit, page fades, and the Studio's own settings page (look, window, while a bot runs)
 - The Library's Screen view: each screen's last shot from Capture with its assets drawn in place; the inspector shows the chosen asset glowing on its screen, and Test on screen opens Capture straight into Test for it, searching its own region
