@@ -126,20 +126,36 @@ def keys_to_steps(events: list[RawEvent]) -> list[Timed]:
 
 
 def clicks_to_steps(events: list[RawEvent]) -> list[Timed]:
-    """A click where each mouse button went down."""
+    """A click where each mouse button went down; a drag (the mouse moved while it was down, like turning Roblox's
+    camera with the right button) is the button going down, then up, so the movement in between plays with it held."""
     found: list[Timed] = []
     down: dict[str, RawEvent] = {}
+    dragged: set[str] = set()
     for event in events:
-        if event.kind == "mouse_down":
+        if event.kind == "turn":
+            for button in down:
+                dragged.add(button)
+        elif event.kind == "mouse_down":
             down[event.key] = event
+            dragged.discard(event.key)
         elif event.kind == "mouse_up" and event.key in down:
             start = down.pop(event.key)
-            verb = BUTTONS.get(event.key, "click")
-            note = ""
-            if abs(event.x - start.x) > CLICK_MOVE or abs(event.y - start.y) > CLICK_MOVE:
-                note = f"was a drag to {event.x}, {event.y}"
-            found.append(Timed(start.t, Step("mouse", {"verb": verb, "target": [start.x, start.y]}, note)))
+            moved = abs(event.x - start.x) > CLICK_MOVE or abs(event.y - start.y) > CLICK_MOVE
+            if moved or event.key in dragged:
+                found.append(Timed(start.t, _button_step("mouse_down", event.key, [start.x, start.y])))
+                end = None  # let go where it is: moving a held button would turn the camera again
+                if moved:
+                    end = [event.x, event.y]
+                found.append(Timed(event.t, _button_step("mouse_up", event.key, end)))
+            else:
+                verb = BUTTONS.get(event.key, "click")
+                found.append(Timed(start.t, Step("mouse", {"verb": verb, "target": [start.x, start.y]})))
+            dragged.discard(event.key)
     return found
+
+
+def _button_step(verb: str, button: str, target: list[int] | None) -> Step:
+    return Step("mouse", {"verb": verb, "target": target, "button": button})
 
 
 def turns_to_steps(events: list[RawEvent]) -> list[Timed]:

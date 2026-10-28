@@ -150,6 +150,23 @@ def write(text: str) -> None:
     device.write(text)
 
 
+def mouse_down(at: Spot | None = None, button: str = "left") -> bool:
+    """Press a mouse button and keep it down until mouse_up(), at `at` if given, else where the mouse is."""
+    if at is not None and not hover(at):
+        return False
+    _front()
+    device.mouse_down(button)
+    return True
+
+
+def mouse_up(at: Spot | None = None, button: str = "left") -> bool:
+    """Let go of a mouse button, after moving to `at` if given (the end of a drag)."""
+    if at is not None and not hover(at):
+        return False
+    device.mouse_up(button)
+    return True
+
+
 def move_by(dx: int, dy: int, seconds: float = 0) -> None:
     """Move the mouse by dx, dy counts over `seconds`, like a hand on the mouse: turns a game's camera even when the
     game holds the cursor in place (Roblox's shift lock)."""

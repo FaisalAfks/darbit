@@ -104,13 +104,17 @@ def test_d_flow_marks_the_function():
 
 def test_a_recorded_action_stays_timed_and_keeps_its_camera_turns(tmp_path):
     steps = [
+        Step("mouse", {"verb": "mouse_down", "target": [960, 540], "button": "right"}),
         Step("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2}),
+        Step("mouse", {"verb": "mouse_up", "target": None, "button": "right"}),
         Step("wait", {"seconds": 0.37}),
         Step("key", {"verb": "press", "keys": ["shift+e"]}),
     ]
     text = flowfile.render("run", [Section("Run", steps)], timed=True)
     assert "@d.flow(timed=True)" in text
     assert "d.move_by(-120, 8, 0.2)" in text
+    assert 'd.mouse_down(d.Location(960, 540), button="right")' in text
+    assert 'd.mouse_up(button="right")' in text
     path = tmp_path / "run.py"
     path.write_text(text, encoding="utf-8")
     flow = flowfile.read(path)
@@ -118,7 +122,8 @@ def test_a_recorded_action_stays_timed_and_keeps_its_camera_turns(tmp_path):
     found = []
     for step in flow.sections[0].steps:
         found.append((step.kind, step.args))
-    assert found[0] == ("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2})
+    assert found[1] == ("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2})
+    assert found[2] == ("mouse", {"verb": "mouse_up", "target": None, "button": "right"})
     assert flowfile.render("run", flow.sections, timed=flow.timed) == text
 
 

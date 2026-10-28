@@ -59,8 +59,8 @@ def test_clicks_land_where_the_button_went_down():
     found = recorder.steps()
     assert (found[0].kind, found[0].args) == ("mouse", {"verb": "click", "target": [812, 440]})
     assert found[1].args == {"seconds": 0.6}
-    assert found[2].args == {"verb": "right_click", "target": [100, 100]}
-    assert "drag" in found[2].note
+    assert found[2].args == {"verb": "mouse_down", "target": [100, 100], "button": "right"}  # a drag
+    assert found[4].args == {"verb": "mouse_up", "target": [300, 100], "button": "right"}
 
 
 def test_pausing_skips_events_and_checks_land_in_time():
@@ -119,3 +119,16 @@ def test_a_right_drag_is_a_turn_even_when_the_cursor_moves():
     events.append(RawEvent(0.1, "mouse_up", "right", 150, 100))
     found = steps_of(events)
     assert ("mouse", {"verb": "move_by", "by": [50, 0], "seconds": 0.04}) in found
+
+
+def test_turning_the_camera_with_the_right_button_plays_back_with_it_held():
+    events = [RawEvent(0.0, "mouse_down", "right", 960, 540)]
+    for tick in range(1, 6):
+        events.append(turn(tick * 0.01, 10))  # Roblox holds the cursor while the right button turns the camera
+    events.append(RawEvent(0.1, "mouse_up", "right", 960, 540))
+    verbs = []
+    for kind, args in steps_of(events):
+        if kind == "mouse":
+            verbs.append(args["verb"])
+    assert verbs == ["mouse_down", "move_by", "mouse_up"]
+    assert steps_of(events)[-1] == ("mouse", {"verb": "mouse_up", "target": None, "button": "right"})  # in place

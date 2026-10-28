@@ -18,6 +18,7 @@
 - The recorder takes each click's place from when it happened, not when it was handled
 - Keys held by an action were left down when it stopped or failed: Play lets go of every key and button at the end
 - A recorded Shift+E played back as Shift, then E: combos are now one press (`d.press("shift+e")`)
+- A recorded drag (turning Roblox's camera with the right button) played back as the movement and then a click, so the mouse ran off to the edge: it's now `d.mouse_down`, the movement, then `d.mouse_up`
 
 ### Docs
 

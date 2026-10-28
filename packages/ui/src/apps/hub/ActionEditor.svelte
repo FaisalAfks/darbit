@@ -235,6 +235,7 @@
     const args = step.args;
     if (step.kind === "key") return `${args.verb} ${(args.keys ?? []).join("+")}`;
     if (step.kind === "wait") return `wait ${args.seconds} s`;
+    if (step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")) return `${args.button} button ${args.verb === "mouse_down" ? "down" : "up"}`;
     if (step.kind === "mouse" && args.verb === "move_by") return `turn ${args.by[0]}, ${args.by[1]} in ${args.seconds} s`;
     if (step.kind === "mouse") return `${args.verb} ${Array.isArray(args.target) ? args.target.join(", ") : args.target}`;
     if (step.kind === "check" || step.kind === "if") return `${args.verb} ${args.target}`;
@@ -353,6 +354,8 @@
     <span class="verb">{args.verb}</span><span class="keycaps">{#each (args.keys ?? []).join("+").split("+") as key, index (index)}<kbd>{key}</kbd>{/each}</span>
   {:else if step.kind === "wait"}
     <span class="verb">wait</span><span class="dur"><i style:width="{Math.min(12, args.seconds) * 4}%"></i>{args.seconds} s</span>
+  {:else if step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")}
+    <span class="verb">{args.button} button {args.verb === "mouse_down" ? "down" : "up"}</span><span class="tgt">{Array.isArray(args.target) ? `${args.target[0]}, ${args.target[1]}` : "where it is"}</span>
   {:else if step.kind === "mouse" && args.verb === "move_by"}
     <span class="verb">turn</span><span class="tgt">{args.by[0]}, {args.by[1]}</span><small>in {args.seconds} s</small>
   {:else if step.kind === "mouse" || step.kind === "check" || step.kind === "if"}

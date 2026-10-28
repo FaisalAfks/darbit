@@ -260,6 +260,12 @@ def _call_step(call: ast.Call, imported: set[str]) -> Step | None:
                 seconds = _constant(call.args[2])
             by = [_constant(call.args[0]), _constant(call.args[1])]
             return Step("mouse", {"verb": "move_by", "by": by, "seconds": seconds})
+        if verb in ("mouse_down", "mouse_up"):
+            target = None
+            if call.args:
+                target = _spot(call.args[0])
+            button = _keyword(call, "button") or "left"
+            return Step("mouse", {"verb": verb, "target": target, "button": button})
         if verb in MOUSE_CALLS and call.args:
             return Step("mouse", {"verb": verb, "target": _spot(call.args[0])})
         if verb in CHECK_CALLS and call.args:
@@ -322,6 +328,13 @@ def statement(step: Step) -> str:
     if step.kind == "mouse" and args.get("verb") == "move_by":
         dx, dy = args.get("by") or [0, 0]
         return f"d.move_by({int(dx)}, {int(dy)}, {_number(args.get('seconds') or 0)})"
+    if step.kind == "mouse" and args.get("verb") in ("mouse_down", "mouse_up"):
+        parts = []
+        if args.get("target") is not None:
+            parts.append(_spot_text(args.get("target")))
+        if args.get("button", "left") != "left":
+            parts.append(f"button={_quote(str(args.get('button')))}")
+        return f"d.{args.get('verb')}({', '.join(parts)})"
     if step.kind == "mouse":
         return f"d.{args.get('verb', 'click')}({_spot_text(args.get('target'))})"
     if step.kind == "check":
