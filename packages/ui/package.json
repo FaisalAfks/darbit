@@ -1,7 +1,7 @@
 {
   "name": "darbit-ui",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "The web UI of darbit: the hub, capture, highlight, recorder and run panel",
   "scripts": {
