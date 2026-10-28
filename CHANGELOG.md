@@ -16,6 +16,8 @@
 - The first hour on the Results timeline was cut off
 - Playing an action from the Studio clicked on the Studio itself: it now hides while the action plays and comes back at a breakpoint or the end
 - The recorder takes each click's place from when it happened, not when it was handled
+- Keys held by an action were left down when it stopped or failed: Play lets go of every key and button at the end
+- A recorded Shift+E played back as Shift, then E: combos are now one press (`d.press("shift+e")`)
 
 ### Docs
 
@@ -23,6 +25,8 @@
 
 ### New
 
+- Recorded actions keep their timing: the recorder writes `@d.flow(timed=True)` and waits to 0.01 s, and in a timed action each wait ends on the recorded schedule, with the time the steps took taken out of it; clicks glide 0.03 s instead of 0.5 s
+- The recorder keeps camera turns: mouse movement while a game holds the cursor still (Roblox's shift lock) or with the right button down becomes `d.move_by(dx, dy, seconds)`, which plays back the mouse's own counts
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it
 - darbit Studio's new frame (decision 0013): a bot dropdown or sidebar, a centred page bar (Overview, Results, Library, Settings) with a gliding highlight, Play, Pause, Stop and Edit, page fades, and the Studio's own settings page (look, window, while a bot runs)
 - The Library's Screen view: each screen's last shot from Capture with its assets drawn in place; the inspector shows the chosen asset glowing on its screen, and Test on screen opens Capture straight into Test for it, searching its own region

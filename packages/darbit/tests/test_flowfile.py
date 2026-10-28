@@ -100,3 +100,52 @@ def test_d_flow_marks_the_function():
 
     assert run.darbit_flow is True
     assert run() == 1
+
+
+def test_a_recorded_action_stays_timed_and_keeps_its_camera_turns(tmp_path):
+    steps = [
+        Step("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2}),
+        Step("wait", {"seconds": 0.37}),
+        Step("key", {"verb": "press", "keys": ["shift+e"]}),
+    ]
+    text = flowfile.render("run", [Section("Run", steps)], timed=True)
+    assert "@d.flow(timed=True)" in text
+    assert "d.move_by(-120, 8, 0.2)" in text
+    path = tmp_path / "run.py"
+    path.write_text(text, encoding="utf-8")
+    flow = flowfile.read(path)
+    assert flow.timed
+    found = []
+    for step in flow.sections[0].steps:
+        found.append((step.kind, step.args))
+    assert found[0] == ("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2})
+    assert flowfile.render("run", flow.sections, timed=flow.timed) == text
+
+
+def test_a_timed_action_keeps_to_its_schedule(monkeypatch):
+    import time
+
+    import darbit as d
+    from darbit.platform import safety
+    from darbit.runtime import actions
+
+    slept = []
+
+    def sleep(seconds):
+        slept.append(seconds)
+        time.sleep(seconds)
+
+    monkeypatch.setattr(safety, "sleep", sleep)
+
+    @d.flow(timed=True)
+    def run():
+        actions.sleep(0.2)
+        time.sleep(0.05)  # a step that took 0.05 s
+        actions.sleep(0.2)
+
+    run()
+    assert slept[0] == pytest.approx(0.2, abs=0.02)
+    assert slept[1] == pytest.approx(0.15, abs=0.02)  # the step's 0.05 s came out of this wait
+    assert run.darbit_flow is True
+    actions.sleep(0)  # outside a timed action, a sleep is just a sleep
+    assert slept[2] == 0

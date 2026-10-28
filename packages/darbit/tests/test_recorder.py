@@ -37,7 +37,7 @@ def test_a_modifier_held_makes_a_combo():
         RawEvent(0.10, "key_up", "e"),
         RawEvent(0.20, "key_up", "shift"),
     ]
-    assert steps_of(events) == [("key", {"verb": "press", "keys": ["shift", "e"]})]
+    assert steps_of(events) == [("key", {"verb": "press", "keys": ["shift+e"]})]  # one press, not two
 
 
 def test_a_modifier_alone_is_its_own_press():
@@ -85,3 +85,37 @@ def test_key_codes_have_keymap_names():
     assert key_name(0xA0) == "shift"
     assert key_name(0x70) == "f1"
     assert key_name(0xFF) == ""
+
+
+def turn(t: float, dx: int, x: int = 960, y: int = 540) -> RawEvent:
+    return RawEvent(t, "turn", "", x, y, dx, 0)
+
+
+def test_mouse_movement_while_the_game_holds_the_cursor_is_a_camera_turn():
+    events = []
+    for tick in range(30):  # 0.3 s of moving right, the cursor held in the middle (shift lock)
+        events.append(turn(tick * 0.01, 4))
+    steps = steps_of(events)
+    assert steps[0] == ("mouse", {"verb": "move_by", "by": [80, 0], "seconds": 0.19})
+    assert steps[-1][1]["verb"] == "move_by"
+    total = 0
+    for kind, args in steps:
+        if kind == "mouse":
+            total += args["by"][0]
+    assert total == 120  # every count is kept
+
+
+def test_moving_the_cursor_around_isnt_a_turn():
+    events = []
+    for tick in range(10):
+        events.append(turn(tick * 0.01, 10, x=100 + tick * 12))  # the cursor follows the mouse
+    assert steps_of(events) == []
+
+
+def test_a_right_drag_is_a_turn_even_when_the_cursor_moves():
+    events = [RawEvent(0.0, "mouse_down", "right", 100, 100)]
+    for tick in range(1, 6):
+        events.append(turn(tick * 0.01, 10, x=100 + tick * 10))
+    events.append(RawEvent(0.1, "mouse_up", "right", 150, 100))
+    found = steps_of(events)
+    assert ("mouse", {"verb": "move_by", "by": [50, 0], "seconds": 0.04}) in found

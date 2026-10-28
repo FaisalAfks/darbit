@@ -42,6 +42,7 @@ class Flow:
     sections: list[Section]
     calls: list[str] = field(default_factory=list)  # other actions this one calls
     docstring: str = ""
+    timed: bool = False  # @d.flow(timed=True): waits keep to the recorded schedule
 
 
 class FlowError(ValueError):
@@ -74,7 +75,7 @@ def read(path: Path) -> Flow:
     if loose.steps:
         sections.insert(0, loose)
     calls = _calls(sections)
-    return Flow(function.name, sections, calls, ast.get_docstring(tree) or "")
+    return Flow(function.name, sections, calls, ast.get_docstring(tree) or "", _is_timed(function))
 
 
 def _flow_function(tree: ast.Module, stem: str) -> ast.FunctionDef | None:
@@ -83,11 +84,27 @@ def _flow_function(tree: ast.Module, stem: str) -> ast.FunctionDef | None:
         if not isinstance(node, ast.FunctionDef):
             continue
         for decorator in node.decorator_list:
-            if _dotted(decorator) == "d.flow":
+            if _decorator_name(decorator) == "d.flow":
                 return node
         if node.name == stem:
             named = node
     return named
+
+
+def _decorator_name(decorator: ast.expr) -> str:
+    """`d.flow` for both `@d.flow` and `@d.flow(timed=True)`."""
+    if isinstance(decorator, ast.Call):
+        return _dotted(decorator.func)
+    return _dotted(decorator)
+
+
+def _is_timed(function: ast.FunctionDef) -> bool:
+    for decorator in function.decorator_list:
+        if isinstance(decorator, ast.Call) and _dotted(decorator.func) == "d.flow":
+            for keyword in decorator.keywords:
+                if keyword.arg == "timed" and isinstance(keyword.value, ast.Constant):
+                    return keyword.value.value is True
+    return False
 
 
 def _body(function: ast.FunctionDef) -> list[ast.stmt]:
@@ -148,6 +165,8 @@ def _note(lines: list[str], line: int) -> str:
 def _constant(node: ast.expr) -> object:
     if isinstance(node, ast.Constant):
         return node.value
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub) and isinstance(node.operand, ast.Constant):
+        return -node.operand.value  # a negative number: -12
     raise ValueError("not a constant")
 
 
@@ -235,6 +254,12 @@ def _call_step(call: ast.Call, imported: set[str]) -> Step | None:
             return Step("write", {"text": _constant(call.args[0])})
         if verb == "sleep" and call.args:
             return Step("wait", {"seconds": _constant(call.args[0])})
+        if verb == "move_by" and len(call.args) >= 2:
+            seconds = _keyword(call, "seconds") or 0
+            if len(call.args) >= 3:
+                seconds = _constant(call.args[2])
+            by = [_constant(call.args[0]), _constant(call.args[1])]
+            return Step("mouse", {"verb": "move_by", "by": by, "seconds": seconds})
         if verb in MOUSE_CALLS and call.args:
             return Step("mouse", {"verb": verb, "target": _spot(call.args[0])})
         if verb in CHECK_CALLS and call.args:
@@ -294,6 +319,9 @@ def statement(step: Step) -> str:
         return f"d.write({_quote(str(args.get('text', '')))})"
     if step.kind == "wait":
         return f"d.sleep({_number(args.get('seconds', 0))})"
+    if step.kind == "mouse" and args.get("verb") == "move_by":
+        dx, dy = args.get("by") or [0, 0]
+        return f"d.move_by({int(dx)}, {int(dy)}, {_number(args.get('seconds') or 0)})"
     if step.kind == "mouse":
         return f"d.{args.get('verb', 'click')}({_spot_text(args.get('target'))})"
     if step.kind == "check":
@@ -331,7 +359,9 @@ def _lines(steps: list[Step], depth: int) -> list[str]:
     return found
 
 
-def render(name: str, sections: list[Section], docstring: str = "", calls: list[str] | None = None) -> str:
+def render(
+    name: str, sections: list[Section], docstring: str = "", calls: list[str] | None = None, timed: bool = False
+) -> str:
     """The action as a Python file."""
     rows = []
     if docstring:
@@ -340,7 +370,8 @@ def render(name: str, sections: list[Section], docstring: str = "", calls: list[
     rows.append("import darbit as d")
     for other in calls or []:
         rows.append(f"from .{other} import {other}")
-    rows += ["", "", "@d.flow", f"def {name}():"]
+    decorator = "@d.flow(timed=True)" if timed else "@d.flow"
+    rows += ["", "", decorator, f"def {name}():"]
     body = []
     for section in sections:
         if section.name:

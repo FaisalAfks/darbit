@@ -30,6 +30,7 @@ BUTTON_FLAGS = (
     (0x0020, "mouse_up", 2),
 )
 WHEEL = 0x0400
+MOUSE_MOVE_ABSOLUTE = 0x0001  # usFlags: a tablet or remote desktop, not counts
 
 OnEvent = Callable[[str, int, int, int, int], None]  # kind, code, x, y, time_ns
 
@@ -111,7 +112,8 @@ def events_of(raw: RAWINPUT, cursor: tuple[int, int]) -> list[tuple[str, int, in
     """What one raw input message means: (kind, code, x, y) for each key or button change, and mouse moves.
 
     Kinds: key_down, key_up (code: the virtual-key), mouse_down, mouse_up (code: 0 left, 1 right, 2 middle),
-    wheel (code: notches), mouse_move. Sent input gives nothing."""
+    wheel (code: notches), mouse_move, and mouse_delta (x, y: how far the mouse itself moved, in counts, even when a
+    game holds the cursor still). Sent input gives nothing."""
     found: list[tuple[str, int, int, int]] = []
     if not is_real(raw.header.hDevice):
         return found
@@ -124,6 +126,8 @@ def events_of(raw: RAWINPUT, cursor: tuple[int, int]) -> list[tuple[str, int, in
         mouse = raw.data.mouse
         if mouse.lLastX or mouse.lLastY:
             found.append(("mouse_move", 0, x, y))
+            if not mouse.usFlags & MOUSE_MOVE_ABSOLUTE:
+                found.append(("mouse_delta", 0, mouse.lLastX, mouse.lLastY))
         for flag, kind, button in BUTTON_FLAGS:
             if mouse.usButtonFlags & flag:
                 found.append((kind, button, x, y))

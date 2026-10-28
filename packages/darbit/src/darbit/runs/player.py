@@ -12,6 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..errors import Stopped
+from ..platform import input as device
 
 OnLine = Callable[[str, int], None]  # (action file's name without .py, line)
 
@@ -75,6 +76,7 @@ class Player:
                 function()
             finally:
                 sys.settrace(None)
+                device.release_all()  # a stop or a failure mid-hold mustn't leave keys down
         except Stopped:
             status = "stopped"
         except Exception as error:  # noqa: BLE001 - the Studio shows why the action failed

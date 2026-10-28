@@ -235,6 +235,7 @@
     const args = step.args;
     if (step.kind === "key") return `${args.verb} ${(args.keys ?? []).join("+")}`;
     if (step.kind === "wait") return `wait ${args.seconds} s`;
+    if (step.kind === "mouse" && args.verb === "move_by") return `turn ${args.by[0]}, ${args.by[1]} in ${args.seconds} s`;
     if (step.kind === "mouse") return `${args.verb} ${Array.isArray(args.target) ? args.target.join(", ") : args.target}`;
     if (step.kind === "check" || step.kind === "if") return `${args.verb} ${args.target}`;
     if (step.kind === "loop") return "times" in args ? `repeat ${args.times}×` : `repeat until ${args.until} shows`;
@@ -349,9 +350,11 @@
 {#snippet what(step: StepData)}
   {@const args = step.args}
   {#if step.kind === "key"}
-    <span class="verb">{args.verb}</span><span class="keycaps">{#each args.keys ?? [] as key (key)}<kbd>{key}</kbd>{/each}</span>
+    <span class="verb">{args.verb}</span><span class="keycaps">{#each (args.keys ?? []).join("+").split("+") as key, index (index)}<kbd>{key}</kbd>{/each}</span>
   {:else if step.kind === "wait"}
     <span class="verb">wait</span><span class="dur"><i style:width="{Math.min(12, args.seconds) * 4}%"></i>{args.seconds} s</span>
+  {:else if step.kind === "mouse" && args.verb === "move_by"}
+    <span class="verb">turn</span><span class="tgt">{args.by[0]}, {args.by[1]}</span><small>in {args.seconds} s</small>
   {:else if step.kind === "mouse" || step.kind === "check" || step.kind === "if"}
     <span class="verb">{step.kind === "mouse" ? args.verb.replace("_", " ") : args.verb}</span>
     {#if typeof args.target === "string" && thumbnails[args.target]}<img class="thumb" src={thumbnails[args.target]} alt="" />{/if}
@@ -375,9 +378,13 @@
   <div class="settings">
     {#if step.kind === "key"}
       <label>Do <select bind:value={args.verb} onchange={changed}><option>press</option><option>hold</option><option>release</option></select></label>
-      <label>Keys <input value={(args.keys ?? []).join("+")} oninput={(event) => { args.keys = event.currentTarget.value.split("+").map((key) => key.trim()).filter(Boolean); changed(); }} /></label>
+      <label>Keys <input value={(args.keys ?? []).join("+")} oninput={(event) => { const keys = event.currentTarget.value.split("+").map((key) => key.trim()).filter(Boolean); args.keys = args.verb === "press" ? [keys.join("+")] : keys; changed(); }} /></label>
     {:else if step.kind === "wait"}
-      <label>Seconds <input type="number" min="0" step="0.05" bind:value={args.seconds} oninput={changed} /></label>
+      <label>Seconds <input type="number" min="0" step="0.01" bind:value={args.seconds} oninput={changed} /></label>
+    {:else if step.kind === "mouse" && args.verb === "move_by"}
+      <label>Right <input type="number" step="1" bind:value={args.by[0]} oninput={changed} /></label>
+      <label>Down <input type="number" step="1" bind:value={args.by[1]} oninput={changed} /></label>
+      <label>Over <input type="number" min="0" step="0.01" bind:value={args.seconds} oninput={changed} /> s</label>
     {:else if step.kind === "mouse"}
       <label>Do <select bind:value={args.verb} onchange={changed}><option>click</option><option>double_click</option><option>right_click</option><option>hover</option></select></label>
       <label>On <input list="pictures" value={Array.isArray(args.target) ? args.target.join(", ") : args.target} oninput={(event) => { const value = event.currentTarget.value; const parts = value.split(","); args.target = parts.length === 2 && parts.every((part) => part.trim() !== "" && !isNaN(Number(part))) ? parts.map((part) => Number(part)) : value; changed(); }} placeholder="a picture's name, or x, y" /></label>

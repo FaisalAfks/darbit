@@ -115,8 +115,11 @@ def read(project: Path, name: str) -> dict:
     }
 
 
-def save(project: Path, name: str, sections_data: list[dict], docstring: str = "") -> dict:
-    """Write the action from the editor's sections and steps, then read it back (lines change)."""
+def save(project: Path, name: str, sections_data: list[dict], docstring: str = "", timed: bool | None = None) -> dict:
+    """Write the action from the editor's sections and steps, then read it back (lines change).
+
+    `timed` None keeps what the file had: a recorded action stays on its recorded schedule after edits.
+    """
     if not name.isidentifier():
         raise ValueError(f"{name!r} can't be an action's name: use letters, digits and _")
     folder = _folder(project)
@@ -134,7 +137,15 @@ def save(project: Path, name: str, sections_data: list[dict], docstring: str = "
     calls = []
     for section in sections:
         _calls_in(section.steps, known, calls)
-    text = flowfile.render(name, sections, docstring, calls)
+    if timed is None:
+        timed = False
+        existing = folder / f"{name}.py"
+        if existing.exists():
+            try:
+                timed = flowfile.read(existing).timed
+            except flowfile.FlowError:
+                timed = False
+    text = flowfile.render(name, sections, docstring, calls, timed)
     (folder / f"{name}.py").write_text(text, encoding="utf-8", newline="\n")
     return read(project, name)
 

@@ -10,12 +10,14 @@ Steps inside steps are recorded with their path, e.g. "Speed Raid > pick a chara
 Bots can add their own events with d.record("speed raid done", character="Naruto").
 """
 
+import functools
 import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
 from ..errors import Interrupted, Stopped
+from . import actions
 from .log import log, record, screenshot
 
 _stack = threading.local()
@@ -58,7 +60,30 @@ def step(name: str) -> Iterator[None]:
         path.pop()
 
 
-def flow(function):
-    """Mark a function as an action (decision 0010): the Studio opens it as steps, and calling it plays it."""
-    function.darbit_flow = True
-    return function
+def flow(function=None, *, timed: bool = False):
+    """Mark a function as an action (decision 0010): the Studio opens it as steps, and calling it plays it.
+
+    `@d.flow(timed=True)` (what the recorder writes) keeps its waits to the recorded schedule: the time each step
+    takes comes out of the wait after it, so a long recording stays in time with the game.
+    """
+    if function is None:
+
+        def mark(later):
+            return flow(later, timed=timed)
+
+        return mark
+    if not timed:
+        function.darbit_flow = True
+        return function
+
+    @functools.wraps(function)
+    def on_time(*args, **kwargs):
+        before = actions.start_timeline()
+        try:
+            return function(*args, **kwargs)
+        finally:
+            actions.end_timeline(before)
+
+    on_time.darbit_flow = True
+    on_time.darbit_timed = True
+    return on_time

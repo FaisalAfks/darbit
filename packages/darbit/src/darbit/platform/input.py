@@ -65,6 +65,7 @@ _BUTTONS = {"left": (0x0002, 0x0004), "right": (0x0008, 0x0010), "middle": (0x00
 
 STEP = 0.004  # pause between glide steps
 EVENT_DELAY = 0.010  # after every press and release, like SikuliX
+MOVE_BY_STEP = 0.01  # seconds between the small moves of a move_by
 DRAG_DELAY = 0.3  # before pressing, after pressing, and before letting go in a drag, like SikuliX
 
 _lock = threading.RLock()
@@ -144,6 +145,32 @@ def move(x: int, y: int, glide: float) -> None:
             time.sleep(STEP)
     with _lock:
         _send(_move_event(x, y))
+
+
+def move_by(dx: int, dy: int, seconds: float) -> None:
+    """Move the mouse by (dx, dy) counts, spread over `seconds`. Games that lock the cursor (a camera) read these."""
+    safety.check()
+    parts = max(1, round(seconds / MOVE_BY_STEP))
+    sent_x = 0
+    sent_y = 0
+    started = time.perf_counter()
+    for part in range(1, parts + 1):
+        safety.check()
+        target_x = round(dx * part / parts)
+        target_y = round(dy * part / parts)
+        event = _INPUT(type=_MOUSE)
+        event.mi.dx = target_x - sent_x
+        event.mi.dy = target_y - sent_y
+        event.mi.dwFlags = _MOVE  # relative: no _ABSOLUTE
+        if event.mi.dx or event.mi.dy:
+            with _lock:
+                _send(event)
+        sent_x = target_x
+        sent_y = target_y
+        due = started + seconds * part / parts
+        left = due - time.perf_counter()
+        if left > 0:
+            time.sleep(left)
 
 
 def mouse_down(button: str = "left") -> None:

@@ -33,7 +33,7 @@ def test_keys_go_down_and_up():
 def test_buttons_moves_and_the_wheel_carry_the_cursor():
     assert hooks.events_of(mouse(0x0001), (10, 20)) == [("mouse_down", 0, 10, 20)]
     assert hooks.events_of(mouse(0x0008), (10, 20)) == [("mouse_up", 1, 10, 20)]
-    assert hooks.events_of(mouse(dx=3), (5, 6)) == [("mouse_move", 0, 5, 6)]
+    assert hooks.events_of(mouse(dx=3), (5, 6)) == [("mouse_move", 0, 5, 6), ("mouse_delta", 0, 3, 0)]
     wheel_down = ctypes.c_ushort(-240 & 0xFFFF).value
     assert hooks.events_of(mouse(0x0400, wheel_down), (0, 0)) == [("wheel", -2, 0, 0)]
 
