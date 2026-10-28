@@ -21,7 +21,7 @@ CHECK_CALLS = {"wait": "wait for", "vanish": "until gone"}
 class Step:
     """One step: what kind, the values it needs, and the Python it came from."""
 
-    kind: str  # key, write, wait, mouse, check, if, loop, call, code
+    kind: str  # key, write, wait, mouse, tape, check, if, loop, call, code
     args: dict = field(default_factory=dict)
     note: str = ""
     line: int = 0  # in the file, from 1; 0 for a step not saved yet
@@ -260,6 +260,11 @@ def _call_step(call: ast.Call, imported: set[str]) -> Step | None:
                 seconds = _constant(call.args[2])
             by = [_constant(call.args[0]), _constant(call.args[1])]
             return Step("mouse", {"verb": "move_by", "by": by, "seconds": seconds})
+        if verb == "replay" and len(call.args) >= 2 and _dotted(call.args[0]) == "__file__":
+            end = None
+            if len(call.args) >= 3:
+                end = _constant(call.args[2])
+            return Step("tape", {"start": _constant(call.args[1]), "end": end})
         if verb == "scroll" and call.args and not call.keywords and len(call.args) == 1:
             return Step("mouse", {"verb": "scroll", "notches": _constant(call.args[0])})
         if verb in ("mouse_down", "mouse_up"):
@@ -327,6 +332,10 @@ def statement(step: Step) -> str:
         return f"d.write({_quote(str(args.get('text', '')))})"
     if step.kind == "wait":
         return f"d.sleep({_number(args.get('seconds', 0))})"
+    if step.kind == "tape":
+        if args.get("end") is None:
+            return f"d.replay(__file__, {_number(args.get('start') or 0)})"
+        return f"d.replay(__file__, {_number(args.get('start') or 0)}, {_number(args.get('end'))})"
     if step.kind == "mouse" and args.get("verb") == "scroll":
         return f"d.scroll({int(args.get('notches') or 0)})"
     if step.kind == "mouse" and args.get("verb") == "move_by":

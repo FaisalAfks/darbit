@@ -99,24 +99,35 @@ def mouse_steps(events):
     return found
 
 
-def test_mouse_movement_is_kept_as_the_mouse_s_own_counts():
-    events = []
-    for tick in range(30):  # 0.3 s of moving right: a free cursor, or a camera with shift lock, it's the same
-        events.append(move(tick * 0.01, 4))
-    moves = mouse_steps(events)
-    assert moves[0] == {"verb": "move_by", "by": [40, 0], "seconds": 0.09}
-    total = 0
-    for args in moves:
-        total += args["by"][0]
-    assert total == 120  # every count is kept
+def test_the_tape_keeps_every_event_and_lets_go_of_what_s_still_down():
+    recorder = Recorder()
+    recorder.add(RawEvent(0.0, "key_down", "w"))
+    recorder.add(RawEvent(0.1, "move", "", 500, 300, 3, -1))
+    recorder.add(RawEvent(0.2, "mouse_down", "right", 500, 300))
+    recorder.add(RawEvent(0.3, "hwheel", "", 500, 300, 1))
+    found = []
+    for event in recorder.tape():
+        found.append((event.t, event.kind, event.name, event.up))
+    assert found == [
+        (0.0, "key", "w", False),
+        (0.1, "move", "", False),
+        (0.2, "button", "right", False),
+        (0.3, "hwheel", "", False),
+        (0.3, "key", "w", True),  # still down when recording stopped
+        (0.3, "button", "right", True),
+    ]
 
 
-def test_movement_before_a_click_ends_before_it():
-    events = [move(0.0, 5), move(0.01, 5), RawEvent(0.02, "mouse_down", "left", 50, 50)]
-    events += [RawEvent(0.05, "mouse_up", "left", 50, 50)]
-    assert mouse_steps(events) == [
-        {"verb": "move_by", "by": [10, 0], "seconds": 0.01},
-        {"verb": "click", "target": [50, 50]},
+def test_checks_split_the_tape_into_parts():
+    recorder = Recorder()
+    recorder.add_step(4.0, Step("check", {"verb": "wait for", "target": "Boss", "timeout": 30}))
+    parts = []
+    for step in recorder.parts(10.0):
+        parts.append((step.kind, step.args))
+    assert parts == [
+        ("tape", {"start": 0.0, "end": 4.0}),
+        ("check", {"verb": "wait for", "target": "Boss", "timeout": 30}),
+        ("tape", {"start": 4.0, "end": 10.0}),
     ]
 
 
@@ -128,8 +139,7 @@ def test_turning_the_camera_with_the_right_button_plays_back_with_it_held():
     verbs = []
     for args in mouse_steps(events):
         verbs.append(args["verb"])
-    assert verbs == ["mouse_down", "move_by", "mouse_up"]
-    assert mouse_steps(events)[-1] == {"verb": "mouse_up", "target": None, "button": "right"}  # let go in place
+    assert verbs == ["mouse_down", "mouse_up"]  # what the bar shows; the turn itself is on the tape
 
 
 def test_a_click_with_a_little_jitter_is_still_a_click():

@@ -3,22 +3,21 @@
 The hooks (platform/hooks.py) only queue raw events; everything here is pure, so it's tested with lists of
 fake events. A key pressed and let go quickly is a press (with any modifiers held: shift+e); held longer it's a
 hold ... release. A left, right or middle click is a click where it happened. The time between steps becomes a
-wait, rounded to 0.01 s. Checks added while paused come in as steps at the time they were added. Mouse movement is
-kept as the mouse's own counts (move_by), which Windows and games treat like a hand on the mouse: the cursor follows
-the same path, and a game that holds the cursor (Roblox's shift lock) turns its camera the same. The wheel is kept too.
+wait, rounded to 0.01 s. These steps are what the recorder bar shows as it goes; what's saved is the tape: every
+event as it happened (runtime/tape.py, decision 0014), split into parts at the checks added while paused.
 """
 
 from dataclasses import dataclass, field
 
 from ..platform.keys import key as key_named
 from ..platform.keys import names
+from ..runtime.tape import Event as TapeEvent
+from ..runtime.tape import mark_held
 from .flowfile import Step
 
 PRESS_MAX = 0.15  # down and up within this many seconds is a press, longer is hold ... release
 MERGE_GAP = 0.01  # gaps shorter than this aren't a wait
 WAIT_STEP = 0.01  # waits are rounded to this
-MOVE_PART = 0.1  # seconds of mouse movement kept as one move_by step
-MOVE_GAP = 0.05  # a pause this long in the movement starts a new move_by
 WHEEL_GAP = 0.15  # wheel notches closer together than this are one scroll
 CLICK_MOVE = 8  # px: a press and release further apart than this is a drag, kept as a click where it started
 MODIFIERS = {"shift", "ctrl", "alt", "win"}
@@ -28,12 +27,13 @@ BUTTONS = {"left": "click", "right": "right_click", "middle": "click"}
 @dataclass(frozen=True)
 class RawEvent:
     t: float  # seconds since the recording started
-    kind: str  # "key_down", "key_up", "mouse_down", "mouse_up", "wheel", "move"
+    kind: str  # "key_down", "key_up", "mouse_down", "mouse_up", "wheel", "hwheel", "move"
     key: str = ""  # key name, or button: left, right, middle
     x: int = 0  # where the cursor was
     y: int = 0
     dx: int = 0  # "move": how far the mouse itself moved, in counts; "wheel": notches (up is positive)
     dy: int = 0
+    shown: bool = True  # "move": the cursor was showing
 
 
 @dataclass
@@ -82,11 +82,77 @@ class Recorder:
         self.added.append(Timed(t, step))
 
     def steps(self) -> list[Step]:
-        """Every step in order, with waits between them."""
-        timed = keys_to_steps(self.events) + clicks_to_steps(self.events) + moves_to_steps(self.events)
-        timed += wheel_to_steps(self.events) + self.added
+        """Every key, click, scroll and check in order, with waits between them: what the recorder bar shows."""
+        timed = keys_to_steps(self.events) + clicks_to_steps(self.events) + wheel_to_steps(self.events)
+        timed += self.added
         timed.sort(key=_when)
         return with_waits(timed)
+
+    def tape(self, screen: list[int] | None = None, cursor_at_end: tuple[int, int] | None = None) -> list[TapeEvent]:
+        """Every event for the tape, with keys and buttons still down at the end let go there. `screen` is the
+        desktop (x, y, width, height), to tell a cursor pushed against its edge from one a game holds."""
+        found: list[TapeEvent] = []
+        keys_down: set[str] = set()
+        buttons_down: dict[str, tuple[int, int]] = {}
+        for event in self.events:
+            if event.kind in ("key_down", "key_up"):
+                up = event.kind == "key_up"
+                found.append(TapeEvent(event.t, "key", event.key, up))
+                if up:
+                    keys_down.discard(event.key)
+                else:
+                    keys_down.add(event.key)
+            elif event.kind in ("mouse_down", "mouse_up"):
+                up = event.kind == "mouse_up"
+                found.append(TapeEvent(event.t, "button", event.key, up, x=event.x, y=event.y))
+                if up:
+                    buttons_down.pop(event.key, None)
+                else:
+                    buttons_down[event.key] = (event.x, event.y)
+            elif event.kind == "move":
+                found.append(
+                    TapeEvent(event.t, "move", dx=event.dx, dy=event.dy, x=event.x, y=event.y, shown=event.shown)
+                )
+            elif event.kind in ("wheel", "hwheel"):
+                found.append(TapeEvent(event.t, event.kind, dx=event.dx, x=event.x, y=event.y))
+        end = 0.0
+        if found:
+            end = found[-1].t
+        for name in sorted(keys_down):
+            found.append(TapeEvent(end, "key", name, True))
+        for button, spot in buttons_down.items():
+            found.append(TapeEvent(end, "button", button, True, x=spot[0], y=spot[1]))
+        _places_after_moving(found, cursor_at_end)
+        mark_held(found, screen)
+        return found
+
+    def parts(self, length: float) -> list[Step]:
+        """The action's steps: the tape played in parts, with each check added while paused between them."""
+        found: list[Step] = []
+        start = 0.0
+        checks = sorted(self.added, key=_when)
+        for check in checks:
+            if check.t > start:
+                found.append(Step("tape", {"start": round(start, 3), "end": round(check.t, 3)}))
+            found.append(check.step)
+            start = max(start, check.t)
+        if length > start:
+            found.append(Step("tape", {"start": round(start, 3), "end": round(length, 3)}))
+        return found
+
+
+def _places_after_moving(events: list[TapeEvent], cursor_at_end: tuple[int, int] | None) -> None:
+    """Windows gives each mouse packet the cursor's place from just before that packet moved it: give each move
+    where the cursor went instead, which is the place the next packet came with (or where it was at the end)."""
+    moves = []
+    for event in events:
+        if event.kind == "move":
+            moves.append(event)
+    for index in range(len(moves) - 1):
+        moves[index].x = moves[index + 1].x
+        moves[index].y = moves[index + 1].y
+    if moves and cursor_at_end is not None:
+        moves[-1].x, moves[-1].y = cursor_at_end
 
 
 def _when(item: Timed) -> float:
@@ -156,37 +222,6 @@ def _button_step(verb: str, button: str, target: list[int] | None) -> Step:
     return Step("mouse", {"verb": verb, "target": target, "button": button})
 
 
-def moves_to_steps(events: list[RawEvent]) -> list[Timed]:
-    """Mouse movement as move_by steps of the mouse's own counts, one for every short stretch of moving."""
-    found: list[Timed] = []
-    part: list[RawEvent] = []
-    for event in events:
-        if event.kind != "move":
-            if part and event.kind in ("mouse_down", "mouse_up", "wheel"):
-                _add_move(part, found)  # the movement before a click ends before it
-                part = []
-            continue
-        if part and (event.t - part[0].t >= MOVE_PART or event.t - part[-1].t > MOVE_GAP):
-            _add_move(part, found)
-            part = []
-        part.append(event)
-    if part:
-        _add_move(part, found)
-    return found
-
-
-def _add_move(part: list[RawEvent], found: list[Timed]) -> None:
-    dx = 0
-    dy = 0
-    for event in part:
-        dx += event.dx
-        dy += event.dy
-    if dx == 0 and dy == 0:
-        return
-    seconds = round(part[-1].t - part[0].t, 2)
-    found.append(Timed(part[0].t, Step("mouse", {"verb": "move_by", "by": [dx, dy], "seconds": seconds})))
-
-
 def wheel_to_steps(events: list[RawEvent]) -> list[Timed]:
     """The wheel: notches close together are one scroll."""
     found: list[Timed] = []
@@ -194,7 +229,7 @@ def wheel_to_steps(events: list[RawEvent]) -> list[Timed]:
     last = -1.0
     notches = 0
     for event in events:
-        if event.kind != "wheel":
+        if event.kind not in ("wheel", "hwheel"):
             continue
         if notches and event.t - last <= WHEEL_GAP and (event.dx > 0) == (notches > 0):
             notches += event.dx

@@ -5,6 +5,7 @@ import pytest
 from darbit import paths
 from darbit.platform import hooks
 from darbit.runs import flowfile
+from darbit.runtime import tape
 from darbit.server import record_api
 
 SECOND = 1_000_000_000  # ns
@@ -15,7 +16,7 @@ def recording(tmp_path, monkeypatch):
     def project_dir(folder):
         return folder / ".darbit"
 
-    def fake_start(on_event):
+    def fake_start(on_event, moves=False):
         def stop():
             return None
 
@@ -38,20 +39,36 @@ def event(kind, code=0, x=0, y=0, at=0.0):
     record_api._on_event(kind, code, x, y, int(at * SECOND))
 
 
-def test_keys_and_clicks_become_an_action(recording):
+def test_keys_clicks_and_the_mouse_become_a_tape(recording):
     event("key_down", 0x51, at=1.0)  # q
     event("key_up", 0x51, at=1.05)
+    event("mouse_move", 0, 800, 440, at=1.2)
+    event("mouse_delta", 1, 12, 0, at=1.2)
     event("mouse_down", 0, 812, 440, at=1.5)
     event("mouse_up", 0, 812, 440, at=1.55)
+    event("wheel", -2, 812, 440, at=1.7)
     status = record_api.status()
-    assert status["count"] == 3  # press, wait, click
+    assert status["count"] == 5  # press, wait, click, wait, scroll: what the bar shows
     saved = record_api.stop(True)
-    assert saved == {"saved": True, "name": "dodge", "steps": 3}
+    assert saved == {"saved": True, "name": "dodge", "steps": 1}
     flow = flowfile.read(recording / "actions" / "dodge.py")
-    steps = flow.sections[0].steps
-    assert [step.kind for step in steps] == ["key", "wait", "mouse"]
-    assert steps[2].args == {"verb": "click", "target": [812, 440]}
+    assert flow.timed
     assert flow.sections[0].name == "Dodge"
+    assert [(step.kind, step.args) for step in flow.sections[0].steps] == [("tape", {"start": 0, "end": 1.75})]
+    saved_tape = tape.load(recording / "actions" / "dodge.tape.json")
+    kinds = []
+    for one in saved_tape.events:
+        kinds.append((one.kind, one.name, one.up))
+    assert kinds == [
+        ("key", "q", False),
+        ("key", "q", True),
+        ("move", "", False),
+        ("button", "left", False),
+        ("button", "left", True),
+        ("wheel", "", False),
+    ]
+    assert saved_tape.events[2].dx == 12
+    assert saved_tape.events[5].dx == -2
 
 
 def test_darbit_hotkeys_are_left_out(recording):

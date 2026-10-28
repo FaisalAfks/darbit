@@ -13,6 +13,7 @@ from pathlib import Path
 
 from ..errors import Stopped
 from ..platform import input as device
+from ..runtime import tape
 
 OnLine = Callable[[str, int], None]  # (action file's name without .py, line)
 
@@ -36,6 +37,7 @@ class Player:
         self.thread: threading.Thread | None = None
 
     def start(self) -> None:
+        tape.stopping.clear()
         self.thread = threading.Thread(target=self._play, name=f"darbit-play-{self.name}", daemon=True)
         self.thread.start()
 
@@ -50,6 +52,7 @@ class Player:
 
     def stop(self) -> None:
         self.stopping.set()
+        tape.stopping.set()  # a tape that's playing ends at its next event
         self.resume_event.set()
 
     def _load(self) -> Callable[[], object]:

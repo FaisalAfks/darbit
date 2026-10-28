@@ -42,6 +42,7 @@
     loop: { icon: "↻", tone: "var(--warn)" },
     call: { icon: "⤷", tone: "var(--slot-bot)" },
     code: { icon: "{ }", tone: "var(--faint)" },
+    tape: { icon: "◉", tone: "var(--danger)" },
   };
   const SECTION_TONES = ["var(--accent)", "var(--accent-2)", "var(--ok)", "var(--warn)", "var(--danger)", "var(--slot-bot)", "var(--muted)"];
   const NEW_STEPS: { label: string; step: () => StepData }[] = [
@@ -63,6 +64,18 @@
   let lastChosen: number | null = null;
   let folded = $state(new Set<number>());
   let peeks: Record<number, StepData[]> = $state({});
+  interface TapeSummary {
+    seconds: number;
+    moves: number;
+    held: number;
+    keys: number;
+    clicks: number;
+    scrolls: number;
+    path: number[][];
+    marks: { t: number; kind: string; text: string }[];
+  }
+  let tapes: Record<string, TapeSummary> = $state({}); // what each part of the tape holds, by "start-end"
+  let splitAt = $state(0);
   let query = $state("");
   let jumpOpen = $state(false);
   let adding: number | null = $state(null); // insert after this step id (or -1-section for the top)
@@ -108,6 +121,60 @@
     peeks = {};
     const listed = await request("actions.list", { path }).catch(() => []);
     others = listed.map((entry: { name: string }) => entry.name).filter((each: string) => each !== current);
+    loadTapes();
+  }
+
+  // ---- the tape: recorded input played in parts
+  function tapeKey(step: StepData): string {
+    return `${step.args.start}-${step.args.end ?? ""}`;
+  }
+
+  function tapeSteps(steps: StepData[], found: StepData[]): StepData[] {
+    for (const step of steps) {
+      if (step.kind === "tape") found.push(step);
+      tapeSteps(step.children, found);
+    }
+    return found;
+  }
+
+  function loadTapes(): void {
+    if (!action) return;
+    for (const section of action.sections) {
+      for (const step of tapeSteps(section.steps, [])) loadTape(step);
+    }
+  }
+
+  function loadTape(step: StepData): void {
+    const key = tapeKey(step);
+    if (tapes[key]) return;
+    request<TapeSummary>("actions.tape", { path, name: current, start: step.args.start, end: step.args.end })
+      .then((found) => (tapes[key] = found))
+      .catch(() => {});
+  }
+
+  function tapeChanged(step: StepData): void {
+    changed();
+    loadTape(step);
+  }
+
+  function splitTape(step: StepData): void {
+    const end = step.args.end ?? Infinity;
+    if (!(splitAt > step.args.start && splitAt < end)) {
+      toast(`Split between ${step.args.start} and ${step.args.end ?? "the end"} s`);
+      return;
+    }
+    const found = locate(step.id!);
+    if (!found) return;
+    const second = blank("tape", { start: splitAt, end: step.args.end });
+    step.args.end = splitAt;
+    found.steps.splice(found.index + 1, 0, second);
+    changed();
+    loadTape(step);
+    loadTape(second);
+  }
+
+  function pathPoints(summary: TapeSummary): string {
+    return summary.path.map((point) => `${(point[0] * 100).toFixed(1)},${(point[1] * 60).toFixed(1)}`).join(" ");
   }
 
   async function save(): Promise<void> {
@@ -117,6 +184,7 @@
       for (const section of saved.sections) withIds(section.steps);
       action = saved;
       dirty = false;
+      loadTapes();
       toast(`Saved ${current}`);
     } catch (error) {
       toast((error as Error).message);
@@ -235,6 +303,7 @@
     const args = step.args;
     if (step.kind === "key") return `${args.verb} ${(args.keys ?? []).join("+")}`;
     if (step.kind === "wait") return `wait ${args.seconds} s`;
+    if (step.kind === "tape") return `replay ${args.start}–${args.end ?? "end"} s`;
     if (step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")) return `${args.button} button ${args.verb === "mouse_down" ? "down" : "up"}`;
     if (step.kind === "mouse" && args.verb === "move_by") return `move ${args.by[0]}, ${args.by[1]} in ${args.seconds} s`;
     if (step.kind === "mouse" && args.verb === "scroll") return `scroll ${args.notches > 0 ? "up" : "down"} ${Math.abs(args.notches)}`;
@@ -355,6 +424,16 @@
     <span class="verb">{args.verb}</span><span class="keycaps">{#each (args.keys ?? []).join("+").split("+") as key, index (index)}<kbd>{key}</kbd>{/each}</span>
   {:else if step.kind === "wait"}
     <span class="verb">wait</span><span class="dur"><i style:width="{Math.min(12, args.seconds) * 4}%"></i>{args.seconds} s</span>
+  {:else if step.kind === "tape"}
+    {@const summary = tapes[tapeKey(step)]}
+    <span class="verb">replay</span><span class="tgt">{args.start} – {args.end ?? "end"} s</span>
+    {#if summary}
+      <small>{summary.moves} mouse moves{summary.held ? ` (${summary.held} turning the camera)` : ""} · {summary.keys} keys · {summary.clicks} clicks{summary.scrolls ? ` · ${summary.scrolls} scrolls` : ""}</small>
+      <span class="tape">
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true"><polyline points={pathPoints(summary)} /></svg>
+        <span class="marks">{#each summary.marks as mark, index (index)}<i data-kind={mark.kind} style:left="{summary.seconds ? (mark.t / summary.seconds) * 100 : 0}%" title="{mark.text} at {mark.t} s"></i>{/each}</span>
+      </span>
+    {/if}
   {:else if step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")}
     <span class="verb">{args.button} button {args.verb === "mouse_down" ? "down" : "up"}</span><span class="tgt">{Array.isArray(args.target) ? `${args.target[0]}, ${args.target[1]}` : "where it is"}</span>
   {:else if step.kind === "mouse" && args.verb === "scroll"}
@@ -387,6 +466,11 @@
       <label>Keys <input value={(args.keys ?? []).join("+")} oninput={(event) => { const keys = event.currentTarget.value.split("+").map((key) => key.trim()).filter(Boolean); args.keys = args.verb === "press" ? [keys.join("+")] : keys; changed(); }} /></label>
     {:else if step.kind === "wait"}
       <label>Seconds <input type="number" min="0" step="0.01" bind:value={args.seconds} oninput={changed} /></label>
+    {:else if step.kind === "tape"}
+      <label>From <input type="number" min="0" step="0.01" bind:value={args.start} oninput={() => tapeChanged(step)} /> s</label>
+      <label>To <input type="number" min="0" step="0.01" bind:value={args.end} oninput={() => tapeChanged(step)} /> s</label>
+      <label>Split at <input type="number" min="0" step="0.01" bind:value={splitAt} /> s</label>
+      <button class="mini" onclick={() => splitTape(step)}>Split</button>
     {:else if step.kind === "mouse" && args.verb === "scroll"}
       <label>Notches <input type="number" step="1" bind:value={args.notches} oninput={changed} /> (up is positive)</label>
     {:else if step.kind === "mouse" && args.verb === "move_by"}
@@ -920,6 +1004,43 @@
   .note {
     color: var(--faint);
     font-size: var(--size-caption);
+  }
+  .tape {
+    display: inline-grid;
+    grid-template-columns: calc(3 * var(--control-l)) calc(8 * var(--control-l));
+    align-items: center;
+    gap: var(--space-s);
+  }
+  .tape svg {
+    width: 100%;
+    height: var(--control-l);
+    border-radius: var(--radius-s);
+    background: var(--raised);
+  }
+  .tape polyline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .marks {
+    position: relative;
+    height: var(--control-s);
+    border-radius: var(--radius-s);
+    background: var(--raised);
+  }
+  .marks i {
+    position: absolute;
+    top: var(--space-xs);
+    bottom: var(--space-xs);
+    width: 1px;
+    background: var(--accent-2);
+  }
+  .marks i[data-kind="click"] {
+    background: var(--accent);
+  }
+  .marks i[data-kind="wheel"] {
+    background: var(--warn);
   }
   .dur {
     display: inline-flex;

@@ -15,6 +15,7 @@ from ..project.manifest import load
 from ..runs import flowfile
 from ..runs.flowfile import Section
 from ..runs.player import Player
+from ..runtime import tape
 from ..settings import settings
 from .events import publish
 
@@ -113,6 +114,14 @@ def read(project: Path, name: str) -> dict:
         "used_by": _used_by(others, name),
         "breakpoints": breakpoints(project).get(name, []),
     }
+
+
+def tape_summary(project: Path, name: str, start: float = 0.0, end: float | None = None) -> dict:
+    """What a part of an action's tape holds, for the editor's tape block."""
+    path = tape.path_for(_folder(project) / f"{name}.py")
+    if not path.exists():
+        raise ValueError(f"{name} has no tape")
+    return tape.summary(tape.load(path), start, end)
 
 
 def save(project: Path, name: str, sections_data: list[dict], docstring: str = "", timed: bool | None = None) -> dict:
@@ -240,9 +249,16 @@ def register() -> None:
     def control_request(data: dict) -> dict:
         return control(str(data.get("what", "")))
 
+    def tape_request(data: dict) -> dict:
+        end = data.get("end")
+        if end is not None:
+            end = float(end)
+        return tape_summary(_project(data), str(data.get("name", "")), float(data.get("start") or 0), end)
+
     HANDLERS["actions.list"] = list_request
     HANDLERS["actions.read"] = read_request
     HANDLERS["actions.save"] = save_request
     HANDLERS["actions.breakpoints"] = breakpoints_request
     HANDLERS["actions.play"] = play_request
     HANDLERS["actions.control"] = control_request
+    HANDLERS["actions.tape"] = tape_request

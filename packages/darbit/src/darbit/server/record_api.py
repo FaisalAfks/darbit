@@ -15,13 +15,19 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .. import __version__
 from ..platform import hooks
+from ..platform import input as device
+from ..project import manifest
 from ..runs.flowfile import Step, statement, to_dict
 from ..runs.recorder import RawEvent, Recorder, key_name
+from ..runtime import tape
+from ..settings import settings
 from . import actions_api
 from .events import publish
 
 TICK = 0.25  # seconds between record.tick events
+TAIL = 0.05  # seconds kept after the last event
 SHOWN_STEPS = 14  # steps sent with each tick, newest last
 BUTTONS = {0: "left", 1: "right", 2: "middle"}
 
@@ -38,6 +44,9 @@ class Recording:
     recorder: Recorder = field(default_factory=Recorder)
     started: float = field(default_factory=time.perf_counter)
     stop_hooks: Callable[[], None] | None = None
+    cursor: tuple[int, int] = (0, 0)  # where the cursor last was
+    window: list[int] | None = None  # the game window's client area when recording started
+    screen: list[int] | None = None
     held: set[str] = field(default_factory=set)  # keys down right now
     hotkey_keys: set[str] = field(default_factory=set)  # keys of a darbit hotkey: their ups are dropped too
     running: threading.Event = field(default_factory=threading.Event)
@@ -70,12 +79,15 @@ def _on_event(kind: str, code: int, x: int, y: int, time_ns: int) -> None:
         if _inside_bar(x, y):
             return
         recording.recorder.add(RawEvent(t, kind, BUTTONS.get(code, "left"), x, y))
+    elif kind == "mouse_move":
+        recording.cursor = (x, y)
     elif kind == "mouse_delta":
-        recording.recorder.add(RawEvent(t, "move", "", 0, 0, x, y))
-    elif kind == "wheel":
+        cursor_x, cursor_y = recording.cursor
+        recording.recorder.add(RawEvent(t, "move", "", cursor_x, cursor_y, x, y, shown=code == 1))
+    elif kind in ("wheel", "hwheel"):
         if _inside_bar(x, y):
             return
-        recording.recorder.add(RawEvent(t, "wheel", "", x, y, code))
+        recording.recorder.add(RawEvent(t, kind, "", x, y, code))
 
 
 def _on_key(recording: Recording, kind: str, name: str, t: float) -> None:
@@ -116,8 +128,11 @@ def start(project: Path, name: str) -> dict:
     if _recording is not None:
         raise ValueError("already recording")
     recording = Recording(project, name)
+    manifest.setup(settings, __version__, project)  # the bot's settings.window: places are kept relative to it
+    recording.window = tape._window_now()
+    recording.screen = list(device.desktop())
     _recording = recording
-    recording.stop_hooks = hooks.start(_on_event)
+    recording.stop_hooks = hooks.start(_on_event, moves=True)  # the cursor's place goes with each mouse packet
     recording.running.set()
     threading.Thread(target=_tick, args=(recording,), name="darbit-record-tick", daemon=True).start()
     return status()
@@ -217,7 +232,17 @@ def stop(keep: bool = True) -> dict:
         recording.stop_hooks()
     result: dict = {"saved": False}
     if keep:
-        steps = recording.recorder.steps()
+        events = recording.recorder.tape(recording.screen, device.position())
+        length = recording.seconds()
+        if events:
+            length = min(length, events[-1].t + TAIL)
+        folder = recording.project / "actions"
+        folder.mkdir(parents=True, exist_ok=True)
+        tape.save(
+            tape.path_for(folder / f"{recording.name}.py"),
+            tape.Tape(events, recording.window, recording.screen),
+        )
+        steps = recording.recorder.parts(length)
         step_dicts = []
         for step in steps:
             step_dicts.append(to_dict(step))

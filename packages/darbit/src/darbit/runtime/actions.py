@@ -217,6 +217,13 @@ def end_timeline(before: _Schedule | None) -> None:
     _timelines.current = before
 
 
+def resync() -> None:
+    """In a timed action, carry on the schedule from now (after a tape, which keeps its own time)."""
+    schedule = _timeline()
+    if schedule is not None:
+        schedule.due = time.perf_counter()
+
+
 def _glide() -> float:
     if _timeline() is None:
         return settings.glide

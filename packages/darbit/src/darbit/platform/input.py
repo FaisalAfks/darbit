@@ -60,6 +60,7 @@ _user32.GetSystemMetrics.argtypes = (ctypes.c_int,)
 
 _MOUSE, _KEYBOARD = 0, 1
 _MOVE, _WHEEL, _VIRTUALDESK, _ABSOLUTE = 0x0001, 0x0800, 0x4000, 0x8000
+_HWHEEL = 0x01000
 _KEYUP, _EXTENDED, _UNICODE = 0x0002, 0x0001, 0x0004
 _BUTTONS = {"left": (0x0002, 0x0004), "right": (0x0008, 0x0010), "middle": (0x0020, 0x0040)}
 
@@ -81,6 +82,11 @@ def _send(*events: _INPUT) -> None:
 
 def _desktop() -> tuple[int, int, int, int]:
     return tuple(_user32.GetSystemMetrics(i) for i in (76, 77, 78, 79))  # type: ignore[return-value]
+
+
+def desktop() -> tuple[int, int, int, int]:
+    """Every screen together: x, y, width, height."""
+    return _desktop()
 
 
 def _move_event(x: int, y: int) -> _INPUT:
@@ -260,6 +266,58 @@ def write(text: str) -> None:
                 _send(_unicode_event(unit, up=False))
                 _send(_unicode_event(unit, up=True))
         time.sleep(EVENT_DELAY)
+
+
+# ------------------------------------------------------------- the tape's input
+
+
+def key_now(what: Key | str, up: bool) -> None:
+    """A key down or up, sent at once with no pause after it, kept track of for release_all."""
+    chosen = key(what)
+    with _lock:
+        if up:
+            if chosen in _held_keys:
+                _send(_key_event(chosen, up=True))
+                _held_keys.pop(chosen, None)
+        elif chosen not in _held_keys:
+            _send(_key_event(chosen, up=False))
+            _held_keys[chosen] = None
+
+
+def button_now(button: str, up: bool) -> None:
+    """A mouse button down or up where the cursor is, sent at once."""
+    with _lock:
+        if up:
+            if button in _held_buttons:
+                _send(_button_event(_BUTTONS[button][1]))
+                _held_buttons.discard(button)
+        elif button not in _held_buttons:
+            _send(_button_event(_BUTTONS[button][0]))
+            _held_buttons.add(button)
+
+
+def nudge(dx: int, dy: int) -> None:
+    """One relative mouse packet, like the mouse sends: what a game that holds the cursor turns its camera by."""
+    event = _INPUT(type=_MOUSE)
+    event.mi.dx = dx
+    event.mi.dy = dy
+    event.mi.dwFlags = _MOVE
+    with _lock:
+        _send(event)
+
+
+def place(x: int, y: int) -> None:
+    """Put the cursor at (x, y) at once."""
+    with _lock:
+        _send(_move_event(x, y))
+
+
+def wheel_now(notches: int, sideways: bool = False) -> None:
+    event = _INPUT(type=_MOUSE)
+    event.mi.mouseData = ctypes.c_uint32(notches * 120).value
+    event.mi.dwFlags = _HWHEEL if sideways else _WHEEL
+    with _lock:
+        _send(event)
 
 
 def release_all() -> None:

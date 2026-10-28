@@ -30,6 +30,8 @@ BUTTON_FLAGS = (
     (0x0020, "mouse_up", 2),
 )
 WHEEL = 0x0400
+HWHEEL = 0x0800
+CURSOR_SHOWING = 0x00000001
 MOUSE_MOVE_ABSOLUTE = 0x0001  # usFlags: a tablet or remote desktop, not counts
 
 OnEvent = Callable[[str, int, int, int, int], None]  # kind, code, x, y, time_ns
@@ -108,12 +110,12 @@ def is_real(device: int | None) -> bool:
     return bool(device)
 
 
-def events_of(raw: RAWINPUT, cursor: tuple[int, int]) -> list[tuple[str, int, int, int]]:
+def events_of(raw: RAWINPUT, cursor: tuple[int, int], shown: bool = True) -> list[tuple[str, int, int, int]]:
     """What one raw input message means: (kind, code, x, y) for each key or button change, and mouse moves.
 
     Kinds: key_down, key_up (code: the virtual-key), mouse_down, mouse_up (code: 0 left, 1 right, 2 middle),
-    wheel (code: notches), mouse_move, and mouse_delta (x, y: how far the mouse itself moved, in counts, even when a
-    game holds the cursor still). Sent input gives nothing."""
+    wheel and hwheel (code: notches), mouse_move, and mouse_delta (x, y: how far the mouse itself moved, in counts,
+    even when a game holds the cursor still; code: 1 if the cursor is showing). Sent input gives nothing."""
     found: list[tuple[str, int, int, int]] = []
     if not is_real(raw.header.hDevice):
         return found
@@ -127,14 +129,35 @@ def events_of(raw: RAWINPUT, cursor: tuple[int, int]) -> list[tuple[str, int, in
         if mouse.lLastX or mouse.lLastY:
             found.append(("mouse_move", 0, x, y))
             if not mouse.usFlags & MOUSE_MOVE_ABSOLUTE:
-                found.append(("mouse_delta", 0, mouse.lLastX, mouse.lLastY))
+                found.append(("mouse_delta", 1 if shown else 0, mouse.lLastX, mouse.lLastY))
         for flag, kind, button in BUTTON_FLAGS:
             if mouse.usButtonFlags & flag:
                 found.append((kind, button, x, y))
         if mouse.usButtonFlags & WHEEL:
             notches = ctypes.c_short(mouse.usButtonData).value // 120
             found.append(("wheel", notches, x, y))
+        if mouse.usButtonFlags & HWHEEL:
+            notches = ctypes.c_short(mouse.usButtonData).value // 120
+            found.append(("hwheel", notches, x, y))
     return found
+
+
+class CURSORINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD),
+        ("flags", wintypes.DWORD),
+        ("hCursor", wintypes.HANDLE),
+        ("ptScreenPos", wintypes.POINT),
+    ]
+
+
+def _cursor_showing() -> bool:
+    """Whether the cursor is on screen; games hide it while they hold the mouse (a camera)."""
+    info = CURSORINFO()
+    info.cbSize = ctypes.sizeof(CURSORINFO)
+    if not ctypes.windll.user32.GetCursorInfo(ctypes.byref(info)):
+        return True
+    return bool(info.flags & CURSOR_SHOWING)
 
 
 class _Listener:
@@ -185,7 +208,7 @@ class _Listener:
         now = time.perf_counter_ns()
         with self.lock:
             subscribers = list(self.subscribers)
-        for kind, code, x, y in events_of(raw, (point.x, point.y)):
+        for kind, code, x, y in events_of(raw, (point.x, point.y), _cursor_showing()):
             for on_event in subscribers:
                 try:
                     on_event(kind, code, x, y, now)
@@ -233,12 +256,12 @@ class _Listener:
 _listener = _Listener()
 
 
-def start(on_event: OnEvent) -> Callable[[], None]:
+def start(on_event: OnEvent, moves: bool = False) -> Callable[[], None]:
     """Get every real key and mouse button change: `on_event(kind, code, x, y, time_ns)`. Returns a function
-    that stops it. Mouse moves are left out here; the run pill uses `watch_mouse`."""
+    that stops it. Cursor moves (mouse_move) are left out unless `moves`; the run pill uses `watch_mouse`."""
 
     def without_moves(kind: str, code: int, x: int, y: int, time_ns: int) -> None:
-        if kind != "mouse_move":
+        if moves or kind != "mouse_move":
             on_event(kind, code, x, y, time_ns)
 
     _listener.add(without_moves)
