@@ -38,6 +38,66 @@ class Run:
 
 
 _runs: dict[str, Run] = {}  # folder -> its run
+
+
+class Earlier:
+    """A bot an earlier Studio started that's still running (that Studio was closed): enough of a Popen for
+    status, Stop and the watcher, found through the pid file in the bot's control folder."""
+
+    def __init__(self, pid: int) -> None:
+        self.pid = pid
+        self.returncode: int | None = None
+
+    def poll(self) -> int | None:
+        if self.returncode is None and not _alive(self.pid):
+            self.returncode = 0
+        return self.returncode
+
+    def wait(self, timeout: float | None = None) -> int:
+        deadline = time.monotonic() + (timeout or 0)
+        while self.poll() is None:
+            if timeout is not None and time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(str(self.pid), timeout)
+            time.sleep(0.2)
+        return self.returncode or 0
+
+
+def _alive(pid: int) -> bool:
+    import ctypes
+
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not handle:
+        return False
+    code = ctypes.c_ulong()
+    try:
+        kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+    finally:
+        kernel32.CloseHandle(handle)
+    return code.value == STILL_ACTIVE
+
+
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+STILL_ACTIVE = 259
+
+
+def _adopt(folder: Path) -> Run | None:
+    """A run an earlier Studio left behind, if its process is still alive."""
+    pid_file = control_dir(folder) / "pid"
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not _alive(pid):
+        pid_file.unlink(missing_ok=True)
+        return None
+    run = Run(folder, Earlier(pid), pid_file.stat().st_mtime)
+    with _lock:
+        _runs[str(folder)] = run
+    threading.Thread(target=_watch, args=(run,), name=f"darbit-run-{folder.name}", daemon=True).start()
+    return run
+
+
 _lock = threading.Lock()
 
 
@@ -122,6 +182,8 @@ def status(folder: Path) -> str:
     """running, paused or stopped."""
     with _lock:
         run = _runs.get(str(folder))
+    if run is None:
+        run = _adopt(folder)  # started by a Studio that's gone
     if run is None or run.process.poll() is not None:
         return "stopped"
     if run.paused:
@@ -164,6 +226,7 @@ def project_run(data: dict) -> dict:
         process = subprocess.Popen(
             bots.entry_command(project.entry, folder), cwd=folder, env=environment, stdout=sink, stderr=sink
         )
+    (control / "pid").write_text(str(process.pid), encoding="utf-8")  # a later Studio can still stop it
     run = Run(folder, process, time.time())
     with _lock:
         _runs[str(folder)] = run
@@ -179,6 +242,10 @@ def project_pause(data: dict) -> dict:
         run = _runs.get(str(folder))
     if run is None or run.process.poll() is not None:
         raise ValueError(f"{folder.name} isn't running")
+    if not understands_control(folder):
+        raise ValueError(
+            f"{folder.name}'s darbit is older than the Studio's Pause: move its darbit pin to a newer release"
+        )
     pause_file = control_dir(folder) / "pause"
     run.paused = not run.paused
     if run.paused:
@@ -194,16 +261,42 @@ def project_stop(data: dict) -> dict:
     folder = _folder(data)
     with _lock:
         run = _runs.get(str(folder))
+    if run is None:
+        run = _adopt(folder)
     if run is None or run.process.poll() is not None:
         return {"status": "stopped"}
     run.stopping = True
     (control_dir(folder) / "pause").unlink(missing_ok=True)
     (control_dir(folder) / "stop").write_text("", encoding="utf-8")
+    wait = STOP_WAIT
+    if not understands_control(folder):
+        wait = 0  # its darbit is older than the Studio's stop: it would never see it
     try:
-        run.process.wait(timeout=STOP_WAIT)
+        run.process.wait(timeout=wait)
     except subprocess.TimeoutExpired:
-        run.process.terminate()  # it didn't reach a darbit call in time
+        end_tree(run.process.pid)  # it didn't reach a darbit call in time
+        from ..platform import input as device
+
+        device.let_go_of_everything()  # whatever it held stays down otherwise
     return {"status": "stopped"}
+
+
+def end_tree(pid: int) -> None:
+    """End a process and every process it started: `uv run` starts the bot as a child, which outlives its parent
+    on Windows if only the parent is ended."""
+    subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
+
+
+def understands_control(folder: Path) -> bool:
+    """Whether the darbit in the bot's own environment takes the Studio's pause and stop (its control folder).
+    A bot without its own environment runs with the Studio's darbit, which does."""
+    safety = folder / ".venv" / "Lib" / "site-packages" / "darbit" / "platform" / "safety.py"
+    if not safety.is_file():
+        return True
+    try:
+        return "DARBIT_CONTROL" in safety.read_text(encoding="utf-8")
+    except OSError:
+        return True
 
 
 def _watch(run: Run) -> None:
@@ -216,6 +309,7 @@ def _watch(run: Run) -> None:
             publish("project.changed", {"path": str(run.folder)})
         time.sleep(WATCH_EVERY)
     code = run.process.returncode
+    (control_dir(run.folder) / "pid").unlink(missing_ok=True)
     ended = "failed"
     if code == 0 or run.stopping:
         ended = "stopped"

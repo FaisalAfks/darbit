@@ -13,7 +13,7 @@ import time
 from ctypes import wintypes
 
 from . import safety
-from .keys import Key, Keys, key
+from .keys import Key, Keys, key, names
 
 _user32 = ctypes.WinDLL("user32", use_last_error=True)
 _ULONG_PTR = ctypes.c_size_t
@@ -318,6 +318,20 @@ def wheel_now(notches: int, sideways: bool = False) -> None:
     event.mi.dwFlags = _HWHEEL if sideways else _WHEEL
     with _lock:
         _send(event)
+
+
+def let_go_of_everything() -> None:
+    """Send a release for every key and mouse button, held or not: after a bot is ended by force, whatever it
+    was holding (W while walking) would otherwise stay down in Windows."""
+    events = []
+    for name in names():
+        events.append(_key_event(key(name), up=True))
+    for _, up_flag in _BUTTONS.values():
+        events.append(_button_event(up_flag))
+    with _lock:
+        _send(*events)
+        _held_keys.clear()
+        _held_buttons.clear()
 
 
 def release_all() -> None:
