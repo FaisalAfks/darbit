@@ -22,16 +22,30 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "settings.set": ("req", {"key": "str", "value": "any"}, "save a UI setting"),
     "log": ("evt", {"line": "str", "time": "str"}, "a log line from a running script"),
     "record": ("evt", {"event": "str", "fields": "dict"}, "a run report event (steps, searches)"),
-    # T09/T10 capture
-    "capture.freeze": ("req", {"monitors": "list[int] | None"}, "grab and send frames, then lines"),
-    "capture.lines": ("evt", {"monitor": "int", "lines": "Lines"}, "snap lines for a frozen frame"),
+    # T09/T10 capture (decision 0013, round 7): a session for one bot, on one frozen shot
+    "capture.open": (
+        "req",
+        {"path": "str", "mode": "str", "name": "str | None", "kind": "Kind | None"},
+        "hide the Studio, freeze, show Capture",
+    ),
+    "capture.session": ("req", {}, "the items still to take"),
+    "capture.frame": ("req", {}, "the frozen shot as a frame"),
     "capture.candidates": ("req", {"x": "int", "y": "int", "kind": "Kind"}, "boxes around a point, smallest first"),
-    "capture.targets": ("req", {}, "the project's saved targets"),
-    "capture.save": ("req", {"draft": "Draft"}, "write the target's files"),
-    "capture.undo": ("req", {}, "undo the last save, rename or delete"),
-    "capture.redo": ("req", {}, "redo it"),
-    "capture.rename": ("req", {"from": "str", "to": "str"}, "rename a target's files and links"),
-    "capture.delete": ("req", {"name": "str"}, "delete a target's files"),
+    "capture.test": (
+        "req",
+        {"box": "Box | None", "name": "str | None", "region": "Box | None", "similarity": "float"},
+        "every match in the region, with scores",
+    ),
+    "capture.save": (
+        "req",
+        {"name": "str", "kind": "Kind", "image": "Box | None", "region": "Box | None", "point": "list[float] | None"},
+        "write the target's files",
+    ),
+    "capture.close": ("req", {}, "leave Capture and show the Studio"),
+    "capture.next": ("req", {}, "hide Capture until the next guide screen is frozen"),
+    "capture.refreeze": ("req", {}, "grab the screen again"),
+    "capture.frozen": ("evt", {}, "a new shot is ready"),
+    "capture.waiting": ("evt", {}, "the bar between guide items is showing again"),
     # T11 highlight
     "highlight.scan": ("req", {"targets": "list[str] | None", "context": "str | None"}, "start a scan"),
     "highlight.hit": (
@@ -43,13 +57,43 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     # T12 guide
     "guide.open": ("req", {"path": "str", "say": "str | None", "only": "list[str] | None"}, "show the guide card"),
     "guide.progress": ("evt", {"done": "int", "total": "int", "current": "str | None"}, "guide progress"),
-    # T15 recorder
-    "record.start": ("req", {"name": "str", "window": "str"}, "start recording"),
-    "record.mark": ("req", {}, "add a checkpoint"),
-    "record.pause": ("req", {}, "pause or resume recording"),
-    "record.stop": ("req", {}, "stop and save"),
-    "record.tick": ("evt", {"seconds": "float", "checkpoints": "int", "paused": "bool"}, "the bar's clock"),
+    # T15 recorder (decision 0013, round 8)
+    "record.start": ("req", {"path": "str", "name": "str"}, "hide the Studio and record into actions/<name>.py"),
+    "record.pause": ("req", {}, "pause or go on"),
+    "record.check": (
+        "req",
+        {
+            "kind": "str",
+            "seconds": "float | None",
+            "target": "str | None",
+            "gone": "bool | None",
+            "timeout": "float | None",
+        },
+        "while paused: add a wait or a picture check",
+    ),
+    "record.undo": ("req", {}, "forget the last thing recorded"),
+    "record.stop": ("req", {"keep": "bool | None"}, "stop; keep writes the action"),
+    "record.status": ("req", {}, "time, counts and the last steps"),
+    "record.size": ("req", {"open": "bool"}, "make the recorder bar taller for its panel, or back"),
+    "record.tick": ("evt", {"recording": "bool"}, "the recording's time, counts and last steps"),
     # T16 player and run panel
+    "actions.list": ("req", {"path": "str"}, "the bot's actions, with their size and who uses them"),
+    "actions.read": ("req", {"path": "str", "name": "str"}, "an action's sections and steps"),
+    "actions.save": (
+        "req",
+        {"path": "str", "name": "str", "sections": "list[dict]", "docstring": "str | None"},
+        "write an action",
+    ),
+    "actions.breakpoints": ("req", {"path": "str", "name": "str", "lines": "list[int]"}, "an action's breakpoints"),
+    "actions.play": (
+        "req",
+        {"path": "str", "name": "str", "stepping": "bool | None"},
+        "play an action, following its lines",
+    ),
+    "actions.control": ("req", {"what": "str"}, "resume, step or stop the action playing"),
+    "action.line": ("evt", {"action": "str", "line": "int"}, "the line an action is on"),
+    "action.paused": ("evt", {"action": "str", "line": "int"}, "stopped at a breakpoint or a step"),
+    "action.ended": ("evt", {"action": "str", "status": "str", "reason": "str"}, "done, stopped or failed"),
     "run.load": ("req", {"path": "str"}, "the run's tree"),
     "run.control": ("req", {"do": "continue | stop | step | pause"}, "drive the player"),
     "run.edit": ("req", {"at": "list[int]", "step": "dict"}, "change, add or remove a step"),
@@ -67,8 +111,16 @@ MESSAGES: dict[str, tuple[str, dict[str, str], str]] = {
     "project.settings": ("req", {"path": "str"}, "a bot's settings form and values"),
     "project.settings.save": ("req", {"path": "str", "values": "dict"}, "save a bot's settings"),
     "library.list": ("req", {"path": "str"}, "pictures with thumbnails and last scores"),
-    "reports.days": ("req", {"path": "str"}, "days with a run report"),
+    "library.screens": ("req", {"path": "str"}, "each screen's last shot with its assets in place"),
+    "library.uses": ("req", {"path": "str", "name": "str"}, "every line in the bot that names an asset"),
+    "library.rename.plan": ("req", {"path": "str", "name": "str", "to": "str"}, "what renaming an asset would change"),
+    "library.rename": ("req", {"path": "str", "name": "str", "to": "str"}, "rename an asset and every line naming it"),
+    "results.days": ("req", {"path": "str"}, "the Results page's days, each with its lead gain"),
+    "results.day": ("req", {"path": "str", "day": "str | None"}, "one day of the Results page"),
     "tools.open": ("req", {"path": "str", "tool": "str"}, "open capture, guide or check for a bot"),
+    "studio.collapse": ("req", {"path": "str"}, "hide the Studio behind the run pill while the bot runs"),
+    "studio.expand": ("req", {}, "bring the Studio back from the run pill"),
+    "studio.page": ("evt", {"page": "str"}, "the tray asks the Studio to show a page (studio-settings)"),
 }
 
 

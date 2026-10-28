@@ -197,3 +197,15 @@ def test_a_real_server_starts_once_and_answers():
         server.stop()
     assert server.running() is None
     assert not server.info_file().exists()
+
+
+def test_a_second_darbit_app_brings_the_open_studio_forward(client, monkeypatch):
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    monkeypatch.delitem(server_app.HANDLERS, "studio.show", raising=False)
+    assert client.get("/studio", headers=headers).json() == {"shown": False}  # no Studio here: open one
+
+    shown = []
+    monkeypatch.setitem(server_app.HANDLERS, "studio.show", shown.append)
+    assert client.get("/studio", headers=headers).json() == {"shown": True}
+    assert shown == [{}]
+    assert client.get("/studio").status_code == 401

@@ -16,7 +16,6 @@
     padding: var(--space-xs);
     border-radius: var(--radius-pill);
     background: var(--glass);
-    backdrop-filter: blur(var(--blur));
     border: 1px solid var(--line);
     box-shadow: var(--shadow);
     max-width: 100%;

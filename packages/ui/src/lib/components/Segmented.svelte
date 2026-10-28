@@ -15,6 +15,28 @@
   }: { items: Item[]; value: string; label: string; variant?: "nav" | "plain" } = $props();
 
   let buttons: HTMLButtonElement[] = $state([]);
+  let marker = $state({ left: 0, width: 0, shown: false }); // the highlight that glides to the chosen item
+
+  let bar: HTMLElement | undefined = $state();
+  let size = $state(0); // bumps when the bar's size changes (fonts loading, the window resizing)
+
+  $effect(() => {
+    if (!bar) return;
+    const watcher = new ResizeObserver(() => (size += 1));
+    watcher.observe(bar);
+    return () => watcher.disconnect();
+  });
+
+  $effect(() => {
+    size; // measure again after a resize
+    const index = items.findIndex((item) => item.value === value);
+    const button = buttons[index];
+    if (!button || !button.offsetWidth) {
+      marker = { ...marker, shown: false };
+      return;
+    }
+    marker = { left: button.offsetLeft, width: button.offsetWidth, shown: true };
+  });
 
   function onkeydown(event: KeyboardEvent, index: number): void {
     let next = index;
@@ -27,7 +49,8 @@
   }
 </script>
 
-<div class="segmented" data-variant={variant} role="radiogroup" aria-label={label}>
+<div class="segmented" bind:this={bar} data-variant={variant} role="radiogroup" aria-label={label}>
+  <span class="marker" class:shown={marker.shown} style:translate="{marker.left}px 0" style:width="{marker.width}px" aria-hidden="true"></span>
   {#each items as item, index (item.value)}
     <button
       bind:this={buttons[index]}
@@ -44,6 +67,7 @@
 
 <style>
   .segmented {
+    position: relative;
     display: inline-flex;
     gap: 2px;
     padding: var(--space-xs);
@@ -85,14 +109,41 @@
   button:hover {
     color: var(--text);
   }
-  [aria-checked="true"] {
-    color: var(--text);
+  .marker {
+    position: absolute;
+    top: var(--space-xs);
+    bottom: var(--space-xs);
+    left: 0;
+    border-radius: var(--radius-pill);
     background: var(--glass-strong);
     box-shadow: var(--shadow);
+    opacity: 0;
+    transition:
+      translate var(--duration-normal) var(--curve-decelerate),
+      width var(--duration-normal) var(--curve-decelerate),
+      opacity var(--duration-fast) var(--curve-easy-ease);
+  }
+  .marker.shown {
+    opacity: 1;
+  }
+  [data-variant="nav"] .marker {
+    background: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+  button {
+    position: relative;
+  }
+  [aria-checked="true"] {
+    color: var(--text);
   }
   [data-variant="nav"] [aria-checked="true"] {
     color: var(--on-accent);
+  }
+  /* until the highlight is measured, the chosen item carries its own background */
+  .segmented:not(:has(.marker.shown)) [aria-checked="true"] {
+    background: var(--glass-strong);
+  }
+  [data-variant="nav"]:not(:has(.marker.shown)) [aria-checked="true"] {
     background: var(--accent);
-    box-shadow: none;
   }
 </style>

@@ -13,7 +13,7 @@
 "capture.freeze"   = "ctrl+alt+c"         # freeze the screen and capture (or retake the current guide item)
 "highlight.toggle" = "ctrl+alt+h"         # show what's found on screen, with scores; again to hide
 "record.toggle"    = "ctrl+alt+r"         # start recording; again to stop
-"record.mark"      = "ctrl+alt+m"         # while recording: mark a checkpoint here
+"record.mark"      = "ctrl+alt+k"         # while recording: a checkpoint; what came before becomes its own action
 "run.pause"        = "ctrl+alt+p"         # pause or resume the bot, a recording or a played run
 "run.stop"         = "ctrl+alt+q"         # stop everything (the stop hotkey)
 

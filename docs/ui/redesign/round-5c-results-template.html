@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio results template</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 700px; }
+.page { flex-direction: row; overflow: hidden; }
+.days { width: 216px; flex: none; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.days .week { padding: 4px 8px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; display: grid; gap: 3px; }
+.days .week small { color: var(--muted); font-size: 11px; }
+.days .week b { font: 800 20px var(--font-strong); }
+.day { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; border-radius: 12px; font-size: 12.5px; }
+.day.on { background: rgb(90 200 250 / .12); box-shadow: inset 2px 0 0 var(--accent); }
+.day b { font: 650 13px var(--font-strong); }
+.day small { color: var(--muted); font-size: 11px; grid-column: 1 / -1; }
+.day .gain { font: 700 12px var(--font-strong); color: var(--ok); }
+.day .x { color: var(--danger); font-weight: 700; }
+.story { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.head { padding: 14px 16px; display: grid; gap: 10px; }
+.head .top { display: flex; align-items: baseline; gap: 14px; }
+.head h4 { margin: 0; font: 700 20px var(--font-strong); }
+.head .sub { color: var(--muted); font-size: 12px; }
+.gains { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gain-t { padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .05); display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; }
+.gain-t .ic { grid-row: span 3; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; background: color-mix(in oklab, var(--c) 22%, transparent); color: var(--c); }
+.gain-t small { color: var(--muted); font-size: 10.5px; }
+.gain-t b { font: 800 19px var(--font-strong); white-space: nowrap; }
+.gain-t em { font-style: normal; font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.row { display: flex; gap: 10px; min-height: 0; }
+.cardp { padding: 12px; display: grid; gap: 6px; align-content: start; flex: 1; }
+h5 { margin: 0; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+h5 code { text-transform: none; letter-spacing: 0; font-size: 10px; color: var(--accent-2); background: rgb(167 139 250 / .12); }
+.prob { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 8px; border-radius: 12px; background: rgb(248 113 113 / .07); border: 1px solid rgb(248 113 113 / .25); font-size: 12px; }
+.prob .shot { height: 50px; border-radius: 8px; background: linear-gradient(160deg, #3b4560, #232b3c); }
+.prob small { color: var(--muted); display: block; margin: 2px 0 5px; }
+.list2 { display: grid; gap: 0; }
+.list2 div { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.list2 div:last-child { border: 0; }
+.list2 span { color: var(--muted); }
+.time { padding: 10px 14px 12px; display: grid; gap: 6px; }
+.tl-head { display: flex; align-items: center; gap: 8px; }
+.tl-head .grow { flex: 1; }
+.zoom { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(255 255 255 / .06); }
+.zoom button { border: 0; background: none; color: var(--text); width: 26px; height: 24px; border-radius: 999px; cursor: pointer; font: 700 13px var(--font-strong); }
+.zoom button:hover { background: rgb(255 255 255 / .1); }
+.zoom span { padding: 0 8px; font: 600 11px var(--font-strong); color: var(--muted); display: grid; place-items: center; }
+.viewport { position: relative; overflow: hidden; cursor: grab; border-radius: 8px; user-select: none; }
+.viewport:active { cursor: grabbing; }
+.canvas { position: relative; width: 100%; transition: width .25s var(--ease); }
+.hours2 { position: relative; height: 16px; margin-left: 92px; }
+.hours2 span { position: absolute; font-size: 10px; color: var(--faint); translate: -50% 0; }
+.lane { display: grid; grid-template-columns: 92px 1fr; align-items: center; font-size: 12px; height: 26px; }
+.lane > span { position: sticky; left: 0; z-index: 2; background: #151a26; padding-left: 2px; height: 100%; display: grid; align-items: center; }
+.track { position: relative; height: 22px; border-radius: 6px; background: rgb(255 255 255 / .04); }
+.track i { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; background: rgb(90 200 250 / .55); }
+.track i.ok { background: rgb(74 222 128 / .55); } .track i.bad { background: rgb(248 113 113 / .85); } .track i.idle { background: rgb(255 255 255 / .1); }
+.track i.gold { background: rgb(251 191 36 / .55); }
+.nowline { position: absolute; top: 16px; bottom: 0; width: 0; border-left: 1.5px solid var(--accent); z-index: 1; }
+.nowline::before { content: "now"; position: absolute; top: -14px; left: -12px; font: 700 9px var(--font-strong); color: var(--accent); }
+.minimap { position: relative; height: 18px; margin-left: 92px; border-radius: 6px; background: rgb(255 255 255 / .04); overflow: hidden; }
+.minimap i { position: absolute; top: 6px; height: 6px; border-radius: 3px; background: rgb(90 200 250 / .5); }
+.minimap .win2 { position: absolute; top: 0; bottom: 0; border-radius: 6px; border: 1.5px solid var(--text); background: rgb(255 255 255 / .06); transition: left .1s, width .25s var(--ease); }
+.toml { font: 12px/1.65 var(--mono); padding: 14px 16px; border-radius: 14px; background: #0d1018; border: 1px solid var(--line); color: var(--muted); white-space: pre; overflow: auto; }
+.toml .k2 { color: var(--accent); } .toml .s { color: var(--ok); } .toml .c { color: var(--faint); } .toml .h { color: var(--accent-2); }
+.pair { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
+@media (max-width: 1150px) { .pair { grid-template-columns: 1fr; } }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 5c: <span>Results as a template</span></h1>
+  <p class="lead">The page is darbit's template, and each bot fills it in. The author lists what the bot tracks in <code>darbit.toml</code>: which gains lead the page, what totals to keep, and which modes get a timeline lane. The bot reports them with <code>d.record</code>. Below, the same template filled by ad-bot and by a fishing bot. The timeline is the <b>whole day</b>: zoom with − / + (or Ctrl+wheel), and drag it, or the box in the strip under it, left and right. Open the HTML to try it.</p>
+
+  <section class="look" style="margin-top:30px">
+    <div class="about"><h2>ad-bot</h2></div>
+    <div class="pair">
+      <div class="app">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span class="on">Results</span><span>Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+        <div class="page">
+          <div class="days panel">
+            <div class="week"><small>This week</small><b style="color:var(--ok)">+8 420 gems</b><small>+31 400 gold · 6 rewards</small></div>
+            <div class="day"><b>Today</b><span class="gain">+640</span><small>running · 4 h so far</small></div>
+            <div class="day"><b>Saturday</b><span class="gain">+1 510</span><small>9 h · all rounds done</small></div>
+            <div class="day"><b>Friday</b><span class="gain">+1 620</span><small>10 h · all rounds done</small></div>
+            <div class="day on"><b>Thursday</b><span class="gain">+1 240</span><small>10 h 38 m · <span class="x">4 failures</span></small></div>
+            <div class="day"><b>Wednesday</b><span class="gain">+1 380</span><small>8 h · rejoined once</small></div>
+            <div class="day"><b>Tuesday</b><span class="gain">+1 090</span><small>8 h · all rounds done</small></div>
+          </div>
+          <div class="story">
+            <div class="head panel">
+              <div class="top"><h4>Thursday, Oct 23</h4><span class="sub">08:02 – 18:40 · ended by you</span></div>
+              <div class="gains">
+                <div class="gain-t" style="--c:#5ac8fa"><span class="ic">◆</span><small>Gems</small><b>+1 240</b><em>total 48 210</em></div>
+                <div class="gain-t" style="--c:#fbbf24"><span class="ic">●</span><small>Gold</small><b>+5 300</b><em>total 212 900</em></div>
+                <div class="gain-t" style="--c:#a78bfa"><span class="ic">▣</span><small>Rewards</small><b>3 chests</b><em>2 rare</em></div>
+                <div class="gain-t" style="--c:#4ade80"><span class="ic">✓</span><small>Rounds finished</small><b>62%</b><em>average 91%</em></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="cardp panel"><h5><span>Needs you</span></h5>
+                <div class="prob"><span class="shot"></span><div><b>Leave button not found (4×)</b><small>12:58 – 14:02 · best .71, needs .80</small><button class="btn primary">▣ Retake</button></div></div>
+              </div>
+              <div class="cardp panel"><h5><span>Totals</span><code>[studio.results] totals</code></h5>
+                <div class="list2"><div><span>Weekly characters</span><b>92 / 133</b></div><div><span>Raid today</span><b>1 / 1</b></div><div><span>Best gem hour</span><b>10:00 · +240</b></div></div>
+              </div>
+            </div>
+            <div class="time panel" data-timeline>
+              <div class="tl-head"><h5 style="flex:none"><span>Timeline</span></h5><span class="grow"></span><div class="zoom"><button data-out>−</button><span data-label>Whole day</span><button data-in>+</button></div></div>
+              <div class="viewport" data-view>
+                <div class="canvas" data-canvas>
+                  <div class="hours2" data-hours></div>
+                  <div class="lane"><span>Raid</span><div class="track"><i class="ok" style="left:34%;width:3%"></i></div></div>
+                  <div class="lane"><span>Speed Raid</span><div class="track"><i style="left:37.5%;width:14%"></i><i class="bad" style="left:54%;width:.6%"></i><i class="bad" style="left:55.5%;width:.6%"></i><i class="bad" style="left:57%;width:.6%"></i><i class="bad" style="left:58.4%;width:.6%"></i><i style="left:60%;width:9%"></i></div></div>
+                  <div class="lane"><span>AFK</span><div class="track"><i class="idle" style="left:70%;width:7.8%"></i></div></div>
+                  <div class="lane"><span>Gems</span><div class="track"><i class="gold" style="left:35%;width:.5%"></i><i class="gold" style="left:40%;width:.5%"></i><i class="gold" style="left:44%;width:.5%"></i><i class="gold" style="left:48%;width:.5%"></i><i class="gold" style="left:62%;width:.5%"></i><i class="gold" style="left:66%;width:.5%"></i></div></div>
+                </div>
+              </div>
+              <div class="minimap" data-mini><i style="left:34%;width:44%"></i><div class="win2" data-win></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="toml"><span class="c"># darbit.toml: what the Results page shows</span>
+<span class="h">[studio.results]</span>
+<span class="k2">gains</span>  = [<span class="s">"gems"</span>, <span class="s">"gold"</span>, <span class="s">"rewards"</span>, <span class="s">"rounds"</span>]
+<span class="k2">totals</span> = [<span class="s">"weekly_characters"</span>, <span class="s">"raid_today"</span>,
+          <span class="s">"best_gem_hour"</span>]
+<span class="k2">lanes</span>  = [<span class="s">"Raid"</span>, <span class="s">"Speed Raid"</span>, <span class="s">"AFK"</span>, <span class="s">"gems"</span>]
+
+<span class="h">[studio.results.gems]</span>
+<span class="k2">label</span> = <span class="s">"Gems"</span>
+<span class="k2">icon</span>  = <span class="s">"◆"</span>
+<span class="k2">sum</span>   = <span class="s">"gained"</span>        <span class="c"># adds up d.record("gems", gained=…)</span>
+<span class="k2">total</span> = <span class="s">"balance"</span>       <span class="c"># and shows the last balance</span>
+
+<span class="c"># in the bot's code:</span>
+<span class="c"># d.record("gems", gained=120, balance=48210)</span></div>
+        <p class="note">The <b>gains</b> are the big tiles and the day list numbers. The <b>totals</b> are the small table. The <b>lanes</b> are the timeline rows: modes (top-level steps) or recorded events.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="look" style="margin-top:48px">
+    <div class="about"><h2>fish-bot: the same template, another bot</h2></div>
+    <div class="pair">
+      <div class="app" style="height:440px">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="bar3"><div class="picker panel"><span class="av" style="background:#fcd34d">fi</span>fish-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span class="on">Results</span><span>Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+        <div class="page">
+          <div class="days panel">
+            <div class="week"><small>This week</small><b style="color:var(--ok)">+212 fish</b><small>+18 300 coins</small></div>
+            <div class="day on"><b>Today</b><span class="gain">+40</span><small>3 h · 2 rare</small></div>
+            <div class="day"><b>Yesterday</b><span class="gain">+61</span><small>5 h</small></div>
+            <div class="day"><b>Friday</b><span class="gain">+38</span><small>2 h</small></div>
+          </div>
+          <div class="story">
+            <div class="head panel">
+              <div class="top"><h4>Today</h4><span class="sub">09:10 – 12:14</span></div>
+              <div class="gains" style="grid-template-columns:repeat(3,1fr)">
+                <div class="gain-t" style="--c:#5ac8fa"><span class="ic">🐟</span><small>Fish</small><b>+40</b><em>best: salmon 4.2 kg</em></div>
+                <div class="gain-t" style="--c:#fbbf24"><span class="ic">●</span><small>Coins</small><b>+3 410</b><em>total 61 020</em></div>
+                <div class="gain-t" style="--c:#f0abfc"><span class="ic">★</span><small>Rare</small><b>2</b><em>golden carp, eel</em></div>
+              </div>
+            </div>
+            <div class="cardp panel"><h5><span>Totals</span></h5><div class="list2"><div><span>Bait used</span><b>44</b></div><div><span>Catch rate</span><b>91%</b></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="toml"><span class="h">[studio.results]</span>
+<span class="k2">gains</span>  = [<span class="s">"fish"</span>, <span class="s">"coins"</span>, <span class="s">"rare"</span>]
+<span class="k2">totals</span> = [<span class="s">"bait_used"</span>, <span class="s">"catch_rate"</span>]
+<span class="k2">lanes</span>  = [<span class="s">"Lake"</span>, <span class="s">"Shop"</span>, <span class="s">"fish"</span>]</div>
+    </div>
+    <p class="note">With no <code>[studio.results]</code>, darbit falls back to a plain default: rounds finished, time running, failures, and the timeline from the bot's steps.</p>
+  </section>
+</main>
+<script>
+// whole-day timeline: zoom with −/+ or ctrl+wheel, drag the view or the minimap box
+for (const box of document.querySelectorAll("[data-timeline]")) {
+  const view = box.querySelector("[data-view]"), canvas = box.querySelector("[data-canvas]"), hours = box.querySelector("[data-hours]");
+  const mini = box.querySelector("[data-mini]"), frame = box.querySelector("[data-win]"), label = box.querySelector("[data-label]");
+  const zooms = [1, 2, 4, 8, 16], names = ["Whole day", "12 h", "6 h", "3 h", "90 min"];
+  let level = 0;
+  function drawHours() {
+    hours.innerHTML = "";
+    const step = zooms[level] >= 8 ? 0.5 : zooms[level] >= 2 ? 1 : 2;
+    for (let h = 0; h <= 24; h += step) {
+      const tag = document.createElement("span");
+      tag.style.left = (h / 24 * 100) + "%";
+      tag.textContent = String(Math.floor(h)).padStart(2, "0") + ":" + (h % 1 ? "30" : "00");
+      hours.appendChild(tag);
+    }
+  }
+  function syncMini() {
+    const share = view.clientWidth / canvas.scrollWidth;
+    frame.style.width = (share * 100) + "%";
+    frame.style.left = (view.scrollLeft / canvas.scrollWidth * 100) + "%";
+  }
+  function setLevel(next, centre = 0.5) {
+    const before = (view.scrollLeft + view.clientWidth * centre) / canvas.scrollWidth;
+    level = Math.max(0, Math.min(zooms.length - 1, next));
+    canvas.style.width = (zooms[level] * 100) + "%";
+    label.textContent = names[level];
+    drawHours();
+    setTimeout(() => { view.scrollLeft = before * canvas.scrollWidth - view.clientWidth * centre; syncMini(); }, 260);
+  }
+  box.querySelector("[data-in]").onclick = () => setLevel(level + 1);
+  box.querySelector("[data-out]").onclick = () => setLevel(level - 1);
+  view.addEventListener("wheel", (event) => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    const rect = view.getBoundingClientRect();
+    setLevel(level + (event.deltaY < 0 ? 1 : -1), (event.clientX - rect.left) / rect.width);
+  }, { passive: false });
+  let dragging = null;
+  view.addEventListener("pointerdown", (event) => { dragging = { x: event.clientX, left: view.scrollLeft, from: "view" }; view.setPointerCapture(event.pointerId); });
+  mini.addEventListener("pointerdown", (event) => { dragging = { x: event.clientX, left: view.scrollLeft, from: "mini" }; mini.setPointerCapture(event.pointerId); });
+  window.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    const moved = event.clientX - dragging.x;
+    if (dragging.from === "view") view.scrollLeft = dragging.left - moved;
+    else view.scrollLeft = dragging.left + moved * canvas.scrollWidth / mini.clientWidth;
+    syncMini();
+  });
+  window.addEventListener("pointerup", () => (dragging = null));
+  view.addEventListener("scroll", syncMini);
+  drawHours();
+  syncMini();
+}
+</script>
+</body>
+</html>

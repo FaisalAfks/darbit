@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en" data-theme="glass-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio structure</title>
+<style>
+:root {
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-strong: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --bg: #0b0d12; --glass: rgb(22 25 33 / .74); --glass-strong: rgb(28 31 41 / .94); --raised: rgb(255 255 255 / .06);
+  --raised-hover: rgb(255 255 255 / .11); --line: rgb(255 255 255 / .1); --shadow: 0 12px 40px rgb(0 0 0 / .45);
+  --text: #eef1f6; --muted: #9aa1ad; --faint: #6b7280; --accent: #5ac8fa; --accent-2: #a78bfa; --on-accent: #06121c;
+  --ok: #4ade80; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa;
+  --kind-image: #5ac8fa; --kind-region: #a78bfa; --kind-point: #4ade80; --slot-bot: #f0abfc; --on-bot: #1a0b14;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(1200px 600px at 20% -10%, rgb(90 200 250 / .10), transparent 60%),
+       radial-gradient(900px 500px at 100% 10%, rgb(167 139 250 / .10), transparent 60%), var(--bg);
+       color: var(--text); font: 15px/1.5 var(--font); }
+main { max-width: 1240px; margin: 0 auto; padding: 40px 24px 80px; }
+h1 { font: 700 30px/1.15 var(--font-strong); margin: 0; }
+h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h2 { font: 650 20px/1.3 var(--font-strong); margin: 0; }
+.lead { color: var(--muted); max-width: 78ch; margin: 10px 0 0; }
+.options { display: grid; gap: 40px; margin-top: 36px; }
+.option { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+@media (max-width: 980px) { .option { grid-template-columns: 1fr; } }
+.tag { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; margin-right: 10px; vertical-align: middle;
+       background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); font: 800 16px var(--font-strong); }
+.about h2 { display: flex; align-items: center; }
+.about p { color: var(--muted); margin: 10px 0 0; font-size: 14px; }
+.about ul { margin: 12px 0 0; padding-left: 18px; font-size: 14px; }
+.about li { margin: 4px 0; }
+.about .plus { color: var(--ok); } .about .minus { color: var(--warn); }
+
+/* the mini app window */
+.win { position: relative; height: 560px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow);
+       background: radial-gradient(500px 300px at 70% 0%, rgb(90 200 250 / .08), transparent 70%), #0e1117; display: flex; flex-direction: column; }
+.title { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font: 600 12px var(--font-strong); color: var(--muted);
+         border-bottom: 1px solid var(--line); background: rgb(255 255 255 / .02); flex: none; }
+.title .grow { flex: 1; }
+.title i { width: 10px; height: 10px; border-radius: 50%; background: var(--raised-hover); display: inline-block; }
+.logo { width: 18px; height: 18px; border-radius: 6px; display: inline-grid; place-items: center; font: 800 10px var(--font-strong);
+        background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
+.body { flex: 1; display: flex; min-height: 0; }
+.content { flex: 1; padding: 18px 20px; overflow: hidden; display: grid; gap: 12px; align-content: start; }
+.crumb { color: var(--muted); font-size: 12px; }
+.crumb b { color: var(--text); }
+.pagehead { display: flex; align-items: center; gap: 10px; }
+.pagehead h3 { margin: 0; font: 700 20px var(--font-strong); }
+.pagehead .grow { flex: 1; }
+.goal { color: var(--muted); font-size: 12px; margin-top: -6px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 6px 14px; border-radius: 999px; background: var(--raised);
+       color: var(--text); font: 600 12px var(--font-strong); cursor: pointer; transition: background .12s var(--ease), transform .12s var(--ease); }
+.btn:hover { background: var(--raised-hover); } .btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.chip { --c: var(--muted); display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; font: 600 11px/1.7 var(--font-strong);
+        color: var(--c); background: color-mix(in oklab, var(--c) 14%, transparent); border: 1px solid color-mix(in oklab, var(--c) 32%, transparent); }
+.chip.ok { --c: var(--ok); } .chip.info { --c: var(--info); } .chip.warn { --c: var(--warn); }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.card { padding: 12px; border-radius: 12px; background: var(--raised); display: grid; gap: 6px; transition: transform .2s var(--ease), background .2s var(--ease); }
+.card:hover { transform: translateY(-2px); background: var(--raised-hover); }
+.card small { color: var(--muted); font-size: 11px; }
+.card b { font: 650 13px var(--font-strong); }
+.big { font: 700 22px var(--font-strong); }
+.bar { height: 5px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; display: inline-block; }
+.dot.run { background: var(--ok); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px rgb(74 222 128 / .15); } }
+.avatar { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font: 800 10px var(--font-strong);
+          background: var(--slot-bot); color: var(--on-bot); flex: none; }
+.avatar.b2 { background: #fcd34d; } .avatar.b3 { background: #86efac; }
+.toolicon { width: 22px; height: 22px; border-radius: 7px; display: inline-grid; place-items: center; font-size: 12px; flex: none;
+            background: color-mix(in oklab, var(--c) 22%, transparent); color: var(--c); }
+.label { font: 700 10px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+
+/* A: one sidebar */
+.side { width: 210px; flex: none; border-right: 1px solid var(--line); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; background: rgb(255 255 255 / .015); }
+.side .label { padding: 10px 8px 4px; }
+.item { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 9px; font-size: 13px; color: var(--muted); cursor: pointer;
+        transition: background .15s var(--ease), color .15s var(--ease); }
+.item:hover { background: var(--raised); color: var(--text); }
+.item.on { background: var(--raised-hover); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.item .grow { flex: 1; }
+.sub { padding-left: 39px; font-size: 12.5px; }
+.side .grow { flex: 1; }
+
+/* B: home and a bot workspace */
+.home { padding: 22px 26px; display: grid; gap: 16px; align-content: start; flex: 1; }
+.home h3 { margin: 0; font: 700 22px var(--font-strong); }
+.botcard { padding: 14px; border-radius: 14px; background: var(--raised); display: grid; gap: 8px; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.botcard:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(90 200 250 / .5), 0 0 18px rgb(90 200 250 / .25); }
+.botcard .row { display: flex; align-items: center; gap: 8px; }
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tool { padding: 12px; border-radius: 12px; background: var(--raised); display: grid; gap: 6px; font-size: 12px; transition: transform .2s var(--ease); }
+.tool:hover { transform: translateY(-2px); }
+.tool b { font: 650 13px var(--font-strong); }
+.tool span { color: var(--muted); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tabs { display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--raised); width: max-content; }
+.tabs span { padding: 4px 12px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); }
+.tabs span.on { background: var(--accent); color: var(--on-accent); }
+
+/* C: icon rail with two modes */
+.rail { width: 58px; flex: none; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; }
+.railbtn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--muted); font-size: 17px; position: relative;
+           transition: background .15s var(--ease), color .15s var(--ease); }
+.railbtn:hover { background: var(--raised); color: var(--text); }
+.railbtn.on { background: var(--raised-hover); color: var(--accent); }
+.railbtn.on::before { content: ""; position: absolute; left: -9px; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--accent); }
+.railbtn small { position: absolute; bottom: -13px; font: 600 9px var(--font-strong); color: var(--faint); }
+.rail .grow { flex: 1; }
+.list { width: 190px; flex: none; border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; }
+.list h4 { margin: 0 8px 8px; font: 700 14px var(--font-strong); }
+.listitem { display: grid; grid-template-columns: auto 1fr; gap: 2px 9px; align-items: center; padding: 8px; border-radius: 10px; font-size: 13px; }
+.listitem.on { background: var(--raised-hover); }
+.listitem small { grid-column: 2; color: var(--muted); font-size: 11px; margin-top: -2px; }
+
+/* pages, shared by every option */
+.pages { margin-top: 64px; }
+.pagegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 16px; }
+.pagecard { padding: 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
+.pagecard h4 { margin: 0 0 4px; font: 650 15px var(--font-strong); display: flex; gap: 8px; align-items: center; }
+.pagecard p { margin: 0; color: var(--muted); font-size: 13px; }
+.pagecard ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+.kind { font: 700 10px var(--font-strong); letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; }
+.kind.bot { color: var(--slot-bot); background: color-mix(in oklab, var(--slot-bot) 16%, transparent); }
+.kind.tool { color: var(--accent); background: color-mix(in oklab, var(--accent) 16%, transparent); }
+.kind.app { color: var(--muted); background: var(--raised); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 1: <span>where the menu lives</span></h1>
+  <p class="lead">One decision this round: the Studio's structure. There's one main menu, bot pages are clearly separate from tool pages, and every page has a goal (listed at the bottom). Look and motion come in the next rounds. Each picture is the same Studio with ad-bot open on its Overview. Hover the cards to feel the motion.</p>
+
+  <div class="options">
+
+    <!-- A -->
+    <section class="option">
+      <div class="win">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="body">
+          <nav class="side">
+            <div class="item"><span>⌂</span>Home</div>
+            <div class="label">Bots</div>
+            <div class="item on"><span class="avatar">ad</span><span class="grow">ad-bot</span><span class="dot run"></span></div>
+            <div class="item sub on" style="box-shadow:none;background:none;color:var(--accent)">Overview</div>
+            <div class="item sub">Runs</div>
+            <div class="item sub">Library</div>
+            <div class="item sub">Settings</div>
+            <div class="item"><span class="avatar b2">fi</span><span class="grow">fish-bot</span><span class="dot"></span></div>
+            <div class="item" style="color:var(--faint)"><span style="width:22px;text-align:center">＋</span>Add a bot</div>
+            <div class="label">Tools</div>
+            <div class="item"><span class="toolicon" style="--c:var(--kind-image)">▣</span>Capture</div>
+            <div class="item"><span class="toolicon" style="--c:var(--danger)">●</span>Recorder</div>
+            <div class="item"><span class="toolicon" style="--c:var(--kind-region)">⑂</span>Flows</div>
+            <span class="grow"></span>
+            <div class="item"><span>⚙</span>Studio settings</div>
+          </nav>
+          <div class="content">
+            <div class="crumb">ad-bot › <b>Overview</b></div>
+            <div class="pagehead"><h3>ad-bot</h3><span class="chip ok">running</span><span class="grow"></span><button class="btn">❚❚ Pause</button><button class="btn">■ Stop</button></div>
+            <div class="goal">What it's doing now and how today is going</div>
+            <div class="cards">
+              <div class="card"><small>Now</small><b>Speed Raid › Sakura</b><small>since 11:24</small></div>
+              <div class="card"><small>Speed Raid this week</small><span class="big">32<small> / 133</small></span><div class="bar"><i style="width:24%"></i></div></div>
+              <div class="card"><small>Next up</small><b>Daily reset</b><small>in 7 h 25 m</small></div>
+            </div>
+            <div class="card"><small>Today's round</small><b>Raid ✓ · Speed Raid ● · Boss Rush ✓ · AFK ✕</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="about">
+        <h2><span class="tag">A</span>One sidebar</h2>
+        <p>Like Windows Settings or Discord: a single menu on the left, split in two labelled groups. Bots on top (the open bot shows its four pages under it), tools below.</p>
+        <ul>
+          <li class="plus">Everything is in one place. It's always clear where you are.</li>
+          <li class="plus">A running bot's dot is always visible.</li>
+          <li class="minus">The sidebar takes 210 px. It can fold to icons.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section class="option">
+      <div class="win">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="body">
+          <div class="home">
+            <div class="split" style="align-items:start">
+              <div style="display:grid;gap:12px">
+                <h3>Home</h3>
+                <div class="label">Your bots</div>
+                <div class="botcard"><div class="row"><span class="avatar">ad</span><b>ad-bot</b><span class="grow" style="flex:1"></span><span class="chip ok">running</span></div><small style="color:var(--muted)">Speed Raid › Sakura · 32 / 133 this week</small><div class="bar"><i style="width:24%"></i></div></div>
+                <div class="botcard"><div class="row"><span class="avatar b2">fi</span><b>fish-bot</b><span class="grow" style="flex:1"></span><span class="chip">stopped</span></div><small style="color:var(--muted)">Last run yesterday · 40 fish</small></div>
+              </div>
+              <div style="display:grid;gap:12px">
+                <h3 style="opacity:0">.</h3>
+                <div class="label">Tools</div>
+                <div class="tools" style="grid-template-columns:1fr 1fr">
+                  <div class="tool"><span class="toolicon" style="--c:var(--kind-image)">▣</span><b>Capture</b><span>Take and test a picture</span></div>
+                  <div class="tool"><span class="toolicon" style="--c:var(--danger)">●</span><b>Recorder</b><span>Record a run</span></div>
+                  <div class="tool"><span class="toolicon" style="--c:var(--kind-region)">⑂</span><b>Flows</b><span>Edit steps</span></div>
+                  <div class="tool"><span class="toolicon" style="--c:var(--muted)">＋</span><b>New bot</b><span>Install or make one</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:10px">
+              <div class="crumb">← Home › <b>ad-bot</b> &nbsp;(after clicking the card)</div>
+              <div class="pagehead"><span class="avatar">ad</span><h3>ad-bot</h3><div class="tabs"><span class="on">Overview</span><span>Runs</span><span>Library</span><span>Settings</span></div><span class="grow"></span><button class="btn">■ Stop</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="about">
+        <h2><span class="tag">B</span>Home, then a workspace</h2>
+        <p>Like Steam or a game launcher. The Studio opens on Home: bot cards on one side, tools on the other. Clicking a bot opens its workspace, with tabs and a back arrow.</p>
+        <ul>
+          <li class="plus">Home is a clean start page; it's obvious what bots and tools are.</li>
+          <li class="plus">The bot's pages get the full width.</li>
+          <li class="minus">Switching bots or tools means going back to Home first.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="option">
+      <div class="win">
+        <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+        <div class="body">
+          <nav class="rail">
+            <div class="railbtn on">◉<small>Bots</small></div>
+            <div style="height:12px"></div>
+            <div class="railbtn">▣<small>Tools</small></div>
+            <span class="grow"></span>
+            <div class="railbtn">⚙</div>
+          </nav>
+          <div class="list">
+            <h4>Bots</h4>
+            <div class="listitem on"><span class="avatar">ad</span>ad-bot <small><span class="dot run"></span> Speed Raid</small></div>
+            <div class="listitem"><span class="avatar b2">fi</span>fish-bot <small>stopped</small></div>
+            <div class="listitem" style="color:var(--faint)"><span style="width:22px;text-align:center">＋</span>Add a bot</div>
+          </div>
+          <div class="content">
+            <div class="pagehead"><h3>ad-bot</h3><span class="chip ok">running</span><span class="grow"></span><button class="btn">■ Stop</button></div>
+            <div class="tabs"><span class="on">Overview</span><span>Runs</span><span>Library</span><span>Settings</span></div>
+            <div class="cards" style="grid-template-columns:1fr 1fr">
+              <div class="card"><small>Now</small><b>Speed Raid › Sakura</b><small>since 11:24</small></div>
+              <div class="card"><small>Speed Raid this week</small><span class="big">32<small> / 133</small></span><div class="bar"><i style="width:24%"></i></div></div>
+            </div>
+            <div class="card"><small>Next up</small><b>Daily reset in 7 h 25 m</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="about">
+        <h2><span class="tag">C</span>Icon rail with two modes</h2>
+        <p>Like VS Code or Outlook. A slim rail switches between Bots and Tools. The column beside it lists the bots (or the tools), and the open bot's pages are tabs.</p>
+        <ul>
+          <li class="plus">Bots and tools are clearly two different worlds.</li>
+          <li class="plus">Switching bots is one click.</li>
+          <li class="minus">There are three columns, which is busier than A at small sizes.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <section class="pages">
+    <h2>What each page is for (the same in every option)</h2>
+    <p class="lead">Bot pages work on the open bot. Tool pages work on whatever you point them at, with the open bot's assets as the default.</p>
+    <div class="pagegrid">
+      <div class="pagecard"><h4>Overview <span class="kind bot">bot</span></h4><p>Goal: see at a glance what the bot is doing and how today is going.</p><ul><li>Now, Today's round, progress, Next up</li><li>Run / Pause / Stop</li></ul></div>
+      <div class="pagecard"><h4>Runs <span class="kind bot">bot</span></h4><p>Goal: find out what happened and why something failed.</p><ul><li>A timeline per day</li><li>Failures with their screenshot</li></ul></div>
+      <div class="pagecard"><h4>Library <span class="kind bot">bot</span></h4><p>Goal: manage everything the bot uses.</p><ul><li>Images, regions, points, guides, flows</li><li>Rename (code updated too), retake, edit, delete</li><li>Test one asset → highlight it on screen</li></ul></div>
+      <div class="pagecard"><h4>Settings <span class="kind bot">bot</span></h4><p>Goal: change how the bot plays, without code.</p><ul><li>The bot's own settings, in sections</li></ul></div>
+      <div class="pagecard"><h4>Capture <span class="kind tool">tool</span></h4><p>Goal: take a new asset, or retake one, and test it.</p><ul><li>Opens on the frozen screen</li><li>Check = highlight it live</li></ul></div>
+      <div class="pagecard"><h4>Recorder <span class="kind tool">tool</span></h4><p>Goal: record what you do as a flow, adding checks as you go.</p></div>
+      <div class="pagecard"><h4>Flows <span class="kind tool">tool</span></h4><p>Goal: edit a recorded or written flow, step by step.</p></div>
+      <div class="pagecard"><h4>Home / Studio settings <span class="kind app">app</span></h4><p>Goal: add bots, choose the theme and keys, and set how the Studio behaves (tray, hiding on Run).</p></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

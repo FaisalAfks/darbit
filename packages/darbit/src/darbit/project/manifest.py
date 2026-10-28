@@ -21,7 +21,7 @@ BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
 # the tiles darbit Studio can show on a bot's Overview (decision 0011); "progress:<label>" picks one progress
-TILES = ("now", "round", "progress", "next", "activity", "failures", "watching", "setup")
+TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup")
 
 # what each darbit setting takes in [settings]; images come from [images] instead
 SETTING_KINDS = {

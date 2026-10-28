@@ -1,81 +1,62 @@
-<!-- darbit Studio: the bot switcher, the open bot's Overview, Library, Runs and Settings, run controls and the
-     tools dock, all from the local server (server/hub.py). See docs/tasks/T20-hub.md. -->
+<!-- darbit Studio: the bot picker (dropdown or sidebar), the centred page bar, the bot's controls, and the open
+     page, all from the local server (server/hub.py). See decision 0013 and docs/ui/redesign/. -->
 <script lang="ts">
   import { register } from "$lib/actions";
   import { on, request } from "$lib/api";
-  import Button from "$lib/components/Button.svelte";
-  import Chip from "$lib/components/Chip.svelte";
   import CommandPalette from "$lib/components/CommandPalette.svelte";
-  import Dock, { type Tool } from "$lib/components/Dock.svelte";
-  import Field from "$lib/components/Field.svelte";
-  import IconButton from "$lib/components/IconButton.svelte";
-  import Pill from "$lib/components/Pill.svelte";
-  import ScoreBadge from "$lib/components/ScoreBadge.svelte";
   import Segmented from "$lib/components/Segmented.svelte";
-  import SettingsForm, { type Section } from "$lib/components/SettingsForm.svelte";
-  import Sheet from "$lib/components/Sheet.svelte";
+  import type { Section } from "$lib/components/SettingsForm.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import { toast } from "$lib/toasts.svelte";
-  import { chooseTheme, currentTheme, THEMES, type ThemeName } from "$lib/theme";
-  import TileView, { type TileData } from "./TileView.svelte";
+  import { currentTheme } from "$lib/theme";
+  import BotPicker, { type Bot } from "./BotPicker.svelte";
+  import BotSettingsPage from "./BotSettingsPage.svelte";
+  import LibraryPage from "./LibraryPage.svelte";
+  import OverviewPage from "./OverviewPage.svelte";
+  import ResultsPage from "./ResultsPage.svelte";
+  import StudioSettings, { type StudioValues } from "./StudioSettings.svelte";
+  import type { TileData } from "./TileView.svelte";
 
-  interface Bot {
-    path: string;
-    name: string;
-    version?: string;
-    summary?: string;
-    installed?: boolean;
-    status: string;
-    error?: string;
-  }
-
-  interface Picture {
-    name: string;
-    thumbnail: string | null;
-    score: number | null;
-  }
-
-  const SECTIONS = [
-    { value: "overview", label: "Overview", icon: "◉" },
-    { value: "library", label: "Library", icon: "▣" },
-    { value: "runs", label: "Runs", icon: "≡" },
-    { value: "settings", label: "Settings", icon: "⚙" },
+  const PAGES = [
+    { value: "overview", label: "Overview" },
+    { value: "results", label: "Results" },
+    { value: "library", label: "Library" },
+    { value: "settings", label: "Settings" },
   ];
-  const THEME_LABELS: Record<ThemeName, string> = {
-    "glass-dark": "Glass dark",
-    "glass-light": "Glass light",
-    midnight: "Midnight",
-    "high-contrast": "High contrast",
-  };
 
   let { connected = false }: { connected?: boolean } = $props();
 
-  let section = $state("overview");
+  let page = $state(firstPage()); // a bot page, or "studio" for the Studio's own settings
   let bots: Bot[] = $state([]);
   let bot: Bot | undefined = $state();
   let tiles: TileData[] = $state([]);
-  let pictures: Picture[] = $state([]);
-  let days: string[] = $state([]);
-  let day = $state("");
-  let dayTiles: TileData[] = $state([]);
   let form: { sections: Section[]; values: Record<string, unknown>; error: string | null } = $state({ sections: [], values: {}, error: null });
-  let botsOpen = $state(false);
-  let appOpen = $state(false);
   let palette = $state(false);
-  let sources = $state(false);
-  let theme: ThemeName = $state(currentTheme());
-  let folderToAdd = $state("");
+  let editing = $state(false); // Edit unlocks adding and changing the bot's things
+  let libraryTab = $state("assets");
+  let openedAction = $state(""); // an action open in the editor (Library › Actions)
   let problem = $state("");
   let ready = $state(false); // the bots list arrived
-  let loading = $state(false); // no "nothing here" while a section is still on its way
+  let loading = $state(false); // no "nothing here" while a page is still on its way
+  let lastBotPage = "overview";
+  let studio: StudioValues = $state({
+    theme: currentTheme(),
+    picker: "dropdown",
+    effects: true,
+    closing: "tray",
+    collapseOnRun: true,
+    pillHideAfter: "3",
+  });
 
   const status = $derived(bot?.status ?? "stopped");
+  const live = $derived(status === "running" || status === "paused");
+  const botPage = $derived(page === "studio" ? "" : page);
 
-  const TOOLS: Tool[] = [
-    { label: "Capture", icon: "▣", tone: "kind-image", onclick: () => openTool("capture") },
-    { label: "Guide", icon: "☰", tone: "warn", onclick: () => openTool("guide") },
-    { label: "Check", icon: "✓", tone: "info", onclick: () => openTool("check") },
-  ];
+  function firstPage(): string {
+    const asked = new URLSearchParams(location.search).get("page") ?? "";
+    if (asked === "studio" || PAGES.some((each) => each.value === asked)) return asked;
+    return "overview";
+  }
 
   function failed(error: Error): void {
     toast(error.message);
@@ -90,16 +71,13 @@
 
   async function openBot(next: Bot): Promise<void> {
     bot = next;
-    botsOpen = false;
     tiles = [];
-    pictures = [];
-    days = [];
-    dayTiles = [];
-    await loadSection();
+    if (page === "studio") page = lastBotPage;
+    await loadPage();
   }
 
-  async function loadSection(): Promise<void> {
-    if (!bot) return;
+  async function loadPage(): Promise<void> {
+    if (!bot || page === "studio") return;
     const path = bot.path;
     loading = true;
     try {
@@ -110,65 +88,100 @@
   }
 
   async function loadPart(path: string): Promise<void> {
-    if (section === "overview") {
+    if (page === "overview") {
       const overview = await request("dashboard.tiles", { path });
       tiles = overview.tiles;
       if (bot?.path === path) bot = { ...bot, ...overview.project };
-    } else if (section === "library") {
-      pictures = await request<Picture[]>("library.list", { path });
-    } else if (section === "runs") {
-      days = await request<string[]>("reports.days", { path });
-      if (!days.includes(day)) day = days[0] ?? "";
-      await loadDay();
-    } else if (section === "settings") {
+    } else if (page === "settings") {
       form = await request("project.settings", { path });
     }
   }
 
-  async function loadDay(): Promise<void> {
-    if (!bot || !day) {
-      dayTiles = [];
-      return;
-    }
-    const overview = await request("dashboard.tiles", { path: bot.path, day });
-    dayTiles = overview.tiles.filter((tile: TileData) => tile.kind !== "now");
-  }
-
   async function control(type: "project.run" | "project.pause" | "project.stop"): Promise<void> {
     if (!bot) return;
-    const reply = await request(type, { path: bot.path }).catch(failed);
-    if (reply) bot = { ...bot, status: reply.status };
+    const path = bot.path;
+    const reply = await request(type, { path }).catch(failed);
+    if (!reply) return;
+    bot = { ...bot, status: reply.status };
+    if (type === "project.run" && studio.collapseOnRun) {
+      request("studio.collapse", { path }).catch(() => {
+        // no desktop window (opened in a browser): the Studio stays as it is
+      });
+    }
   }
 
   async function saveSettings(values: Record<string, unknown>): Promise<void> {
     if (!bot) return;
-    await request("project.settings.save", { path: bot.path, values })
+    const path = bot.path;
+    await request("project.settings.save", { path, values })
       .then(() => toast("Settings saved. The bot reads them when it starts."))
       .catch(failed);
+    form = await request("project.settings", { path });
   }
 
-  async function openTool(tool: string): Promise<void> {
+  /** Retake the picture a failure names ("Lobby.Play not found"): its name goes in Capture's name slot. */
+  async function retake(failure: string): Promise<void> {
     if (!bot) return;
-    await request("tools.open", { path: bot.path, tool })
-      .then(() => toast(`Opening ${tool} for ${bot?.name}`))
-      .catch(failed);
+    const assets = await request<{ name: string; kind: string }[]>("library.list", { path: bot.path, have: {} }).catch(() => []);
+    let best: { name: string; kind: string } | null = null;
+    for (const asset of assets) {
+      if (failure.includes(asset.name) && (!best || asset.name.length > best.name.length)) best = asset;
+    }
+    if (best) openCapture("one", best.name, best.kind);
+    else openCapture("new");
   }
 
-  async function addFolder(): Promise<void> {
-    const added = await request<Bot>("project.add", { path: folderToAdd.trim() }).catch(failed);
+  async function openCapture(mode: "guide" | "one" | "new" | "test", name = "", kind = "image"): Promise<void> {
+    if (!bot) return;
+    const reply = await request("capture.open", { path: bot.path, mode, name, kind }).catch((error: Error) => {
+      toast(error.message.includes("unknown request") ? "Capture opens from the desktop Studio (darbit app)" : error.message);
+      return null;
+    });
+    if (reply && !reply.open) toast("Every picture in the setup guide is already taken");
+  }
+
+
+  async function addFolder(path: string): Promise<void> {
+    const added = await request<Bot>("project.add", { path }).catch(failed);
     if (!added) return;
-    folderToAdd = "";
     await loadBots();
     await openBot(added);
   }
 
-  function pickTheme(event: Event): void {
-    theme = (event.target as HTMLSelectElement).value as ThemeName;
-    chooseTheme(theme);
+  function toggleStudio(): void {
+    if (page === "studio") {
+      page = lastBotPage;
+    } else {
+      lastBotPage = page;
+      page = "studio";
+    }
+  }
+
+  function changeStudio(key: string, value: unknown): void {
+    request("settings.set", { key, value }).catch(failed);
+    if (key === "studio.effects") applyEffects();
+  }
+
+  function applyEffects(): void {
+    document.documentElement.dataset.effects = studio.effects ? "on" : "off";
+  }
+
+  async function loadStudio(): Promise<void> {
+    const keys = ["studio.picker", "studio.effects", "studio.closing", "studio.collapse_on_run", "studio.pill_hide_after"];
+    const found = await Promise.all(keys.map((key) => request("settings.get", { key }).catch(() => null)));
+    studio.picker = found[0] === "sidebar" ? "sidebar" : "dropdown";
+    studio.effects = found[1] !== false;
+    studio.closing = found[2] === "quit" ? "quit" : "tray";
+    studio.collapseOnRun = found[3] !== false;
+    studio.pillHideAfter = "3";
+    if (found[4] === 0) studio.pillHideAfter = "never";
+    else if (typeof found[4] === "number") studio.pillHideAfter = String(found[4]);
+    applyEffects();
   }
 
   $effect(() => {
     if (!connected) return;
+    loadStudio();
     loadBots()
       .catch((error: Error) => (problem = error.message))
       .finally(() => (ready = true));
@@ -180,313 +193,274 @@
         if (data.status === "failed") toast(`${shown.name} stopped with an error`, "bot", shown.name);
       }
     });
+    let missed = false; // the bot's report changed while the Studio was hidden
     const stopChanged = on("project.changed", (data) => {
-      if (bot?.path === data.path && section === "overview") loadSection().catch(failed);
+      if (bot?.path !== data.path || page !== "overview") return;
+      if (document.hidden) missed = true; // in the tray or behind the run pill: nobody's looking
+      else loadPage().catch(failed);
+    });
+    const onShown = () => {
+      if (!document.hidden && missed && page === "overview") {
+        missed = false;
+        loadPage().catch(failed);
+      }
+    };
+    document.addEventListener("visibilitychange", onShown);
+    const stopPage = on("studio.page", (data) => {
+      if (data.page === "studio-settings" && page !== "studio") toggleStudio();
+      if (data.page === "action") {
+        page = "library";
+        libraryTab = "actions";
+        openedAction = data.name;
+        editing = true;
+      }
     });
     return () => {
       stopStatus();
       stopChanged();
+      document.removeEventListener("visibilitychange", onShown);
+      stopPage();
     };
   });
 
   $effect(() => {
-    section; // reload when the section changes
-    if (connected && bot) loadSection().catch(failed);
+    page; // reload when the page changes
+    if (connected && bot) loadPage().catch(failed);
   });
 
   register({ name: "palette.open", label: "Commands", run: () => (palette = true) });
-  register({ name: "hub.section.next", label: "Next section", run: () => (section = SECTIONS[(SECTIONS.findIndex((each) => each.value === section) + 1) % SECTIONS.length].value) });
-  register({ name: "studio.overview", label: "Go to Overview", run: () => (section = "overview") });
-  register({ name: "studio.library", label: "Go to Library", run: () => (section = "library") });
-  register({ name: "studio.runs", label: "Go to Runs", run: () => (section = "runs") });
-  register({ name: "studio.settings", label: "Go to Settings", run: () => (section = "settings") });
-  register({ name: "hub.run.toggle", label: "Run or stop the bot", run: () => control(status === "stopped" || status === "failed" ? "project.run" : "project.stop") });
+  register({ name: "hub.section.next", label: "Next page", run: () => (page = PAGES[(PAGES.findIndex((each) => each.value === page) + 1) % PAGES.length].value) });
+  register({ name: "studio.overview", label: "Go to Overview", run: () => (page = "overview") });
+  register({ name: "studio.results", label: "Go to Results", run: () => (page = "results") });
+  register({ name: "studio.library", label: "Go to Library", run: () => (page = "library") });
+  register({ name: "studio.settings", label: "Go to Settings", run: () => (page = "settings") });
+  register({ name: "hub.run.toggle", label: "Run or stop the bot", run: () => control(live ? "project.stop" : "project.run") });
   register({ name: "run.pause", label: "Pause the bot", run: () => control("project.pause") });
 </script>
 
-<div class="studio">
-  <header class="top">
-    <div class="anchor">
-      <Pill label="Bot">
-        <button class="switcher" aria-expanded={botsOpen} onclick={() => (botsOpen = !botsOpen)}>
-          <span class="avatar">{bot ? bot.name.slice(0, 2) : "?"}</span>{bot?.name ?? "No bot"}<span class="caret" aria-hidden="true">▾</span>
-        </button>
-      </Pill>
-      <Sheet title="Your bots" bind:open={botsOpen} side="left" width={620}>
-        <div class="bots">
-          {#each bots as each (each.path)}
-            <button class="bot" class:on={each.path === bot?.path} onclick={() => openBot(each)}>
-              <b>{each.name} {#if each.version}<em>v{each.version}</em>{/if}</b>
-              <span>{each.error ?? (each.summary || each.path)}</span>
-              <Chip text={each.status} tone={each.status === "running" ? "ok" : each.status === "failed" || each.status === "broken" ? "danger" : "neutral"} />
-            </button>
-          {/each}
-        </div>
-        <form class="add" onsubmit={(event) => { event.preventDefault(); addFolder(); }}>
-          <Field label="Add a project folder" help="A folder with a darbit.toml, such as a bot you're writing.">
-            <input bind:value={folderToAdd} placeholder="C:\Users\me\Projects\my-bot" />
-          </Field>
-          <Button label="Add" icon="＋" variant="primary" size="s" disabled={!folderToAdd.trim()} onclick={addFolder} />
-        </form>
-      </Sheet>
-    </div>
-    <Segmented items={SECTIONS} bind:value={section} label="Studio sections" variant="nav" />
-    <Pill label="Run controls">
-      <span class="running" class:live={status === "running"} class:held={status === "paused"}>
-        <span class="dot"></span><b>{status[0].toUpperCase() + status.slice(1)}</b>
-      </span>
-      {#if status === "running" || status === "paused"}
-        <IconButton label={status === "paused" ? "Resume" : "Pause"} icon={status === "paused" ? "▶" : "❚❚"} action="run.pause" />
-        <IconButton label="Stop" icon="■" onclick={() => control("project.stop")} />
-      {:else}
-        <IconButton label="Run" icon="▶" action="hub.run.toggle" disabled={!bot || status === "broken"} />
-      {/if}
-    </Pill>
-    <div class="anchor">
-      <Pill label="Studio">
-        <IconButton label="Where each tile comes from" icon="‹/›" bind:pressed={sources} />
-        <IconButton label="Studio settings" icon="⚙" onclick={() => (appOpen = !appOpen)} />
-      </Pill>
-      <Sheet title="Studio" bind:open={appOpen} side="right" width={360}>
-        <Field label="Theme">
-          <select value={theme} onchange={pickTheme}>
-            {#each THEMES as name (name)}<option value={name}>{THEME_LABELS[name]}</option>{/each}
-          </select>
-        </Field>
-      </Sheet>
-    </div>
-  </header>
-
-  <main>
-    {#if !connected}
-      <p class="empty">darbit Studio needs darbit's local server. Start it with <code>darbit app</code>.</p>
-    {:else if problem}
-      <p class="empty">{problem}</p>
-    {:else if !ready}
-      <span></span>
-    {:else if !bot}
-      <p class="empty">No bots yet. Install one with <code>darbit install &lt;link&gt;</code>, or add a project folder from the bot menu.</p>
-    {:else if section === "overview"}
-      <div class="bento">
-        {#each tiles as tile (tile.kind)}
-          <TileView {tile} showSource={sources} />
-        {/each}
+<div class="studio" class:with-sidebar={studio.picker === "sidebar"}>
+  {#if studio.picker === "sidebar"}
+    <BotPicker {bots} {bot} variant="sidebar" onpick={openBot} onadd={addFolder} onstudio={toggleStudio} studioOpen={page === "studio"} />
+  {/if}
+  <div class="main">
+    <header class="top">
+      <div class="left">
+        {#if studio.picker !== "sidebar"}
+          <BotPicker {bots} {bot} onpick={openBot} onadd={addFolder} onstudio={toggleStudio} studioOpen={page === "studio"} />
+        {/if}
       </div>
-    {:else if section === "library"}
-      {#if pictures.length}
-        <div class="library">
-          {#each pictures as picture (picture.name)}
-            <figure>
-              {#if picture.thumbnail}<img src={picture.thumbnail} alt="" />{:else}<span class="nothumb">?</span>{/if}
-              <figcaption>
-                <span>{picture.name}</span>
-                {#if picture.score !== null}<ScoreBadge score={picture.score} />{/if}
-              </figcaption>
-            </figure>
-          {/each}
+      <Segmented items={PAGES} bind:value={() => botPage, (next) => (page = next)} label="Bot pages" variant="nav" />
+      <div class="right">
+        <div class="controls" role="group" aria-label="Bot controls">
+          <span class="state" data-status={status}><span class="dot"></span>{status === "paused" ? "Paused" : live ? "Running" : "Stopped"}</span>
+          <button class="ctl go" class:on={status === "running"} aria-label="Run" title="Run (F5)" disabled={!bot || live || status === "broken"} onclick={() => control("project.run")}>▶</button>
+          <button class="ctl" class:on={status === "paused"} aria-label={status === "paused" ? "Resume" : "Pause"} title="Pause (Ctrl+Alt+P)" disabled={!live} onclick={() => control("project.pause")}>❚❚</button>
+          <button class="ctl" aria-label="Stop" title="Stop (Ctrl+Alt+Q)" disabled={!live} onclick={() => control("project.stop")}>■</button>
+          <span class="sep"></span>
+          <button class="edit" class:on={editing} aria-pressed={editing} onclick={() => (editing = !editing)}>✎ {editing ? "Editing" : "Edit"}</button>
         </div>
-      {:else if !loading}
-        <p class="empty">No pictures yet. Take them with the Guide in the dock.</p>
-      {/if}
-    {:else if section === "runs"}
-      {#if days.length}
-        <div class="runs">
-          <Field label="Day">
-            <select bind:value={day} onchange={() => loadDay().catch(failed)}>
-              {#each days as each (each)}<option value={each}>{each}</option>{/each}
-            </select>
-          </Field>
-          <div class="bento">
-            {#each dayTiles as tile (tile.kind)}
-              <TileView {tile} showSource={sources} />
-            {/each}
-          </div>
-        </div>
-      {:else if !loading}
-        <p class="empty">No runs yet.</p>
-      {/if}
-    {:else if section === "settings"}
-      {#if form.error}
-        <p class="empty bad">{form.error}</p>
-      {:else if form.sections.length}
-        <SettingsForm sections={form.sections} values={form.values} onsave={saveSettings} showSource={sources} />
-      {:else if !loading}
-        <p class="empty">This bot has no settings.toml.</p>
-      {/if}
-    {/if}
-  </main>
+      </div>
+    </header>
 
-  <div class="dock"><Dock tools={TOOLS} /></div>
+    {#key page + (bot?.path ?? "")}
+      <main class="page-in">
+        {#if page === "studio"}
+          <StudioSettings bind:values={studio} onchange={changeStudio} />
+        {:else if !connected}
+          <p class="empty">darbit Studio needs darbit's local server. Start it with <code>darbit app</code>.</p>
+        {:else if problem}
+          <p class="empty">{problem}</p>
+        {:else if !ready}
+          <span></span>
+        {:else if !bot}
+          <p class="empty">No bots yet. Install one with <code>darbit install &lt;link&gt;</code>, or add a bot folder from the bot menu.</p>
+        {:else if page === "overview"}
+          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={retake} />
+        {:else if page === "library"}
+          <LibraryPage path={bot.path} {editing} bind:tab={libraryTab} bind:opened={openedAction} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} ontest={(name) => openCapture("test", name)} />
+        {:else if page === "results"}
+          <ResultsPage path={bot.path} onretake={retake} />
+        {:else if page === "settings"}
+          {#if form.error}
+            <p class="empty bad">{form.error}</p>
+          {:else if form.sections.length}
+            <BotSettingsPage sections={form.sections} values={form.values} onsave={saveSettings} />
+          {:else if !loading}
+            <p class="empty">This bot has no settings.toml.</p>
+          {/if}
+        {/if}
+      </main>
+    {/key}
+  </div>
   <CommandPalette bind:open={palette} />
   <Toast />
 </div>
 
 <style>
+  :global(html body) {
+    margin: 0;
+    background: var(--bg);
+  }
+  /* the colour wash: its own fixed layer, painted once, never repainted while scrolling or resizing */
+  .studio::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60vw 40vh at 80% -10%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%),
+      radial-gradient(50vw 40vh at 0% 100%, color-mix(in oklab, var(--accent-2) 14%, transparent), transparent 70%);
+    transform: translateZ(0);
+  }
+  /* "Smooth effects" off: no blur and no motion, for slower PCs */
+  :global(html[data-effects="off"] *),
+  :global(html[data-effects="off"] *::before),
+  :global(html[data-effects="off"] *::after) {
+    backdrop-filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
   .studio {
     position: relative;
-    min-height: 100vh;
-    display: grid;
-    grid-template-rows: auto 1fr;
-    gap: var(--space-l);
-    padding: var(--space-xxl) var(--space-xxl) calc(3 * var(--control-l));
-    font-size: var(--size-content);
-    background: var(--bg);
+    z-index: 0;
+    display: flex;
+    height: 100vh; /* the window doesn't scroll: only the page under the top bar does */
+    overflow: hidden;
     color: var(--text);
-    box-sizing: border-box;
+    font-size: var(--size-content);
+  }
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--space-l);
+    padding: var(--space-l) 0 0;
   }
   .top {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: var(--space-m);
     position: relative;
-    z-index: 5;
+    z-index: 10;
   }
-  .top > :global(.segmented) {
-    margin: 0 auto;
+  .left {
+    display: flex;
+    justify-self: start;
   }
-  .anchor {
-    position: relative;
+  .right {
+    display: flex;
+    justify-self: end;
   }
-  .switcher {
-    display: inline-flex;
+  .controls {
+    display: flex;
     align-items: center;
-    gap: var(--space-m-nudge);
-    padding: var(--space-xs) var(--space-m) var(--space-xs) var(--space-xs);
-    border: 0;
+    gap: var(--space-xs);
+    padding: var(--space-xs);
     border-radius: var(--radius-pill);
-    background: none;
-    color: var(--text);
-    font: 650 var(--size-body) / 1 var(--font-strong);
-    cursor: pointer;
+    background: var(--glass);
+    backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
   }
-  .switcher:hover {
-    background: var(--raised-hover);
-  }
-  .avatar {
-    width: var(--control-m);
-    height: var(--control-m);
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    font-size: var(--size-caption);
-    font-weight: 800;
-    color: var(--on-bot);
-    background: var(--slot-bot);
-  }
-  .caret {
-    color: var(--muted);
-  }
-  .running {
+  .state {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-s-nudge);
-    padding: 0 var(--space-s-nudge) 0 var(--space-m);
-    font-size: var(--size-caption);
+    gap: var(--space-s);
+    padding: 0 var(--space-s) 0 var(--space-m);
+    font: 600 var(--size-caption) / 1 var(--font-strong);
     color: var(--muted);
     white-space: nowrap;
   }
-  .running b {
-    color: var(--text);
-  }
-  .dot {
+  .state .dot {
     width: var(--space-s);
     height: var(--space-s);
     border-radius: 50%;
     background: var(--faint);
   }
-  .live .dot {
+  .state[data-status="running"] .dot {
     background: var(--ok);
+    box-shadow: 0 0 var(--space-s) var(--ok);
   }
-  .held .dot {
+  .state[data-status="paused"] .dot {
     background: var(--warn);
   }
-  .bots {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-m);
-  }
-  .bot {
-    display: grid;
-    gap: var(--space-s);
-    justify-items: start;
-    padding: var(--space-l);
-    border: 0;
-    border-radius: var(--radius-xl);
-    background: var(--raised);
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-  .bot:hover {
-    background: var(--raised-hover);
-  }
-  .bot.on {
-    box-shadow: var(--glow);
-  }
-  .bot em {
-    font-style: normal;
-    font-weight: 400;
-    color: var(--muted);
-  }
-  .bot span {
-    color: var(--muted);
-    font-size: var(--size-caption);
-    word-break: break-all;
-  }
-  .add {
-    display: flex;
-    align-items: end;
-    gap: var(--space-m);
-    margin-top: var(--space-xl);
-  }
-  .add :global(.field) {
-    flex: 1;
-  }
-  .bento {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    grid-auto-flow: dense; /* a narrow tile fills the gap beside a wide one */
-    gap: var(--space-l);
-    align-content: start;
-  }
-  .library {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(calc(5 * var(--control-l)), 1fr));
-    gap: var(--space-l);
-  }
-  figure {
-    margin: 0;
-    display: grid;
-    gap: var(--space-s);
-    padding: var(--space-m);
-    border-radius: var(--radius-l);
-    background: var(--raised);
-  }
-  figure img,
-  .nothumb {
-    width: 100%;
-    height: calc(2 * var(--control-l));
-    object-fit: contain;
+  .ctl {
+    width: var(--control-m);
+    height: var(--control-m);
     display: grid;
     place-items: center;
-    color: var(--faint);
-  }
-  figcaption {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-s);
+    border: 0;
+    border-radius: 50%;
+    background: var(--raised);
+    color: var(--text);
     font-size: var(--size-caption);
-    word-break: break-all;
+    cursor: pointer;
+    transition:
+      background var(--duration-fast) var(--curve-easy-ease),
+      transform var(--duration-fast) var(--curve-easy-ease);
   }
-  .runs {
-    display: grid;
-    gap: var(--space-l);
-    align-content: start;
+  .ctl:hover:not(:disabled) {
+    background: var(--raised-hover);
   }
-  .runs > :global(.field) {
-    max-width: var(--width-inspector);
+  .ctl:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+  .ctl:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .ctl.go:not(:disabled) {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .ctl.on {
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  .sep {
+    width: 1px;
+    height: var(--space-xl);
+    background: var(--line);
+    margin: 0 var(--space-xs);
+  }
+  .edit {
+    height: var(--control-m);
+    padding: 0 var(--space-m);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--raised);
+    color: var(--text);
+    font: 650 var(--size-caption) / 1 var(--font-strong);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--curve-easy-ease);
+  }
+  .edit:hover {
+    background: var(--raised-hover);
+  }
+  .edit.on {
+    background: var(--accent-2);
+    color: var(--on-accent);
+  }
+  .top {
+    padding: 0 var(--space-xxl);
+  }
+  main {
+    min-width: 0;
+    overflow-y: auto;
+    padding: var(--space-xs) var(--space-xxl) var(--space-xxl);
+    contain: content; /* scrolling the page never repaints the top bar */
+  }
+  .page-in {
+    animation: page-in var(--duration-normal) var(--curve-decelerate);
+  }
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--space-s));
+    }
   }
   .empty {
     color: var(--muted);
@@ -495,12 +469,5 @@
   }
   .bad {
     color: var(--danger);
-  }
-  .dock {
-    position: fixed;
-    left: 50%;
-    bottom: var(--space-xxl);
-    translate: -50% 0;
-    z-index: 5;
   }
 </style>

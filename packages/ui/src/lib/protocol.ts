@@ -18,34 +18,54 @@ export interface Requests {
   "settings.get": { key: string };
   /** save a UI setting */
   "settings.set": { key: string; value: unknown };
-  /** grab and send frames, then lines */
-  "capture.freeze": { monitors: number[] | null };
+  /** hide the Studio, freeze, show Capture */
+  "capture.open": { path: string; mode: string; name: string | null; kind: Kind | null };
+  /** the items still to take */
+  "capture.session": Record<string, never>;
+  /** the frozen shot as a frame */
+  "capture.frame": Record<string, never>;
   /** boxes around a point, smallest first */
   "capture.candidates": { x: number; y: number; kind: Kind };
-  /** the project's saved targets */
-  "capture.targets": Record<string, never>;
+  /** every match in the region, with scores */
+  "capture.test": { box: Box | null; name: string | null; region: Box | null; similarity: number };
   /** write the target's files */
-  "capture.save": { draft: Draft };
-  /** undo the last save, rename or delete */
-  "capture.undo": Record<string, never>;
-  /** redo it */
-  "capture.redo": Record<string, never>;
-  /** rename a target's files and links */
-  "capture.rename": { from: string; to: string };
-  /** delete a target's files */
-  "capture.delete": { name: string };
+  "capture.save": { name: string; kind: Kind; image: Box | null; region: Box | null; point: number[] | null };
+  /** leave Capture and show the Studio */
+  "capture.close": Record<string, never>;
+  /** hide Capture until the next guide screen is frozen */
+  "capture.next": Record<string, never>;
+  /** grab the screen again */
+  "capture.refreeze": Record<string, never>;
   /** start a scan */
   "highlight.scan": { targets: string[] | null; context: string | null };
   /** show the guide card */
   "guide.open": { path: string; say: string | null; only: string[] | null };
-  /** start recording */
-  "record.start": { name: string; window: string };
-  /** add a checkpoint */
-  "record.mark": Record<string, never>;
-  /** pause or resume recording */
+  /** hide the Studio and record into actions/<name>.py */
+  "record.start": { path: string; name: string };
+  /** pause or go on */
   "record.pause": Record<string, never>;
-  /** stop and save */
-  "record.stop": Record<string, never>;
+  /** while paused: add a wait or a picture check */
+  "record.check": { kind: string; seconds: number | null; target: string | null; gone: boolean | null; timeout: number | null };
+  /** forget the last thing recorded */
+  "record.undo": Record<string, never>;
+  /** stop; keep writes the action */
+  "record.stop": { keep: boolean | null };
+  /** time, counts and the last steps */
+  "record.status": Record<string, never>;
+  /** make the recorder bar taller for its panel, or back */
+  "record.size": { open: boolean };
+  /** the bot's actions, with their size and who uses them */
+  "actions.list": { path: string };
+  /** an action's sections and steps */
+  "actions.read": { path: string; name: string };
+  /** write an action */
+  "actions.save": { path: string; name: string; sections: Record<string, unknown>[]; docstring: string | null };
+  /** an action's breakpoints */
+  "actions.breakpoints": { path: string; name: string; lines: number[] };
+  /** play an action, following its lines */
+  "actions.play": { path: string; name: string; stepping: boolean | null };
+  /** resume, step or stop the action playing */
+  "actions.control": { what: string };
   /** the run's tree */
   "run.load": { path: string };
   /** drive the player */
@@ -70,10 +90,24 @@ export interface Requests {
   "project.settings.save": { path: string; values: Record<string, unknown> };
   /** pictures with thumbnails and last scores */
   "library.list": { path: string };
-  /** days with a run report */
-  "reports.days": { path: string };
+  /** each screen's last shot with its assets in place */
+  "library.screens": { path: string };
+  /** every line in the bot that names an asset */
+  "library.uses": { path: string; name: string };
+  /** what renaming an asset would change */
+  "library.rename.plan": { path: string; name: string; to: string };
+  /** rename an asset and every line naming it */
+  "library.rename": { path: string; name: string; to: string };
+  /** the Results page's days, each with its lead gain */
+  "results.days": { path: string };
+  /** one day of the Results page */
+  "results.day": { path: string; day: string | null };
   /** open capture, guide or check for a bot */
   "tools.open": { path: string; tool: string };
+  /** hide the Studio behind the run pill while the bot runs */
+  "studio.collapse": { path: string };
+  /** bring the Studio back from the run pill */
+  "studio.expand": Record<string, never>;
 }
 
 export interface Events {
@@ -85,16 +119,24 @@ export interface Events {
   "log": { line: string; time: string };
   /** a run report event (steps, searches) */
   "record": { event: string; fields: Record<string, unknown> };
-  /** snap lines for a frozen frame */
-  "capture.lines": { monitor: number; lines: Lines };
+  /** a new shot is ready */
+  "capture.frozen": Record<string, never>;
+  /** the bar between guide items is showing again */
+  "capture.waiting": Record<string, never>;
   /** one target found */
   "highlight.hit": { name: string; box: Box; score: number; elsewhere: number; verdict: string };
   /** the scan finished */
   "highlight.done": { missing: string[] };
   /** guide progress */
   "guide.progress": { done: number; total: number; current: string | null };
-  /** the bar's clock */
-  "record.tick": { seconds: number; checkpoints: number; paused: boolean };
+  /** the recording's time, counts and last steps */
+  "record.tick": { recording: boolean };
+  /** the line an action is on */
+  "action.line": { action: string; line: number };
+  /** stopped at a breakpoint or a step */
+  "action.paused": { action: string; line: number };
+  /** done, stopped or failed */
+  "action.ended": { action: string; status: string; reason: string };
   /** the step being played */
   "run.at": { checkpoint: number; goal: number; step: number };
   /** stopped at a breakpoint or by pause */
@@ -103,6 +145,8 @@ export interface Events {
   "project.status": { path: string; status: string; code: number | null };
   /** a running bot's report changed */
   "project.changed": { path: string };
+  /** the tray asks the Studio to show a page (studio-settings) */
+  "studio.page": { page: string };
 }
 
 export type RequestType = keyof Requests;

@@ -6,8 +6,6 @@ the bot's darbit watches (platform/safety.py), so held keys are always let go. W
 report is watched and every change goes to the windows as `project.changed`. See docs/tasks/T20-hub.md.
 """
 
-import base64
-import json
 import os
 import subprocess
 import threading
@@ -16,20 +14,15 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-import cv2
-import numpy as np
-
 from .. import paths
-from ..core.targets import IMAGE_TYPES
 from ..project import bots
-from ..project.manifest import MANIFEST, ProjectError, load
+from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, ui_settings
+from . import dashboard, library, results, ui_settings
 from .events import publish
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
-THUMB = 96  # px, the library's thumbnails
-WATCH_EVERY = 1.0  # seconds between looks at a running bot's report
+WATCH_EVERY = 2.0  # seconds between looks at a running bot's report
 STOP_WAIT = 10.0  # seconds a bot gets to stop before it's ended
 
 
@@ -45,6 +38,66 @@ class Run:
 
 
 _runs: dict[str, Run] = {}  # folder -> its run
+
+
+class Earlier:
+    """A bot an earlier Studio started that's still running (that Studio was closed): enough of a Popen for
+    status, Stop and the watcher, found through the pid file in the bot's control folder."""
+
+    def __init__(self, pid: int) -> None:
+        self.pid = pid
+        self.returncode: int | None = None
+
+    def poll(self) -> int | None:
+        if self.returncode is None and not _alive(self.pid):
+            self.returncode = 0
+        return self.returncode
+
+    def wait(self, timeout: float | None = None) -> int:
+        deadline = time.monotonic() + (timeout or 0)
+        while self.poll() is None:
+            if timeout is not None and time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired(str(self.pid), timeout)
+            time.sleep(0.2)
+        return self.returncode or 0
+
+
+def _alive(pid: int) -> bool:
+    import ctypes
+
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not handle:
+        return False
+    code = ctypes.c_ulong()
+    try:
+        kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+    finally:
+        kernel32.CloseHandle(handle)
+    return code.value == STILL_ACTIVE
+
+
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+STILL_ACTIVE = 259
+
+
+def _adopt(folder: Path) -> Run | None:
+    """A run an earlier Studio left behind, if its process is still alive."""
+    pid_file = control_dir(folder) / "pid"
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not _alive(pid):
+        pid_file.unlink(missing_ok=True)
+        return None
+    run = Run(folder, Earlier(pid), pid_file.stat().st_mtime)
+    with _lock:
+        _runs[str(folder)] = run
+    threading.Thread(target=_watch, args=(run,), name=f"darbit-run-{folder.name}", daemon=True).start()
+    return run
+
+
 _lock = threading.Lock()
 
 
@@ -129,11 +182,30 @@ def status(folder: Path) -> str:
     """running, paused or stopped."""
     with _lock:
         run = _runs.get(str(folder))
+    if run is None:
+        run = _adopt(folder)  # started by a Studio that's gone
     if run is None or run.process.poll() is not None:
         return "stopped"
     if run.paused:
         return "paused"
     return "running"
+
+
+def running() -> list[Path]:
+    """The bots this Studio started that are still running or paused."""
+    with _lock:
+        runs = list(_runs.values())
+    found = []
+    for run in runs:
+        if run.process.poll() is None:
+            found.append(run.folder)
+    return found
+
+
+def stop_all() -> None:
+    """Stop every bot this Studio started (quitting darbit)."""
+    for folder in running():
+        project_stop({"path": str(folder)})
 
 
 def project_run(data: dict) -> dict:
@@ -154,6 +226,7 @@ def project_run(data: dict) -> dict:
         process = subprocess.Popen(
             bots.entry_command(project.entry, folder), cwd=folder, env=environment, stdout=sink, stderr=sink
         )
+    (control / "pid").write_text(str(process.pid), encoding="utf-8")  # a later Studio can still stop it
     run = Run(folder, process, time.time())
     with _lock:
         _runs[str(folder)] = run
@@ -169,6 +242,10 @@ def project_pause(data: dict) -> dict:
         run = _runs.get(str(folder))
     if run is None or run.process.poll() is not None:
         raise ValueError(f"{folder.name} isn't running")
+    if not understands_control(folder):
+        raise ValueError(
+            f"{folder.name}'s darbit is older than the Studio's Pause: move its darbit pin to a newer release"
+        )
     pause_file = control_dir(folder) / "pause"
     run.paused = not run.paused
     if run.paused:
@@ -184,16 +261,42 @@ def project_stop(data: dict) -> dict:
     folder = _folder(data)
     with _lock:
         run = _runs.get(str(folder))
+    if run is None:
+        run = _adopt(folder)
     if run is None or run.process.poll() is not None:
         return {"status": "stopped"}
     run.stopping = True
     (control_dir(folder) / "pause").unlink(missing_ok=True)
     (control_dir(folder) / "stop").write_text("", encoding="utf-8")
+    wait = STOP_WAIT
+    if not understands_control(folder):
+        wait = 0  # its darbit is older than the Studio's stop: it would never see it
     try:
-        run.process.wait(timeout=STOP_WAIT)
+        run.process.wait(timeout=wait)
     except subprocess.TimeoutExpired:
-        run.process.terminate()  # it didn't reach a darbit call in time
+        end_tree(run.process.pid)  # it didn't reach a darbit call in time
+        from ..platform import input as device
+
+        device.let_go_of_everything()  # whatever it held stays down otherwise
     return {"status": "stopped"}
+
+
+def end_tree(pid: int) -> None:
+    """End a process and every process it started: `uv run` starts the bot as a child, which outlives its parent
+    on Windows if only the parent is ended."""
+    subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
+
+
+def understands_control(folder: Path) -> bool:
+    """Whether the darbit in the bot's own environment takes the Studio's pause and stop (its control folder).
+    A bot without its own environment runs with the Studio's darbit, which does."""
+    safety = folder / ".venv" / "Lib" / "site-packages" / "darbit" / "platform" / "safety.py"
+    if not safety.is_file():
+        return True
+    try:
+        return "DARBIT_CONTROL" in safety.read_text(encoding="utf-8")
+    except OSError:
+        return True
 
 
 def _watch(run: Run) -> None:
@@ -206,6 +309,7 @@ def _watch(run: Run) -> None:
             publish("project.changed", {"path": str(run.folder)})
         time.sleep(WATCH_EVERY)
     code = run.process.returncode
+    (control_dir(run.folder) / "pid").unlink(missing_ok=True)
     ended = "failed"
     if code == 0 or run.stopping:
         ended = "stopped"
@@ -226,10 +330,29 @@ def dashboard_tiles(data: dict) -> dict:
     folder = _folder(data)
     project = load(folder)
     day = data.get("day") or None
-    tiles = []
-    for tile in dashboard.tiles(project, day):
-        tiles.append(asdict(tile))
-    return {"project": describe(folder), "tiles": tiles}
+    key = _tiles_key(project, day)
+    if _tiles_made.get(str(folder), (None, None))[0] != key:
+        tiles = []
+        for tile in dashboard.tiles(project, day):
+            tiles.append(asdict(tile))
+        _tiles_made[str(folder)] = (key, tiles)
+    return {"project": describe(folder), "tiles": _tiles_made[str(folder)][1]}
+
+
+_tiles_made: dict[str, tuple[tuple, list[dict]]] = {}  # the Overview's tiles, made again only when something changed
+
+
+def _tiles_key(project: Project, day: str | None) -> tuple:
+    """What the tiles depend on: the report, the minute (next up counts down), the guide and the pictures."""
+    report = dashboard.report_file(project, day or datetime.now().strftime("%Y-%m-%d"))
+    parts: list = [day, datetime.now().strftime("%H:%M")]
+    for path in [report, project.folder / "guide.toml", *library._folders(project)]:
+        try:
+            stat = path.stat()
+            parts.append((stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            parts.append(None)
+    return tuple(parts)
 
 
 def settings_get(data: dict) -> dict:
@@ -262,68 +385,56 @@ def settings_save(data: dict) -> dict:
 
 
 def library_list(data: dict) -> list[dict]:
-    """Every picture in the bot's image folders with a small thumbnail and its last check score."""
-    folder = _folder(data)
-    project = load(folder)
-    scores = _last_scores(folder)
+    """Every asset the bot uses: images, regions, points, and the guide's pictures still missing."""
+    names = data.get("names")
+    if names is not None:
+        names = set(names)
+    have = data.get("have")
+    if not isinstance(have, dict):
+        have = None
+    return library.assets(load(_folder(data)), names, have)
+
+
+def library_uses(data: dict) -> list[dict]:
+    """Every line in the bot's code and guide that names an asset."""
+    project = load(_folder(data))
     found = []
-    for name in project.images:
-        images = folder / name
-        if not images.is_dir():
-            continue
-        for path in sorted(images.iterdir()):
-            if path.suffix.lower() not in IMAGE_TYPES:
-                continue
-            target = path.stem
-            found.append({"name": target, "thumbnail": _thumbnail(path), "score": scores.get(target)})
+    for use in library.uses(project, str(data.get("name", ""))):
+        found.append({"file": use.file.relative_to(project.folder).as_posix(), "line": use.line, "text": use.text})
     return found
 
 
-def _thumbnail(path: Path) -> str | None:
-    """A small PNG as a data URL, so the list needs no more requests."""
-    pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
-    if pixels is None:
-        return None
-    height, width = pixels.shape[:2]
-    scale = min(1.0, THUMB / max(height, width))
-    if scale < 1.0:
-        pixels = cv2.resize(
-            pixels, (max(1, round(width * scale)), max(1, round(height * scale))), interpolation=cv2.INTER_AREA
-        )
-    ok, encoded = cv2.imencode(".png", pixels)
-    if not ok:
-        return None
-    return "data:image/png;base64," + base64.b64encode(encoded.tobytes()).decode("ascii")
+def library_screens(data: dict) -> list[dict]:
+    """Each screen's last shot with its assets in place."""
+    return library.screens(load(_folder(data)))
 
 
-def _last_scores(folder: Path) -> dict[str, float]:
-    """The newest score per target from `darbit check`'s history."""
-    history = paths.project_dir(folder) / "state" / "check.jsonl"
-    scores: dict[str, float] = {}
-    if not history.is_file():
-        return scores
-    for line in history.read_text(encoding="utf-8").splitlines():
-        try:
-            row = json.loads(line)
-        except ValueError:
-            continue
-        name = str(row.get("name", "")).removesuffix(".png")
-        if name and isinstance(row.get("score"), (int, float)):
-            scores[name] = row["score"]
-    return scores
+def library_rename_plan(data: dict) -> dict:
+    """What renaming an asset would change, without changing anything."""
+    return library.rename_plan(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
 
 
-def reports_days(data: dict) -> list[str]:
-    """The days the bot has a run report for, newest first."""
+def library_delete(data: dict) -> dict:
+    """Delete an asset's files."""
+    return library.delete(load(_folder(data)), str(data.get("name", "")))
+
+
+def library_rename(data: dict) -> dict:
+    """Rename an asset and every line naming it, all at once."""
+    return library.rename(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
+
+
+def results_days(data: dict) -> list[dict]:
+    """The Results page's day list: days with a run report, newest first, with their lead gain."""
     folder = _folder(data)
-    project = load(folder)
-    logs = dashboard.report_file(project, "x").parent
-    days = []
-    if logs.is_dir():
-        for path in logs.glob("report-*.jsonl"):
-            days.append(path.stem.removeprefix("report-"))
-    days.sort(reverse=True)
-    return days
+    return results.days(load(folder))
+
+
+def results_day(data: dict) -> dict:
+    """One day of the Results page (today when no day is given)."""
+    folder = _folder(data)
+    day = str(data.get("day") or datetime.now().strftime("%Y-%m-%d"))
+    return results.day(load(folder), day)
 
 
 def tools_open(data: dict) -> dict:
@@ -358,5 +469,11 @@ def register() -> None:
     HANDLERS["project.settings"] = settings_get
     HANDLERS["project.settings.save"] = settings_save
     HANDLERS["library.list"] = library_list
-    HANDLERS["reports.days"] = reports_days
+    HANDLERS["library.uses"] = library_uses
+    HANDLERS["library.screens"] = library_screens
+    HANDLERS["library.rename.plan"] = library_rename_plan
+    HANDLERS["library.rename"] = library_rename
+    HANDLERS["library.delete"] = library_delete
+    HANDLERS["results.days"] = results_days
+    HANDLERS["results.day"] = results_day
     HANDLERS["tools.open"] = tools_open

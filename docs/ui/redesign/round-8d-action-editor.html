@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action editor, fancy</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 780px; }
+.page { overflow: hidden; }
+.ed { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; max-width: 1000px; margin: 0 auto; width: 100%; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); padding: 0 4px 6px; flex-wrap: wrap; }
+.crumbs a { color: var(--muted); cursor: pointer; padding: 2px 8px; border-radius: 999px; transition: background .15s, color .15s; }
+.crumbs a:hover { background: rgb(255 255 255 / .06); color: var(--text); }
+.crumbs b { font: 700 19px var(--font-strong); padding: 0 4px; background: linear-gradient(90deg, var(--text), #c9d6ff); -webkit-background-clip: text; background-clip: text; color: transparent; animation: crumbin .3s var(--ease); }
+@keyframes crumbin { from { opacity: 0; transform: translateX(8px); } }
+.crumbs .back { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / .07); color: var(--text); cursor: pointer; transition: transform .15s; }
+.crumbs .back:hover { transform: translateX(-2px); }
+.head { display: flex; align-items: center; gap: 10px; padding: 0 4px 10px; flex-wrap: wrap; }
+.head .meta { color: var(--muted); font-size: 12.5px; display: flex; gap: 8px; align-items: center; }
+.head .grow { flex: 1; }
+.pillstat { padding: 2px 9px; border-radius: 999px; background: rgb(255 255 255 / .06); font: 600 11.5px var(--font-strong); color: var(--text); }
+.usedby a { color: var(--accent); cursor: pointer; }
+.playbtn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; border: 0; cursor: pointer; font: 700 13px var(--font-strong);
+           background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); box-shadow: 0 6px 18px rgb(90 200 250 / .3); transition: transform .12s, box-shadow .2s; }
+.playbtn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgb(90 200 250 / .45); }
+.playbtn.running { background: linear-gradient(135deg, var(--warn), #fb923c); color: #1a1004; box-shadow: 0 6px 18px rgb(251 191 36 / .35); }
+.box { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 6px; position: relative; overflow: hidden; }
+.box::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 120px; background: radial-gradient(400px 120px at 20% 0, rgb(90 200 250 / .08), transparent 70%); pointer-events: none; }
+.bar2 { display: flex; gap: 8px; align-items: center; padding: 4px 6px 8px; position: relative; }
+.bar2 .search { flex: 1; max-width: 360px; display: flex; transition: box-shadow .2s; }
+.bar2 .search:focus-within { box-shadow: 0 0 0 2px rgb(90 200 250 / .5); }
+.bar2 .grow { flex: 1; }
+.legend { display: flex; gap: 10px; font-size: 11.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 4px; background: var(--c); }
+.jump { position: relative; }
+.jumpmenu { position: absolute; right: 0; top: 34px; width: 240px; padding: 6px; border-radius: 12px; z-index: 6; opacity: 0; translate: 0 -6px; pointer-events: none; transition: opacity .18s, translate .18s var(--ease);
+            background: rgb(28 31 41 / .98); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; gap: 1px; }
+.jumpmenu.on { opacity: 1; translate: 0 0; pointer-events: auto; }
+.jumpmenu div { padding: 7px 10px; border-radius: 8px; font-size: 12.5px; display: grid; grid-template-columns: 8px 1fr auto; gap: 8px; align-items: center; cursor: pointer; }
+.jumpmenu div:hover { background: rgb(255 255 255 / .07); }
+.jumpmenu div i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.jumpmenu small { color: var(--faint); }
+.list { flex: 1; overflow: auto; min-height: 0; position: relative; padding: 0 4px 30px; scroll-behavior: smooth; }
+.list::-webkit-scrollbar { width: 8px; } .list::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .12); border-radius: 8px; }
+.sec { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-top: 8px; border-radius: 12px; font: 700 13px var(--font-strong); cursor: pointer;
+       background: linear-gradient(90deg, color-mix(in oklab, var(--c) 22%, rgb(24 28 40)), rgb(24 28 40 / .98) 60%); border: 1px solid color-mix(in oklab, var(--c) 35%, transparent);
+       box-shadow: 0 6px 16px rgb(0 0 0 / .25); backdrop-filter: blur(10px); }
+.sec .dot2 { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.sec .fold { color: var(--muted); width: 12px; transition: transform .2s var(--ease); }
+.sec.closed .fold { transform: rotate(-90deg); }
+.sec code { background: none; padding: 0; font: 600 12px var(--mono); color: var(--muted); }
+.sec small { color: var(--muted); font: 600 11px var(--font-strong); }
+.sec .grow { flex: 1; }
+.sec .mbar { width: 80px; height: 4px; border-radius: 999px; background: rgb(255 255 255 / .1); overflow: hidden; }
+.sec .mbar i { display: block; height: 100%; background: var(--c); transition: width .3s; }
+.secbody { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .28s var(--ease); }
+.secbody.closed { grid-template-rows: 0fr; }
+.secbody > div { overflow: hidden; }
+.r { display: grid; grid-template-columns: 14px 36px 26px 1fr auto 16px; gap: 10px; align-items: center; padding: 0 10px; height: 38px; border-radius: 10px; font-size: 13px; cursor: pointer; position: relative;
+     transition: background .15s, transform .15s; animation: rowin .3s var(--ease) both; }
+@keyframes rowin { from { opacity: 0; transform: translateY(4px); } }
+.r::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--c); opacity: .0; transition: opacity .15s; }
+.r:hover { background: rgb(255 255 255 / .045); }
+.r:hover::before { opacity: .8; }
+.r.on { background: linear-gradient(90deg, rgb(90 200 250 / .16), rgb(90 200 250 / .04)); }
+.r.on::before { opacity: 1; background: var(--accent); }
+.r .grip { color: var(--faint); opacity: 0; cursor: grab; font-size: 11px; transition: opacity .15s; }
+.r:hover .grip { opacity: .8; }
+.r .n { color: var(--faint); font: 600 11px var(--mono); text-align: right; }
+.r .ic { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 12px; background: color-mix(in oklab, var(--c) 20%, transparent); color: var(--c); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 30%, transparent); }
+.r .what { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; }
+.r .verb { color: var(--muted); font-size: 12.5px; }
+.kc { display: inline-flex; gap: 3px; }
+.kc kbd { font: 700 11px var(--font-strong); padding: 1px 7px; min-width: 14px; text-align: center; border: 1px solid rgb(255 255 255 / .22); border-bottom-width: 3px; border-radius: 6px; background: rgb(255 255 255 / .06); color: var(--text); }
+.thumb2 { width: 46px; height: 22px; border-radius: 5px; background: linear-gradient(180deg, #5ee08f, #36b36a); display: grid; place-items: center; font: 800 8px var(--font-strong); color: #fff; box-shadow: 0 0 0 1px rgb(255 255 255 / .15); flex: none; }
+.thumb2.b { background: linear-gradient(135deg, #f87171, #7f1d1d); } .thumb2.s { background: linear-gradient(135deg, #5ac8fa, #1e3a8a); } .thumb2.l { background: linear-gradient(135deg, #a78bfa, #4c1d95); }
+.tgt { font: 600 12.5px var(--mono); color: var(--text); }
+.score { font: 700 10px var(--mono); padding: 0 6px; border-radius: 999px; color: #071016; background: var(--ok); }
+.dur { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--mono); }
+.dur i { display: inline-block; height: 6px; border-radius: 999px; background: linear-gradient(90deg, #6b7280, #9aa1ad); }
+.r small.t { color: var(--faint); font: 11px var(--mono); }
+.r .bp { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid transparent; transition: transform .15s; }
+.r:hover .bp { border-color: var(--faint); }
+.r .bp.on { background: var(--danger); border-color: var(--danger); box-shadow: 0 0 8px rgb(248 113 113 / .7); }
+.r .bp:hover { transform: scale(1.3); }
+.r .between { position: absolute; left: 60px; right: 10px; bottom: -4px; height: 8px; opacity: 0; z-index: 2; transition: opacity .15s; }
+.r:hover .between { opacity: 1; }
+.r .between::before { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), transparent); }
+.r .between::after { content: "＋"; position: absolute; left: -18px; top: -6px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 800 11px var(--font-strong); box-shadow: 0 0 10px rgb(90 200 250 / .6); }
+/* playing */
+.r.playing { background: linear-gradient(90deg, rgb(74 222 128 / .22), rgb(74 222 128 / .03)); }
+.r.playing::before { opacity: 1; background: var(--ok); box-shadow: 0 0 12px var(--ok); }
+.r.playing .n { color: var(--ok); }
+.r.done { opacity: .55; }
+.r.hitbp { animation: bpflash .6s ease-in-out 3; }
+@keyframes bpflash { 50% { background: rgb(248 113 113 / .25); } }
+/* loops */
+.loop { margin: 4px 0 4px 34px; padding: 2px 0 4px 14px; border-left: 2px solid rgb(251 191 36 / .5); border-radius: 0 0 0 10px; position: relative; }
+.loop::before { content: ""; position: absolute; left: -2px; top: 0; width: 2px; height: 30px; background: linear-gradient(var(--warn), transparent); }
+.loophead { display: flex; align-items: center; gap: 8px; height: 32px; font: 600 12.5px var(--font-strong); color: var(--warn); }
+.loophead .cnt { padding: 1px 8px; border-radius: 999px; background: rgb(251 191 36 / .14); font-size: 11px; }
+/* calls */
+.callchip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 10px; border-radius: 999px; color: var(--slot-bot); font: 700 12.5px var(--font-strong);
+            background: linear-gradient(90deg, rgb(240 171 252 / .18), rgb(167 139 250 / .12)); border: 1px solid rgb(240 171 252 / .4); box-shadow: 0 0 14px rgb(240 171 252 / .12); }
+.callchip .peek, .callchip .open { padding: 2px 8px; border-radius: 999px; background: rgb(255 255 255 / .08); color: var(--text); font: 600 11px var(--font-strong); cursor: pointer; transition: background .15s; }
+.callchip .peek:hover, .callchip .open:hover { background: rgb(255 255 255 / .2); }
+.peekwrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s var(--ease); }
+.peekwrap.on { grid-template-rows: 1fr; }
+.peekwrap > div { overflow: hidden; }
+.peekbox { margin: 2px 0 8px 62px; border-radius: 14px; padding: 8px; position: relative;
+           background: linear-gradient(180deg, rgb(240 171 252 / .08), rgb(167 139 250 / .04)); border: 1px solid rgb(240 171 252 / .3); box-shadow: inset 0 0 30px rgb(240 171 252 / .05); }
+.peekbox::before { content: ""; position: absolute; left: -20px; top: -10px; width: 18px; height: 24px; border-left: 2px dashed rgb(240 171 252 / .5); border-bottom: 2px dashed rgb(240 171 252 / .5); border-radius: 0 0 0 8px; }
+.peekbox .ph { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 6px; font-size: 12px; color: var(--muted); }
+.peekbox .ph b { color: var(--slot-bot); }
+.peekbox .r { height: 32px; animation-duration: .25s; }
+/* inline editor */
+.inwrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s var(--ease); }
+.inwrap.on { grid-template-rows: 1fr; }
+.inwrap > div { overflow: hidden; }
+.inline { margin: 2px 0 8px 62px; padding: 14px; border-radius: 14px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr 1fr;
+          background: linear-gradient(180deg, rgb(90 200 250 / .07), rgb(255 255 255 / .02)); border: 1px solid rgb(90 200 250 / .25); }
+.inline .f { display: grid; gap: 5px; font-size: 12px; }
+.inline .f span { color: var(--muted); }
+.inline .f b { padding: 7px 10px; border-radius: 9px; background: rgb(0 0 0 / .25); border: 1px solid var(--line); font: 600 12.5px var(--font-strong); }
+.inline .wide { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; }
+.inline .wide .grow { flex: 1; }
+.inline .shotmini { width: 140px; height: 72px; border-radius: 10px; background: linear-gradient(160deg, #3b4560, #232b3c); position: relative; flex: none; overflow: hidden; }
+.inline .shotmini::after { content: ""; position: absolute; left: 32%; top: 30%; width: 34%; height: 30%; border: 2px solid var(--ok); border-radius: 4px; box-shadow: 0 0 12px rgb(74 222 128 / .6); animation: pulse3 1.6s ease-in-out infinite; }
+@keyframes pulse3 { 50% { box-shadow: 0 0 22px rgb(74 222 128 / .9); } }
+/* drag reorder */
+.r.dragging { opacity: .35; }
+.ghost { position: fixed; pointer-events: none; z-index: 50; border-radius: 10px; background: rgb(30 36 52 / .95); border: 1px solid var(--accent); box-shadow: 0 16px 40px rgb(0 0 0 / .5), 0 0 20px rgb(90 200 250 / .35); transform: rotate(-1deg); }
+.dropline { height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 10px var(--accent); margin: -1px 10px; }
+.toast2 { position: absolute; left: 50%; bottom: 16px; translate: -50% 40px; opacity: 0; padding: 8px 14px; border-radius: 999px; font: 600 12.5px var(--font-strong); transition: translate .3s cubic-bezier(.34,1.4,.64,1), opacity .2s; z-index: 8;
+          background: rgb(28 31 41 / .96); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.toast2.on { translate: -50% 0; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: opacity .15s !important; } }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+.changes ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.changes li { margin: 4px 0; } .changes b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 8d: <span>the action editor, fancy</span></h1>
+  <p class="lead">8c with polish. <b>Open the HTML</b> and press <b>▶ Play</b>: a glowing playhead walks the steps, the list follows it, finished steps dim, and it stops on a red breakpoint. Also try:
+    <ul style="margin:6px 0 0;color:var(--muted)">
+      <li>drag a row by its ⋮⋮ grip to reorder it;</li>
+      <li>open a step, or Peek into a call: both unfold smoothly;</li>
+      <li>fold a section: its rows slide closed;</li>
+      <li>Open a call, then use ← to come back.</li>
+    </ul></p>
+
+  <section class="look" style="margin-top:20px">
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div></div>
+      <div class="page">
+        <div class="ed">
+          <div class="crumbs" id="crumbs"></div>
+          <div class="head"><span class="meta" id="meta"></span><span class="grow"></span><button class="btn">● Record more</button><button class="playbtn" id="play">▶ Play</button></div>
+          <div class="box panel">
+            <div class="bar2"><span class="search"><input id="q" placeholder="⌕ Search steps" style="all:unset;width:100%;font-size:12px;color:var(--text)"></span>
+              <span class="legend"><span><i style="--c:#a78bfa"></i>keys</span><span><i style="--c:#5ac8fa"></i>clicks</span><span><i style="--c:#4ade80"></i>checks</span><span><i style="--c:#9aa1ad"></i>waits</span><span><i style="--c:#f0abfc"></i>actions</span></span>
+              <span class="grow"></span><span class="jump"><button class="btn" id="jumpbtn">Jump to ▾</button><div class="jumpmenu" id="jumpmenu"></div></span></div>
+            <div class="list" id="list"></div>
+            <div class="toast2" id="toast"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="changes" style="margin-top:22px">
+    <h2>What's new on top of 8c</h2>
+    <ul>
+      <li><b>Steps read like what they do:</b> keys as keycaps, clicks and checks with a thumbnail of their target (and a check's score), waits with a bar as long as the wait.</li>
+      <li><b>Sections:</b> each has its own colour, a glowing dot and a small progress bar while playing. Folding slides the rows closed.</li>
+      <li><b>Play:</b> a green playhead walks the steps and the list follows. Finished steps dim, and a breakpoint flashes red and stops it.</li>
+      <li><b>Motion:</b> settings and Peek unfold, rows slide in, and the breadcrumb animates when you open a call. With reduced-motion turned on, it all becomes plain fades.</li>
+      <li><b>Drag to reorder:</b> the row lifts as a ghost, and a glowing line shows where it lands.</li>
+    </ul>
+  </section>
+</main>
+<script>
+const KINDS = { key: { c: "#a78bfa", ic: "⌨" }, mouse: { c: "#5ac8fa", ic: "🖱" }, check: { c: "#4ade80", ic: "▣" }, wait: { c: "#9aa1ad", ic: "⏱" }, call: { c: "#f0abfc", ic: "⤷" } };
+const SEC_COLOURS = ["#5ac8fa", "#a78bfa", "#4ade80", "#fbbf24", "#f87171", "#f0abfc", "#9aa1ad"];
+const ACTIONS = {
+  speed_raid_fight: { usedBy: ["speed_raid", "raid_challenge"], sections: ["Enter the raid", "Wave 1", "Wave 2", "Wave 3", "Boss", "Collect rewards", "Leave"] },
+  dodge: { usedBy: ["speed_raid_fight", "boss_rush_fight", "raid_fight"], sections: ["Dodge"] },
+  spam_skills: { usedBy: ["speed_raid_fight", "afk_farm"], sections: ["Skills"] },
+};
+const POOL = [
+  { kind: "key", keys: ["Q"] }, { kind: "mouse", target: "Fight.Skill2", th: "s" }, { kind: "key", keys: ["Shift", "E"] }, { kind: "check", verb: "if seen", target: "Dim.Boss.Bar", th: "b", score: ".91" },
+  { kind: "key", keys: ["Space"] }, { kind: "wait", secs: 0.4 }, { kind: "key", keys: ["W"], hold: true }, { kind: "check", verb: "wait for", target: "Dim.Game.Left", th: "l", score: ".84" },
+  { kind: "mouse", target: "Gui.Equip", th: "" }, { kind: "wait", secs: 1.2 }, { kind: "key", keys: ["R"] },
+];
+const cache = {};
+function makeSteps(name) {
+  if (cache[name]) return cache[name];
+  const out = []; let n = 0;
+  ACTIONS[name].sections.forEach((sec, si) => {
+    const count = name === "speed_raid_fight" ? (si === 4 ? 30 : 16) : 8;
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      n += 1;
+      if (name === "speed_raid_fight" && i === 5) { items.push({ n, kind: "call", target: "dodge" }); continue; }
+      if (name === "speed_raid_fight" && i === 10) { items.push({ n, kind: "call", target: "spam_skills" }); continue; }
+      if (name === "speed_raid_fight" && i === 13) { const inner = []; for (let k = 0; k < 3; k++) { n += 1; inner.push({ n, ...POOL[k] }); } items.push({ loop: "repeat until Dim.Boss.Bar is gone", times: "≈ 6×", items: inner }); continue; }
+      items.push({ n, ...POOL[(i * 7 + si * 3) % POOL.length] });
+    }
+    out.push({ section: sec, items });
+  });
+  cache[name] = out;
+  return out;
+}
+const stack = ["speed_raid_fight"];
+const folded = new Set(), peeks = new Set(), BREAKS = new Set([24, 61]);
+let openStep = null, query = "", playing = null, playTimer = null;
+const done = new Set();
+const list = document.getElementById("list");
+function what(s) {
+  if (s.kind === "key") return `<span class="verb">${s.hold ? "hold" : "press"}</span><span class="kc">${s.keys.map((k) => `<kbd>${k}</kbd>`).join("")}</span>`;
+  if (s.kind === "mouse") return `<span class="verb">click</span><span class="thumb2 ${s.th}">${s.target.split(".")[1].toUpperCase().slice(0, 6)}</span><span class="tgt">${s.target}</span>`;
+  if (s.kind === "check") return `<span class="verb">${s.verb}</span><span class="thumb2 ${s.th}">${s.target.split(".").pop().toUpperCase()}</span><span class="tgt">${s.target}</span><span class="score">${s.score}</span>`;
+  if (s.kind === "wait") return `<span class="verb">wait</span><span class="dur"><i style="width:${Math.round(s.secs * 50)}px"></i>${s.secs} s</span>`;
+  const steps = makeSteps(s.target).reduce((sum, sec) => sum + sec.items.length, 0);
+  return `<span class="callchip">⤷ ${s.target}<span class="peek" data-peek="${s.n}">${peeks.has(s.n) ? "Hide" : "Peek"}</span><span class="open" data-open="${s.target}">Open ›</span></span><small class="t">${steps} steps</small>`;
+}
+function text(s) { return s.kind === "key" ? s.keys.join("+") : s.kind === "wait" ? "wait" : s.target; }
+function rowHtml(s, si) {
+  if (s.loop !== undefined) return `<div class="loop"><div class="loophead">↻ ${s.loop} <span class="cnt">${s.times}</span></div>${s.items.map((x) => rowHtml(x, si)).join("")}</div>`;
+  if (query && !text(s).toLowerCase().includes(query)) return "";
+  const k = KINDS[s.kind];
+  const cls = ["r"]; if (openStep === s.n) cls.push("on"); if (playing === s.n) cls.push("playing"); if (done.has(s.n)) cls.push("done");
+  let html = `<div class="${cls.join(" ")}" data-step="${s.n}" data-sec="${si}" style="--c:${k.c}"><span class="grip" data-grip="${s.n}">⋮⋮</span><span class="n">${s.n}</span><span class="ic" style="--c:${k.c}">${k.ic}</span><span class="what">${what(s)}</span><small class="t">${s.kind === "call" ? "" : ""}</small><span class="bp${BREAKS.has(s.n) ? " on" : ""}" data-bp="${s.n}"></span><span class="between"></span></div>`;
+  if (s.kind === "call") {
+    const inner = makeSteps(s.target)[0].items.slice(0, 5);
+    html += `<div class="peekwrap${peeks.has(s.n) ? " on" : ""}"><div><div class="peekbox"><div class="ph"><span>Inside <b>${s.target}</b> · read-only</span><span class="btn" data-open="${s.target}" style="padding:2px 10px">Open to edit ›</span></div>${inner.map((x) => `<div class="r" style="--c:${KINDS[x.kind].c}"><span></span><span class="n">${x.n}</span><span class="ic" style="--c:${KINDS[x.kind].c}">${KINDS[x.kind].ic}</span><span class="what">${what(x)}</span><small></small><span></span></div>`).join("")}<div style="padding:4px 12px;color:var(--faint);font-size:12px">… and 3 more</div></div></div></div>`;
+  } else {
+    html += `<div class="inwrap${openStep === s.n ? " on" : ""}"><div><div class="inline">
+      <div class="f"><span>Step ${s.n}</span><b>${s.kind === "wait" ? "wait" : s.kind === "key" ? (s.hold ? "hold " : "press ") + s.keys.join("+") : (s.verb || "click") + " " + s.target}</b></div>
+      <div class="f"><span>${s.kind === "wait" ? "How long" : s.kind === "check" ? "Look for up to" : s.kind === "key" ? "Hold for" : "Button"}</span><b>${s.kind === "wait" ? s.secs + " s" : s.kind === "check" ? "0.5 s" : s.kind === "key" ? (s.hold ? "until released" : "a tap") : "left"}</b></div>
+      <div class="f"><span>${s.kind === "check" ? "Then" : "Note"}</span><b>${s.kind === "check" ? "call dodge ▾" : "add a note…"}</b></div>
+      <div class="wide"><span class="shotmini"></span><span style="color:var(--muted);font-size:12px">The screen when this step was recorded.</span><span class="grow"></span><button class="btn">⧉ Duplicate</button><button class="btn" style="color:var(--danger)">⌫ Delete</button></div>
+    </div></div></div>`;
+  }
+  return html;
+}
+function countAll(items) { let c = 0; for (const x of items) c += x.loop !== undefined ? x.items.length : 1; return c; }
+function render() {
+  const name = stack[stack.length - 1], data = makeSteps(name);
+  const total = data.reduce((sum, sec) => sum + countAll(sec.items), 0);
+  let html = "";
+  data.forEach((sec, si) => {
+    const nums = []; sec.items.forEach((x) => { if (x.loop !== undefined) x.items.forEach((y) => nums.push(y.n)); else nums.push(x.n); });
+    const doneHere = nums.filter((n) => done.has(n)).length;
+    html += `<div class="sec${folded.has(si) ? " closed" : ""}" data-fold="${si}" id="sec${si}" style="--c:${SEC_COLOURS[si % SEC_COLOURS.length]}"><span class="fold">▾</span><span class="dot2"></span>${sec.section}<code>with d.step("${sec.section}")</code><span class="grow"></span><span class="mbar"><i style="width:${doneHere / nums.length * 100}%"></i></span><small>${nums.length} steps</small></div>`;
+    html += `<div class="secbody${folded.has(si) ? " closed" : ""}"><div>${sec.items.map((x) => rowHtml(x, si)).join("")}</div></div>`;
+  });
+  list.innerHTML = html;
+  document.getElementById("crumbs").innerHTML = (stack.length > 1 ? `<span class="back" data-back="1">←</span>` : "") +
+    `<a data-crumb="-1" style="padding-left:0">Library › Actions</a>` +
+    stack.map((each, i) => i === stack.length - 1 ? `› <b>${each}</b>` : `› <a data-crumb="${i}">${each}</a>`).join(" ") + ` <span class="k act">action</span>`;
+  document.getElementById("meta").innerHTML = `<span class="pillstat">${total} steps</span><span class="pillstat">${data.length} sections</span><span class="usedby">used by ${ACTIONS[name].usedBy.map((u) => `<a>${u}</a>`).join(", ")}</span>`;
+  document.getElementById("jumpmenu").innerHTML = data.map((sec, si) => `<div data-jump="${si}" style="--c:${SEC_COLOURS[si % SEC_COLOURS.length]}"><i></i>${sec.section}<small>${countAll(sec.items)}</small></div>`).join("");
+}
+const toastEl = document.getElementById("toast");
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("on"); clearTimeout(toastEl._t); toastEl._t = setTimeout(() => toastEl.classList.remove("on"), 1800); }
+list.addEventListener("click", (event) => {
+  const t = event.target;
+  if (t.dataset.peek) { const n = Number(t.dataset.peek); if (peeks.has(n)) peeks.delete(n); else peeks.add(n); render(); return; }
+  if (t.dataset.open) { stack.push(t.dataset.open); openStep = null; peeks.clear(); folded.clear(); render(); list.scrollTop = 0; return; }
+  if (t.dataset.bp) { const n = Number(t.dataset.bp); if (BREAKS.has(n)) BREAKS.delete(n); else BREAKS.add(n); render(); return; }
+  const sec = t.closest(".sec");
+  if (sec) { const si = Number(sec.dataset.fold); if (folded.has(si)) folded.delete(si); else folded.add(si); sec.classList.toggle("closed"); sec.nextElementSibling.classList.toggle("closed"); return; }
+  const row = t.closest(".r[data-step]");
+  if (row) { const n = Number(row.dataset.step); openStep = openStep === n ? null : n; render(); }
+});
+document.getElementById("crumbs").addEventListener("click", (event) => {
+  const c = event.target.dataset.crumb, back = event.target.dataset.back;
+  if (back) { stack.pop(); render(); return; }
+  if (c !== undefined && Number(c) >= 0) { stack.length = Number(c) + 1; render(); }
+});
+const jumpmenu = document.getElementById("jumpmenu");
+document.getElementById("jumpbtn").addEventListener("click", () => jumpmenu.classList.toggle("on"));
+jumpmenu.addEventListener("click", (event) => { const j = event.target.closest("[data-jump]"); if (!j) return; jumpmenu.classList.remove("on"); const el = document.getElementById("sec" + j.dataset.jump); list.scrollTop = el.offsetTop - list.offsetTop; });
+document.getElementById("q").addEventListener("input", (event) => { query = event.target.value.toLowerCase(); render(); });
+
+// play: walk the steps, follow them, stop on a breakpoint
+const playBtn = document.getElementById("play");
+function order() { const nums = []; for (const sec of makeSteps(stack[stack.length - 1])) for (const x of sec.items) { if (x.loop !== undefined) x.items.forEach((y) => nums.push(y.n)); else nums.push(x.n); } return nums; }
+function stopPlay(msg) { clearInterval(playTimer); playTimer = null; playBtn.classList.remove("running"); playBtn.textContent = "▶ Play"; if (msg) toast(msg); }
+playBtn.addEventListener("click", () => {
+  if (playTimer) { stopPlay("Paused"); return; }
+  const nums = order();
+  let i = playing ? nums.indexOf(playing) + 1 : 0;
+  playBtn.classList.add("running"); playBtn.textContent = "❚❚ Pause";
+  playTimer = setInterval(() => {
+    if (playing) done.add(playing);
+    if (i >= nums.length) { playing = null; render(); stopPlay("Finished"); return; }
+    playing = nums[i]; i += 1;
+    render();
+    const el = list.querySelector(`.r[data-step="${playing}"]`);
+    if (el) list.scrollTop = el.offsetTop - list.clientHeight / 2;
+    if (BREAKS.has(playing)) { el && el.classList.add("hitbp"); stopPlay(`Breakpoint at step ${playing}`); }
+  }, 260);
+});
+
+// drag to reorder (moves the row inside its section)
+let drag = null, ghost = null, line = null;
+list.addEventListener("pointerdown", (event) => {
+  const g = event.target.dataset.grip; if (!g) return;
+  event.preventDefault();
+  const row = event.target.closest(".r");
+  drag = { n: Number(g), row };
+  row.classList.add("dragging");
+  ghost = row.cloneNode(true); ghost.classList.add("ghost"); ghost.style.width = row.offsetWidth + "px"; document.body.appendChild(ghost);
+  line = document.createElement("div"); line.className = "dropline";
+  moveGhost(event);
+});
+function moveGhost(event) {
+  ghost.style.left = event.clientX - 30 + "px"; ghost.style.top = event.clientY - 18 + "px";
+  const rows = [...list.querySelectorAll(".secbody .r[data-step]")];
+  let target = null;
+  for (const r of rows) { const b = r.getBoundingClientRect(); if (event.clientY < b.top + b.height / 2) { target = r; break; } }
+  if (target) target.parentNode.insertBefore(line, target);
+}
+window.addEventListener("pointermove", (event) => { if (drag) moveGhost(event); });
+window.addEventListener("pointerup", () => {
+  if (!drag) return;
+  const next = line.nextElementSibling;
+  if (next && next.dataset.step && Number(next.dataset.step) !== drag.n) {
+    for (const sec of makeSteps(stack[stack.length - 1])) {
+      const from = sec.items.findIndex((x) => x.n === drag.n);
+      const to = sec.items.findIndex((x) => x.n === Number(next.dataset.step));
+      if (from >= 0 && to >= 0) { const [item] = sec.items.splice(from, 1); sec.items.splice(to > from ? to - 1 : to, 0, item); toast(`Moved step ${drag.n}`); }
+    }
+  }
+  ghost.remove(); line.remove(); drag = null; render();
+});
+
+if (location.hash.includes("demo")) { openStep = 3; peeks.add(6); done.add(1); done.add(2); playing = 3; }
+render();
+</script>
+</body>
+</html>

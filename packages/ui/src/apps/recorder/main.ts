@@ -1,4 +1,4 @@
-// recorder: see docs/tasks/README.md for the task that builds this window.
+// The recorder bar (desktop/record_window.py): mounts once connected, since it only shows a live recording.
 import { mount } from "svelte";
 import { connect, request } from "$lib/api";
 import { listen, setKeymap } from "$lib/keymap";
@@ -6,13 +6,15 @@ import { startTheme } from "$lib/theme";
 import App from "./App.svelte";
 
 startTheme();
-mount(App, { target: document.getElementById("app")! });
+
+const target = document.getElementById("app")!;
 
 connect()
   .then(async () => {
     setKeymap(await request("keymap.get"), "app");
     listen();
+    mount(App, { target });
   })
   .catch(() => {
-    // opened without darbit's server (e.g. npm run dev on its own): the app still shows, without data
+    target.textContent = "The recorder needs darbit's local server: start it from darbit Studio.";
   });

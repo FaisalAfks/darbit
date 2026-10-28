@@ -155,3 +155,35 @@ def test_mistakes_in_the_calls_say_what_is_wrong(call, message, monkeypatch):
     monkeypatch.setattr(d.settings, "log", False)
     with pytest.raises((ValueError, TypeError), match=message):
         call()
+
+
+def test_the_plan_shows_steps_still_to_come_and_gains_add_up(tmp_path):
+    events = [
+        {"time": "09:00:00", "event": "plan", "steps": ["Raid", "Speed Raid", "AFK"]},
+        {"time": "09:01:00", "event": "step", "step": "Speed Raid", "state": "started"},
+        {"time": "09:02:00", "event": "gain", "name": "Gems", "amount": 100, "total": 900, "icon": "◆"},
+        {"time": "09:03:00", "event": "gain", "name": "Gems", "amount": 20, "total": 920},
+        {"time": "09:04:00", "event": "gain", "name": "Gold", "amount": "lots"},
+    ]
+    tiles = by_kind(dashboard.tiles(project_with(tmp_path, events), TODAY, NOON))
+    steps = tiles["round"].data["steps"]
+    assert [(row["name"], row["state"]) for row in steps] == [
+        ("Raid", "planned"),
+        ("Speed Raid", "running"),
+        ("AFK", "planned"),
+    ]
+    assert tiles["gains"].data["items"] == [{"name": "Gems", "today": 120, "total": 920, "icon": "◆"}]
+    assert "activity" not in tiles  # gains and plans are darbit's own detail
+
+
+def test_a_growing_report_is_read_a_bit_at_a_time(tmp_path):
+    from darbit.server import dashboard as board
+
+    report = tmp_path / "report.jsonl"
+    report.write_text('{"event": "a"}\n{"event": "b"}\n{"event": "c', encoding="utf-8")  # the last line isn't done
+    assert [event["event"] for event in board.read_events(report)] == ["a", "b"]
+    with report.open("a", encoding="utf-8") as file:
+        file.write('"}\nnot json\n{"event": "d"}\n')
+    assert [event["event"] for event in board.read_events(report)] == ["a", "b", "c", "d"]
+    report.write_text('{"event": "new day"}\n', encoding="utf-8")  # shorter: started again
+    assert [event["event"] for event in board.read_events(report)] == ["new day"]

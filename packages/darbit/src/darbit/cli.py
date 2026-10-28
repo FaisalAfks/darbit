@@ -115,13 +115,21 @@ def _app(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="darbit app", description="Open darbit Studio.")
     parser.add_argument("--debug", action="store_true", help="with the browser's developer tools")
     args = parser.parse_args(argv)
+    from . import server
+
+    current = server.running()
+    if current is not None:
+        import ctypes
+
+        ctypes.windll.user32.AllowSetForegroundWindow(-1)  # this launch may come to the front; let the Studio instead
+    if current is not None and server.show_studio(current):
+        print("darbit Studio is already open (it was in the tray).")
+        return 0
     try:
-        from .desktop import open_window, run
-    except ImportError:
-        print('darbit Studio needs the app extra: pip install "darbit[app]"')
-        return 2
-    try:
-        open_window("hub")
+        from .desktop import run
+        from .desktop.studio import open_studio
+
+        open_studio()
     except ImportError:
         print('darbit Studio needs the app extra: pip install "darbit[app]"')
         return 2

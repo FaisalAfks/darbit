@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio results, rows</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 780px; }
+.page { flex-direction: row; overflow: hidden; }
+.days { width: 200px; flex: none; padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+.day { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 8px; padding: 9px 10px; border-radius: 10px; font-size: 12.5px; }
+.day.on { background: rgb(90 200 250 / .12); box-shadow: inset 2px 0 0 var(--accent); }
+.day b { font: 650 13px var(--font-strong); display: flex; align-items: center; gap: 6px; }
+.day b i { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); display: inline-block; }
+.day span { color: var(--ok); font: 700 12px var(--font-strong); }
+.day small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.sep2 { height: 1px; background: var(--line); margin: 6px 4px; }
+.weekrow { padding: 8px 10px; font-size: 12px; color: var(--muted); }
+.weekrow b { color: var(--text); }
+.story { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow: hidden; }
+.sum { padding: 16px 18px; display: grid; gap: 10px; }
+.sum .top { display: flex; align-items: baseline; gap: 12px; }
+.sum h4 { margin: 0; font: 700 21px var(--font-strong); }
+.sum .sub { color: var(--muted); font-size: 12.5px; }
+.sentence { font-size: 15px; line-height: 1.6; color: var(--muted); }
+.sentence b { color: var(--text); }
+.sentence .g { color: var(--ok); font-weight: 700; }
+.alert { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px;
+         background: linear-gradient(90deg, rgb(248 113 113 / .14), rgb(248 113 113 / .04)); border: 1px solid rgb(248 113 113 / .3); font-size: 13px; }
+.alert .ico { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgb(248 113 113 / .2); color: var(--danger); font-weight: 800; }
+.alert small { display: block; color: var(--muted); font-size: 11.5px; }
+.ledger { padding: 6px 16px 10px; }
+.ledger h5, .time h5 { margin: 10px 0 4px; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 600 11px var(--font-strong); color: var(--faint); padding: 4px 6px; }
+th.r, td.r { text-align: right; }
+td { padding: 8px 6px; border-top: 1px solid var(--line); vertical-align: middle; }
+td .nm { display: flex; align-items: center; gap: 9px; font-weight: 600; }
+td .ic { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; background: color-mix(in oklab, var(--c) 22%, transparent); color: var(--c); }
+td .plus { color: var(--ok); font: 700 13.5px var(--font-strong); }
+td .muted { color: var(--muted); }
+.spark { display: flex; gap: 2px; align-items: end; height: 20px; width: 110px; }
+.spark i { flex: 1; border-radius: 2px; background: color-mix(in oklab, var(--c) 60%, transparent); }
+.spark i.on { background: var(--c); }
+.prog { display: flex; align-items: center; gap: 8px; }
+.prog .bar { width: 110px; height: 6px; border-radius: 999px; background: rgb(255 255 255 / .08); overflow: hidden; }
+.prog .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.time { padding: 4px 16px 12px; display: grid; gap: 6px; }
+.tl-head { display: flex; align-items: center; gap: 8px; }
+.tl-head .grow { flex: 1; }
+.zoom { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(255 255 255 / .06); }
+.zoom span { padding: 2px 9px; font: 600 11px var(--font-strong); color: var(--muted); }
+.zoom b { padding: 0 8px; }
+.hours { display: grid; grid-template-columns: 92px repeat(12, 1fr); font-size: 10px; color: var(--faint); }
+.lane { display: grid; grid-template-columns: 92px 1fr; align-items: center; font-size: 12px; height: 24px; }
+.track { position: relative; height: 20px; border-radius: 6px; background: rgb(255 255 255 / .04); }
+.track i { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; background: rgb(90 200 250 / .55); }
+.track i.ok { background: rgb(74 222 128 / .55); } .track i.bad { background: rgb(248 113 113 / .85); } .track i.idle { background: rgb(255 255 255 / .1); }
+.code { margin-top: 16px; font: 12.5px/1.7 var(--mono); padding: 16px 18px; border-radius: 14px; background: #0d1018; border: 1px solid var(--line); color: var(--text); white-space: pre; overflow: auto; }
+.code .c { color: var(--faint); } .code .f { color: var(--accent); } .code .s { color: var(--ok); } .code .n { color: var(--warn); }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+.changes ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.changes li { margin: 4px 0; } .changes b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 5d: <span>Results in rows, set up from code</span></h1>
+  <p class="lead">No tile grids. The day starts with one plain sentence, a problem shows as a single line only when there is one, and gains and progress share one table. Each row shows today's number, the week as a small bar chart, and the total. The bot sets everything up from its code with <code>d.record</code>; there's nothing to configure.</p>
+
+  <section class="look" style="margin-top:30px">
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span class="on">Results</span><span>Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+      <div class="page">
+        <div class="days panel">
+          <div class="weekrow">This week <b style="color:var(--ok)">+8 420 gems</b></div>
+          <div class="sep2"></div>
+          <div class="day"><b>Today</b><span>+640</span><small>running · 4 h</small></div>
+          <div class="day"><b>Saturday</b><span>+1 510</span><small>9 h</small></div>
+          <div class="day"><b>Friday</b><span>+1 620</span><small>10 h</small></div>
+          <div class="day on"><b>Thursday <i></i></b><span>+1 240</span><small>10 h 38 m · 1 problem</small></div>
+          <div class="day"><b>Wednesday</b><span>+1 380</span><small>8 h</small></div>
+          <div class="day"><b>Tuesday</b><span>+1 090</span><small>8 h</small></div>
+          <div class="day"><b>Monday</b><span>+980</span><small>6 h</small></div>
+          <div class="sep2"></div>
+          <div class="weekrow" style="color:var(--accent)">Older days ›</div>
+        </div>
+        <div class="story">
+          <div class="sum panel">
+            <div class="top"><h4>Thursday, Oct 23</h4><span class="sub">08:02 – 18:40</span></div>
+            <div class="sentence">Ran <b>10 h 38 m</b> and earned <span class="g">+1 240 gems</span> and <span class="g">+5 300 gold</span>. It finished <b>62%</b> of its rounds (usually 91%) and lost about <b>1 h 40 m</b> to one problem.</div>
+            <div class="alert"><span class="ico">!</span><div><b>The Leave button wasn't found, 4 times</b><small>12:58 – 14:02 · best .71, needs .80 · likely the game update</small></div><button class="btn primary">▣ Retake</button><button class="btn">◎ Show me</button></div>
+          </div>
+          <div class="ledger panel">
+            <h5><span>What it got</span><span>today · this week · total</span></h5>
+            <table>
+              <tr><th>Name</th><th class="r">Today</th><th>This week</th><th class="r">Total</th></tr>
+              <tr><td><span class="nm"><span class="ic" style="--c:#5ac8fa">◆</span>Gems</span></td><td class="r"><span class="plus">+1 240</span></td><td><span class="spark" style="--c:#5ac8fa"><i style="height:50%"></i><i style="height:56%"></i><i style="height:70%"></i><i class="on" style="height:63%"></i><i style="height:84%"></i><i style="height:78%"></i><i style="height:33%"></i></span></td><td class="r muted">48 210</td></tr>
+              <tr><td><span class="nm"><span class="ic" style="--c:#fbbf24">●</span>Gold</span></td><td class="r"><span class="plus">+5 300</span></td><td><span class="spark" style="--c:#fbbf24"><i style="height:60%"></i><i style="height:52%"></i><i style="height:66%"></i><i class="on" style="height:58%"></i><i style="height:80%"></i><i style="height:74%"></i><i style="height:30%"></i></span></td><td class="r muted">212 900</td></tr>
+              <tr><td><span class="nm"><span class="ic" style="--c:#a78bfa">▣</span>Chests</span></td><td class="r"><span class="plus">+3</span></td><td><span class="spark" style="--c:#a78bfa"><i style="height:30%"></i><i style="height:60%"></i><i style="height:30%"></i><i class="on" style="height:90%"></i><i style="height:60%"></i><i style="height:30%"></i><i style="height:0%"></i></span></td><td class="r muted">2 rare</td></tr>
+              <tr><td><span class="nm"><span class="ic" style="--c:#4ade80">✓</span>Weekly characters</span></td><td class="r"><span class="plus">+18</span></td><td><span class="prog"><span class="bar"><i style="width:69%"></i></span></span></td><td class="r muted">92 / 133</td></tr>
+              <tr><td><span class="nm"><span class="ic" style="--c:#4ade80">✓</span>Raid</span></td><td class="r"><span class="plus">1</span></td><td><span class="prog"><span class="bar"><i style="width:100%"></i></span></span></td><td class="r muted">1 / 1 today</td></tr>
+            </table>
+          </div>
+          <div class="time panel">
+            <div class="tl-head"><h5 style="flex:none"><span>Timeline</span></h5><span class="grow"></span><div class="zoom"><b>−</b><span>Whole day</span><b>+</b></div></div>
+            <div class="hours"><span></span><span>00</span><span>02</span><span>04</span><span>06</span><span>08</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span><span>22</span></div>
+            <div class="lane"><span>Raid</span><div class="track"><i class="ok" style="left:34%;width:3%"></i></div></div>
+            <div class="lane"><span>Speed Raid</span><div class="track"><i style="left:37.5%;width:14%"></i><i class="bad" style="left:54%;width:.6%"></i><i class="bad" style="left:55.5%;width:.6%"></i><i class="bad" style="left:57%;width:.6%"></i><i class="bad" style="left:58.4%;width:.6%"></i><i style="left:60%;width:9%"></i></div></div>
+            <div class="lane"><span>AFK</span><div class="track"><i class="idle" style="left:70%;width:7.8%"></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="code"><span class="c"># In the bot's code: each call adds a row. The first one recorded leads the day list.</span>
+<span class="f">d.record.gain</span>(<span class="s">"Gems"</span>, <span class="n">120</span>, total=<span class="n">48210</span>, icon=<span class="s">"◆"</span>)     <span class="c"># adds to today, shows the last total</span>
+<span class="f">d.record.gain</span>(<span class="s">"Gold"</span>, <span class="n">500</span>, total=<span class="n">212900</span>, icon=<span class="s">"●"</span>)
+<span class="f">d.record.gain</span>(<span class="s">"Chests"</span>, <span class="n">1</span>, note=<span class="s">"rare"</span>)
+<span class="f">d.progress</span>(<span class="s">"Weekly characters"</span>, <span class="n">92</span>, <span class="n">133</span>)                  <span class="c"># already exists: a progress row</span>
+<span class="f">d.record</span>(<span class="s">"speed raid done"</span>, character=<span class="s">"Sakura"</span>)           <span class="c"># plain events still work: the timeline and log</span></div>
+    <p class="note">The <b>sentence</b> is built from the same numbers: run time, the first two gains, the share of rounds finished compared with usual, and time lost. Timeline lanes are the bot's top-level steps.</p>
+  </section>
+
+  <section class="changes" style="margin-top:24px">
+    <h2>What changed from 5c</h2>
+    <ul>
+      <li><b>Set up from code:</b> <code>d.record.gain(...)</code> and <code>d.progress(...)</code>. There's no <code>[studio.results]</code> table.</li>
+      <li><b>No tiles:</b> one sentence for the day, and one table for gains and progress (today, the week, total).</li>
+      <li><b>Day list:</b> the date, the lead gain and how long it ran. A red dot marks a day with a problem.</li>
+      <li><b>Needs you:</b> one line under the sentence, only when there's a problem. <b>Totals</b> merged into the table.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

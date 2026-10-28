@@ -124,7 +124,8 @@ def test_the_overview_comes_from_the_report(bot):
     assert overview["project"]["name"] == "tick-bot"
     kinds = [tile["kind"] for tile in overview["tiles"]]
     assert kinds[:3] == ["now", "round", "progress"]
-    assert hub.reports_days({"path": str(bot)}) == [today]
+    listed = hub.results_days({"path": str(bot)})
+    assert [entry["day"] for entry in listed] == [today]
 
 
 def test_settings_are_read_and_saved(bot):
@@ -144,7 +145,8 @@ def test_the_library_has_thumbnails_and_scores(bot):
     (state / "check.jsonl").write_text(json.dumps({"name": "Gui.Play.png", "score": 0.97}) + "\n", encoding="utf-8")
     library = hub.library_list({"path": str(bot)})
     assert library[0]["name"] == "Gui.Play"
-    assert library[0]["score"] == 0.97
+    assert library[0]["scores"] == [0.97]
+    assert library[0]["kind"] == "image"
     assert library[0]["thumbnail"].startswith("data:image/png;base64,")
 
 
@@ -168,3 +170,57 @@ def test_ui_settings_stay_in_the_temporary_folder(bot, tmp_path):
     ui_settings.set_value("x", 1)
     assert (tmp_path / "config" / "ui.json").is_file()
     assert Path(sys.executable).exists()
+
+
+def test_a_bot_with_an_older_darbit_is_ended_at_once(tmp_path, monkeypatch):
+    from darbit.platform import input as device
+
+    safety = tmp_path / ".venv" / "Lib" / "site-packages" / "darbit" / "platform" / "safety.py"
+    safety.parent.mkdir(parents=True)
+    safety.write_text('"""v0.3.0: no control folder."""\n', encoding="utf-8")
+    assert not hub.understands_control(tmp_path)
+    safety.write_text('CONTROL = "DARBIT_CONTROL"\n', encoding="utf-8")
+    assert hub.understands_control(tmp_path)
+    assert hub.understands_control(tmp_path / "no-env")  # runs with the Studio's own darbit
+
+    ended = []
+
+    def let_go():
+        ended.append("let go")
+
+    def known(data):
+        return Path(data["path"])
+
+    monkeypatch.setattr(hub, "end_tree", ended.append)
+    monkeypatch.setattr(device, "let_go_of_everything", let_go)
+    monkeypatch.setattr(hub, "_folder", known)
+    safety.write_text('"""old"""\n', encoding="utf-8")
+
+    class Stubborn:
+        pid = 4242
+
+        def poll(self):
+            return None
+
+        def wait(self, timeout):
+            raise hub.subprocess.TimeoutExpired("bot", timeout)
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "old-bot"\n', encoding="utf-8")
+    hub.control_dir(tmp_path).mkdir(parents=True)
+    monkeypatch.setitem(hub._runs, str(tmp_path), hub.Run(tmp_path, Stubborn(), 0.0))
+    assert hub.project_stop({"path": str(tmp_path)}) == {"status": "stopped"}
+    assert ended == [4242, "let go"]  # the whole tree, then every key let go
+
+
+def test_a_bot_an_earlier_studio_started_is_still_known(tmp_path, monkeypatch):
+    import os
+
+    monkeypatch.setattr(hub, "_runs", {})
+    control = hub.control_dir(tmp_path)
+    control.mkdir(parents=True)
+    (control / "pid").write_text("999999", encoding="utf-8")  # long gone
+    assert hub.status(tmp_path) == "stopped"
+    assert not (control / "pid").exists()
+    (control / "pid").write_text(str(os.getpid()), encoding="utf-8")  # alive: this test's own process
+    assert hub.status(tmp_path) == "running"
+    assert isinstance(hub._runs[str(tmp_path)].process, hub.Earlier)

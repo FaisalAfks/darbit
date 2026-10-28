@@ -13,7 +13,7 @@ import time
 from ctypes import wintypes
 
 from . import safety
-from .keys import Key, Keys, key
+from .keys import Key, Keys, key, names
 
 _user32 = ctypes.WinDLL("user32", use_last_error=True)
 _ULONG_PTR = ctypes.c_size_t
@@ -60,11 +60,13 @@ _user32.GetSystemMetrics.argtypes = (ctypes.c_int,)
 
 _MOUSE, _KEYBOARD = 0, 1
 _MOVE, _WHEEL, _VIRTUALDESK, _ABSOLUTE = 0x0001, 0x0800, 0x4000, 0x8000
+_HWHEEL = 0x01000
 _KEYUP, _EXTENDED, _UNICODE = 0x0002, 0x0001, 0x0004
 _BUTTONS = {"left": (0x0002, 0x0004), "right": (0x0008, 0x0010), "middle": (0x0020, 0x0040)}
 
 STEP = 0.004  # pause between glide steps
 EVENT_DELAY = 0.010  # after every press and release, like SikuliX
+MOVE_BY_STEP = 0.01  # seconds between the small moves of a move_by
 DRAG_DELAY = 0.3  # before pressing, after pressing, and before letting go in a drag, like SikuliX
 
 _lock = threading.RLock()
@@ -80,6 +82,11 @@ def _send(*events: _INPUT) -> None:
 
 def _desktop() -> tuple[int, int, int, int]:
     return tuple(_user32.GetSystemMetrics(i) for i in (76, 77, 78, 79))  # type: ignore[return-value]
+
+
+def desktop() -> tuple[int, int, int, int]:
+    """Every screen together: x, y, width, height."""
+    return _desktop()
 
 
 def _move_event(x: int, y: int) -> _INPUT:
@@ -144,6 +151,32 @@ def move(x: int, y: int, glide: float) -> None:
             time.sleep(STEP)
     with _lock:
         _send(_move_event(x, y))
+
+
+def move_by(dx: int, dy: int, seconds: float) -> None:
+    """Move the mouse by (dx, dy) counts, spread over `seconds`. Games that lock the cursor (a camera) read these."""
+    safety.check()
+    parts = max(1, round(seconds / MOVE_BY_STEP))
+    sent_x = 0
+    sent_y = 0
+    started = time.perf_counter()
+    for part in range(1, parts + 1):
+        safety.check()
+        target_x = round(dx * part / parts)
+        target_y = round(dy * part / parts)
+        event = _INPUT(type=_MOUSE)
+        event.mi.dx = target_x - sent_x
+        event.mi.dy = target_y - sent_y
+        event.mi.dwFlags = _MOVE  # relative: no _ABSOLUTE
+        if event.mi.dx or event.mi.dy:
+            with _lock:
+                _send(event)
+        sent_x = target_x
+        sent_y = target_y
+        due = started + seconds * part / parts
+        left = due - time.perf_counter()
+        if left > 0:
+            time.sleep(left)
 
 
 def mouse_down(button: str = "left") -> None:
@@ -233,6 +266,72 @@ def write(text: str) -> None:
                 _send(_unicode_event(unit, up=False))
                 _send(_unicode_event(unit, up=True))
         time.sleep(EVENT_DELAY)
+
+
+# ------------------------------------------------------------- the tape's input
+
+
+def key_now(what: Key | str, up: bool) -> None:
+    """A key down or up, sent at once with no pause after it, kept track of for release_all."""
+    chosen = key(what)
+    with _lock:
+        if up:
+            if chosen in _held_keys:
+                _send(_key_event(chosen, up=True))
+                _held_keys.pop(chosen, None)
+        elif chosen not in _held_keys:
+            _send(_key_event(chosen, up=False))
+            _held_keys[chosen] = None
+
+
+def button_now(button: str, up: bool) -> None:
+    """A mouse button down or up where the cursor is, sent at once."""
+    with _lock:
+        if up:
+            if button in _held_buttons:
+                _send(_button_event(_BUTTONS[button][1]))
+                _held_buttons.discard(button)
+        elif button not in _held_buttons:
+            _send(_button_event(_BUTTONS[button][0]))
+            _held_buttons.add(button)
+
+
+def nudge(dx: int, dy: int) -> None:
+    """One relative mouse packet, like the mouse sends: what a game that holds the cursor turns its camera by."""
+    event = _INPUT(type=_MOUSE)
+    event.mi.dx = dx
+    event.mi.dy = dy
+    event.mi.dwFlags = _MOVE
+    with _lock:
+        _send(event)
+
+
+def place(x: int, y: int) -> None:
+    """Put the cursor at (x, y) at once."""
+    with _lock:
+        _send(_move_event(x, y))
+
+
+def wheel_now(notches: int, sideways: bool = False) -> None:
+    event = _INPUT(type=_MOUSE)
+    event.mi.mouseData = ctypes.c_uint32(notches * 120).value
+    event.mi.dwFlags = _HWHEEL if sideways else _WHEEL
+    with _lock:
+        _send(event)
+
+
+def let_go_of_everything() -> None:
+    """Send a release for every key and mouse button, held or not: after a bot is ended by force, whatever it
+    was holding (W while walking) would otherwise stay down in Windows."""
+    events = []
+    for name in names():
+        events.append(_key_event(key(name), up=True))
+    for _, up_flag in _BUTTONS.values():
+        events.append(_button_event(up_flag))
+    with _lock:
+        _send(*events)
+        _held_keys.clear()
+        _held_buttons.clear()
 
 
 def release_all() -> None:

@@ -16,5 +16,7 @@ Architecture decision records: one short file per decision, with its context, th
 | [0010](0010-flows-are-python.md) | Run files and flows are saved as `@d.flow` Python | 2026-10-26 |
 | [0011](0011-what-a-bot-shows.md) | What a bot shows in the Studio | 2026-10-26 |
 | [0012](0012-design-standards.md) | The UI follows Fluent 2's scales and WCAG 2.2 AA | 2026-10-26 |
+| [0013](0013-studio-redesign.md) | darbit Studio's redesign | 2026-10-26 |
+| [0014](0014-input-tapes.md) | Recorded input is a tape | 2026-10-28 |
 
 The full plan these came from: [plan-2026-10-25.md](../plan-2026-10-25.md).

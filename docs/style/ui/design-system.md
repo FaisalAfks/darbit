@@ -1,6 +1,6 @@
 # Design system
 
-One look for every darbit surface: the hub app, the capture tool, highlight, the recorder bar, the run panel and the VS Code webviews. Everything here lives in `packages/ui/src/lib/tokens/` and `packages/ui/src/lib/components/`. The mockups are in [mockups.html](../../ui/mockups.html).
+One look for every darbit surface: the hub app, the capture tool, highlight, the recorder bar, the run panel and the VS Code webviews. Everything here lives in `packages/ui/src/lib/tokens/` and `packages/ui/src/lib/components/`. The mockups are in [mockups.html](../../ui/mockups.html); the Studio's redesign (decision 0013) is in [docs/ui/redesign/](../../ui/redesign/README.md).
 
 ## Principles
 

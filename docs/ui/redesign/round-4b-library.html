@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio library, richer</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 660px; }
+/* richer cards */
+.grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; overflow: visible; }
+.cell { position: relative; padding: 8px; gap: 7px; border: 1px solid transparent; transition: transform .2s var(--ease), box-shadow .2s var(--ease), opacity .2s var(--ease), border-color .2s; }
+.grid.has-sel .cell:not(.sel) { opacity: .62; }
+.cell.sel { transform: translateY(-3px) scale(1.03); border-color: var(--accent); background: rgb(90 200 250 / .1);
+            box-shadow: 0 0 0 3px rgb(90 200 250 / .18), 0 12px 28px rgb(0 0 0 / .45), 0 0 26px rgb(90 200 250 / .3); z-index: 1; }
+.cell.sel::after { content: "✓"; position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                   background: var(--accent); color: var(--on-accent); font: 800 11px var(--font-strong); box-shadow: 0 0 0 3px #131826; }
+.cell .thumb { height: 58px; position: relative; overflow: hidden; }
+.cell .thumb .reg { position: absolute; right: 4px; top: 4px; font: 700 9px var(--font-strong); padding: 0 5px; border-radius: 999px; color: var(--kind-region); background: rgb(0 0 0 / .45); }
+.cell .name { font: 650 12px var(--font-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cell .meta { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 10.5px; }
+.cell .meta .grow { flex: 1; }
+.meter { height: 4px; border-radius: 999px; background: rgb(255 255 255 / .08); position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--ok); }
+.meter i.w { background: var(--warn); } .meter i.r { background: var(--danger); }
+.meter b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); border-radius: 2px; opacity: .7; }
+/* inspector with the screen in context */
+.inspector { width: 340px; gap: 12px; overflow: hidden; }
+.ctx { position: relative; height: 170px; border-radius: 12px; overflow: hidden; background: linear-gradient(160deg, #31405a 0%, #1d2638 55%, #2b1f3a 100%); }
+.ctx .fake { position: absolute; border-radius: 6px; background: rgb(255 255 255 / .08); }
+.ctx .regbox { position: absolute; border: 1.5px dashed var(--kind-region); border-radius: 5px; background: rgb(167 139 250 / .06); }
+.ctx .hl { position: absolute; border: 2px solid var(--kind-image); border-radius: 5px; box-shadow: 0 0 0 9999px rgb(0 0 0 / .4), 0 0 16px rgb(90 200 250 / .6); animation: pulse2 1.6s ease-in-out infinite; }
+.ctx .tag2 { position: absolute; padding: 1px 7px; border-radius: 999px; font: 700 10px var(--font-strong); background: var(--kind-image); color: var(--on-accent); }
+.ctx .corner { position: absolute; left: 8px; bottom: 8px; font: 600 10px var(--font-strong); color: var(--text); background: rgb(0 0 0 / .5); padding: 2px 8px; border-radius: 999px; }
+.ctx .zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; }
+.ctx .zoom span { padding: 2px 8px; border-radius: 999px; background: rgb(0 0 0 / .5); font: 600 10px var(--font-strong); }
+.pair2 { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: center; }
+.pair2 .thumb { height: 46px; font-size: 11px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stats div { padding: 7px; border-radius: 10px; background: rgb(255 255 255 / .05); display: grid; gap: 1px; }
+.stats small { color: var(--muted); font-size: 10px; }
+.stats b { font: 700 14px var(--font-strong); }
+.spark { display: flex; gap: 2px; align-items: end; height: 22px; }
+.spark i { flex: 1; border-radius: 2px; background: rgb(74 222 128 / .7); }
+.spark i.w { background: rgb(251 191 36 / .8); }
+.tabs2 { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgb(255 255 255 / .06); width: max-content; }
+.tabs2 span { padding: 3px 11px; border-radius: 999px; font: 600 11px var(--font-strong); color: var(--muted); }
+.tabs2 span.on { background: rgb(255 255 255 / .14); color: var(--text); }
+/* variant 2: screen on top, strip below */
+.stack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.bigscreen { position: relative; flex: 1; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #31405a 0%, #1d2638 55%, #2b1f3a 100%); }
+.bigscreen .fake { position: absolute; border-radius: 8px; background: rgb(255 255 255 / .08); }
+.bigscreen .box { position: absolute; border: 1.5px solid rgb(90 200 250 / .55); border-radius: 6px; background: rgb(90 200 250 / .06); }
+.bigscreen .box span { position: absolute; left: -1px; top: -18px; padding: 0 6px; border-radius: 6px 6px 6px 0; font: 700 9.5px var(--font-strong); background: rgb(90 200 250 / .55); color: var(--on-accent); white-space: nowrap; }
+.bigscreen .box.sel { border: 2px solid var(--kind-image); background: rgb(90 200 250 / .12); box-shadow: 0 0 0 9999px rgb(0 0 0 / .32), 0 0 20px rgb(90 200 250 / .6); z-index: 1; }
+.bigscreen .box.sel span { background: var(--kind-image); }
+.bigscreen .box.reg { border: 1.5px dashed var(--kind-region); background: none; }
+.bigscreen .box.reg span { background: var(--kind-region); }
+.bigscreen .box.miss { border: 1.5px dashed var(--danger); background: rgb(248 113 113 / .08); }
+.bigscreen .box.miss span { background: var(--danger); }
+.bigscreen .box.pt { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--kind-point); }
+.bigscreen .box.pt span { background: var(--kind-point); }
+.bigscreen .hud { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; z-index: 2; }
+.bigscreen .hud span { padding: 3px 10px; border-radius: 999px; background: rgb(0 0 0 / .5); font: 600 11px var(--font-strong); }
+.strip2 { display: flex; gap: 8px; overflow: hidden; flex: none; }
+.strip2 .cell { width: 132px; flex: none; }
+.note { max-width: 120ch; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 4b: <span>a richer Library</span></h1>
+  <p class="lead">Built on A, with three improvements. The <b>selection</b> lifts and glows, gets a check mark, and the other cards fade. Each <b>card</b> shows more: its score against its similarity line, how often it's used, whether it has a search region, and a warning when it's weak. And C's <b>on-the-screen view</b> is built in. Two ways to do that last part:</p>
+
+  <!-- V1 -->
+  <section class="look" style="margin-top:36px">
+    <div class="about"><h2><span class="tag">1</span>The screen in the inspector</h2><p>The grid stays the main view. The inspector opens with the selected asset on its screen, glowing inside its search region. Below that are its numbers and its history. Click the preview to make it full size.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3">
+        <div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span>
+        <div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span>
+        <div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div>
+      </div>
+      <div class="page">
+        <div class="col" style="flex:1;min-width:0">
+          <div class="head"><span class="search">⌕ Search 172 assets</span><span class="chipf on">All</span><span class="chipf">Images</span><span class="chipf">Regions</span><span class="chipf">Points</span><span class="chipf">Actions</span><span class="chipf" style="color:var(--danger)">Missing 7</span><span class="chipf" style="color:var(--warn)">Weak 2</span><span class="grow"></span><button class="btn primary">▣ Capture</button><button class="btn">● Record</button></div>
+          <div class="group"><span>Lobby · 12</span><span>sort: screen ▾</span></div>
+          <div class="grid has-sel">
+            <div class="cell sel"><div class="thumb">Play<span class="reg">▭ Menu</span></div><div class="name">Lobby.Play</div><div class="meter"><i style="width:97%"></i><b style="left:85%"></b></div><div class="meta"><span>.97</span><span class="grow"></span><span>used 3×</span></div></div>
+            <div class="cell"><div class="thumb">Shop</div><div class="name">Lobby.Shop</div><div class="meter"><i style="width:95%"></i><b style="left:85%"></b></div><div class="meta"><span>.95</span><span class="grow"></span><span>used 1×</span></div></div>
+            <div class="cell"><div class="thumb reg">▭ 640 × 220</div><div class="name">Lobby.Menu</div><div class="meta"><span class="k reg">region</span><span class="grow"></span><span>follows window</span></div></div>
+            <div class="cell"><div class="thumb miss">not taken</div><div class="name">Lobby.Close</div><div class="meta"><span style="color:var(--danger)">guide step 4</span><span class="grow"></span><span>used 2×</span></div></div>
+          </div>
+          <div class="group"><span>Speed Raid · 41</span><span></span></div>
+          <div class="grid has-sel">
+            <div class="cell"><div class="thumb">Start</div><div class="name">SR.Start</div><div class="meter"><i style="width:93%"></i><b style="left:85%"></b></div><div class="meta"><span>.93</span><span class="grow"></span><span>used 2×</span></div></div>
+            <div class="cell"><div class="thumb">Leave</div><div class="name">Game.Leave ⚠</div><div class="meter"><i class="r" style="width:71%"></i><b style="left:80%"></b></div><div class="meta"><span style="color:var(--danger)">.71 &lt; .80</span><span class="grow"></span><span>used 6×</span></div></div>
+            <div class="cell"><div class="thumb pt">✛ 812, 440</div><div class="name">SR.Slot1</div><div class="meta"><span class="k pt">point</span><span class="grow"></span><span>used 4×</span></div></div>
+            <div class="cell"><div class="thumb act">● 12 steps · 8 s</div><div class="name">dodge</div><div class="meta"><span class="k act">action</span><span class="grow"></span><span>used 1×</span></div></div>
+          </div>
+        </div>
+        <div class="inspector panel">
+          <div class="ctx">
+            <div class="fake" style="left:6%;top:8%;width:30%;height:12%"></div><div class="fake" style="left:64%;top:10%;width:30%;height:60%"></div>
+            <div class="regbox" style="left:4%;top:28%;width:52%;height:50%"></div>
+            <div class="hl" style="left:14%;top:54%;width:22%;height:14%"></div>
+            <span class="tag2" style="left:14%;top:70%">.97</span>
+            <span class="corner">Lobby · last seen 11:02</span>
+            <span class="zoom"><span>⤢ Full size</span></span>
+          </div>
+          <div class="pair2"><span class="thumb">Play</span><div><h4 style="margin:0">Lobby.Play</h4><span class="k img">image</span> <span style="color:var(--muted);font-size:11px">180 × 52 · 100% scale</span></div></div>
+          <div class="stats"><div><small>Score</small><b style="color:var(--ok)">.97</b></div><div><small>Needs</small><b>.85</b></div><div><small>Found in</small><b>34 ms</b></div></div>
+          <div><small style="color:var(--muted);font-size:11px">Last 14 runs</small><div class="spark"><i style="height:90%"></i><i style="height:92%"></i><i style="height:95%"></i><i style="height:96%"></i><i style="height:94%"></i><i class="w" style="height:70%"></i><i style="height:95%"></i><i style="height:97%"></i><i style="height:96%"></i><i style="height:97%"></i><i style="height:95%"></i><i style="height:97%"></i><i style="height:96%"></i><i style="height:97%"></i></div></div>
+          <div class="acts"><button class="btn">◎ Test on screen</button><button class="btn">▣ Retake</button><button class="btn">✎ Rename</button><button class="btn">▭ Search region</button></div>
+          <div class="used"><b style="color:var(--text);font-size:12px">Used in 3 places</b><code>screens/lobby.py:14</code><code>modes/raid.py:52</code></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">The <b>meter</b> on each card is the last score, and the white tick is the similarity it needs, so a weak picture shows at a glance. The <b>preview</b> is the asset's own screen, from the last time it was seen.</p>
+  </section>
+
+  <!-- V2 -->
+  <section class="look" style="margin-top:56px">
+    <div class="about"><h2><span class="tag">2</span>Grid and Screen as two views</h2><p>A switch at the top swaps the grid for the screen. In Screen view the selected screen fills the page with every asset drawn in place, and a strip of its cards runs underneath. The inspector stays the same in both views.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3">
+        <div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span>
+        <div class="nav panel"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div><span class="grow"></span>
+        <div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b edit on">✎ Editing</span></div>
+      </div>
+      <div class="page">
+        <div class="stack">
+          <div class="head"><div class="tabs2"><span>▦ Grid</span><span class="on">▣ Screen</span></div><span class="chipf on">Lobby</span><span class="chipf">Speed Raid</span><span class="chipf">Fight</span><span class="chipf">Rewards</span><span class="grow"></span><button class="btn primary">▣ Capture here</button></div>
+          <div class="bigscreen">
+            <div class="hud"><span>Lobby · screenshot 11:02</span><span>12 assets</span></div>
+            <div class="fake" style="left:5%;top:12%;width:28%;height:10%"></div><div class="fake" style="left:62%;top:14%;width:32%;height:62%"></div>
+            <div class="box reg" style="left:3%;top:30%;width:52%;height:58%"><span>Lobby.Menu</span></div>
+            <div class="box sel" style="left:12%;top:62%;width:22%;height:14%"><span>Lobby.Play · .97</span></div>
+            <div class="box" style="left:38%;top:62%;width:14%;height:14%"><span>Lobby.Shop · .95</span></div>
+            <div class="box miss" style="left:46%;top:36%;width:7%;height:10%"><span>Close · not taken</span></div>
+            <div class="box" style="left:64%;top:80%;width:20%;height:10%"><span>Lobby.Daily · .91</span></div>
+            <div class="box pt" style="left:80%;top:24%"><span>Lobby.Slot</span></div>
+          </div>
+          <div class="strip2">
+            <div class="cell sel" style="transform:none"><div class="thumb" style="height:40px">Play</div><div class="name">Lobby.Play</div><div class="meter"><i style="width:97%"></i><b style="left:85%"></b></div></div>
+            <div class="cell"><div class="thumb" style="height:40px">Shop</div><div class="name">Lobby.Shop</div><div class="meter"><i style="width:95%"></i><b style="left:85%"></b></div></div>
+            <div class="cell"><div class="thumb reg" style="height:40px">▭</div><div class="name">Lobby.Menu</div><div class="meta"><span class="k reg">region</span></div></div>
+            <div class="cell"><div class="thumb miss" style="height:40px">!</div><div class="name">Lobby.Close</div><div class="meta"><span style="color:var(--danger)">not taken</span></div></div>
+            <div class="cell"><div class="thumb" style="height:40px">Daily</div><div class="name">Lobby.Daily</div><div class="meter"><i style="width:91%"></i><b style="left:85%"></b></div></div>
+          </div>
+        </div>
+        <div class="inspector panel">
+          <div class="pair2"><span class="thumb">Play</span><div><h4 style="margin:0">Lobby.Play</h4><span class="k img">image</span> <span style="color:var(--muted);font-size:11px">180 × 52</span></div></div>
+          <div class="stats"><div><small>Score</small><b style="color:var(--ok)">.97</b></div><div><small>Needs</small><b>.85</b></div><div><small>Found in</small><b>34 ms</b></div></div>
+          <div><small style="color:var(--muted);font-size:11px">Last 14 runs</small><div class="spark"><i style="height:90%"></i><i style="height:92%"></i><i style="height:95%"></i><i style="height:96%"></i><i style="height:94%"></i><i class="w" style="height:70%"></i><i style="height:95%"></i><i style="height:97%"></i><i style="height:96%"></i><i style="height:97%"></i><i style="height:95%"></i><i style="height:97%"></i><i style="height:96%"></i><i style="height:97%"></i></div></div>
+          <div class="acts"><button class="btn">◎ Test on screen</button><button class="btn">▣ Retake</button><button class="btn">✎ Rename</button><button class="btn">▭ Search region</button></div>
+          <div class="used"><b style="color:var(--text);font-size:12px">Used in 3 places</b><code>screens/lobby.py:14</code><code>modes/raid.py:52</code><code>guide.toml</code></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">In Screen view, <b>dragging a box</b> moves or resizes a region or point (with Edit on). <b>Capture here</b> takes a new asset from this screenshot without opening the game.</p>
+  </section>
+</main>
+</body>
+</html>

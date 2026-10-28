@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capture layouts</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+.shot { position: relative; height: 600px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); font-family: var(--font);
+        background: radial-gradient(500px 300px at 80% 90%, rgb(251 146 60 / .25), transparent 60%), linear-gradient(160deg, #233049 0%, #141a28 60%, #241a33 100%); }
+/* the frozen game */
+.game { position: absolute; inset: 0; }
+.game .menu { position: absolute; left: 16%; top: 18%; width: 52%; height: 64%; border-radius: 10px; background: #12162099; border: 1px solid rgb(255 255 255 / .08); }
+.game .menu::before { content: "BAG · CHARACTERS"; position: absolute; left: 14px; top: 10px; font: 700 11px var(--font-strong); color: #c9a46b; letter-spacing: .06em; }
+.game .slot { position: absolute; width: 11%; height: 16%; border-radius: 8px; border: 1px solid rgb(255 255 255 / .12); }
+.game .equip { position: absolute; left: 50%; top: 70%; width: 15%; height: 8%; border-radius: 8px; background: linear-gradient(180deg, #5ee08f, #36b36a); display: grid; place-items: center; font: 800 13px var(--font-strong); color: #fff; }
+.dim { position: absolute; inset: 0; background: rgb(0 0 0 / .58); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 49.6% 69.4%, 49.6% 78.6%, 65.4% 78.6%, 65.4% 69.4%, 49.6% 69.4%); }
+.sel { position: absolute; left: 49.6%; top: 69.4%; width: 15.8%; height: 9.2%; border: 2px solid var(--kind-image); border-radius: 4px; }
+.sel i { position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid var(--kind-image); border-radius: 2px; }
+.regionbox { position: absolute; left: 15.4%; top: 17.4%; width: 53.2%; height: 66%; border: 2px dashed var(--kind-region); border-radius: 10px; }
+.readout { position: absolute; padding: 1px 7px; border-radius: 6px; font: 600 11px var(--mono); color: var(--on-accent); background: var(--kind-image); white-space: nowrap; }
+.readout.reg { background: var(--kind-region); color: #160b2e; }
+.chipok { position: absolute; padding: 1px 8px; border-radius: 999px; font: 700 10.5px var(--font-strong); color: var(--ok); background: rgb(74 222 128 / .15); border: 1px solid rgb(74 222 128 / .35); }
+.glass2 { background: rgb(22 25 33 / .78); border: 1px solid rgb(255 255 255 / .12); box-shadow: 0 12px 40px rgb(0 0 0 / .45); backdrop-filter: blur(18px); }
+.guide { position: absolute; padding: 14px; border-radius: 16px; display: grid; gap: 8px; font-size: 13px; width: 360px; }
+.guide .t { display: flex; justify-content: space-between; font: 700 14px var(--font-strong); }
+.guide .t small { color: var(--muted); font: 600 12px var(--mono); }
+.guide p { margin: 0; }
+.guide .bot { color: var(--slot-bot); }
+.guide .bot b { padding: 0 6px; border-radius: 999px; background: color-mix(in oklab, var(--slot-bot) 18%, transparent); font-size: 11px; margin-right: 4px; }
+.prog2 { height: 5px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.prog2 i { display: block; height: 100%; width: 29%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.steps { display: flex; gap: 3px; }
+.steps i { width: 14px; height: 14px; border-radius: 4px; background: rgb(255 255 255 / .1); }
+.steps i.d { background: var(--accent); } .steps i.n { background: var(--warn); }
+.tb { position: absolute; display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.tb .nm { font: 700 13px var(--mono); padding: 0 6px 0 10px; }
+.seg3 { display: flex; padding: 2px; border-radius: 999px; background: var(--raised); }
+.seg3 span { padding: 4px 11px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); }
+.seg3 span.on { background: var(--accent); color: var(--on-accent); }
+.ib { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.ib.on { background: var(--raised-hover); color: var(--text); }
+.save { padding: 7px 16px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 13px var(--font-strong); }
+.test { padding: 7px 14px; border-radius: 999px; background: rgb(74 222 128 / .16); color: var(--ok); font: 700 13px var(--font-strong); border: 1px solid rgb(74 222 128 / .35); }
+.vline { width: 1px; height: 20px; background: var(--line); }
+.side { position: absolute; right: 14px; top: 14px; bottom: 14px; width: 300px; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; }
+.side h4 { margin: 0; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.side .name { font: 700 16px var(--mono); padding: 7px 10px; border-radius: 10px; background: rgb(0 0 0 / .25); border: 1px solid var(--line); }
+.side .kv { display: grid; grid-template-columns: 90px 1fr; gap: 6px; font-size: 12.5px; }
+.side .kv span { color: var(--muted); }
+.side .grow { flex: 1; }
+.side .row { display: flex; gap: 8px; }
+.side .row > * { flex: 1; text-align: center; }
+.mag { width: 100%; height: 96px; border-radius: 10px; background: repeating-linear-gradient(0deg, transparent 0 7px, rgb(255 255 255 / .05) 7px 8px), repeating-linear-gradient(90deg, transparent 0 7px, rgb(255 255 255 / .05) 7px 8px), linear-gradient(90deg, #1a2030 0 40%, #5ee08f 40%); position: relative; }
+.mag::after { content: "1430, 1118 · #52e38f"; position: absolute; left: 6px; bottom: 6px; font: 600 10px var(--mono); padding: 1px 6px; border-radius: 6px; background: rgb(0 0 0 / .55); }
+.slider { display: grid; gap: 4px; font-size: 12px; }
+.slider .tr { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--danger), var(--warn) 60%, var(--ok)); position: relative; }
+.slider .tr b { position: absolute; left: 85%; top: -5px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .4); translate: -50% 0; }
+.mini { position: absolute; display: flex; gap: 4px; padding: 4px; border-radius: 999px; }
+.mini span { padding: 4px 10px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); }
+.mini span.on { background: var(--accent); color: var(--on-accent); }
+.strip3 { position: absolute; left: 50%; top: 12px; translate: -50% 0; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; border-radius: 999px; font-size: 13px; }
+.strip3 .steps i { width: 10px; height: 10px; }
+.match { position: absolute; border: 2px solid var(--ok); border-radius: 5px; box-shadow: 0 0 14px rgb(74 222 128 / .5); }
+.match.weak { border-color: var(--warn); box-shadow: 0 0 14px rgb(251 191 36 / .45); }
+.match span { position: absolute; left: -2px; top: -20px; padding: 0 6px; border-radius: 5px 5px 5px 0; font: 700 10.5px var(--mono); color: #071016; background: var(--ok); white-space: nowrap; }
+.match.weak span { background: var(--warn); }
+.about p { max-width: 100ch; }
+.note { margin: 10px 2px 0; color: var(--muted); font-size: 13px; max-width: 120ch; }
+.note b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 7: <span>Capture</span></h1>
+  <p class="lead">Capture runs over the frozen game: the screen is dimmed outside the box and keeps its real colours. It saves into the open bot. When you're <b>setting up</b> a bot someone else made, the guide leads: name, type and region are filled in, you only box it. With <b>Edit</b> on, you can add any type (image, region, point) and name it yourself. <b>Test</b> is the old Check: it searches the live screen for the asset and shows every match with its score. Three layouts:</p>
+
+  <!-- K1 -->
+  <section class="look" style="margin-top:36px">
+    <div class="about"><h2><span class="tag">K1</span>The approved mockup, refined</h2><p>One toolbar at the bottom and the guide card in a corner. The box carries its own readouts. It gets in the way least, but the settings live in small menus.</p></div>
+    <div class="shot">
+      <div class="game"><div class="menu"></div>
+        <div class="slot" style="left:19%;top:27%;background:linear-gradient(135deg,#7a3b3b,#4d2733)"></div><div class="slot" style="left:32%;top:27%;background:linear-gradient(135deg,#2f5f73,#273a52)"></div><div class="slot" style="left:45%;top:27%;background:linear-gradient(135deg,#3c6b3a,#24452c)"></div>
+        <div class="slot" style="left:19%;top:47%;background:linear-gradient(135deg,#7a6b2b,#4d3b1a)"></div><div class="slot" style="left:32%;top:47%;background:linear-gradient(135deg,#5b3b7a,#3a2552)"></div>
+        <div class="equip">EQUIP</div></div>
+      <div class="dim"></div>
+      <div class="regionbox"></div><span class="readout reg" style="left:15.4%;top:calc(17.4% - 22px)">▭ Bag.Menu · 344, 243 · 1515 × 1082</span>
+      <div class="sel"><i style="left:-5px;top:-5px"></i><i style="right:-5px;top:-5px"></i><i style="left:-5px;bottom:-5px"></i><i style="right:-5px;bottom:-5px"></i></div>
+      <span class="readout" style="left:49.6%;top:calc(78.6% + 6px)">435 × 130</span><span class="chipok" style="left:56%;top:calc(78.6% + 6px)">inside ✓</span>
+      <div class="guide glass2" style="right:18px;top:18px"><div class="t">Bag, Characters tab <small>7 / 24</small></div><p>Open the Bag and go to the Characters tab.</p><p class="bot"><b>ad-bot</b>The green Equip button, without the shadow under it.</p><div class="steps"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i><i></i></div></div>
+      <div class="tb glass2" style="left:50%;bottom:18px;translate:-50% 0"><span class="nm">Bag.Equip</span><div class="seg3"><span class="on">Image</span><span>Region</span><span>Point</span></div><span class="ib">▭</span><div class="vline"></div><span class="ib on">⌗</span><span class="ib">⌕</span><span class="ib">↶</span><div class="vline"></div><span class="test">◎ Test</span><span class="save">Save</span></div>
+    </div>
+  </section>
+
+  <!-- K2 -->
+  <section class="look" style="margin-top:48px">
+    <div class="about"><h2><span class="tag">K2</span>A side panel</h2><p>A glass panel on the right holds everything: the guide step, name and type, the region link, the magnifier, the similarity slider, and Test and Save. The screen gets less room, but nothing is hidden in menus. The panel moves to the other side when the box comes near it.</p></div>
+    <div class="shot">
+      <div class="game" style="right:320px"><div class="menu" style="left:8%;width:70%"></div>
+        <div class="slot" style="left:12%;top:27%;background:linear-gradient(135deg,#7a3b3b,#4d2733);width:14%"></div><div class="slot" style="left:29%;top:27%;background:linear-gradient(135deg,#2f5f73,#273a52);width:14%"></div><div class="slot" style="left:46%;top:27%;background:linear-gradient(135deg,#3c6b3a,#24452c);width:14%"></div>
+        <div class="equip" style="left:52%;top:68%;width:19%">EQUIP</div></div>
+      <div style="position:absolute;inset:0 320px 0 0;background:rgb(0 0 0 / .58);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 0,51.6% 67.4%,51.6% 76.6%,71.4% 76.6%,71.4% 67.4%,51.6% 67.4%)"></div>
+      <div style="position:absolute;left:calc((100% - 320px) * .516);top:67.4%;width:calc((100% - 320px) * .198);height:9.2%;border:2px solid var(--kind-image);border-radius:4px"></div>
+      <div class="side glass2">
+        <div style="display:flex;justify-content:space-between;align-items:center"><h4>Setup · 7 of 24</h4><div class="steps"><i class="d"></i><i class="d"></i><i class="d"></i><i class="n"></i><i></i></div></div>
+        <div style="font-size:13px">Open the Bag, Characters tab.<br><span style="color:var(--slot-bot)">The green Equip button, without its shadow.</span></div>
+        <h4>Asset</h4>
+        <div class="name">Bag.Equip</div>
+        <div class="seg3" style="width:max-content"><span class="on">Image</span><span>Region</span><span>Point</span></div>
+        <div class="kv"><span>Search in</span><b style="color:var(--kind-region)">▭ Bag.Menu ✓</b><span>Size</span><b>435 × 130</b><span>Click point</span><b>centre +20, 0</b></div>
+        <div class="mag"></div>
+        <div class="slider"><div style="display:flex;justify-content:space-between"><span>Similarity</span><b>.85</b></div><div class="tr"><b></b></div></div>
+        <span class="grow"></span>
+        <div class="row"><span class="test">◎ Test</span><span class="save">Save &amp; next</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- K3 -->
+  <section class="look" style="margin-top:48px">
+    <div class="about"><h2><span class="tag">K3</span>Around the box</h2><p>The fewest pieces: the guide is a slim strip at the top, and a small bar follows the box with just type, Test and Save. Everything else is behind a "⋯" or keys. The most game visible, the least to read.</p></div>
+    <div class="shot">
+      <div class="game"><div class="menu"></div>
+        <div class="slot" style="left:19%;top:27%;background:linear-gradient(135deg,#7a3b3b,#4d2733)"></div><div class="slot" style="left:32%;top:27%;background:linear-gradient(135deg,#2f5f73,#273a52)"></div><div class="slot" style="left:45%;top:27%;background:linear-gradient(135deg,#3c6b3a,#24452c)"></div>
+        <div class="slot" style="left:19%;top:47%;background:linear-gradient(135deg,#7a6b2b,#4d3b1a)"></div><div class="slot" style="left:32%;top:47%;background:linear-gradient(135deg,#5b3b7a,#3a2552)"></div>
+        <div class="equip">EQUIP</div></div>
+      <div class="dim"></div>
+      <div class="sel"></div>
+      <div class="strip3 glass2"><b>7 / 24</b><span>Bag, Characters tab: <span style="color:var(--slot-bot)">the green Equip button</span></span><div class="steps"><i class="d"></i><i class="d"></i><i class="d"></i><i class="n"></i><i></i><i></i></div></div>
+      <div class="mini glass2" style="left:49.6%;top:calc(78.6% + 10px)"><span class="on">Image</span><span>◎ Test</span><span style="color:var(--text)">Save ↵</span><span>⋯</span></div>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section class="look" style="margin-top:56px">
+    <div class="about"><h2>Test (in every layout)</h2><p>Press Test, or open "Test on screen" from the Library. The Studio steps aside and the live screen is searched. Every match glows with its score, and a weak one shows in yellow. Drag the similarity to see which matches stay. Esc goes back.</p></div>
+    <div class="shot" style="height:420px">
+      <div class="game"><div class="menu"></div>
+        <div class="slot" style="left:19%;top:27%;background:linear-gradient(135deg,#7a3b3b,#4d2733)"></div><div class="slot" style="left:32%;top:27%;background:linear-gradient(135deg,#2f5f73,#273a52)"></div><div class="slot" style="left:45%;top:27%;background:linear-gradient(135deg,#3c6b3a,#24452c)"></div>
+        <div class="equip">EQUIP</div><div class="equip" style="left:20%;top:70%;opacity:.8;filter:saturate(.6)">EQUIP</div></div>
+      <div class="match" style="left:49.6%;top:69.4%;width:15.8%;height:9.2%"><span>Bag.Equip · .97</span></div>
+      <div class="match weak" style="left:19.6%;top:69.4%;width:15.8%;height:9.2%"><span>.82 · look-alike</span></div>
+      <div class="tb glass2" style="left:50%;top:14px;translate:-50% 0"><span class="nm">Test · Bag.Equip</span><span style="color:var(--muted)">2 matches · 41 ms</span><div class="vline"></div><div class="slider" style="width:160px"><div class="tr"><b></b></div></div><b>.85</b><div class="vline"></div><span class="ib">✕</span></div>
+    </div>
+    <p class="note">At .85, only the real button stays. The look-alike at .82 is below the line, so a bot using this picture won't click it by mistake.</p>
+  </section>
+</main>
+</body>
+</html>

@@ -1,5 +1,8 @@
 """Mouse and keyboard actions on targets, matches and locations."""
 
+import threading
+import time
+
 from ..core.geometry import Location, Region
 from ..core.targets import Match, Target
 from ..platform import input as device
@@ -52,7 +55,7 @@ def _mouse(kind: str, what: Spot, timeout: float | None, region: Region | None, 
         record(kind, target=_label(what), done=False)
         return False
     _front()
-    device.click(*point, settings.glide, button, times)
+    device.click(*point, _glide(), button, times)
     log(f"{kind} {_label(what)} at {point[0]},{point[1]}")
     record(kind, target=_label(what), done=True, at=list(point))
     return True
@@ -77,7 +80,7 @@ def hover(what: Spot, timeout: float | None = None, region: Region | None = None
     if point is None:
         return False
     _front()
-    device.move(*point, settings.glide)
+    device.move(*point, _glide())
     return True
 
 
@@ -147,6 +150,81 @@ def write(text: str) -> None:
     device.write(text)
 
 
+def mouse_down(at: Spot | None = None, button: str = "left") -> bool:
+    """Press a mouse button and keep it down until mouse_up(), at `at` if given, else where the mouse is."""
+    if at is not None and not hover(at):
+        return False
+    _front()
+    device.mouse_down(button)
+    return True
+
+
+def mouse_up(at: Spot | None = None, button: str = "left") -> bool:
+    """Let go of a mouse button, after moving to `at` if given (the end of a drag)."""
+    if at is not None and not hover(at):
+        return False
+    device.mouse_up(button)
+    return True
+
+
+def move_by(dx: int, dy: int, seconds: float = 0) -> None:
+    """Move the mouse by dx, dy counts over `seconds`, like a hand on the mouse: turns a game's camera even when the
+    game holds the cursor in place (Roblox's shift lock)."""
+    _front()
+    device.move_by(dx, dy, seconds)
+
+
 def sleep(seconds: float) -> None:
-    """Wait, stopping at once if the stop hotkey is pressed."""
-    safety.sleep(seconds)
+    """Wait, stopping at once if the stop hotkey is pressed. In a timed action, wait until `seconds` after the
+    previous wait was due, so the time the steps between took doesn't add up."""
+    schedule = _timeline()
+    if schedule is None:
+        safety.sleep(seconds)
+        return
+    now = time.perf_counter()
+    if now - schedule.due > LATE_LIMIT:
+        schedule.due = now  # something slow ran (a picture check): carry on from here
+    schedule.due += seconds
+    safety.sleep(max(0.0, schedule.due - time.perf_counter()))
+
+
+# ---- timed actions (recorded ones): waits keep to the recorded schedule
+
+LATE_LIMIT = 0.5  # seconds behind schedule that are caught up; later than this, the schedule starts again
+TIMED_GLIDE = 0.03  # seconds a click glides in a timed action: enough for a game to see the hover
+
+
+class _Schedule:
+    def __init__(self) -> None:
+        self.due = time.perf_counter()
+
+
+_timelines = threading.local()
+
+
+def _timeline() -> _Schedule | None:
+    return getattr(_timelines, "current", None)
+
+
+def start_timeline() -> _Schedule | None:
+    """Waits keep to a schedule from now on, in this thread. Returns the one before, for end_timeline."""
+    before = _timeline()
+    _timelines.current = _Schedule()
+    return before
+
+
+def end_timeline(before: _Schedule | None) -> None:
+    _timelines.current = before
+
+
+def resync() -> None:
+    """In a timed action, carry on the schedule from now (after a tape, which keeps its own time)."""
+    schedule = _timeline()
+    if schedule is not None:
+        schedule.due = time.perf_counter()
+
+
+def _glide() -> float:
+    if _timeline() is None:
+        return settings.glide
+    return min(settings.glide, TIMED_GLIDE)

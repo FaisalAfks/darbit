@@ -9,7 +9,7 @@ Every shortcut is in one file, [`packages/darbit/src/darbit/keymap.toml`](../../
 | `Ctrl+Alt+C` | freeze the screen and capture |
 | `Ctrl+Alt+H` | highlight what's found, with scores (again to hide) |
 | `Ctrl+Alt+R` | record (again to stop) |
-| `Ctrl+Alt+M` | mark a checkpoint while recording |
+| `Ctrl+Alt+K` | a checkpoint while recording: what came before becomes its own action |
 | `Ctrl+Alt+P` | pause or resume |
 | `Ctrl+Alt+Q` | stop everything |
 

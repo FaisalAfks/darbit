@@ -1,40 +1,401 @@
-<!-- The recorder bar: one pill at the top, never takes focus from the game. See docs/tasks/T15-recorder.md. -->
+<!-- The recorder bar (decision 0013, round 8): a pill at the top with the time, the action's name, its steps and
+     checks, Pause, Add check, Checkpoint (each part becomes its own action, decision 0014), the live steps and Stop. While paused, the check menu adds a wait or a picture
+     check at that moment. The live steps panel lists what's been caught, newest last. -->
 <script lang="ts">
-  import { on } from "$lib/api";
-  import IconButton from "$lib/components/IconButton.svelte";
+  import { on, request } from "$lib/api";
 
-  let seconds = $state(0);
-  let checkpoints = $state(0);
-  let paused = $state(false);
-  let name = $state(new URLSearchParams(location.search).get("run") ?? "run");
+  interface Shown {
+    kind: string;
+    text: string;
+    note: string;
+  }
+  interface Status {
+    recording: boolean;
+    name?: string;
+    path?: string;
+    seconds?: number;
+    paused?: boolean;
+    count?: number;
+    checks?: number;
+    parts?: number;
+    keys?: Record<string, string>;
+    missing?: string[];
+    steps?: Shown[];
+  }
 
-  on("record.tick", (t: { seconds: number; checkpoints: number; paused: boolean }) => {
-    seconds = t.seconds;
-    checkpoints = t.checkpoints;
-    paused = t.paused;
+  let status: Status = $state({ recording: true });
+  let menu = $state(false);
+  let live = $state(false);
+  let pictures: string[] = $state([]);
+  let target = $state("");
+  let gone = $state(false);
+  let timeout = $state(30);
+  let wait = $state(1);
+  let problem = $state("");
+
+  const clock = $derived(clockOf(status.seconds ?? 0));
+  const missing = $derived((status.missing ?? []).map((action) => keyOf(action)).join(", "));
+
+  function keyOf(action: string): string {
+    const combo = status.keys?.[action] ?? "";
+    return combo
+      .split("+")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("+");
+  }
+
+  function clockOf(seconds: number): string {
+    const whole = Math.floor(seconds);
+    return `${String(Math.floor(whole / 60)).padStart(2, "0")}:${String(whole % 60).padStart(2, "0")}`;
+  }
+
+  function size(): void {
+    request("record.size", { open: menu || live }).catch(() => {});
+  }
+
+  async function togglePause(): Promise<void> {
+    status = await request("record.pause");
+    if (!status.paused) menu = false;
+    size();
+  }
+
+  async function openChecks(): Promise<void> {
+    if (!status.paused) status = await request("record.pause");
+    menu = !menu;
+    if (menu && !pictures.length && status.path) {
+      const assets = await request("library.list", { path: status.path }).catch(() => []);
+      pictures = assets.filter((asset: { kind: string; missing: boolean }) => asset.kind === "image" && !asset.missing).map((asset: { name: string }) => asset.name);
+      target = pictures[0] ?? "";
+    }
+    size();
+  }
+
+  async function addWait(): Promise<void> {
+    status = await request("record.check", { kind: "wait", seconds: wait });
+  }
+
+  async function addPicture(): Promise<void> {
+    problem = "";
+    try {
+      status = await request("record.check", { kind: "picture", target, gone, timeout });
+    } catch (error) {
+      problem = (error as Error).message;
+    }
+  }
+
+  function toggleLive(): void {
+    live = !live;
+    size();
+  }
+
+  $effect(() => {
+    request("record.status").then((found: Status) => (status = found)).catch(() => {});
+    return on("record.tick", (data: Status) => {
+      if (data.recording) status = data;
+    });
   });
-  const clock = $derived(`${Math.floor(seconds / 60).toString().padStart(2, "0")}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`);
-  // TODO(T15): register record.mark / run.pause / record.toggle actions that send record.* requests
 </script>
 
-<div class="bar appear" class:paused>
-  <i class="dot"></i>
-  <span class="num">{clock}</span>
-  <span class="name">{name}</span>
-  <span class="cp num">◆ {checkpoints}</span>
-  <IconButton action="record.mark" label="Checkpoint" icon="◆" />
-  <IconButton action="run.pause" label={paused ? "Resume" : "Pause"} icon={paused ? "▶" : "❚❚"} />
-  <IconButton action="record.toggle" label="Stop" icon="■" />
+<div class="wrap" class:open={menu || live}>
+  <div class="pill" class:paused={status.paused}>
+    <span class="rec" aria-hidden="true"></span>
+    <span class="time">{clock}</span>
+    <b class="name">{status.name ?? "…"}</b>
+    <small>{(status.parts ?? 1) > 1 ? `part ${status.parts} · ` : ""}{status.count ?? 0} steps · {status.checks ?? 0} checks{status.paused ? " · paused" : ""}</small>
+    {#if missing}<span class="taken" title="{missing}: another program already uses it, so use the buttons here (or change it in keymap.toml)">⚠ {missing}</span>{/if}
+    <button class="check" class:on={menu} onclick={openChecks} title="Pause and add a check here">＋ Check</button>
+    <button class="icon" aria-label="Checkpoint" title="Checkpoint: what's recorded so far becomes its own action ({keyOf('record.mark')})" onclick={() => request("record.mark").then((found) => (status = found))}>⚑</button>
+    <button class="icon" class:on={live} aria-label="Live steps" title="Live steps" onclick={toggleLive}>≡</button>
+    <button class="icon" aria-label="Forget the last step" title="Forget the last step" onclick={() => request("record.undo").then((found) => (status = found))}>↶</button>
+    <button class="icon go" aria-label={status.paused ? "Go on" : "Pause"} title="{status.paused ? 'Go on' : 'Pause'} ({keyOf('run.pause')})" onclick={togglePause}>{status.paused ? "▶" : "❚❚"}</button>
+    <button class="icon stop" aria-label="Stop and save" title="Stop and save ({keyOf('record.toggle')})" onclick={() => request("record.stop", { keep: true })}>■</button>
+  </div>
+
+  {#if menu}
+    <div class="panel">
+      <h6>Paused at {clock}. Add a check here:</h6>
+      <div class="option">
+        <span class="ic" data-kind="image">▣</span>
+        <span class="text"><b>Picture</b><small>wait for it to show, or until it's gone</small></span>
+      </div>
+      <div class="form">
+        <select bind:value={target} aria-label="Picture">
+          {#each pictures as name (name)}<option>{name}</option>{:else}<option value="">No pictures yet</option>{/each}
+        </select>
+        <label><input type="checkbox" bind:checked={gone} /> until gone</label>
+        <label>up to <input type="number" min="1" bind:value={timeout} /> s</label>
+        <button class="add" onclick={addPicture} disabled={!target}>Add</button>
+      </div>
+      {#if problem}<p class="bad">{problem}</p>{/if}
+      <div class="option">
+        <span class="ic" data-kind="wait">⏱</span>
+        <span class="text"><b>Wait</b><small>a fixed pause</small></span>
+      </div>
+      <div class="form">
+        <label><input type="number" min="0.1" step="0.1" bind:value={wait} /> s</label>
+        <button class="add" onclick={addWait}>Add</button>
+      </div>
+      <div class="option off">
+        <span class="ic">◉</span>
+        <span class="text"><b>Colour at a point · area changes · text</b><small>later</small></span>
+      </div>
+    </div>
+  {:else if live}
+    <div class="panel steps">
+      <h6>Caught so far, newest last</h6>
+      {#each status.steps ?? [] as step, index (index)}
+        <div class="step" data-kind={step.kind}><span class="n">{(status.count ?? 0) - (status.steps?.length ?? 0) + index + 1}</span><code>{step.text}</code>{#if step.note}<small>{step.note}</small>{/if}</div>
+      {:else}
+        <p class="muted">Nothing yet. Play: keys and clicks show up here.</p>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
-  .bar {
-    display: inline-flex; align-items: center; gap: var(--space-s); padding: var(--space-xs) var(--space-s-nudge) var(--space-xs) var(--space-m); max-width: calc(9 * var(--control-l));
-    background: var(--glass); backdrop-filter: blur(var(--blur)); border: 1px solid var(--line);
-    border-radius: var(--radius-pill); box-shadow: var(--shadow); font-size: var(--size-caption);
+  /* the page fills the bar's window, whose corners Windows rounds */
+  :global(html),
+  :global(body) {
+    margin: 0;
+    height: 100%;
+    background: var(--glass-strong);
+    overflow: hidden;
   }
-  .dot { width: var(--space-m-nudge); height: var(--space-m-nudge); border-radius: 50%; background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
-  .paused .dot { background: var(--warn); animation: none; }
-  .name { font-weight: 600; }
-  .cp { color: var(--muted); font-size: var(--size-caption); }
+  .wrap {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100vh;
+    font-family: var(--font);
+    color: var(--text);
+  }
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    min-width: 0;
+    padding: var(--space-s) var(--space-s) var(--space-s) var(--space-l);
+    white-space: nowrap;
+  }
+  .wrap:not(.open) .pill {
+    height: 100vh; /* the whole window, buttons in the middle */
+    box-sizing: border-box;
+  }
+  .open .pill {
+    border-bottom: 1px solid var(--line);
+  }
+  .name {
+    max-width: calc(4 * var(--control-l));
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pill > small {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .taken {
+    color: var(--warn);
+    font-size: var(--size-caption);
+  }
+  .rec {
+    position: relative;
+    width: var(--space-m-nudge);
+    height: var(--space-m-nudge);
+    border-radius: 50%;
+    background: var(--danger);
+  }
+  .rec::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--danger);
+    animation: rec 1.4s ease-out infinite;
+  }
+  .paused .rec {
+    background: var(--warn);
+  }
+  .paused .rec::after {
+    display: none;
+  }
+  @keyframes rec {
+    from {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(2.4);
+    }
+  }
+  .time {
+    font: 700 var(--size-body) / 1 var(--mono);
+  }
+  .name {
+    font: 700 var(--size-body) / 1 var(--font-strong);
+  }
+  .time {
+    font-variant-numeric: tabular-nums;
+  }
+  small {
+    color: var(--muted);
+    font-size: var(--size-caption);
+  }
+  .check {
+    height: var(--control-m);
+    padding: 0 var(--space-m);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in oklab, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font: 700 var(--size-caption) / 1 var(--font-strong);
+    cursor: pointer;
+  }
+  .check.on {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .icon {
+    width: var(--control-m);
+    height: var(--control-m);
+    border: 0;
+    border-radius: 50%;
+    background: var(--raised);
+    color: var(--text);
+    font-size: var(--size-caption);
+    cursor: pointer;
+  }
+  .icon.on {
+    background: var(--raised-hover);
+    color: var(--accent);
+  }
+  .icon.go {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .icon.stop {
+    background: color-mix(in oklab, var(--danger) 20%, transparent);
+    color: var(--danger);
+  }
+  .panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    overflow: auto;
+    animation: drop var(--duration-normal) var(--curve-decelerate);
+  }
+  h6 {
+    margin: 0 var(--space-xs) var(--space-xs);
+    font: 600 var(--size-caption) / 1.3 var(--font);
+    color: var(--muted);
+  }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+  }
+  .option.off {
+    opacity: 0.45;
+  }
+  .ic {
+    width: var(--control-l);
+    height: var(--control-l);
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-m);
+    background: var(--raised);
+    color: var(--muted);
+  }
+  .ic[data-kind="image"] {
+    color: var(--kind-image);
+    background: color-mix(in oklab, var(--kind-image) 18%, transparent);
+  }
+  .ic[data-kind="wait"] {
+    color: var(--warn);
+    background: color-mix(in oklab, var(--warn) 18%, transparent);
+  }
+  .text {
+    display: grid;
+  }
+  .form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    margin: 0 0 var(--space-s) calc(var(--control-l) + var(--space-m));
+    font-size: var(--size-caption);
+    flex-wrap: wrap;
+  }
+  .form select,
+  .form input[type="number"] {
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--raised);
+    color: var(--text);
+    font: inherit;
+  }
+  .form input[type="number"] {
+    width: calc(2 * var(--control-m));
+  }
+  .add {
+    height: var(--control-s);
+    padding: 0 var(--space-m);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font: 700 var(--size-caption) / 1 var(--font-strong);
+    cursor: pointer;
+  }
+  .add:disabled {
+    opacity: 0.4;
+  }
+  .steps {
+    max-height: calc(9 * var(--control-l));
+    overflow: auto;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: var(--control-m) 1fr auto;
+    gap: var(--space-s);
+    align-items: center;
+    padding: var(--space-xs) var(--space-s);
+    border-radius: var(--radius-m);
+    animation: drop var(--duration-normal) var(--curve-decelerate);
+  }
+  .step:last-child {
+    background: color-mix(in oklab, var(--danger) 12%, transparent);
+  }
+  .step[data-kind="check"] {
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .step .n {
+    color: var(--faint);
+    font: 600 var(--size-caption) / 1 var(--mono);
+  }
+  .step code {
+    font: var(--size-caption) / 1.4 var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .muted {
+    color: var(--muted);
+    font-size: var(--size-caption);
+    margin: var(--space-s);
+  }
+  .bad {
+    color: var(--danger);
+    font-size: var(--size-caption);
+    margin: 0;
+  }
+  @keyframes drop {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--space-s)));
+    }
+  }
 </style>

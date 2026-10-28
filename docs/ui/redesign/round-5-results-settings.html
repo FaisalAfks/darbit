@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio results and settings</title>
+<link rel="stylesheet" href="rounds.css">
+<link rel="stylesheet" href="library.css">
+<style>
+.app { height: 640px; }
+.page { flex-direction: column; overflow: hidden; }
+.row2 { display: flex; gap: 12px; min-height: 0; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.kpi { padding: 12px 14px; display: grid; gap: 2px; }
+.kpi small { color: var(--muted); font-size: 11px; }
+.kpi b { font: 800 24px var(--font-strong); }
+.kpi em { font-style: normal; font-size: 11px; color: var(--ok); }
+.kpi em.down { color: var(--danger); }
+.chart { padding: 14px; display: grid; gap: 8px; flex: 1.3; }
+.chart h5, .box2 h5 { margin: 0; font: 700 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; height: 120px; }
+.bars div { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%; font-size: 10px; color: var(--muted); }
+.bars i { width: 100%; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, var(--accent), rgb(90 200 250 / .25)); position: relative; }
+.bars i.fail::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 22%; border-radius: 6px 6px 0 0; background: var(--danger); }
+.bars div.on i { box-shadow: 0 0 0 2px var(--text); }
+.bars div.on { color: var(--text); font-weight: 700; }
+.box2 { padding: 14px; display: grid; gap: 8px; align-content: start; flex: 1; }
+.problem { display: grid; grid-template-columns: 60px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; background: rgb(255 255 255 / .05); font-size: 12px; }
+.problem .shot { height: 38px; border-radius: 6px; background: linear-gradient(135deg, #3a2328, #1f1a24); }
+.problem small { color: var(--muted); display: block; }
+.gantt { padding: 14px; display: grid; gap: 8px; }
+.lane { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: center; font-size: 12px; }
+.track { position: relative; height: 22px; border-radius: 6px; background: rgb(255 255 255 / .04); }
+.track i { position: absolute; top: 3px; bottom: 3px; border-radius: 4px; background: rgb(90 200 250 / .55); }
+.track i.ok { background: rgb(74 222 128 / .55); } .track i.bad { background: rgb(248 113 113 / .7); } .track i.idle { background: rgb(255 255 255 / .1); }
+.hours { display: grid; grid-template-columns: 90px repeat(6, 1fr); gap: 0; font-size: 10px; color: var(--faint); }
+.days2 { width: 210px; flex: none; padding: 12px; display: grid; gap: 4px; align-content: start; }
+.day { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 9px; font-size: 12px; }
+.day.on { background: rgb(255 255 255 / .1); }
+.day i { width: 10px; height: 10px; border-radius: 3px; }
+.day small { color: var(--muted); }
+.story { flex: 1; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.storyhead { padding: 14px; display: flex; gap: 16px; align-items: center; }
+.storyhead h4 { margin: 0; font: 700 18px var(--font-strong); }
+.storyhead .grow { flex: 1; }
+.pillstat { padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / .06); font: 600 12px var(--font-strong); }
+.secnav { width: 200px; flex: none; padding: 10px; display: grid; gap: 2px; align-content: start; }
+.secnav div { padding: 7px 10px; border-radius: 9px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.secnav div.on { background: rgb(255 255 255 / .1); color: var(--text); }
+.secnav .dot { width: 7px; height: 7px; background: var(--accent-2); }
+.form { flex: 1; padding: 16px 18px; display: grid; gap: 4px; align-content: start; overflow: hidden; }
+.form h4 { margin: 0 0 2px; font: 700 18px var(--font-strong); }
+.form > p { margin: 0 0 8px; color: var(--muted); font-size: 12.5px; }
+.set { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.set b { font: 600 13.5px var(--font-strong); display: flex; gap: 6px; align-items: center; }
+.set small { color: var(--muted); font-size: 12px; grid-column: 1; }
+.set .changed { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); }
+.sw { width: 40px; height: 22px; border-radius: 999px; background: rgb(255 255 255 / .15); position: relative; grid-row: span 2; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--text); transition: left .2s; }
+.sw.on { background: var(--accent); } .sw.on::after { left: 21px; background: var(--on-accent); }
+.num { grid-row: span 2; display: flex; align-items: center; gap: 6px; font: 600 13px var(--font-strong); }
+.num span { padding: 4px 12px; border-radius: 8px; background: rgb(255 255 255 / .07); }
+.sel2 { grid-row: span 2; padding: 4px 12px; border-radius: 8px; background: rgb(255 255 255 / .07); font: 600 13px var(--font-strong); }
+.savebar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 16px; border-radius: 999px; font: 600 13px var(--font-strong); z-index: 3; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1; align-content: start; }
+.mode { padding: 14px; display: grid; gap: 10px; align-content: start; }
+.mode.off { opacity: .55; }
+.mode .top { display: flex; align-items: center; gap: 10px; }
+.mode .top b { font: 700 16px var(--font-strong); flex: 1; }
+.mode .line2 { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted); }
+.mode .line2 b { color: var(--text); font-weight: 600; }
+.mode .more { font: 600 12px var(--font-strong); color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Studio round 5: <span>Results and Settings</span></h1>
+  <p class="lead"><b>Results</b>' goal: is the bot getting me what I want, and what needs fixing? Its achievements, problems with fixes, and the story of a day. <b>Settings</b>' goal: change how the bot plays, without code. Two layouts for each page.</p>
+
+  <h2 style="margin-top:40px">Results</h2>
+  <section class="look" style="margin-top:14px">
+    <div class="about"><h2><span class="tag">R1</span>The week at a glance</h2><p>Numbers on top, the week as bars with its failures in red, and "Needs you" beside them. Click a day to see its timeline below.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span class="on">Results</span><span>Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+      <div class="page">
+        <div class="kpis">
+          <div class="kpi panel"><small>Speed Raids this week</small><b>126</b><em>▲ 14 vs last week</em></div>
+          <div class="kpi panel"><small>Rounds finished</small><b>91%</b><em class="down">▼ 4%</em></div>
+          <div class="kpi panel"><small>Time running</small><b>41 h</b><em>6 h a day</em></div>
+          <div class="kpi panel"><small>Problems</small><b style="color:var(--danger)">2</b><em class="down">need you</em></div>
+        </div>
+        <div class="row2">
+          <div class="chart panel"><h5><span>This week</span><span>Speed Raids per day</span></h5>
+            <div class="bars"><div><i style="height:62%"></i>Mon</div><div><i style="height:80%"></i>Tue</div><div><i style="height:74%"></i>Wed</div><div class="on"><i class="fail" style="height:40%"></i>Thu</div><div><i style="height:92%"></i>Fri</div><div><i style="height:86%"></i>Sat</div><div><i style="height:30%"></i>Today</div></div>
+          </div>
+          <div class="box2 panel"><h5><span>Needs you</span><span>2</span></h5>
+            <div class="problem"><span class="shot"></span><div><b>Leave button not found</b><small>6 times since Thu · score .71</small></div><button class="btn primary">Retake</button></div>
+            <div class="problem"><span class="shot"></span><div><b>Roblox closed</b><small>2 times · rejoined each time</small></div><button class="btn">Details</button></div>
+          </div>
+        </div>
+        <div class="gantt panel">
+          <div class="hours"><span style="font:700 11px var(--font-strong);letter-spacing:.08em;color:var(--muted)">THU</span><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span></div>
+          <div class="lane"><span>Raid</span><div class="track"><i class="ok" style="left:2%;width:12%"></i></div></div>
+          <div class="lane"><span>Speed Raid</span><div class="track"><i style="left:16%;width:30%"></i><i class="bad" style="left:46%;width:2%"></i><i style="left:50%;width:22%"></i></div></div>
+          <div class="lane"><span>AFK</span><div class="track"><i class="idle" style="left:74%;width:24%"></i></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="look" style="margin-top:48px">
+    <div class="about"><h2><span class="tag">R2</span>Day by day</h2><p>A list of days on the left, each coloured by how it went. The chosen day reads like a story: its summary, problems with fixes, and its timeline with the failure screenshot inline. The week's numbers sit at the top of the list.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span class="on">Results</span><span>Library</span><span>Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+      <div class="page" style="flex-direction:row">
+        <div class="days2 panel">
+          <div style="padding:4px 9px 10px"><small style="color:var(--muted)">This week</small><div style="font:800 22px var(--font-strong)">126 <small style="font-size:12px;color:var(--muted)">Speed Raids · 91%</small></div></div>
+          <div class="day"><i style="background:var(--ok)"></i>Today<small>30</small></div>
+          <div class="day"><i style="background:var(--ok)"></i>Sat<small>39</small></div>
+          <div class="day"><i style="background:var(--ok)"></i>Fri<small>41</small></div>
+          <div class="day on"><i style="background:var(--danger)"></i>Thu<small>18 · 4 ✕</small></div>
+          <div class="day"><i style="background:var(--warn)"></i>Wed<small>33 · 1 ✕</small></div>
+          <div class="day"><i style="background:var(--ok)"></i>Tue<small>36</small></div>
+          <div class="day"><i style="background:var(--ok)"></i>Mon<small>28</small></div>
+        </div>
+        <div class="story">
+          <div class="storyhead panel"><div><h4>Thursday</h4><small style="color:var(--muted)">08:02 – 18:40 · 10 h 38 m</small></div><span class="grow"></span><span class="pillstat">18 Speed Raids</span><span class="pillstat">Raid ✓</span><span class="pillstat" style="color:var(--danger)">4 failures</span></div>
+          <div class="box2 panel"><h5><span>What went wrong</span></h5>
+            <div class="problem"><span class="shot"></span><div><b>Leave button not found (4×)</b><small>12:58, 13:20, 13:41, 14:02 · it stopped matching after a game update</small></div><button class="btn primary">Retake</button></div>
+          </div>
+          <div class="gantt panel">
+            <div class="hours"><span></span><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span></div>
+            <div class="lane"><span>Raid</span><div class="track"><i class="ok" style="left:2%;width:12%"></i></div></div>
+            <div class="lane"><span>Speed Raid</span><div class="track"><i style="left:16%;width:30%"></i><i class="bad" style="left:46%;width:2%"></i><i style="left:50%;width:22%"></i></div></div>
+            <div class="lane"><span>AFK</span><div class="track"><i class="idle" style="left:74%;width:24%"></i></div></div>
+            <div style="font-size:12px;color:var(--muted)">Click a block for its steps and screenshots · <span style="color:var(--accent)">Open the full log</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h2 style="margin-top:56px">Settings</h2>
+  <section class="look" style="margin-top:14px">
+    <div class="about"><h2><span class="tag">S1</span>Sections and a form</h2><p>Like Windows Settings: sections on the left (one per mode), clear rows on the right with a purple dot on anything changed from the default. A save bar slides up when something changes.</p></div>
+    <div class="app" style="position:relative">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span>Library</span><span class="on">Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+      <div class="page" style="flex-direction:row">
+        <div class="secnav panel"><span class="search" style="margin-bottom:8px">⌕ Search settings</span><div>General</div><div class="on">Speed Raid <span class="dot"></span></div><div>Raid</div><div>Boss Rush</div><div>AFK</div><div>Rejoin <span class="dot"></span></div><div>Logs</div></div>
+        <div class="form panel">
+          <h4>Speed Raid</h4><p>Plays each character once a week, in the order below.</p>
+          <div class="set"><b>Play Speed Raid</b><span class="sw on"></span><small>Turn off to skip it in the round.</small></div>
+          <div class="set"><b>Start every <span class="changed"></span></b><div class="num"><span>45</span>min</div><small>Default 30. How long to wait between characters.</small></div>
+          <div class="set"><b>Difficulty</b><span class="sel2">Hard ▾</span><small>Hard gives more rewards but fails more.</small></div>
+          <div class="set"><b>Skip characters already done</b><span class="sw on"></span><small>Uses this week's progress.</small></div>
+          <div class="set" style="border:0"><b>Wait before attacking</b><div class="num"><span>3</span>s</div><small>Lets the wave load first.</small></div>
+        </div>
+      </div>
+      <div class="savebar panel"><span>1 change</span><button class="btn">Undo</button><button class="btn primary">Save</button></div>
+    </div>
+  </section>
+
+  <section class="look" style="margin-top:48px">
+    <div class="about"><h2><span class="tag">S2</span>A card per mode</h2><p>Each mode is a card with a big on/off switch and its two or three main settings; "More" opens the rest. You see the whole bot at once, but long settings lists are hidden one level down.</p></div>
+    <div class="app">
+      <div class="title"><span class="logo">d</span>darbit Studio<span class="grow"></span><i></i><i></i><i></i></div>
+      <div class="bar3"><div class="picker panel"><span class="av">ad</span>ad-bot ▾</div><span class="grow"></span><div class="nav panel"><span>Overview</span><span>Results</span><span>Library</span><span class="on">Settings</span></div><span class="grow"></span><div class="ctl panel"><span class="b go">▶</span><span class="b">❚❚</span><span class="b">■</span><span class="sep"></span><span class="b">✎ Edit</span></div></div>
+      <div class="page">
+        <div class="modes">
+          <div class="mode panel"><div class="top"><b>Speed Raid</b><span class="sw on"></span></div><div class="line2"><span>Start every</span><b>45 min ●</b></div><div class="line2"><span>Difficulty</span><b>Hard</b></div><span class="more">More (6) ›</span></div>
+          <div class="mode panel"><div class="top"><b>Raid</b><span class="sw on"></span></div><div class="line2"><span>Times a day</span><b>1</b></div><div class="line2"><span>Team</span><b>Sakura, Itachi</b></div><span class="more">More (4) ›</span></div>
+          <div class="mode panel"><div class="top"><b>Boss Rush</b><span class="sw on"></span></div><div class="line2"><span>Boss</span><b>Aizen</b></div><span class="more">More (3) ›</span></div>
+          <div class="mode panel off"><div class="top"><b>AFK</b><span class="sw"></span></div><div class="line2"><span>Between rounds</span><b>yes</b></div><span class="more">More (2) ›</span></div>
+          <div class="mode panel"><div class="top"><b>Rejoin</b><span class="sw on"></span></div><div class="line2"><span>Private server</span><b>from AD_PS</b></div><span class="more">More (3) ›</span></div>
+          <div class="mode panel"><div class="top"><b>General</b></div><div class="line2"><span>Stop key</span><b>Ctrl+Alt+Q</b></div><div class="line2"><span>Logs kept</span><b>14 days</b></div><span class="more">More (5) ›</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
