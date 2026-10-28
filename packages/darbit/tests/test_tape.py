@@ -152,3 +152,19 @@ def test_the_studio_gets_a_short_summary():
     assert len(found["path"]) <= tape.SUMMARY_POINTS
     assert found["marks"][0] == {"t": 1.0, "kind": "key", "text": "e"}
     assert found["seconds"] == 1.5
+
+
+def test_threads_switch_quickly_while_recording_or_playing():
+    import sys
+
+    from darbit.platform import switching
+
+    before = sys.getswitchinterval()
+    first = switching.fast()
+    second = switching.fast()
+    assert sys.getswitchinterval() == switching.FAST
+    first()
+    first()  # twice is once
+    assert sys.getswitchinterval() == switching.FAST  # the other one still needs it
+    second()
+    assert sys.getswitchinterval() == before

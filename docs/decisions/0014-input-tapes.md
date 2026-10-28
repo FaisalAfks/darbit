@@ -29,5 +29,6 @@ Recorded actions stay `@d.flow(timed=True)`. The steps the recorder bar shows wh
 - Recorded movement isn't Python lines any more. It's edited as parts of a tape, while hand-written actions keep using `d.click`, `d.move_by`, `d.mouse_down` and the rest.
 - Tapes are big, about 2 MB a minute for a 1000 Hz mouse, and they're data, not code to review.
 - Playing keeps one CPU core busy for the last moment before each event.
+- Python runs one thread at a time and by default switches every 5 ms; with the Studio's other threads busy, the raw input thread fell behind and mouse counts were lost. While recording or playing, threads switch every 0.5 ms (`platform/switching.py`). Roblox was checked to take replayed counts 1:1 at any speed.
 - A game that reads raw counts while showing a free cursor would get the cursor placed instead of the counts. That's rare; it would need a switch on the action.
 - At a very slow Windows pointer speed (a free cursor moving less than a quarter of the counts), a free cursor would be taken for a held one.

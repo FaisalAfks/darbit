@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import __version__
-from ..platform import hooks
+from ..platform import hooks, switching
 from ..platform import input as device
 from ..project import manifest
 from ..runs.flowfile import Step, statement, to_dict
@@ -44,6 +44,7 @@ class Recording:
     recorder: Recorder = field(default_factory=Recorder)
     started: float = field(default_factory=time.perf_counter)
     stop_hooks: Callable[[], None] | None = None
+    slow_again: Callable[[], None] | None = None  # ends the quick thread switching
     cursor: tuple[int, int] = (0, 0)  # where the cursor last was
     window: list[int] | None = None  # the game window's client area when recording started
     screen: list[int] | None = None
@@ -132,6 +133,7 @@ def start(project: Path, name: str) -> dict:
     recording.window = tape._window_now()
     recording.screen = list(device.desktop())
     _recording = recording
+    recording.slow_again = switching.fast()  # the raw input thread mustn't wait its turn: counts were lost
     recording.stop_hooks = hooks.start(_on_event, moves=True)  # the cursor's place goes with each mouse packet
     recording.running.set()
     threading.Thread(target=_tick, args=(recording,), name="darbit-record-tick", daemon=True).start()
@@ -230,6 +232,8 @@ def stop(keep: bool = True) -> dict:
     recording.running.clear()
     if recording.stop_hooks is not None:
         recording.stop_hooks()
+    if recording.slow_again is not None:
+        recording.slow_again()
     result: dict = {"saved": False}
     if keep:
         events = recording.recorder.tape(recording.screen, device.position())

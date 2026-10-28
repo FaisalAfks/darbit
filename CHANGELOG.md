@@ -14,6 +14,7 @@
 - A second `darbit app` while the Studio is in the tray brings it back instead of opening another Studio and tray icon
 - The Library opens faster: it skips the bot's environment and git folders, counts uses in one pass and keeps thumbnails until the file changes
 - The first hour on the Results timeline was cut off
+- The recorder lost mouse counts and bunched events whenever darbit Studio was busy (38 of 200 counts caught in a test): Python only switched threads every 5 ms. While recording or playing a tape, threads now switch every 0.5 ms, and every count arrives on time
 - Playing an action from the Studio clicked on the Studio itself: it now hides while the action plays and comes back at a breakpoint or the end
 - The recorder takes each click's place from when it happened, not when it was handled
 - Keys held by an action were left down when it stopped or failed: Play lets go of every key and button at the end

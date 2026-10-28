@@ -17,7 +17,7 @@ from pathlib import Path
 
 from ..errors import Stopped
 from ..platform import input as device
-from ..platform import safety, windows
+from ..platform import safety, switching, windows
 from ..settings import settings
 from . import actions
 
@@ -191,12 +191,16 @@ def replay(action_file: str | Path, start: float = 0.0, end: float | None = None
         chosen.append(event)
     actions._front()
     place = Placing(tape.window, _window_now())
-    began = time.perf_counter()
-    for event in chosen:
-        _wait_until(began + event.t - start)
-        _send(event, place)
-    if end is not None:
-        _wait_until(began + end - start)  # the next step starts when it did while recording
+    done = switching.fast()  # other threads mustn't hold up an event
+    try:
+        began = time.perf_counter()
+        for event in chosen:
+            _wait_until(began + event.t - start)
+            _send(event, place)
+        if end is not None:
+            _wait_until(began + end - start)  # the next step starts when it did while recording
+    finally:
+        done()
     actions.resync()
 
 
