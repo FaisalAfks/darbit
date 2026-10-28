@@ -27,7 +27,7 @@
 ### New
 
 - Recorded actions keep their timing: the recorder writes `@d.flow(timed=True)` and waits to 0.01 s, and in a timed action each wait ends on the recorded schedule, with the time the steps took taken out of it; clicks glide 0.03 s instead of 0.5 s
-- The recorder keeps camera turns: mouse movement while a game holds the cursor still (Roblox's shift lock) or with the right button down becomes `d.move_by(dx, dy, seconds)`, which plays back the mouse's own counts
+- The recorder keeps all mouse movement as the mouse's own counts, `d.move_by(dx, dy, seconds)`, which Windows and games take like a real mouse: a free cursor follows the same path and a held one (Roblox's shift lock, a right-drag) turns the camera the same; clicks still land where they were. It keeps the wheel too (`d.scroll`), and `d.mouse_down` / `d.mouse_up` for drags
 - darbit Studio, first usable version: `darbit app` (needs `darbit[app]`) opens it in a desktop window. Pick a bot (installed, or any project folder you add), run, pause and stop it, and see its Overview, pictures with their last scores, past days and settings; the dock opens Capture, Guide and Check for it
 - darbit Studio's new frame (decision 0013): a bot dropdown or sidebar, a centred page bar (Overview, Results, Library, Settings) with a gliding highlight, Play, Pause, Stop and Edit, page fades, and the Studio's own settings page (look, window, while a bot runs)
 - The Library's Screen view: each screen's last shot from Capture with its assets drawn in place; the inspector shows the chosen asset glowing on its screen, and Test on screen opens Capture straight into Test for it, searching its own region

@@ -87,48 +87,61 @@ def test_key_codes_have_keymap_names():
     assert key_name(0xFF) == ""
 
 
-def turn(t: float, dx: int, x: int = 960, y: int = 540) -> RawEvent:
-    return RawEvent(t, "turn", "", x, y, dx, 0)
+def move(t: float, dx: int, dy: int = 0) -> RawEvent:
+    return RawEvent(t, "move", "", 0, 0, dx, dy)
 
 
-def test_mouse_movement_while_the_game_holds_the_cursor_is_a_camera_turn():
-    events = []
-    for tick in range(30):  # 0.3 s of moving right, the cursor held in the middle (shift lock)
-        events.append(turn(tick * 0.01, 4))
-    steps = steps_of(events)
-    assert steps[0] == ("mouse", {"verb": "move_by", "by": [80, 0], "seconds": 0.19})
-    assert steps[-1][1]["verb"] == "move_by"
-    total = 0
-    for kind, args in steps:
+def mouse_steps(events):
+    found = []
+    for kind, args in steps_of(events):
         if kind == "mouse":
-            total += args["by"][0]
+            found.append(args)
+    return found
+
+
+def test_mouse_movement_is_kept_as_the_mouse_s_own_counts():
+    events = []
+    for tick in range(30):  # 0.3 s of moving right: a free cursor, or a camera with shift lock, it's the same
+        events.append(move(tick * 0.01, 4))
+    moves = mouse_steps(events)
+    assert moves[0] == {"verb": "move_by", "by": [40, 0], "seconds": 0.09}
+    total = 0
+    for args in moves:
+        total += args["by"][0]
     assert total == 120  # every count is kept
 
 
-def test_moving_the_cursor_around_isnt_a_turn():
-    events = []
-    for tick in range(10):
-        events.append(turn(tick * 0.01, 10, x=100 + tick * 12))  # the cursor follows the mouse
-    assert steps_of(events) == []
-
-
-def test_a_right_drag_is_a_turn_even_when_the_cursor_moves():
-    events = [RawEvent(0.0, "mouse_down", "right", 100, 100)]
-    for tick in range(1, 6):
-        events.append(turn(tick * 0.01, 10, x=100 + tick * 10))
-    events.append(RawEvent(0.1, "mouse_up", "right", 150, 100))
-    found = steps_of(events)
-    assert ("mouse", {"verb": "move_by", "by": [50, 0], "seconds": 0.04}) in found
+def test_movement_before_a_click_ends_before_it():
+    events = [move(0.0, 5), move(0.01, 5), RawEvent(0.02, "mouse_down", "left", 50, 50)]
+    events += [RawEvent(0.05, "mouse_up", "left", 50, 50)]
+    assert mouse_steps(events) == [
+        {"verb": "move_by", "by": [10, 0], "seconds": 0.01},
+        {"verb": "click", "target": [50, 50]},
+    ]
 
 
 def test_turning_the_camera_with_the_right_button_plays_back_with_it_held():
     events = [RawEvent(0.0, "mouse_down", "right", 960, 540)]
     for tick in range(1, 6):
-        events.append(turn(tick * 0.01, 10))  # Roblox holds the cursor while the right button turns the camera
+        events.append(move(tick * 0.01, 10))  # Roblox holds the cursor while the right button turns the camera
     events.append(RawEvent(0.1, "mouse_up", "right", 960, 540))
     verbs = []
-    for kind, args in steps_of(events):
-        if kind == "mouse":
-            verbs.append(args["verb"])
+    for args in mouse_steps(events):
+        verbs.append(args["verb"])
     assert verbs == ["mouse_down", "move_by", "mouse_up"]
-    assert steps_of(events)[-1] == ("mouse", {"verb": "mouse_up", "target": None, "button": "right"})  # in place
+    assert mouse_steps(events)[-1] == {"verb": "mouse_up", "target": None, "button": "right"}  # let go in place
+
+
+def test_a_click_with_a_little_jitter_is_still_a_click():
+    events = [RawEvent(0.0, "mouse_down", "left", 50, 50), move(0.01, 2), RawEvent(0.05, "mouse_up", "left", 50, 50)]
+    assert mouse_steps(events)[0] == {"verb": "click", "target": [50, 50]}
+
+
+def test_wheel_notches_close_together_are_one_scroll():
+    events = [
+        RawEvent(0.0, "wheel", "", 10, 10, 1),
+        RawEvent(0.05, "wheel", "", 10, 10, 1),
+        RawEvent(0.1, "wheel", "", 10, 10, 1),
+        RawEvent(1.0, "wheel", "", 10, 10, -2),
+    ]
+    assert mouse_steps(events) == [{"verb": "scroll", "notches": 3}, {"verb": "scroll", "notches": -2}]

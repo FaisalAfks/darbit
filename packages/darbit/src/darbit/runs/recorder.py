@@ -3,9 +3,9 @@
 The hooks (platform/hooks.py) only queue raw events; everything here is pure, so it's tested with lists of
 fake events. A key pressed and let go quickly is a press (with any modifiers held: shift+e); held longer it's a
 hold ... release. A left, right or middle click is a click where it happened. The time between steps becomes a
-wait, rounded to 0.01 s. Checks added while paused come in as steps at the time they were added. Mouse movement
-while a game holds the cursor still (Roblox's shift lock) or with the right button down turns the camera: it's kept
-as move_by steps of the mouse's own counts.
+wait, rounded to 0.01 s. Checks added while paused come in as steps at the time they were added. Mouse movement is
+kept as the mouse's own counts (move_by), which Windows and games treat like a hand on the mouse: the cursor follows
+the same path, and a game that holds the cursor (Roblox's shift lock) turns its camera the same. The wheel is kept too.
 """
 
 from dataclasses import dataclass, field
@@ -17,10 +17,9 @@ from .flowfile import Step
 PRESS_MAX = 0.15  # down and up within this many seconds is a press, longer is hold ... release
 MERGE_GAP = 0.01  # gaps shorter than this aren't a wait
 WAIT_STEP = 0.01  # waits are rounded to this
-TURN_PART = 0.2  # seconds of mouse movement kept as one move_by step
-TURN_GAP = 0.1  # a pause this long in the movement starts a new move_by
-TURN_MIN = 3  # counts: smaller movements are left out
-LOCKED_SLACK = 4  # px the cursor may drift and still count as held still by the game
+MOVE_PART = 0.1  # seconds of mouse movement kept as one move_by step
+MOVE_GAP = 0.05  # a pause this long in the movement starts a new move_by
+WHEEL_GAP = 0.15  # wheel notches closer together than this are one scroll
 CLICK_MOVE = 8  # px: a press and release further apart than this is a drag, kept as a click where it started
 MODIFIERS = {"shift", "ctrl", "alt", "win"}
 BUTTONS = {"left": "click", "right": "right_click", "middle": "click"}
@@ -29,11 +28,11 @@ BUTTONS = {"left": "click", "right": "right_click", "middle": "click"}
 @dataclass(frozen=True)
 class RawEvent:
     t: float  # seconds since the recording started
-    kind: str  # "key_down", "key_up", "mouse_down", "mouse_up", "wheel", "turn"
+    kind: str  # "key_down", "key_up", "mouse_down", "mouse_up", "wheel", "move"
     key: str = ""  # key name, or button: left, right, middle
     x: int = 0  # where the cursor was
     y: int = 0
-    dx: int = 0  # for "turn": how far the mouse itself moved, in counts
+    dx: int = 0  # "move": how far the mouse itself moved, in counts; "wheel": notches (up is positive)
     dy: int = 0
 
 
@@ -84,8 +83,8 @@ class Recorder:
 
     def steps(self) -> list[Step]:
         """Every step in order, with waits between them."""
-        timed = keys_to_steps(self.events) + clicks_to_steps(self.events) + turns_to_steps(self.events)
-        timed += self.added
+        timed = keys_to_steps(self.events) + clicks_to_steps(self.events) + moves_to_steps(self.events)
+        timed += wheel_to_steps(self.events) + self.added
         timed.sort(key=_when)
         return with_waits(timed)
 
@@ -130,18 +129,18 @@ def clicks_to_steps(events: list[RawEvent]) -> list[Timed]:
     camera with the right button) is the button going down, then up, so the movement in between plays with it held."""
     found: list[Timed] = []
     down: dict[str, RawEvent] = {}
-    dragged: set[str] = set()
+    moved_while_down: dict[str, int] = {}  # counts the mouse moved while each button was down
     for event in events:
-        if event.kind == "turn":
+        if event.kind == "move":
             for button in down:
-                dragged.add(button)
+                moved_while_down[button] += abs(event.dx) + abs(event.dy)
         elif event.kind == "mouse_down":
             down[event.key] = event
-            dragged.discard(event.key)
+            moved_while_down[event.key] = 0
         elif event.kind == "mouse_up" and event.key in down:
             start = down.pop(event.key)
             moved = abs(event.x - start.x) > CLICK_MOVE or abs(event.y - start.y) > CLICK_MOVE
-            if moved or event.key in dragged:
+            if moved or moved_while_down.get(event.key, 0) > CLICK_MOVE:
                 found.append(Timed(start.t, _button_step("mouse_down", event.key, [start.x, start.y])))
                 end = None  # let go where it is: moving a held button would turn the camera again
                 if moved:
@@ -150,7 +149,6 @@ def clicks_to_steps(events: list[RawEvent]) -> list[Timed]:
             else:
                 verb = BUTTONS.get(event.key, "click")
                 found.append(Timed(start.t, Step("mouse", {"verb": verb, "target": [start.x, start.y]})))
-            dragged.discard(event.key)
     return found
 
 
@@ -158,57 +156,57 @@ def _button_step(verb: str, button: str, target: list[int] | None) -> Step:
     return Step("mouse", {"verb": verb, "target": target, "button": button})
 
 
-def turns_to_steps(events: list[RawEvent]) -> list[Timed]:
-    """Camera turns: mouse movement while the cursor stays put or the right button is down, as move_by steps.
-
-    Movement that just moved the cursor around is left out; clicks already say where they were.
-    """
+def moves_to_steps(events: list[RawEvent]) -> list[Timed]:
+    """Mouse movement as move_by steps of the mouse's own counts, one for every short stretch of moving."""
     found: list[Timed] = []
     part: list[RawEvent] = []
-    cursor_before = None  # where the cursor was before this part of the movement
-    right_down = False
-    right_in_part = False
     for event in events:
-        if event.kind != "turn":
-            if part:
-                _add_turn(part, cursor_before, right_in_part, found)
-                cursor_before = (part[-1].x, part[-1].y)
+        if event.kind != "move":
+            if part and event.kind in ("mouse_down", "mouse_up", "wheel"):
+                _add_move(part, found)  # the movement before a click ends before it
                 part = []
-            if event.kind in ("mouse_down", "mouse_up"):
-                cursor_before = (event.x, event.y)
-                if event.key == "right":
-                    right_down = event.kind == "mouse_down"
             continue
-        if part and (event.t - part[0].t >= TURN_PART or event.t - part[-1].t > TURN_GAP):
-            _add_turn(part, cursor_before, right_in_part, found)
-            cursor_before = (part[-1].x, part[-1].y)
+        if part and (event.t - part[0].t >= MOVE_PART or event.t - part[-1].t > MOVE_GAP):
+            _add_move(part, found)
             part = []
-        if not part:
-            right_in_part = right_down
-            if cursor_before is None:
-                cursor_before = (event.x, event.y)
         part.append(event)
     if part:
-        _add_turn(part, cursor_before, right_in_part, found)
+        _add_move(part, found)
     return found
 
 
-def _add_turn(part: list[RawEvent], cursor_before: tuple[int, int], right: bool, found: list[Timed]) -> None:
+def _add_move(part: list[RawEvent], found: list[Timed]) -> None:
     dx = 0
     dy = 0
     for event in part:
         dx += event.dx
         dy += event.dy
-    counts = abs(dx) + abs(dy)
-    if counts < TURN_MIN:
+    if dx == 0 and dy == 0:
         return
-    last = part[-1]
-    drift = abs(last.x - cursor_before[0]) + abs(last.y - cursor_before[1])
-    held_still = drift <= max(LOCKED_SLACK, counts * 0.3)
-    if not held_still and not right:
-        return  # the cursor just moved
-    seconds = round(last.t - part[0].t, 2)
+    seconds = round(part[-1].t - part[0].t, 2)
     found.append(Timed(part[0].t, Step("mouse", {"verb": "move_by", "by": [dx, dy], "seconds": seconds})))
+
+
+def wheel_to_steps(events: list[RawEvent]) -> list[Timed]:
+    """The wheel: notches close together are one scroll."""
+    found: list[Timed] = []
+    started = 0.0
+    last = -1.0
+    notches = 0
+    for event in events:
+        if event.kind != "wheel":
+            continue
+        if notches and event.t - last <= WHEEL_GAP and (event.dx > 0) == (notches > 0):
+            notches += event.dx
+        else:
+            if notches:
+                found.append(Timed(started, Step("mouse", {"verb": "scroll", "notches": notches})))
+            started = event.t
+            notches = event.dx
+        last = event.t
+    if notches:
+        found.append(Timed(started, Step("mouse", {"verb": "scroll", "notches": notches})))
+    return found
 
 
 def with_waits(timed: list[Timed]) -> list[Step]:

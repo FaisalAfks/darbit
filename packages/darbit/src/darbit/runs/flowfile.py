@@ -260,6 +260,8 @@ def _call_step(call: ast.Call, imported: set[str]) -> Step | None:
                 seconds = _constant(call.args[2])
             by = [_constant(call.args[0]), _constant(call.args[1])]
             return Step("mouse", {"verb": "move_by", "by": by, "seconds": seconds})
+        if verb == "scroll" and call.args and not call.keywords and len(call.args) == 1:
+            return Step("mouse", {"verb": "scroll", "notches": _constant(call.args[0])})
         if verb in ("mouse_down", "mouse_up"):
             target = None
             if call.args:
@@ -325,6 +327,8 @@ def statement(step: Step) -> str:
         return f"d.write({_quote(str(args.get('text', '')))})"
     if step.kind == "wait":
         return f"d.sleep({_number(args.get('seconds', 0))})"
+    if step.kind == "mouse" and args.get("verb") == "scroll":
+        return f"d.scroll({int(args.get('notches') or 0)})"
     if step.kind == "mouse" and args.get("verb") == "move_by":
         dx, dy = args.get("by") or [0, 0]
         return f"d.move_by({int(dx)}, {int(dy)}, {_number(args.get('seconds') or 0)})"

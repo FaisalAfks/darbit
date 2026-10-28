@@ -38,7 +38,6 @@ class Recording:
     recorder: Recorder = field(default_factory=Recorder)
     started: float = field(default_factory=time.perf_counter)
     stop_hooks: Callable[[], None] | None = None
-    cursor: tuple[int, int] = (0, 0)  # where the cursor last was
     held: set[str] = field(default_factory=set)  # keys down right now
     hotkey_keys: set[str] = field(default_factory=set)  # keys of a darbit hotkey: their ups are dropped too
     running: threading.Event = field(default_factory=threading.Event)
@@ -71,11 +70,12 @@ def _on_event(kind: str, code: int, x: int, y: int, time_ns: int) -> None:
         if _inside_bar(x, y):
             return
         recording.recorder.add(RawEvent(t, kind, BUTTONS.get(code, "left"), x, y))
-    elif kind == "mouse_move":
-        recording.cursor = (x, y)
     elif kind == "mouse_delta":
-        cursor_x, cursor_y = recording.cursor
-        recording.recorder.add(RawEvent(t, "turn", "", cursor_x, cursor_y, x, y))
+        recording.recorder.add(RawEvent(t, "move", "", 0, 0, x, y))
+    elif kind == "wheel":
+        if _inside_bar(x, y):
+            return
+        recording.recorder.add(RawEvent(t, "wheel", "", x, y, code))
 
 
 def _on_key(recording: Recording, kind: str, name: str, t: float) -> None:

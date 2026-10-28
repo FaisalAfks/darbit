@@ -236,7 +236,8 @@
     if (step.kind === "key") return `${args.verb} ${(args.keys ?? []).join("+")}`;
     if (step.kind === "wait") return `wait ${args.seconds} s`;
     if (step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")) return `${args.button} button ${args.verb === "mouse_down" ? "down" : "up"}`;
-    if (step.kind === "mouse" && args.verb === "move_by") return `turn ${args.by[0]}, ${args.by[1]} in ${args.seconds} s`;
+    if (step.kind === "mouse" && args.verb === "move_by") return `move ${args.by[0]}, ${args.by[1]} in ${args.seconds} s`;
+    if (step.kind === "mouse" && args.verb === "scroll") return `scroll ${args.notches > 0 ? "up" : "down"} ${Math.abs(args.notches)}`;
     if (step.kind === "mouse") return `${args.verb} ${Array.isArray(args.target) ? args.target.join(", ") : args.target}`;
     if (step.kind === "check" || step.kind === "if") return `${args.verb} ${args.target}`;
     if (step.kind === "loop") return "times" in args ? `repeat ${args.times}×` : `repeat until ${args.until} shows`;
@@ -356,8 +357,10 @@
     <span class="verb">wait</span><span class="dur"><i style:width="{Math.min(12, args.seconds) * 4}%"></i>{args.seconds} s</span>
   {:else if step.kind === "mouse" && (args.verb === "mouse_down" || args.verb === "mouse_up")}
     <span class="verb">{args.button} button {args.verb === "mouse_down" ? "down" : "up"}</span><span class="tgt">{Array.isArray(args.target) ? `${args.target[0]}, ${args.target[1]}` : "where it is"}</span>
+  {:else if step.kind === "mouse" && args.verb === "scroll"}
+    <span class="verb">scroll {args.notches > 0 ? "up" : "down"}</span><span class="tgt">{Math.abs(args.notches)}</span>
   {:else if step.kind === "mouse" && args.verb === "move_by"}
-    <span class="verb">turn</span><span class="tgt">{args.by[0]}, {args.by[1]}</span><small>in {args.seconds} s</small>
+    <span class="verb">move</span><span class="tgt">{args.by[0]}, {args.by[1]}</span><small>in {args.seconds} s</small>
   {:else if step.kind === "mouse" || step.kind === "check" || step.kind === "if"}
     <span class="verb">{step.kind === "mouse" ? args.verb.replace("_", " ") : args.verb}</span>
     {#if typeof args.target === "string" && thumbnails[args.target]}<img class="thumb" src={thumbnails[args.target]} alt="" />{/if}
@@ -384,6 +387,8 @@
       <label>Keys <input value={(args.keys ?? []).join("+")} oninput={(event) => { const keys = event.currentTarget.value.split("+").map((key) => key.trim()).filter(Boolean); args.keys = args.verb === "press" ? [keys.join("+")] : keys; changed(); }} /></label>
     {:else if step.kind === "wait"}
       <label>Seconds <input type="number" min="0" step="0.01" bind:value={args.seconds} oninput={changed} /></label>
+    {:else if step.kind === "mouse" && args.verb === "scroll"}
+      <label>Notches <input type="number" step="1" bind:value={args.notches} oninput={changed} /> (up is positive)</label>
     {:else if step.kind === "mouse" && args.verb === "move_by"}
       <label>Right <input type="number" step="1" bind:value={args.by[0]} oninput={changed} /></label>
       <label>Down <input type="number" step="1" bind:value={args.by[1]} oninput={changed} /></label>

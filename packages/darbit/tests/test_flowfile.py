@@ -107,6 +107,7 @@ def test_a_recorded_action_stays_timed_and_keeps_its_camera_turns(tmp_path):
         Step("mouse", {"verb": "mouse_down", "target": [960, 540], "button": "right"}),
         Step("mouse", {"verb": "move_by", "by": [-120, 8], "seconds": 0.2}),
         Step("mouse", {"verb": "mouse_up", "target": None, "button": "right"}),
+        Step("mouse", {"verb": "scroll", "notches": -3}),
         Step("wait", {"seconds": 0.37}),
         Step("key", {"verb": "press", "keys": ["shift+e"]}),
     ]
@@ -115,6 +116,7 @@ def test_a_recorded_action_stays_timed_and_keeps_its_camera_turns(tmp_path):
     assert "d.move_by(-120, 8, 0.2)" in text
     assert 'd.mouse_down(d.Location(960, 540), button="right")' in text
     assert 'd.mouse_up(button="right")' in text
+    assert "d.scroll(-3)" in text
     path = tmp_path / "run.py"
     path.write_text(text, encoding="utf-8")
     flow = flowfile.read(path)
