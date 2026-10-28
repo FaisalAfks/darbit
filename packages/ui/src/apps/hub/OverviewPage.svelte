@@ -19,7 +19,7 @@
     running,
     onsetup,
     onretake,
-  }: { bot: string; tiles: TileData[]; running: string; onsetup: () => void; onretake: () => void } = $props();
+  }: { bot: string; tiles: TileData[]; running: string; onsetup: () => void; onretake: (failure: string) => void } = $props();
 
   const NAMES: Record<string, string> = {
     now: "Now",
@@ -186,7 +186,7 @@
           <div class="needs">
             <span class="mark" aria-hidden="true">!</span>
             <span><b>{String(last.step).split(" > ").pop()}: {last.reason}</b><small>{tile.data.items.length > 1 ? `${tile.data.items.length} failures today, last at ${clock(last.time)}` : `at ${clock(last.time)}`}</small></span>
-            <button class="tool primary" onclick={onretake}>▣ Retake</button>
+            <button class="tool primary" onclick={() => onretake(`${last.step} ${last.reason}`)}>▣ Retake</button>
           </div>
         {:else if place.kind === "setup"}
           {#if tile.data.error}

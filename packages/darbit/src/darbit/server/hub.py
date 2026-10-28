@@ -273,7 +273,13 @@ def settings_save(data: dict) -> dict:
 
 def library_list(data: dict) -> list[dict]:
     """Every asset the bot uses: images, regions, points, and the guide's pictures still missing."""
-    return library.assets(load(_folder(data)))
+    names = data.get("names")
+    if names is not None:
+        names = set(names)
+    have = data.get("have")
+    if not isinstance(have, dict):
+        have = None
+    return library.assets(load(_folder(data)), names, have)
 
 
 def library_uses(data: dict) -> list[dict]:
@@ -293,6 +299,11 @@ def library_screens(data: dict) -> list[dict]:
 def library_rename_plan(data: dict) -> dict:
     """What renaming an asset would change, without changing anything."""
     return library.rename_plan(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
+
+
+def library_delete(data: dict) -> dict:
+    """Delete an asset's files."""
+    return library.delete(load(_folder(data)), str(data.get("name", "")))
 
 
 def library_rename(data: dict) -> dict:
@@ -349,6 +360,7 @@ def register() -> None:
     HANDLERS["library.screens"] = library_screens
     HANDLERS["library.rename.plan"] = library_rename_plan
     HANDLERS["library.rename"] = library_rename
+    HANDLERS["library.delete"] = library_delete
     HANDLERS["results.days"] = results_days
     HANDLERS["results.day"] = results_day
     HANDLERS["tools.open"] = tools_open

@@ -114,21 +114,35 @@ def group_of(name: str) -> str:
     return "Other"
 
 
-def assets(project: Project) -> list[dict]:
-    """Every asset: images, regions, points, and the guide's pictures still missing."""
+def assets(project: Project, names: set[str] | None = None, have: dict[str, str] | None = None) -> list[dict]:
+    """Every asset: images, regions, points, and the guide's pictures still missing.
+
+    `names` limits it to those assets (after a retake, just the one). `have` maps an image's name to the version
+    the Studio already shows; an image still at that version comes without its thumbnail (`same`).
+    """
     scores = _scores(project)
     found: dict[str, dict] = {}
     for folder in _folders(project):
         for path in sorted(folder.iterdir()):
             if path.suffix.lower() == ".png":
                 name = path.stem
+                if names is not None and name not in names:
+                    continue
                 settings = _settings(path.with_suffix(".json"))
-                thumbnail, size = _thumbnail(path)
+                stat = path.stat()
+                version = f"{stat.st_mtime_ns}-{stat.st_size}"
+                same = have is not None and have.get(name) == version
+                thumbnail = None
+                size = None
+                if not same:
+                    thumbnail, size = _thumbnail(path)
                 found[name] = {
                     "name": name,
                     "kind": "image",
                     "group": group_of(name),
                     "thumbnail": thumbnail,
+                    "version": version,
+                    "same": same,
                     "size": size,
                     "region": settings.get("region"),
                     "similarity": settings.get("similarity"),
@@ -137,7 +151,7 @@ def assets(project: Project) -> list[dict]:
                 }
         for path in sorted(folder.glob("*.json")):
             name = path.stem
-            if name in found:
+            if name in found or (names is not None and name not in names):
                 continue
             settings = _settings(path)
             kind = "point"
@@ -156,7 +170,7 @@ def assets(project: Project) -> list[dict]:
                 "missing": False,
             }
     for name, kind in _guide_items(project):
-        if name not in found:
+        if name not in found and (names is None or name in names):
             found[name] = {
                 "name": name,
                 "kind": kind,
@@ -282,6 +296,18 @@ def _asset_files(project: Project, name: str) -> list[Path]:
             if path.is_file():
                 found.append(path)
     return found
+
+
+def delete(project: Project, name: str) -> dict:
+    """Delete an asset's files (its picture and its settings). Lines that use it stay, and the Library shows them."""
+    files = _asset_files(project, name)
+    if not files:
+        raise LibraryError(f"there's no asset called {name}")
+    removed = []
+    for path in files:
+        path.unlink()
+        removed.append(path.relative_to(project.folder).as_posix())
+    return {"deleted": name, "files": removed}
 
 
 def rename_plan(project: Project, old: str, new: str) -> dict:

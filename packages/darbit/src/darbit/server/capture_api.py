@@ -7,6 +7,7 @@ window is the desktop's job (desktop/capture_window.py), which hooks `on_close`.
 from collections.abc import Callable
 
 from ..capture import service
+from .events import publish
 from .frames import Frame, encode
 
 on_close: Callable[[], None] | None = None  # set by the desktop: close the window and bring the Studio back
@@ -38,13 +39,10 @@ def test(data: dict) -> dict:
 
 
 def save(data: dict) -> dict:
-    return service.save(
-        str(data.get("name", "")),
-        str(data.get("kind", "image")),
-        data.get("image"),
-        data.get("region"),
-        data.get("point"),
-    )
+    name = str(data.get("name", ""))
+    saved = service.save(name, str(data.get("kind", "image")), data.get("image"), data.get("region"), data.get("point"))
+    publish("library.changed", {"path": str(service._current().project), "names": [name]})  # the Library redraws it
+    return saved
 
 
 def next_item(data: dict) -> dict:

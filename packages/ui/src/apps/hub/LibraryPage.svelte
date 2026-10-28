@@ -1,8 +1,13 @@
 <!-- The Library page: everything the bot uses (decision 0013, round 4). A grid grouped by screen with filters,
      cards with a score meter, and an inspector for the chosen asset: its numbers, where it's used, and, with
      Edit on, Retake and a Rename that previews every line it changes before changing them all at once. -->
+<script lang="ts" module>
+  // the last list per bot, so coming back to the Library shows it at once while it checks for changes
+  const remembered = new Map<string, { assets: unknown[]; screens: unknown[] }>();
+</script>
+
 <script lang="ts">
-  import { request } from "$lib/api";
+  import { on, request } from "$lib/api";
   import Segmented from "$lib/components/Segmented.svelte";
   import { toast } from "$lib/toasts.svelte";
   import ActionsTab from "./ActionsTab.svelte";
@@ -12,6 +17,8 @@
     kind: "image" | "region" | "point";
     group: string;
     thumbnail: string | null;
+    version?: string; // an image's file version; the server skips thumbnails the page already has
+    same?: boolean;
     size: number[] | null;
     region?: number[] | null;
     location?: number[] | null;
@@ -149,10 +156,64 @@
   }
 
   async function load(): Promise<void> {
-    screens = await request<ScreenShot[]>("library.screens", { path }).catch(() => []);
-    assets = await request<Asset[]>("library.list", { path });
+    const before = remembered.get(path);
+    if (before && !assets.length) {
+      assets = before.assets as Asset[];
+      screens = before.screens as ScreenShot[];
+      loaded = true;
+    }
+    const [found, shots] = await Promise.all([
+      request<Asset[]>("library.list", { path, have: versions() }),
+      request<ScreenShot[]>("library.screens", { path }).catch(() => []),
+    ]);
+    assets = withThumbnails(found);
+    screens = shots;
     loaded = true;
+    remembered.set(path, { assets, screens });
     if (chosen && !assets.some((asset) => asset.name === chosen)) chosen = null;
+  }
+
+  /** Just these assets again (after a retake or a delete), merged into the list. */
+  async function refresh(names: string[]): Promise<void> {
+    const found = withThumbnails(await request<Asset[]>("library.list", { path, names, have: versions() }));
+    const byName = new Map(found.map((asset) => [asset.name, asset]));
+    const kept = assets.filter((asset) => !names.includes(asset.name) || byName.has(asset.name)).map((asset) => byName.get(asset.name) ?? asset);
+    for (const asset of found) if (!kept.some((each) => each.name === asset.name)) kept.push(asset);
+    assets = kept.sort((a, b) => (a.name < b.name ? -1 : 1));
+    screens = await request<ScreenShot[]>("library.screens", { path }).catch(() => screens);
+    remembered.set(path, { assets, screens });
+  }
+
+  function versions(): Record<string, string> {
+    const found: Record<string, string> = {};
+    for (const asset of assets) if (asset.version && asset.thumbnail) found[asset.name] = asset.version;
+    return found;
+  }
+
+  /** The server leaves out thumbnails the page already has (`same`): keep those. */
+  function withThumbnails(found: Asset[]): Asset[] {
+    const old = new Map(assets.map((asset) => [asset.name, asset]));
+    return found.map((asset) => (asset.same ? { ...asset, thumbnail: old.get(asset.name)?.thumbnail ?? null, size: old.get(asset.name)?.size ?? null } : asset));
+  }
+
+  let deleting = $state(false); // Delete asks once more
+
+  async function deleteAsset(): Promise<void> {
+    if (!current) return;
+    if (!deleting) {
+      deleting = true;
+      return;
+    }
+    deleting = false;
+    const name = current.name;
+    try {
+      await request("library.delete", { path, name });
+      toast(current.uses ? `Deleted ${name}: ${current.uses} line${current.uses === 1 ? "" : "s"} still use it` : `Deleted ${name}`);
+      await refresh([name]);
+      if (!assets.some((asset) => asset.name === name)) chosen = null;
+    } catch (error) {
+      toast((error as Error).message);
+    }
   }
 
   async function choose(name: string): Promise<void> {
@@ -199,6 +260,13 @@
     path;
     chosen = null;
     load().catch((error: Error) => toast(error.message));
+  });
+
+  $effect(() => {
+    // a retake or a new picture from Capture: redraw just those cards
+    return on("library.changed", (data: { path: string; names: string[] }) => {
+      if (data.path === path) refresh(data.names).catch(() => {});
+    });
   });
 
   $effect(() => {
@@ -335,6 +403,7 @@
         <div class="actions">
           <button class="action" onclick={() => oncapture(current?.name, current?.kind)}>▣ {current.missing ? "Take it" : "Retake"}</button>
           {#if !current.missing}<button class="action" class:on={renaming} onclick={() => { renaming = !renaming; newName = current?.name ?? ""; plan = null; planError = ""; }}>✎ Rename</button>{/if}
+          {#if !current.missing}<button class="action bad" onclick={deleteAsset} onblur={() => (deleting = false)} title="Delete its picture and settings">{deleting ? (current.uses ? `Used in ${current.uses} place${current.uses === 1 ? "" : "s"}: delete?` : `Delete ${current.name}?`) : "🗑 Delete"}</button>{/if}
         </div>
       {/if}
 

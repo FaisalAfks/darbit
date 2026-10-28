@@ -113,3 +113,21 @@ def test_a_rename_changes_files_and_every_line(project):
 def test_a_rename_that_cant_work_says_why(project, old, new, message):
     with pytest.raises(library.LibraryError, match=message):
         library.rename_plan(project, old, new)
+
+
+def test_one_asset_and_only_the_thumbnails_that_changed(project):
+    first = by_name(library.assets(project))
+    have = {"Lobby.Play": first["Lobby.Play"]["version"], "Lobby.PlayButton": "an older version"}
+    again = by_name(library.assets(project, have=have))
+    assert again["Lobby.Play"]["same"] is True and again["Lobby.Play"]["thumbnail"] is None  # the page has it
+    assert again["Lobby.PlayButton"]["thumbnail"].startswith("data:image/png;base64,")  # changed: sent again
+    only = library.assets(project, names={"Lobby.Play", "Lobby.Close"})
+    assert [entry["name"] for entry in only] == ["Lobby.Close", "Lobby.Play"]
+
+
+def test_deleting_an_asset_takes_its_files(project):
+    found = library.delete(project, "Lobby.Play")
+    assert sorted(found["files"]) == ["assets/images/Lobby.Play.json", "assets/images/Lobby.Play.png"]
+    assert by_name(library.assets(project))["Lobby.Play"]["missing"] is True  # the guide still wants it
+    with pytest.raises(library.LibraryError):
+        library.delete(project, "Lobby.Play")

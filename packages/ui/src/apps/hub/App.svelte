@@ -119,6 +119,18 @@
     form = await request("project.settings", { path });
   }
 
+  /** Retake the picture a failure names ("Lobby.Play not found"): its name goes in Capture's name slot. */
+  async function retake(failure: string): Promise<void> {
+    if (!bot) return;
+    const assets = await request<{ name: string; kind: string }[]>("library.list", { path: bot.path, have: {} }).catch(() => []);
+    let best: { name: string; kind: string } | null = null;
+    for (const asset of assets) {
+      if (failure.includes(asset.name) && (!best || asset.name.length > best.name.length)) best = asset;
+    }
+    if (best) openCapture("one", best.name, best.kind);
+    else openCapture("new");
+  }
+
   async function openCapture(mode: "guide" | "one" | "new" | "test", name = "", kind = "image"): Promise<void> {
     if (!bot) return;
     const reply = await request("capture.open", { path: bot.path, mode, name, kind }).catch((error: Error) => {
@@ -252,11 +264,11 @@
         {:else if !bot}
           <p class="empty">No bots yet. Install one with <code>darbit install &lt;link&gt;</code>, or add a bot folder from the bot menu.</p>
         {:else if page === "overview"}
-          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={() => openCapture("new")} />
+          <OverviewPage bot={bot.name} {tiles} running={status} onsetup={() => openCapture("guide")} onretake={retake} />
         {:else if page === "library"}
           <LibraryPage path={bot.path} {editing} bind:tab={libraryTab} bind:opened={openedAction} oncapture={(name, kind) => openCapture(name ? "one" : "new", name, kind)} ontest={(name) => openCapture("test", name)} />
         {:else if page === "results"}
-          <ResultsPage path={bot.path} onretake={() => openCapture("new")} />
+          <ResultsPage path={bot.path} onretake={retake} />
         {:else if page === "settings"}
           {#if form.error}
             <p class="empty bad">{form.error}</p>

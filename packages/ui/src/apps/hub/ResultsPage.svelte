@@ -212,7 +212,7 @@
             <div class="problem">
               <span class="mark" aria-hidden="true">!</span>
               <span><b>{problem.step}: {problem.reason}{problem.count > 1 ? `, ${problem.count} times` : ""}</b><small>{problem.times.map(clock).join(", ")}</small></span>
-              <button class="fix" onclick={() => onretake(problem.step)}>▣ Retake</button>
+              <button class="fix" onclick={() => onretake(`${problem.step} ${problem.reason}`)}>▣ Retake</button>
             </div>
           {/each}
         </div>
