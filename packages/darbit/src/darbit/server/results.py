@@ -7,6 +7,7 @@ cause, and the timeline lanes. All of it comes from the run report: `d.record.ga
 """
 
 from datetime import date, timedelta
+from pathlib import Path
 
 from ..project.manifest import Project
 from .dashboard import read_events, report_file
@@ -205,7 +206,13 @@ def days(project: Project) -> list[dict]:
     """The day list: each day with a report, its lead gain, how long it ran and how many problems it had."""
     found = []
     for name in report_days(project)[:DAYS_LISTED]:
-        events = read_events(report_file(project, name))
+        path = report_file(project, name)
+        size = path.stat().st_size if path.is_file() else 0
+        known = _days_made.get(path)
+        if known is not None and known[0] == size:
+            found.append(known[1])  # that day's report hasn't changed
+            continue
+        events = read_events(path)
         gains = gains_of(events)
         lead = None
         for gain_name, row in gains.items():
@@ -222,5 +229,10 @@ def days(project: Project) -> list[dict]:
         seconds = 0
         if times:
             seconds = round(max(times) - min(times))
-        found.append({"day": name, "lead": lead, "seconds": seconds, "problems": failures})
+        row = {"day": name, "lead": lead, "seconds": seconds, "problems": failures}
+        _days_made[path] = (size, row)
+        found.append(row)
     return found
+
+
+_days_made: dict[Path, tuple[int, dict]] = {}  # each day's row, by its report's size

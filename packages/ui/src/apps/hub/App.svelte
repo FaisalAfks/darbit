@@ -193,9 +193,19 @@
         if (data.status === "failed") toast(`${shown.name} stopped with an error`, "bot", shown.name);
       }
     });
+    let missed = false; // the bot's report changed while the Studio was hidden
     const stopChanged = on("project.changed", (data) => {
-      if (bot?.path === data.path && page === "overview") loadPage().catch(failed);
+      if (bot?.path !== data.path || page !== "overview") return;
+      if (document.hidden) missed = true; // in the tray or behind the run pill: nobody's looking
+      else loadPage().catch(failed);
     });
+    const onShown = () => {
+      if (!document.hidden && missed && page === "overview") {
+        missed = false;
+        loadPage().catch(failed);
+      }
+    };
+    document.addEventListener("visibilitychange", onShown);
     const stopPage = on("studio.page", (data) => {
       if (data.page === "studio-settings" && page !== "studio") toggleStudio();
       if (data.page === "action") {
@@ -208,6 +218,7 @@
     return () => {
       stopStatus();
       stopChanged();
+      document.removeEventListener("visibilitychange", onShown);
       stopPage();
     };
   });

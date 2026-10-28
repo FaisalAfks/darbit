@@ -174,3 +174,16 @@ def test_the_plan_shows_steps_still_to_come_and_gains_add_up(tmp_path):
     ]
     assert tiles["gains"].data["items"] == [{"name": "Gems", "today": 120, "total": 920, "icon": "◆"}]
     assert "activity" not in tiles  # gains and plans are darbit's own detail
+
+
+def test_a_growing_report_is_read_a_bit_at_a_time(tmp_path):
+    from darbit.server import dashboard as board
+
+    report = tmp_path / "report.jsonl"
+    report.write_text('{"event": "a"}\n{"event": "b"}\n{"event": "c', encoding="utf-8")  # the last line isn't done
+    assert [event["event"] for event in board.read_events(report)] == ["a", "b"]
+    with report.open("a", encoding="utf-8") as file:
+        file.write('"}\nnot json\n{"event": "d"}\n')
+    assert [event["event"] for event in board.read_events(report)] == ["a", "b", "c", "d"]
+    report.write_text('{"event": "new day"}\n', encoding="utf-8")  # shorter: started again
+    assert [event["event"] for event in board.read_events(report)] == ["new day"]

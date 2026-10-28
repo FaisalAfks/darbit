@@ -16,6 +16,7 @@
 - The first hour on the Results timeline was cut off
 - The Library showed old pictures after a retake until the bot was opened again: a saved picture now redraws its card at once, coming back to the Library shows the last list straight away while it checks for changes, and only changed thumbnails are sent
 - Retake from the Overview or Results opened Capture with an empty name: it now fills in the picture the failure names
+- The Studio kept a CPU core busy while a bot ran: every second it read and parsed the whole day's report (a few MB) and rebuilt the Overview, twice. The report is now read a bit at a time (only new lines, about 10 ms instead of 100), the Overview is made again only when the report, the minute, the guide or the pictures change, the Studio looks every 2 s, and a hidden Studio doesn't redraw at all until it's shown
 - Pausing a recording kept held keys down for the rest of the tape and kept the paused time in it: pausing now lets go of held keys on the tape and leaves the pause out
 - Recording with the name of an existing action replaced it without asking: it now has to be Re-record
 - After the stop hotkey (Ctrl+Alt+Q) ended one played action, every later Play in the same Studio ended at once without doing anything: each Play now starts fresh, so Ctrl+Alt+Q is the way to stop a played action

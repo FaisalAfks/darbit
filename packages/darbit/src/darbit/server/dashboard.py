@@ -53,18 +53,70 @@ def report_file(project: Project, day: str) -> Path:
 
 
 def read_events(path: Path) -> list[dict]:
-    """Every event in a run report, oldest first; a broken line is skipped."""
+    """Every event in a run report, oldest first; a broken line is skipped.
+
+    A running bot only adds lines, so what's been read is kept and only the new lines are read next time (a day's
+    report is a few MB; reading it all again every couple of seconds kept a core busy). The list is shared: don't
+    change it or its events.
+    """
     if not path.is_file():
+        _read.pop(path, None)
         return []
-    found = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        try:
-            event = json.loads(line)
-        except ValueError:
-            continue
-        if isinstance(event, dict):
-            found.append(event)
-    return found
+    size = path.stat().st_size
+    known = _read.get(path)
+    if known is None or size < known.offset or not _only_grew(path, known):
+        known = _Read()  # new, or written again from the start
+    if size > known.offset:
+        with path.open("rb") as file:
+            file.seek(known.offset)
+            data = file.read(size - known.offset)
+        end = data.rfind(b"\n") + 1  # a line still being written waits for next time
+        if end < len(data) and _whole(data[end:]):
+            end = len(data)  # the last line has no line break but is whole
+        if end:
+            known.tail = (known.tail + data[:end])[-TAIL:]
+        for line in data[:end].splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(event, dict):
+                known.events.append(event)
+        known.offset += end
+    _read.pop(path, None)
+    _read[path] = known  # newest last
+    while len(_read) > KEEP_READ:
+        _read.pop(next(iter(_read)))
+    return known.events
+
+
+class _Read:
+    def __init__(self) -> None:
+        self.offset = 0  # bytes read so far
+        self.tail = b""  # the last bytes read, to tell a report that grew from one written again
+        self.events: list[dict] = []
+
+
+def _whole(line: bytes) -> bool:
+    try:
+        json.loads(line)
+    except ValueError:
+        return False
+    return True
+
+
+def _only_grew(path: Path, known: _Read) -> bool:
+    """The bytes read last time are still where they were: the report only grew."""
+    if not known.tail:
+        return True
+    with path.open("rb") as file:
+        file.seek(known.offset - len(known.tail))
+        return file.read(len(known.tail)) == known.tail
+
+
+_read: dict[Path, _Read] = {}
+KEEP_READ = 3  # reports kept read: today's, and a couple the Results page looked at
+TAIL = 256  # bytes compared to tell a report that grew from one written again
 
 
 def tiles(project: Project, day: str | None = None, now: datetime | None = None) -> list[Tile]:

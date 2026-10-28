@@ -16,13 +16,13 @@ from pathlib import Path
 
 from .. import paths
 from ..project import bots
-from ..project.manifest import MANIFEST, ProjectError, load
+from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
 from . import dashboard, library, results, ui_settings
 from .events import publish
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
-WATCH_EVERY = 1.0  # seconds between looks at a running bot's report
+WATCH_EVERY = 2.0  # seconds between looks at a running bot's report
 STOP_WAIT = 10.0  # seconds a bot gets to stop before it's ended
 
 
@@ -236,10 +236,29 @@ def dashboard_tiles(data: dict) -> dict:
     folder = _folder(data)
     project = load(folder)
     day = data.get("day") or None
-    tiles = []
-    for tile in dashboard.tiles(project, day):
-        tiles.append(asdict(tile))
-    return {"project": describe(folder), "tiles": tiles}
+    key = _tiles_key(project, day)
+    if _tiles_made.get(str(folder), (None, None))[0] != key:
+        tiles = []
+        for tile in dashboard.tiles(project, day):
+            tiles.append(asdict(tile))
+        _tiles_made[str(folder)] = (key, tiles)
+    return {"project": describe(folder), "tiles": _tiles_made[str(folder)][1]}
+
+
+_tiles_made: dict[str, tuple[tuple, list[dict]]] = {}  # the Overview's tiles, made again only when something changed
+
+
+def _tiles_key(project: Project, day: str | None) -> tuple:
+    """What the tiles depend on: the report, the minute (next up counts down), the guide and the pictures."""
+    report = dashboard.report_file(project, day or datetime.now().strftime("%Y-%m-%d"))
+    parts: list = [day, datetime.now().strftime("%H:%M")]
+    for path in [report, project.folder / "guide.toml", *library._folders(project)]:
+        try:
+            stat = path.stat()
+            parts.append((stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            parts.append(None)
+    return tuple(parts)
 
 
 def settings_get(data: dict) -> dict:
