@@ -40,15 +40,15 @@
 </div>
 
 <style>
+  /* the page fills the bar's window, whose corners Windows rounds */
   :global(html),
   :global(body) {
     margin: 0;
-    background: transparent;
+    background: var(--glass-strong);
     overflow: hidden;
   }
   .bar {
     display: grid;
-    place-items: center;
     height: 100vh;
     font-family: var(--font);
     color: var(--text);
@@ -58,11 +58,6 @@
     align-items: center;
     gap: var(--space-m);
     padding: var(--space-s) var(--space-s) var(--space-s) var(--space-l);
-    border-radius: var(--radius-pill);
-    background: var(--glass-strong);
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow);
-    animation: drop var(--duration-normal) var(--curve-decelerate);
   }
   .dot {
     width: var(--space-s);
@@ -71,6 +66,8 @@
     background: var(--warn);
   }
   .text {
+    flex: 1;
+    min-width: 0;
     display: grid;
     font-size: var(--size-caption);
   }

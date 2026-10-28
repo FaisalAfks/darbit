@@ -35,6 +35,8 @@ BUTTONS = {0: "left", 1: "right", 2: "middle"}
 ignore_area: Callable[[], tuple[int, int, int, int] | None] | None = (
     None  # the bar's screen rectangle, from the desktop
 )
+shortcuts: dict[str, str] = {}  # the recorder's global keys, for the bar: {"run.pause": "ctrl+alt+p", ...}
+missing_shortcuts: list[str] = []  # the ones another program already has
 on_end: Callable[[str | None], None] | None = None  # the desktop closes the bar and opens the action (None: cancelled)
 
 
@@ -171,6 +173,8 @@ def status() -> dict:
         "count": len(steps),
         "checks": checks,
         "parts": len(recording.marks) + 1,
+        "keys": shortcuts,
+        "missing": missing_shortcuts,
         "steps": shown,
     }
 

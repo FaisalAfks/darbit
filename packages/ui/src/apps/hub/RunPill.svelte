@@ -61,14 +61,26 @@
 </div>
 
 <style>
+  /* the page fills the bar's window, whose corners Windows rounds */
   :global(html),
   :global(body) {
-    background: transparent;
+    margin: 0;
+    background: var(--glass-strong);
+    overflow: hidden;
   }
   .bar {
     display: grid;
-    place-items: center;
     height: 100vh;
+  }
+  .bar > :global(.pill) {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0 var(--space-s);
+  }
+  .what {
+    flex: 1;
   }
   .what {
     display: inline-flex;

@@ -16,7 +16,7 @@ from . import pill
 from .windows import Window, open_window
 
 BAR_WIDTH = 620  # px, the bar and its panels
-BAR_HEIGHT = 76
+BAR_HEIGHT = 56  # the bar fills its window, its buttons in the middle
 PANEL_HEIGHT = 470  # with the check menu or the live steps open
 
 
@@ -28,7 +28,7 @@ def _keys() -> dict[str, str]:
     return {
         "run.pause": found.get("run.pause", "ctrl+alt+p"),
         "record.toggle": found.get("record.toggle", "ctrl+alt+r"),
-        "record.mark": found.get("record.mark", "ctrl+alt+m"),
+        "record.mark": found.get("record.mark", "ctrl+alt+k"),
     }
 
 
@@ -61,7 +61,10 @@ class RecordWindow:
                 "record.toggle": self.stop_from_key,
                 "record.mark": record_api.mark,
             }
-            self.hotkey = hotkeys.register(_keys(), handlers)
+            keys = _keys()
+            self.hotkey = hotkeys.register(keys, handlers)
+            record_api.shortcuts = keys
+            record_api.missing_shortcuts = list(self.hotkey.missing)  # another program has them: the bar says so
             try:
                 return record_api.start(folder, str(data.get("name", "")), bool(data.get("replace")))
             except ValueError:

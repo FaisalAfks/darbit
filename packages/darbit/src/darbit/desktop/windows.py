@@ -27,6 +27,10 @@ SIZES = {
     "clickthrough": (0, 0),
 }
 TITLES = {"hub": "darbit Studio"}
+BAR_MIN_SIZE = (120, 32)
+BAR_BACKGROUND = "#0b0d12"  # a bar's window before its page draws, the Studio's own background
+DWMWA_WINDOW_CORNER_PREFERENCE = 33
+DWMWCP_ROUND = 2
 
 
 def styles(kind: Kind) -> int:
@@ -82,11 +86,17 @@ def page_url(app: str, query: dict | None = None) -> str:
 
 
 def _add_styles(native: object, kind: Kind) -> None:
-    """Set the kind's extended styles on the real window once it exists (bars never take focus)."""
+    """Set the kind's extended styles on the real window once it exists (bars never take focus, and get the
+    rounded corners Windows 11 gives normal windows)."""
     extra = styles(kind)
     if not extra:
         return
     handle = native.native.Handle.ToInt64()  # the WinForms form pywebview made
+    if kind == "bar":
+        corner = ctypes.c_int(DWMWCP_ROUND)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            ctypes.c_void_p(handle), DWMWA_WINDOW_CORNER_PREFERENCE, ctypes.byref(corner), ctypes.sizeof(corner)
+        )
     user32 = ctypes.windll.user32
     current = user32.GetWindowLongPtrW(ctypes.c_void_p(handle), GWL_EXSTYLE)
     user32.SetWindowLongPtrW(ctypes.c_void_p(handle), GWL_EXSTYLE, current | extra)
@@ -109,6 +119,10 @@ def open_window(
         options.update({"frameless": True, "on_top": True, "easy_drag": False, "focus": False, "transparent": True})
     if kind == "bar":
         options["easy_drag"] = True  # a bar is moved by dragging it anywhere
+        # the page fills a bar's window: pywebview's transparency on Windows leaves the form's grey showing
+        options["transparent"] = False
+        options.setdefault("background_color", BAR_BACKGROUND)
+        options.setdefault("min_size", BAR_MIN_SIZE)  # pywebview's own minimum (200 x 100) is taller than a bar
     if kind == "overlay":
         options["focus"] = True  # Capture's keys (Esc, Enter, arrows) need the keyboard
     if kind in ("overlay", "clickthrough"):

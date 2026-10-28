@@ -18,6 +18,8 @@
     count?: number;
     checks?: number;
     parts?: number;
+    keys?: Record<string, string>;
+    missing?: string[];
     steps?: Shown[];
   }
 
@@ -32,6 +34,15 @@
   let problem = $state("");
 
   const clock = $derived(clockOf(status.seconds ?? 0));
+  const missing = $derived((status.missing ?? []).map((action) => keyOf(action)).join(", "));
+
+  function keyOf(action: string): string {
+    const combo = status.keys?.[action] ?? "";
+    return combo
+      .split("+")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("+");
+  }
 
   function clockOf(seconds: number): string {
     const whole = Math.floor(seconds);
@@ -85,19 +96,19 @@
   });
 </script>
 
-<div class="wrap">
+<div class="wrap" class:open={menu || live}>
   <div class="pill" class:paused={status.paused}>
     <span class="rec" aria-hidden="true"></span>
     <span class="time">{clock}</span>
     <b class="name">{status.name ?? "…"}</b>
     <small>{(status.parts ?? 1) > 1 ? `part ${status.parts} · ` : ""}{status.count ?? 0} steps · {status.checks ?? 0} checks{status.paused ? " · paused" : ""}</small>
-    <span class="sep"></span>
+    {#if missing}<span class="taken" title="{missing}: another program already uses it, so use the buttons here (or change it in keymap.toml)">⚠ {missing}</span>{/if}
     <button class="check" class:on={menu} onclick={openChecks} title="Pause and add a check here">＋ Check</button>
-    <button class="icon" aria-label="Checkpoint" title="Checkpoint: what's recorded so far becomes its own action (Ctrl+Alt+M)" onclick={() => request("record.mark").then((found) => (status = found))}>⚑</button>
+    <button class="icon" aria-label="Checkpoint" title="Checkpoint: what's recorded so far becomes its own action ({keyOf('record.mark')})" onclick={() => request("record.mark").then((found) => (status = found))}>⚑</button>
     <button class="icon" class:on={live} aria-label="Live steps" title="Live steps" onclick={toggleLive}>≡</button>
     <button class="icon" aria-label="Forget the last step" title="Forget the last step" onclick={() => request("record.undo").then((found) => (status = found))}>↶</button>
-    <button class="icon go" aria-label={status.paused ? "Go on" : "Pause"} title="{status.paused ? 'Go on' : 'Pause'} (Ctrl+Alt+P)" onclick={togglePause}>{status.paused ? "▶" : "❚❚"}</button>
-    <button class="icon stop" aria-label="Stop and save" title="Stop and save (Ctrl+Alt+R)" onclick={() => request("record.stop", { keep: true })}>■</button>
+    <button class="icon go" aria-label={status.paused ? "Go on" : "Pause"} title="{status.paused ? 'Go on' : 'Pause'} ({keyOf('run.pause')})" onclick={togglePause}>{status.paused ? "▶" : "❚❚"}</button>
+    <button class="icon stop" aria-label="Stop and save" title="Stop and save ({keyOf('record.toggle')})" onclick={() => request("record.stop", { keep: true })}>■</button>
   </div>
 
   {#if menu}
@@ -142,17 +153,18 @@
 </div>
 
 <style>
+  /* the page fills the bar's window, whose corners Windows rounds */
   :global(html),
   :global(body) {
     margin: 0;
-    background: transparent;
+    height: 100%;
+    background: var(--glass-strong);
     overflow: hidden;
   }
   .wrap {
     display: grid;
-    justify-items: center;
-    gap: var(--space-s);
-    padding-top: var(--space-xs);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100vh;
     font-family: var(--font);
     color: var(--text);
   }
@@ -160,13 +172,31 @@
     display: flex;
     align-items: center;
     gap: var(--space-s);
+    min-width: 0;
     padding: var(--space-s) var(--space-s) var(--space-s) var(--space-l);
-    border-radius: var(--radius-pill);
-    background: var(--glass-strong);
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow);
     white-space: nowrap;
-    animation: drop var(--duration-normal) var(--curve-decelerate);
+  }
+  .wrap:not(.open) .pill {
+    height: 100vh; /* the whole window, buttons in the middle */
+    box-sizing: border-box;
+  }
+  .open .pill {
+    border-bottom: 1px solid var(--line);
+  }
+  .name {
+    max-width: calc(4 * var(--control-l));
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pill > small {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .taken {
+    color: var(--warn);
+    font-size: var(--size-caption);
   }
   .rec {
     position: relative;
@@ -205,18 +235,12 @@
   .name {
     font: 700 var(--size-body) / 1 var(--font-strong);
   }
+  .time {
+    font-variant-numeric: tabular-nums;
+  }
   small {
     color: var(--muted);
     font-size: var(--size-caption);
-  }
-  .pill > small {
-    min-width: calc(7 * var(--control-l)); /* the buttons don't shift when "part 2" appears */
-    font-variant-numeric: tabular-nums;
-  }
-  .sep {
-    width: 1px;
-    height: var(--space-xl);
-    background: var(--line);
   }
   .check {
     height: var(--control-m);
@@ -255,15 +279,11 @@
     color: var(--danger);
   }
   .panel {
-    width: calc(100% - 2 * var(--space-l));
-    box-sizing: border-box;
     display: grid;
+    align-content: start;
     gap: var(--space-s);
     padding: var(--space-m);
-    border-radius: var(--radius-xl);
-    background: var(--glass-strong);
-    border: 1px solid var(--line);
-    box-shadow: var(--shadow);
+    overflow: auto;
     animation: drop var(--duration-normal) var(--curve-decelerate);
   }
   h6 {
