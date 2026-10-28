@@ -154,3 +154,36 @@ def test_renaming_an_action_follows_it_everywhere(project):
     assert actions_api.breakpoints(project)["go_to_boss"] == [6]
     with pytest.raises(ValueError):
         actions_api.rename(project, "go_to_boss", "count")  # taken
+
+
+def test_deleting_an_action_takes_its_recording_but_not_one_still_played(project):
+    with pytest.raises(ValueError, match="count still plays helper"):
+        actions_api.delete(project, "helper")
+    (project / "actions" / "count.tape.json").write_text("{}", encoding="utf-8")
+    actions_api.set_breakpoints(project, "count", [5])
+    assert actions_api.delete(project, "count") == {"deleted": "count"}
+    assert not (project / "actions" / "count.py").exists()
+    assert not (project / "actions" / "count.tape.json").exists()
+    assert "count" not in actions_api.breakpoints(project)
+    actions_api.delete(project, "helper")  # nothing plays it now
+
+
+def test_a_stop_key_press_doesnt_stop_every_play_after_it(project):
+    from darbit.platform import safety
+
+    safety.stop()  # Ctrl+Alt+Q during an earlier play
+    finished = []
+
+    def on_end(topic, data):
+        if topic == "action.ended":
+            finished.append(data["status"])
+
+    nap = "import darbit as d\n\n\n@d.flow\ndef nap():\n    d.sleep(0.01)\n"
+    (project / "actions" / "nap.py").write_text(nap, encoding="utf-8")
+    stop_listening = events.listen(on_end)
+    actions_api.play(project, "nap")
+    deadline = time.monotonic() + 5
+    while not finished and time.monotonic() < deadline:
+        time.sleep(0.01)
+    stop_listening()
+    assert finished == ["done"]

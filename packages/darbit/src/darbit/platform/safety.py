@@ -52,6 +52,15 @@ def stop() -> None:
         callback()
 
 
+def reset() -> None:
+    """Forget an earlier stop, so the next run in this process can go: darbit Studio plays one action after
+    another, and the stop hotkey that ended one mustn't end every one after it."""
+    with _lock:
+        _pending.clear()
+    _stopped.clear()
+    _wake.clear()
+
+
 def interrupt(event: Interrupted) -> bool:
     """Post an interrupt for the script. False if one is already waiting or interrupts are muted."""
     with _lock:

@@ -195,6 +195,29 @@ def rename(project: Path, name: str, to: str) -> dict:
     return read(project, to)
 
 
+def delete(project: Path, name: str) -> dict:
+    """Delete an action, its tape and its breakpoints. An action other actions still play can't be deleted."""
+    folder = _folder(project)
+    path = folder / f"{name}.py"
+    if not path.exists():
+        raise ValueError(f"there's no action called {name}")
+    callers = []
+    for other in folder.glob("*.py"):
+        if other != path and f"from .{name} import {name}" in other.read_text(encoding="utf-8"):
+            callers.append(other.stem)
+    if callers:
+        raise ValueError(f"{', '.join(sorted(callers))} still plays {name}: take it out there first")
+    path.unlink()
+    recorded = tape.path_for(path)
+    if recorded.exists():
+        recorded.unlink()
+    found = breakpoints(project)
+    if name in found:
+        del found[name]
+        _breakpoints_file(project).write_text(json.dumps(found, indent=2), encoding="utf-8")
+    return {"deleted": name}
+
+
 def _rename_calls(path: Path, name: str, to: str) -> None:
     """`from .name import name` and `name()` in another action become `to`."""
     text = path.read_text(encoding="utf-8")
@@ -289,6 +312,9 @@ def register() -> None:
     def control_request(data: dict) -> dict:
         return control(str(data.get("what", "")))
 
+    def delete_request(data: dict) -> dict:
+        return delete(_project(data), str(data.get("name", "")))
+
     def rename_request(data: dict) -> dict:
         return rename(_project(data), str(data.get("name", "")), str(data.get("to", "")).strip())
 
@@ -306,3 +332,4 @@ def register() -> None:
     HANDLERS["actions.control"] = control_request
     HANDLERS["actions.tape"] = tape_request
     HANDLERS["actions.rename"] = rename_request
+    HANDLERS["actions.delete"] = delete_request

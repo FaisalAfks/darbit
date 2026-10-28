@@ -41,6 +41,7 @@
   let renaming = $state(false);
   let renameTo = $state("");
   let replacing = $state(false); // Re-record asks once more before replacing
+  let deleting = $state(false); // and so does Delete
 
   const KINDS: Record<string, { icon: string; tone: string }> = {
     key: { icon: "⌨", tone: "var(--accent-2)" },
@@ -150,6 +151,22 @@
         stack = [...stack.slice(0, -1), to]; // a part opened from the action that calls it
         await load();
       }
+    } catch (error) {
+      toast((error as Error).message);
+    }
+  }
+
+  async function deleteAction(): Promise<void> {
+    if (!deleting) {
+      deleting = true;
+      return;
+    }
+    deleting = false;
+    try {
+      await request("actions.delete", { path, name: current });
+      toast(`Deleted ${current}`);
+      if (stack.length === 1) onback();
+      else await back(stack.length - 2);
     } catch (error) {
       toast((error as Error).message);
     }
@@ -409,6 +426,7 @@
     try {
       await request("actions.play", { path, name: current, stepping });
       playing = true;
+      toast("Playing: Ctrl+Alt+Q stops it");
     } catch (error) {
       toast((error as Error).message);
     }
@@ -624,6 +642,7 @@
           {:else}
             <button class="tool" onclick={() => { renameTo = current; renaming = true; }} title="Rename it, and every action that calls it">✎ Rename</button>
           {/if}
+          <button class="tool bad" onclick={deleteAction} onblur={() => (deleting = false)} title="Delete this action and its recording">{deleting ? `Delete ${current}? Yes` : "🗑 Delete"}</button>
           <button class="tool bad" onclick={recordAgain} onblur={() => (replacing = false)} title="Record this action again; the actions that call it keep calling it">{replacing ? `Replace ${current}? ● Yes` : "● Re-record"}</button>
         {/if}
         <button class="tool" onclick={() => play(true)} title="Run one line at a time">⤼ Step through</button>
