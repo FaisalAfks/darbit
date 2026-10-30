@@ -19,7 +19,6 @@ repos:
         entry: '(:=|^\s*from __future__ import)'
         types: [python]
         files: ^packages/darbit/src/
-        exclude: ^packages/darbit/src/darbit/capture/(overlay|session)\.py$  # the Tk screens, dropped in the rebuild
       - id: plain-bot-python
         name: plainest Python for bot code (docs/style/code.md)
         language: pygrep

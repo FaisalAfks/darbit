@@ -6,6 +6,7 @@ import tomllib
 
 import pytest
 
+import darbit
 from darbit import cli
 from darbit.project import bots
 from darbit.project.manifest import load
@@ -33,10 +34,14 @@ def test_new_makes_a_project(tmp_path):
     assert project.name == "my-bot"
     assert project.entry == "my_bot.bot:main"
     assert project.images == ["assets/images"]
-    assert project.darbit.startswith(">=0.")
+    assert project.darbit == ">=" + ".".join(darbit.__version__.split(".")[:2])
     pyproject = tomllib.loads((folder / "pyproject.toml").read_text(encoding="utf-8"))
     assert pyproject["project"]["scripts"] == {"my-bot": "my_bot.bot:main"}
-    assert pyproject["tool"]["uv"]["sources"]["darbit"]["tag"].startswith("v0.")
+    source = pyproject["tool"]["uv"]["sources"]["darbit"]
+    if ".dev" in darbit.__version__:
+        assert source["branch"] == "main"  # a development darbit has no release tag to pin to
+    else:
+        assert source["tag"] == "v" + darbit.__version__
     tomllib.loads((folder / "guide.toml").read_text(encoding="utf-8"))
     compile((folder / "src/my_bot/bot.py").read_text(encoding="utf-8"), "bot.py", "exec")
 
@@ -93,7 +98,6 @@ def test_install_from_the_command(tmp_path, capsys):
     assert cli.main(["install", str(repo), "--into", str(tmp_path / "bots")]) == 0
     out = capsys.readouterr().out
     assert "installed in" in out
-    assert "darbit guide" in out
 
 
 def test_entry_commands(tmp_path):
@@ -123,23 +127,8 @@ def test_run_without_a_project(tmp_path, capsys):
     assert "no darbit.toml" in capsys.readouterr().out
 
 
-def test_guide_hands_over_to_the_capture_tool(monkeypatch):
-    import darbit.capture
-
-    seen = []
-
-    def capture(argv):
-        seen.append(argv)
-        return 0
-
-    monkeypatch.setattr(darbit.capture, "main", capture)
-    assert cli.main(["guide"]) == 0
-    assert cli.main(["guide", "other.toml", "--folder", "assets/images"]) == 0
-    assert seen == [["--guide", "guide.toml"], ["--guide", "other.toml", "--folder", "assets/images"]]
-
-
-def test_commands_still_to_come_say_so(capsys):
-    assert cli.main(["record"]) == 2
-    assert "T15" in capsys.readouterr().out
+def test_the_studio_command_says_where_the_studio_is(capsys):
+    assert cli.main(["app"]) == 2
+    assert "v0.4.0" in capsys.readouterr().out
     with pytest.raises(SystemExit):
         cli.main(["fly"])

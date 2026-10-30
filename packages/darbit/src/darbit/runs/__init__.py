@@ -1,8 +1,5 @@
-"""Run files: recorded runs that a bot plays. See docs/archive/tasks/T14-run-files.md, T15 and T16.
+"""Recorded and written actions: action files (flowfile.py), the recorder (recorder.py) and the player (player.py).
 
-d.play("runs/slime.yaml")
+Actions are `@d.flow` Python files in a bot's `actions/` folder (decision 0010); recordings are tapes
+(decision 0014).
 """
-
-from .model import Checkpoint, Goal, Run, Step, dump, load
-
-__all__ = ["Checkpoint", "Goal", "Run", "Step", "dump", "load"]

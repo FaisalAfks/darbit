@@ -10,13 +10,12 @@ platform   screen capture, input, windows, DPI,   Windows only; everything that 
            the stop hotkey
 runtime    find, act, wait, observers, state,     what scripts call (darbit/__init__.py re-exports it)
            logs, run report, steps
-tools · capture · runs · project                  the tools: library check, report, capture tool,
-                                                  run files, bot projects
-server     the local server for the UI            only with the `app` extra
-desktop    desktop windows (pywebview)            only with the `app` extra
+tools · capture · runs · project                  the tools: library check, report, capturing,
+                                                  actions and recording, bot projects
+server     the logic behind the Studio's pages    moves into the service (rebuild plan, milestone 3)
 ```
 
-A layer only imports from the layers above it in this list. `import darbit` loads `core`, `platform` and `runtime`; the Studio parts load only when used.
+A layer only imports from the layers above it in this list. `import darbit` loads `core`, `platform` and `runtime`. This is v0.4's layout; the [rebuild plan](../plan-rebuild.md) replaces it milestone by milestone.
 
 ## What happens on `d.click("Gui.Play")`
 

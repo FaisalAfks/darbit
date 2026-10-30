@@ -14,6 +14,6 @@ hello-bot/
 
 ```bash
 uv sync                                                # darbit at the pinned release
-uv run darbit guide --folder assets/images             # take the button's picture
+# take the button's picture in darbit Studio's Capture (docs/guides/capture.md)
 uv run darbit run                                      # Ctrl+Alt+Q stops it
 ```

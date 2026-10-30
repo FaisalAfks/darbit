@@ -341,32 +341,3 @@ def _current() -> Recording:
     if _recording is None:
         raise ValueError("not recording")
     return _recording
-
-
-def register() -> None:
-    from .app import HANDLERS
-
-    def pause_request(data: dict) -> dict:
-        return pause()
-
-    def mark_request(data: dict) -> dict:
-        return mark()
-
-    def check_request(data: dict) -> dict:
-        return add_check(data)
-
-    def undo_request(data: dict) -> dict:
-        return remove_last()
-
-    def stop_request(data: dict) -> dict:
-        return stop(bool(data.get("keep", True)))
-
-    def status_request(data: dict) -> dict:
-        return status()
-
-    HANDLERS["record.pause"] = pause_request
-    HANDLERS["record.mark"] = mark_request
-    HANDLERS["record.check"] = check_request
-    HANDLERS["record.undo"] = undo_request
-    HANDLERS["record.stop"] = stop_request
-    HANDLERS["record.status"] = status_request

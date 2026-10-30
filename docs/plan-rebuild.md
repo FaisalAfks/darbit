@@ -10,7 +10,7 @@ darbit is rebuilt around a fast, swappable core, with the Studio as a thin clien
 
 - The **library** (`darbit`) is the product: SikuliX for Python. Everything else serves it.
 - The **Studio** is a companion app, like the SikuliX IDE plus a bot manager: capture, record, run, watch results.
-- The **CLI** is a set of entry points (`darbit run`, `darbit app`, `darbit capture`), not a product of its own.
+- The **CLI** is a set of entry points (`darbit run`, `darbit app`, `darbit serve`), not a product of its own.
 - **ad-bot** (Anime Dimensions on Roblox) is the first real bot and the test of every milestone.
 
 ## 2. Principles

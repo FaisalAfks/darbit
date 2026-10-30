@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Removed
+
+- v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service
+- The old Tk capture tool and `darbit capture` and `darbit guide`; capturing goes through the Studio. The capture session, store, engine and setup guides stay
+- The placeholder modules (DXGI capture, run files, highlight, the capture API) and the keymap's unfinished functions
+
+### Changed
+
+- `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
+
 ### Docs
 
 - The rebuild plan (draft): what darbit is, every feature to design for, the core API, the process layout, the Studio on PySide6 and the order of work

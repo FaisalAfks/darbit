@@ -111,20 +111,18 @@ def test_nothing_works_without_a_session():
 
 
 def test_the_guide_gives_the_items_in_order(tmp_path):
-    from darbit.desktop.capture_window import items_for
-
     (tmp_path / "guide.toml").write_text(
         'title = "Setup"\n\n[[screen]]\nname = "Bag"\nsay = "Open the bag"\n\n[[screen.take]]\nimage = "Bag.Equip"\n\n'
         '[[screen.take]]\nlocation = "Bag.Slot"\nsay = "the first slot"\n',
         encoding="utf-8",
     )
-    items = items_for(tmp_path, "guide", "", "image")
+    items = service.items_for(tmp_path, "guide", "", "image")
     assert [(item.name, item.kind, item.note, item.screen) for item in items] == [
         ("Bag.Equip", "image", "Open the bag", "Bag"),
         ("Bag.Slot", "location", "the first slot", "Bag"),
     ]
-    assert items_for(tmp_path, "one", "Lobby.Play", "point")[0].kind == "location"
-    assert items_for(tmp_path, "new", "", "image") == []
+    assert service.items_for(tmp_path, "one", "Lobby.Play", "point")[0].kind == "location"
+    assert service.items_for(tmp_path, "new", "", "image") == []
 
 
 def test_hotkeys_read_like_the_keymap():

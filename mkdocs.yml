@@ -39,7 +39,7 @@ nav:
       - Targets and calls: guides/targets-and-calls.md
       - Observers and saved state: guides/observers-and-state.md
       - Logs, reports, library check: guides/logs-and-reports.md
-      - The capture tool: guides/capture.md
+      - Capturing targets: guides/capture.md
       - Bot projects: guides/projects.md
   - Architecture: architecture/index.md
   - API reference: reference/api.md

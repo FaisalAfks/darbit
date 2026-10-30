@@ -139,26 +139,6 @@ def test_dump_reads_back_the_same(tmp_path):
     assert again == guide
 
 
-def test_capture_tool_converts_a_list_once(tmp_path, capsys):
-    from darbit.capture import main
-
-    list_file = tmp_path / "capture.txt"
-    list_file.write_text((DATA / "capture.txt").read_text(encoding="utf-8"), encoding="utf-8")
-    assert main(["--guide", str(list_file)]) == 0
-    guide = load(tmp_path / "guide.toml")
-    assert guide.screens[1].take[0].kind == "images"
-    assert main(["--guide", str(list_file)]) == 2  # never overwrites
-    assert "already exists" in capsys.readouterr().out
-
-
-def test_capture_tool_stops_on_a_bad_guide(tmp_path, capsys):
-    from darbit.capture import main
-
-    path = write(tmp_path, '[[screen]]\nsay = "no name"')
-    assert main(["--guide", str(path)]) == 2
-    assert "needs a name" in capsys.readouterr().out
-
-
 def test_runs_keep_their_notes_when_they_say_more_than_the_name(tmp_path):
     path = tmp_path / "capture.txt"
     lines = ["[Menu]"]

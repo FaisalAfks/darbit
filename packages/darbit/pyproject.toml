@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "darbit"
-version = "0.4.0"
-description = "Simple GUI automation for Windows, in Python"
+version = "1.0.0.dev0"
+description = "Automate any app from what's on its screen, in Python"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 requires-python = ">=3.11"
@@ -16,19 +16,12 @@ dependencies = [
     "platformdirs>=4.2",
 ]
 
-[project.optional-dependencies]
-# darbit Studio and its tools: the local server and the desktop windows (docs/tasks/T05, T06)
-app = ["starlette>=0.40", "uvicorn>=0.30", "websockets>=13", "pywebview>=5.3"]
-
 [project.scripts]
 darbit = "darbit.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/FaisalAfks/darbit"
 Documentation = "https://github.com/FaisalAfks/darbit/tree/main/docs"
-
-[tool.hatch.build]
-artifacts = ["src/darbit/ui/static/**"]  # the built web UI: git-ignored, built before a release (npm run build)
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/darbit"]

@@ -6,7 +6,7 @@
     test(box, region, similarity)          # every place the boxed picture is found in its region, with scores
     save(name, kind, image, region, point) # write the target's files, like the old capture tool
 
-Coordinates are pixels of the frozen shot. server/capture_api.py turns these into requests; nothing here imports
+Coordinates are pixels of the frozen shot. The Studio's Capture calls these directly; nothing here imports
 the server. See docs/archive/tasks/T09-capture-overlay.md.
 """
 
@@ -245,3 +245,22 @@ def stop() -> None:
     """End the session and let go of the shot."""
     global _session
     _session = None
+
+
+def items_for(folder: Path, mode: str, name: str, kind: str) -> list[Item]:
+    """What to take: the guide's pictures not taken yet, one named asset, or nothing set (anything)."""
+    if mode == "one" and name:
+        capture_kind = "location" if kind == "point" else kind
+        return [Item(name, capture_kind or "image")]
+    if mode != "guide":
+        return []
+    guide_file = folder / "guide.toml"
+    if not guide_file.is_file():
+        return []
+    from .guide import load as load_guide
+    from .guide import steps
+
+    found = []
+    for step in steps(load_guide(guide_file)):
+        found.append(Item(step.name, step.kind, step.take.say or step.screen.say, step.screen.name))
+    return found

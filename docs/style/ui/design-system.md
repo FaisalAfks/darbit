@@ -27,7 +27,7 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 - **Sizes follow Fluent 2,** Microsoft's design system for Windows apps: its type ramp ([typography](https://fluent2.microsoft.design/typography)) and its spacing, corner, duration and curve tokens (`microsoft/fluentui`, `packages/tokens/src/global`). Windows users already know these proportions.
 - **Text in the Studio's content is 16 px** (Fluent's Subtitle 2); controls and the overlays over the game use 14 px (Body 1); chips, keys and hints 12 px (Caption 1).
 - **Accessibility follows WCAG 2.2 AA:** text 4.5:1 against what it sits on, hint text and indicators 3:1, nothing clickable smaller than 24 × 24 px, a visible focus outline, and focus never hidden behind a sheet.
-- **Checked on every build** (`npm run check`): `scripts/check-tokens.ts` refuses a missing token, a colour outside the token files, and a raw pixel size in a component (only 1–2 px hairlines and a component's own named sizes, `--track-width: 44px`, are allowed); `scripts/check-contrast.ts` measures every text and control pair in all four themes, with glass mixed over the background as it shows on screen.
+- **Checked on every build of v0.4's web UI** (`npm run check`, in the `v0.4.0` tag; the QML Studio gets its own check): `scripts/check-tokens.ts` refuses a missing token, a colour outside the token files, and a raw pixel size in a component (only 1–2 px hairlines and a component's own named sizes, `--track-width: 44px`, are allowed); `scripts/check-contrast.ts` measures every text and control pair in all four themes, with glass mixed over the background as it shows on screen.
 
 ## Tokens
 

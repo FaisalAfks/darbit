@@ -224,3 +224,8 @@ def test_a_bot_an_earlier_studio_started_is_still_known(tmp_path, monkeypatch):
     (control / "pid").write_text(str(os.getpid()), encoding="utf-8")  # alive: this test's own process
     assert hub.status(tmp_path) == "running"
     assert isinstance(hub._runs[str(tmp_path)].process, hub.Earlier)
+
+
+def test_no_running_bots_to_stop():
+    assert hub.running() == []
+    hub.stop_all()
