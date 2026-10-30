@@ -6,8 +6,9 @@ How darbit's code fits together. The decisions behind it are in [decisions/](../
 
 ```
 core       geometry, targets, matching            pure: no screen, no input; easy to test
-platform   screen capture, input, windows, DPI,   Windows only; everything that touches the OS
-           the stop hotkey
+platform   screen capture, input, windows, DPI,   small interfaces (platform/backend.py: Screen, Input,
+           the stop hotkey                        Windows, Listener, Hotkeys, System), each forwarded to
+                                                  the system's version; Windows' is platform/win32/
 runtime    find, act, wait, observers, state,     what scripts call (darbit/__init__.py re-exports it)
            logs, run report, steps
 tools · capture · runs · project                  the tools: library check, report, capturing,

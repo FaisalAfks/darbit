@@ -12,8 +12,6 @@ a `stop` file is the stop hotkey; while a `pause` file is there, held keys are l
 the next darbit call waits.
 """
 
-import atexit
-import ctypes
 import os
 import threading
 import time
@@ -21,6 +19,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..errors import Interrupted, Stopped
+from . import system
 from .keys import key
 
 CONTROL = "DARBIT_CONTROL"  # environment variable: the folder darbit Studio writes `stop` and `pause` into
@@ -112,7 +111,7 @@ def arm() -> None:
     from ..settings import settings
 
     watch(settings.stop_key)
-    keep_awake()
+    system.keep_awake()
 
 
 def check() -> None:
@@ -184,16 +183,12 @@ def watch(combo: str) -> None:
         _watch_keys[0] = vks
         return
     _watch_keys[0] = vks
-    get_state = ctypes.windll.user32.GetAsyncKeyState
-    get_state.argtypes = (ctypes.c_int,)
-    get_state.restype = ctypes.c_short
-
     folder = control_folder()
 
     def run() -> None:
         last_look = 0.0
         while True:
-            if all(get_state(vk) & 0x8000 for vk in _watch_keys[0]):
+            if system.keys_down(_watch_keys[0]):
                 stop()
             if folder is not None and time.monotonic() - last_look >= CONTROL_EVERY:
                 _look_at_control(folder)
@@ -204,20 +199,3 @@ def watch(combo: str) -> None:
 
 
 _watch_keys: list[tuple[int, ...]] = [()]
-
-# keeping the PC awake
-_ES_CONTINUOUS, _ES_SYSTEM_REQUIRED, _ES_DISPLAY_REQUIRED = 0x80000000, 0x00000001, 0x00000002
-
-
-def keep_awake() -> None:
-    """Stop Windows from sleeping or turning the screen off until the script ends."""
-    try:
-        ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS | _ES_SYSTEM_REQUIRED | _ES_DISPLAY_REQUIRED)
-        atexit.register(_allow_sleep)
-    except (AttributeError, OSError):
-        pass
-
-
-def _allow_sleep() -> None:
-    """Let Windows sleep again, as it would after the script ends."""
-    ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS)
