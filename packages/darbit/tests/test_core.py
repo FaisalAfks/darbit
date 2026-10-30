@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import pytest
 
@@ -45,6 +46,57 @@ def test_every_finds_each_copy_once():
     screen[100:120, 200:230] = image
     found = matching.every(Target(image="x", _pixels=image), screen, Region(0, 0, 300, 200), 0.9)
     assert sorted((m.x, m.y) for m in found) == [(10, 10), (200, 100)]
+
+
+def smooth_screen(size=(400, 600)) -> np.ndarray:
+    """A screen with soft shapes, so resized copies of a part of it still look alike."""
+    rng = np.random.default_rng(4)
+    noise = rng.integers(0, 255, (size[0] // 8, size[1] // 8, 3), dtype=np.uint8)
+    return cv2.resize(noise, (size[1], size[0]), interpolation=cv2.INTER_CUBIC)
+
+
+def test_options_from_settings():
+    assert matching.Options.from_dict({}) is matching.PLAIN
+    options = matching.Options.from_dict({"fast": True, "sizes": True})
+    assert options.fast and options.sizes == matching.DEFAULT_SIZES
+    assert matching.Options.from_dict({"sizes": [0.5]}).sizes == (0.5,)
+
+
+def test_grayscale_and_fast_find_the_same_spot():
+    screen = smooth_screen()
+    target = Target(image="x", _pixels=screen[200:260, 300:400].copy())
+    for options in ({"grayscale": True}, {"fast": True}, {"fast": True, "grayscale": True}):
+        found = matching.best(target, screen, Region(0, 0, 600, 400), 0.9, matching.Options.from_dict(options))
+        assert (found.x, found.y) == (300, 200), options
+
+
+def test_sizes_finds_a_target_taken_at_another_size():
+    screen = smooth_screen()
+    bigger = cv2.resize(screen[200:260, 300:400], (125, 75), interpolation=cv2.INTER_LINEAR)  # taken at 1.25x
+    target = Target(image="x", _pixels=bigger)
+    whole = Region(0, 0, 600, 400)
+    assert matching.best(target, screen, whole, 0.9) is None
+    found = matching.best(target, screen, whole, 0.9, matching.Options.from_dict({"sizes": True}))
+    assert abs(found.x - 300) <= 2 and abs(found.y - 200) <= 2 and found.w == 100
+
+
+def test_closest_gives_the_best_spot_even_below_similarity():
+    target = Target(image="x", _pixels=patch(seed=3))
+    found = matching.closest(target, screen_with(patch(), (0, 0)), Region(0, 0, 300, 200), 0.9)
+    assert found is not None and found.score < 0.9
+
+
+def test_colour_tells_apart_an_icon_in_other_colours():
+    screen = smooth_screen()
+    image = screen[200:260, 300:400].copy()
+    screen[200:260, 300:400] = 255 - image  # the image itself isn't on screen
+    twin = image // 2 + np.array([0, 120, 0], np.uint8)  # the same shapes in other colours
+    screen[100:160, 100:200] = twin
+    target = Target(image="x", _pixels=image)
+    whole = Region(0, 0, 600, 400)
+    plain = matching.best(target, screen, whole, 0.8)
+    assert plain is not None and (plain.x, plain.y) == (100, 100)
+    assert matching.best(target, screen, whole, 0.8, matching.Options(colour=True)) is None
 
 
 def test_click_point_uses_offset():

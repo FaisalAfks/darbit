@@ -2,7 +2,7 @@
 
     uv run python bench/run.py                     # bench/cases, and bench/private if it's there
     uv run python bench/run.py path/to/cases       # other cases
-    uv run python bench/run.py --options sizes     # with matching options turned on (as they come)
+    uv run python bench/run.py --options fast,colour   # with matching options on (core/matching.py)
 
 A case is a folder with `case.toml`: the screen, the folder of its targets, the display scaling it was taken at
 (`scale`, 1.0 if left out) and what each target should give: `at = [x, y, w, h]`, or `absent = true`. A find
@@ -81,6 +81,7 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
         raise SystemExit(f"{folder}: can't read its screen")
     use_case_screen(pixels, float(spec.get("scale", 1.0)))
     settings.images = [folder / spec.get("images", "images")]
+    settings.match = {name: True for name in options}
     settings.log = False
     settings.window = None
     found_results = []

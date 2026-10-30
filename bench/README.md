@@ -25,3 +25,24 @@ Plain full-colour template matching at the picture's own size, on the owner's PC
 | The same icon in other colours (`colour`) | wrongly found at 0.875 |
 | Targets at 1920 x 1200, taken at 2560 (`sizes`) | not found |
 | ad-bot's Raid screen (JPEG), 4 whole-screen searches | right (0.99+), 0.4–0.6 s each |
+
+## Matching options (2026-10-31)
+
+The same cases with the options in `core/matching.py` turned on (`--options`), median of 5 searches per target. "Whole" is
+a search of the 2560 x 1600 screen; "region" the searches inside a region (mostly the 1660 x 1080 panel).
+
+| Options | Right | Whole, median | Whole, worst | Region, median |
+|---|---|---|---|---|
+| none | 14 of 14 | 572 ms | 701 ms | 274 ms |
+| `grayscale` | 14 of 14 | 207 ms | 233 ms | 112 ms |
+| `fast` | 14 of 14 | 48 ms | 57 ms | 33 ms |
+| `colour` | 15 of 15 (the recoloured icon rightly not found) | 549 ms | 676 ms | 221 ms |
+| `sizes` | 17 of 17 (the 1920 x 1200 targets found) | 612 ms | 3941 ms | 278 ms |
+| `fast,grayscale` | 14 of 14 | 15 ms | 18 ms | 13 ms |
+| `fast,grayscale,colour` | 15 of 15 | 16 ms | 23 ms | 14 ms |
+| `fast,grayscale,colour,sizes` | 18 of 18 | 30 ms | 157 ms | 14 ms |
+
+- `fast` with `grayscale` meets the 40 ms whole-screen goal with the same answers, the Raid JPEG screen included
+- `colour` scores the share of pixels within a colour distance of 40: 0.94 and up on the JPEG screen, 0.07 for the recoloured icon
+- `sizes` costs a search per size tried when the picture is missing at its own size; with `fast` the slowest is a picture not on screen at all (157 ms)
+

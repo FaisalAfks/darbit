@@ -25,13 +25,13 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from ..core import matching
 from ..core.geometry import Region
 from ..core.placement import Place
 from ..core.targets import Target
 from ..errors import Interrupted
 from ..platform import safety, screen
 from ..settings import settings
+from . import matchers
 from .find import What, _loaded, place, where_now
 from .log import log, record
 
@@ -116,7 +116,10 @@ def _look(observer: Observer, frame: tuple | None, now: Place) -> object:
         x, y = crop.x - origin.x, crop.y - origin.y
         pixels, origin = pixels[y : y + crop.h, x : x + crop.w], crop
     similarity = target.similarity if target.similarity is not None else settings.similarity
-    return matching.best(target, pixels, origin, similarity)
+    found = matchers.current().closest(target, pixels, origin, similarity, matchers.options_for(target))
+    if found is None or found.score < similarity:
+        return None
+    return found
 
 
 def tick() -> None:

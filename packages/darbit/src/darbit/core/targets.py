@@ -35,6 +35,7 @@ class Target:
     scale: float | None = None  # display scaling when captured
     window: tuple[int, int] | None = None  # size of the window it was captured in
     origin: tuple[int, int] | None = None  # that window's top-left corner on screen, when captured
+    match: dict | None = None  # matching options for this target (core/matching.py), over settings.match
     _pixels: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     @property
@@ -146,6 +147,8 @@ def _from_json(target: Target, path: Path) -> Target:
         changes["window"] = tuple(data["window"])
     if "origin" in data:
         changes["origin"] = tuple(data["origin"])
+    if isinstance(data.get("match"), dict):
+        changes["match"] = data["match"]
     return replace(target, **changes)
 
 

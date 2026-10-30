@@ -9,13 +9,13 @@ import threading
 import time
 from pathlib import Path
 
-from ..core import matching
 from ..core.geometry import Region
 from ..core.placement import SAME, Place, aspect_changed, placed, ratio
 from ..core.targets import Match, Target, find_file, load
 from ..errors import TargetError
 from ..platform import safety, screen, windows
 from ..settings import settings
+from . import matchers
 from .log import log, record, screenshot
 
 What = str | Path | Target
@@ -98,7 +98,7 @@ def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Ma
             x, y = inside.x - origin.x, inside.y - origin.y
             part, part_origin = pixels[y : y + inside.h, x : x + inside.w], inside
         similarity = one.similarity if one.similarity is not None else settings.similarity
-        best = matching.best(one, part, part_origin, -1.0)
+        best = matchers.current().closest(one, part, part_origin, similarity, matchers.options_for(one))
         if best is not None and best.score >= similarity:
             return best, best
         if best is not None and (closest is None or best.score > closest.score):
@@ -229,7 +229,7 @@ def find_all(what: What, region: Region | None = None) -> list[Match]:
     if pixels.size == 0:
         return []
     similarity = chosen.similarity if chosen.similarity is not None else settings.similarity
-    return matching.every(chosen, pixels, origin, similarity)
+    return matchers.current().every(chosen, pixels, origin, similarity, 100, matchers.options_for(chosen))
 
 
 def check(*whats: What) -> list[str]:

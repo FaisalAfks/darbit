@@ -36,6 +36,8 @@ SETTING_KINDS = {
     "log": "true or false",
     "logs": "folder",
     "state": "folder",
+    "matcher": "text",
+    "match": "table",  # matching options: [settings.match] fast = true
 }
 
 
@@ -140,6 +142,8 @@ def _check_setting(key: str, value: object) -> None:
         ok = isinstance(value, (int, float)) and not isinstance(value, bool)
     elif kind == "true or false":
         ok = isinstance(value, bool)
+    elif kind == "table":
+        ok = isinstance(value, dict)
     else:
         ok = isinstance(value, str)
     if not ok:

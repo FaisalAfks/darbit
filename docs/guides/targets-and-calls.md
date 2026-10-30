@@ -14,10 +14,30 @@ A target is a name like `Gui.Play` or `lobby/play`. It's looked up in the `image
 - `similarity`: lowest score that counts as found, 0 to 1 (default `settings.similarity`)
 - `offset`: click point from the image's centre
 - `location`: a fixed point, for targets without an image
+- `match`: matching options for this target (below)
 
 A target can also be made in code: `d.Target("Bag.Character.png", similarity=0.6)`.
 
 All positions are real screen pixels, also on scaled displays (150% etc.).
+
+### Matching options
+
+By default a picture is found by plain template matching, in full colour, at its own size. Options change that, for one target (`"match"` in its `.json`) or for the whole bot (`[settings.match]` in `darbit.toml`, or `d.settings.match`); a target's own options go on top of the bot's:
+
+```toml
+[settings.match]
+fast = true
+grayscale = true
+```
+
+- `grayscale`: match grey pixels; about a third of the work, and colour is ignored
+- `fast`: look on smaller copies of the screen and the picture first, then check the best few places at full size
+- `colour`: also check the colours, so an icon in other colours isn't taken for this one
+- `sizes`: when the picture isn't found at its own size, try other sizes in turn: `true` for 90%, 110%, 80%, 125%, 75% and 133%, or a list like `[0.75, 1.25]`
+
+On the test bench (`bench/README.md`), `fast` and `grayscale` together bring a whole-screen search from about 0.6 s to 15 ms with the same answers. Each option is off until it's asked for, since a game's pictures may behave differently.
+
+`settings.matcher` picks another matcher installed as a plugin (the `darbit.matchers` entry point); the default is `"template"`.
 
 ### Other screens and moving windows
 
