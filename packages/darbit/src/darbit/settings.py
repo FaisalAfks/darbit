@@ -42,6 +42,8 @@ class Settings:
     log: bool = True  # write a log file per day into `logs`
     missing_images: str = "error"  # "error", or "skip" to treat a missing image as never found
     screenshot_after: float = 20.0  # save a screenshot when a wait this long (or longer) runs out
+    match: dict = field(default_factory=dict)  # matching options for every target, e.g. {"fast": True}
+    matcher: str = "template"  # which matcher finds images: darbit's own, or one from a plugin
 
 
 settings = Settings()
