@@ -1,4 +1,4 @@
-"""Click to select: every sensible box around a point, smallest first. See docs/tasks/T08-capture-engine.md.
+"""Click to select: every sensible box around a point, smallest first. See docs/archive/tasks/T08-capture-engine.md.
 
     boxes = candidates(prep, x, y, "image")    # every size, smallest first
     at = pick(boxes)                           # a click starts here; clicking again steps to the next

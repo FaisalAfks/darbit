@@ -3,7 +3,7 @@
     events.publish("log", {"line": "found Gui.Play"})       # from any thread; free when nobody listens
 
 It sits at the top of the package with no imports, so every layer can publish without importing the
-server (which needs the `app` extra). See docs/tasks/T05-local-server.md.
+server (which needs the `app` extra). See docs/archive/tasks/T05-local-server.md.
 """
 
 import threading

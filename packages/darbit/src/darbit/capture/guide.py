@@ -1,4 +1,4 @@
-"""Setup guides: an ordered walk-through of what to capture for a bot. See docs/tasks/T12-setup-guide.md.
+"""Setup guides: an ordered walk-through of what to capture for a bot. See docs/archive/tasks/T12-setup-guide.md.
 
 A guide.toml lists screens, and on each screen the targets to take, in order. `load` reads and checks
 it, `steps` lists every target in order, `progress` says how many are captured and what's next, and

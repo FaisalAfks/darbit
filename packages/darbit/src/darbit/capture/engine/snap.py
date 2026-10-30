@@ -1,4 +1,4 @@
-"""Snapping: box edges pulled onto straight lines nearby. See docs/tasks/T08-capture-engine.md.
+"""Snapping: box edges pulled onto straight lines nearby. See docs/archive/tasks/T08-capture-engine.md.
 
 A line is a straight run of boundaries between two pixels where the brightness jumps, so a
 line's position is exact: a vertical line at x=300 is between pixels 299 and 300. A drawn

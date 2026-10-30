@@ -1,14 +1,14 @@
 # T20 Hub app
 
-> **Redesigned 2026-10-26** ([decision 0013](../decisions/0013-studio-redesign.md)): the layout below is replaced by the design in [docs/ui/redesign/](../ui/redesign/README.md).
+> **Redesigned 2026-10-26** ([decision 0013](../../decisions/0013-studio-redesign.md)): the layout below is replaced by the design in [docs/ui/redesign/](../../ui/redesign/README.md).
 
 > **First usable version 2026-10-26** (#53): `darbit app` opens the Studio in a desktop window (T06). It lists installed bots and added project folders, runs, pauses and stops one as a child process, and shows its Overview (live from the run report), Library (thumbnails and last scores), Runs (any day of the report) and Settings (its `settings.toml` form, saved to `config.toml`). The dock opens Capture, Guide and Check for the open bot. Still to come: the install wizard, the Flows section (T27) and the keymap editor.
 >
 > **How pause and stop reach the bot:** the Studio starts the bot with `DARBIT_CONTROL` set to `<bot>/.darbit/control`. A `pause` file there pauses it at its next `d.check()` (held keys are released); a `stop` file stops it like the stop hotkey. The bot's darbit looks every 0.25 s. If it hasn't stopped after 10 s, the process is ended.
 
-> **Layout changed 2026-10-26** (mockups, [decision 0011](../decisions/0011-what-a-bot-shows.md)): no rail and no Bots page. A pill menu on top (bot switcher · Overview, Flows, Library, Runs, Settings · run controls · source and Studio settings), the tools in a dock at the bottom, glass over the bot's blurred last screenshot. The Overview is filled from the run report as T30 describes; Settings is the bot's own form (T18); the Studio's own settings sit behind the gear.
+> **Layout changed 2026-10-26** (mockups, [decision 0011](../../decisions/0011-what-a-bot-shows.md)): no rail and no Bots page. A pill menu on top (bot switcher · Overview, Flows, Library, Runs, Settings · run controls · source and Studio settings), the tools in a dock at the bottom, glass over the bot's blurred last screenshot. The Overview is filled from the run report as T30 describes; Settings is the bot's own form (T18); the Studio's own settings sit behind the gear.
 
-> **Renamed 2026-10-25** ([ADR 0007](../decisions/0007-studio-flows-and-actions.md)): the hub is **darbit Studio**. It also installs bots through a wizard, launches every tool for the selected bot, and hosts the flow editor (T27).
+> **Renamed 2026-10-25** ([ADR 0007](../../decisions/0007-studio-flows-and-actions.md)): the hub is **darbit Studio**. It also installs bots through a wizard, launches every tool for the selected bot, and hosts the flow editor (T27).
 
 **Goal:** the desktop home of darbit: your bots, their settings, start and stop, what they're doing now, their history and their image library, with every tool one click away.
 

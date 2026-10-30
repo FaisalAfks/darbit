@@ -107,7 +107,7 @@ my-bot/
 
 ## 8. Recordings and run files
 
-> Run files are now `@d.flow` Python, not YAML: [decision 0010](decisions/0010-flows-are-python.md), [T14](tasks/T14-run-files.md).
+> Run files are now `@d.flow` Python, not YAML: [decision 0010](../decisions/0010-flows-are-python.md), [T14](tasks/T14-run-files.md).
 
 A run file is YAML, with a JSON Schema so editors check and complete it:
 
@@ -139,9 +139,9 @@ actions:                             # reusable steps, like functions
 
 Every window, the hub app and the IDE extension are built from one web UI package.
 
-- **Design tokens** in one file: colours, type scale (Segoe UI and the system font), spacing, corner radius, motion. Themes: glass dark (default), glass light, midnight, high contrast, and custom themes from a file. Details in [ui/design-system.md](style/ui/design-system.md).
+- **Design tokens** in one file: colours, type scale (Segoe UI and the system font), spacing, corner radius, motion. Themes: glass dark (default), glass light, midnight, high contrast, and custom themes from a file. Details in [ui/design-system.md](../style/ui/design-system.md).
 - **Text slots:** text on any surface is darbit's (`tool`), a bot's (`bot`) or a setup guide author's (`guide`), each styled differently.
-- **Keys:** every shortcut is in one remappable file and every shortcut is also a button ([ui/keymap.md](style/ui/keymap.md)).
+- **Keys:** every shortcut is in one remappable file and every shortcut is also a button ([ui/keymap.md](../style/ui/keymap.md)).
 - **Components:**
   - card
   - pill button
@@ -164,7 +164,7 @@ Every window, the hub app and the IDE extension are built from one web UI packag
   - the hub app: projects, a bot's settings form, start and stop, the live view, logs and run history
 - **The freeze overlay** moves to the web UI as well. A short test first checks that a full-screen pywebview window shows a 2560×1600 screenshot smoothly. If it doesn't, that one overlay stays native, styled with the same tokens.
 
-Mockups of the main windows are in [ui/mockups.html](ui/mockups.html). Each part has its own task in [tasks/](tasks/README.md).
+Mockups of the main windows are in [ui/mockups.html](../ui/mockups.html). Each part has its own task in [tasks/](tasks/README.md).
 
 ## 10. The IDE extension (VS Code)
 

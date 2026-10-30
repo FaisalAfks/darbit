@@ -16,7 +16,13 @@ repos:
       - id: plain-python
         name: plain Python (docs/style/code.md)
         language: pygrep
+        entry: '(:=|^\s*from __future__ import)'
+        types: [python]
+        files: ^packages/darbit/src/
+        exclude: ^packages/darbit/src/darbit/capture/(overlay|session)\.py$  # the Tk screens, dropped in the rebuild
+      - id: plain-bot-python
+        name: plainest Python for bot code (docs/style/code.md)
+        language: pygrep
         entry: '(:=|^\s*from __future__ import|@staticmethod|\blambda\b)'
         types: [python]
-        files: ^(packages/darbit/src|examples)/
-        exclude: ^packages/darbit/src/darbit/capture/(overlay|session)\.py$  # the Tk screens, retired in T13
+        files: ^examples/

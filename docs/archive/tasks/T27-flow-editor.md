@@ -2,7 +2,7 @@
 
 **Goal:** edit a flow in the Studio, as a list or a graph. Add checks, branches, loops, retries, variables and actions without code; add a Code step where the editor stops.
 
-**Depends on:** T14, T16, T03. **Milestone:** v0.5. **Decision:** [ADR 0007](../decisions/0007-studio-flows-and-actions.md).
+**Depends on:** T14, T16, T03. **Milestone:** v0.5. **Decision:** [ADR 0007](../../decisions/0007-studio-flows-and-actions.md).
 
 ## What it has
 

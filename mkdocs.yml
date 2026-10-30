@@ -49,9 +49,6 @@ nav:
       - UI design system: style/ui/design-system.md
       - Keys: style/ui/keymap.md
   - Decisions: decisions/README.md
-  - Roadmap: roadmap.md
-  - Tasks: tasks/README.md
   - Ideas: ideas.md
-  - Design (2026-10-21): design.md
-  - Plan (2026-10-25): plan-2026-10-25.md
-  - Rebuild plan (draft): plan-rebuild.md
+  - Rebuild plan: plan-rebuild.md
+  - Archive: archive/README.md

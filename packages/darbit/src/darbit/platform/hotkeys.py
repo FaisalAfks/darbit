@@ -1,4 +1,4 @@
-"""Global hotkeys from the keymap's [global] scope. See docs/tasks/T04-keymap.md.
+"""Global hotkeys from the keymap's [global] scope. See docs/archive/tasks/T04-keymap.md.
 
 RegisterHotKey on one thread with its own message loop: Windows calls back even while a game is in front.
 A key Windows won't give (another program holds it) is skipped and named in the result, so one taken key

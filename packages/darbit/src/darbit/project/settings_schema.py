@@ -3,7 +3,7 @@
 `load_schema` reads settings.toml: a table with a `type` is a setting, any other table is a section of the
 form. `load_values` checks the user's config.toml against it (and makes one from the defaults when there's
 none) and returns the values, nested like the file. `write_values` saves values back into config.toml, line
-by line, so the user's comments and order stay. See docs/tasks/T18-settings-form.md.
+by line, so the user's comments and order stay. See docs/archive/tasks/T18-settings-form.md.
 """
 
 import json

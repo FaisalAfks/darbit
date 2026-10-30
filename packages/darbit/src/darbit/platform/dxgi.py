@@ -1,7 +1,7 @@
 """Screen capture with DXGI Desktop Duplication: faster than mss, and free when nothing changed.
 
 screen.grab() picks it with settings.capture = "auto" and falls back to mss on any error.
-See docs/tasks/T21-fast-capture.md.
+See docs/archive/tasks/T21-fast-capture.md.
 """
 
 import numpy as np

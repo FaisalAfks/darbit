@@ -1,8 +1,8 @@
 # Tasks
 
-Every task on the roadmap, as instructions. Each page says what to build, which files, the steps, the contracts it must keep and when it's done. Rules for working on them are in [CONTRIBUTING.md](../../CONTRIBUTING.md).
+Every task on the roadmap, as instructions. Each page says what to build, which files, the steps, the contracts it must keep and when it's done. Rules for working on them are in [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
-The focus is one suite: **darbit Studio** (the hub app) and its **tools** (capture, highlight, guide, recorder, run panel, flow editor) on one front end, with a fast back end behind it. Decisions behind the plan: [decisions/](../decisions/README.md).
+The focus is one suite: **darbit Studio** (the hub app) and its **tools** (capture, highlight, guide, recorder, run panel, flow editor) on one front end, with a fast back end behind it. Decisions behind the plan: [decisions/](../../decisions/README.md).
 
 ## Order
 

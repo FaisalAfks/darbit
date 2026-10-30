@@ -17,6 +17,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pre-commit run plain-python --all-files
+      - run: uv run pre-commit run plain-bot-python --all-files
       - run: uv run pytest
 
   ui:

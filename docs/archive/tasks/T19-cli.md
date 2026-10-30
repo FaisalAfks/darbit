@@ -1,6 +1,6 @@
 # T19 darbit new, install and run
 
-> **Done in part (2026-10-25):** `new`, `install`, `run` and the tools that exist. Changed from this page by later decisions: bots go in `%LOCALAPPDATA%\darbit\bots` ([0006](../decisions/0006-data-folders.md)), at their newest release tag, with uv instead of venv and pip ([0001](../decisions/0001-tagged-releases-dev-and-live.md), [0003](../decisions/0003-uv.md)). Still to do: `settings.toml` and `config.toml` (with T18), opening the guide card (T12 with T09), `app`, `keys`, `highlight`, `record`, `play` (their tasks).
+> **Done in part (2026-10-25):** `new`, `install`, `run` and the tools that exist. Changed from this page by later decisions: bots go in `%LOCALAPPDATA%\darbit\bots` ([0006](../../decisions/0006-data-folders.md)), at their newest release tag, with uv instead of venv and pip ([0001](../../decisions/0001-tagged-releases-dev-and-live.md), [0003](../../decisions/0003-uv.md)). Still to do: `settings.toml` and `config.toml` (with T18), opening the guide card (T12 with T09), `app`, `keys`, `highlight`, `record`, `play` (their tasks).
 
 **Goal:** one `darbit` command for everything: make a project, install one from git, run it, and open the tools.
 

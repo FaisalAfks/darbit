@@ -1,4 +1,4 @@
-"""The built web UI (from ui/ in the repo), shipped in the wheel. See docs/tasks/T01-ui-package.md."""
+"""The built web UI (from ui/ in the repo), shipped in the wheel. See docs/archive/tasks/T01-ui-package.md."""
 
 import os
 from pathlib import Path

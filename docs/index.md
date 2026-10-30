@@ -16,5 +16,5 @@ if d.click("Gui.Play"):
 | [Architecture](architecture/index.md) | how the code fits together |
 | [API reference](reference/api.md) | every public call |
 | [Code style](style/code.md), [writing style](style/writing.md), [UI design system](style/ui/design-system.md) | how things are written and designed |
-| [Decisions](decisions/README.md), [roadmap](roadmap.md), [tasks](tasks/README.md) | why, what's next, and how to build it |
+| [Rebuild plan](plan-rebuild.md), [decisions](decisions/README.md), [archive](archive/README.md) | what's next, why, and the earlier plans |
 | [UI mockups](ui/mockups.html) | darbit Studio and its tools, before they're built |

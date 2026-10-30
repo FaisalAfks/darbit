@@ -2,7 +2,7 @@
 
 There's no interpreter: playing is calling the @d.flow function. A trace on the thread that plays it reports
 each line of the action files as it runs, stops at breakpoints, steps one line at a time, and stops when asked
-(raising Stopped inside the action, as the stop hotkey does). See docs/tasks/T16-player-run-panel.md.
+(raising Stopped inside the action, as the stop hotkey does). See docs/archive/tasks/T16-player-run-panel.md.
 """
 
 import importlib

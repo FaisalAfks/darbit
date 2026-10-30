@@ -2,7 +2,7 @@
 
 **Goal:** a bot author adds their own steps to the flow editor by marking a Python function. Its typed parameters become a form in the step palette.
 
-**Depends on:** T27. **Milestone:** v0.5. **Decision:** [ADR 0007](../decisions/0007-studio-flows-and-actions.md).
+**Depends on:** T27. **Milestone:** v0.5. **Decision:** [ADR 0007](../../decisions/0007-studio-flows-and-actions.md).
 
 ## How
 

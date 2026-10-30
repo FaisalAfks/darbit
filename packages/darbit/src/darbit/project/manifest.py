@@ -1,5 +1,5 @@
 """darbit.toml: a bot's name, version, entry, game window, accent, and its darbit settings.
-See docs/tasks/T17-projects.md.
+See docs/archive/tasks/T17-projects.md.
 
 `find` walks up from a folder to the nearest darbit.toml, `load` reads and checks it, and `apply` puts its
 `[settings]` and `[images]` on darbit's settings (layer 2, before anything the script sets). `setup` does all

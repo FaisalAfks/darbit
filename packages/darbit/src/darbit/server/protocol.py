@@ -2,7 +2,7 @@
 
 Text frames are JSON: {"type": "...", "id": 7, "data": {...}}. A message with an id is a
 request and gets one {"type": "reply", "id": 7, "data": ..., "error": null}; without an id
-it's an event. Images go in binary frames (see docs/tasks/T05-local-server.md).
+it's an event. Images go in binary frames (see docs/archive/tasks/T05-local-server.md).
 
 This list is the contract. The TypeScript side is generated from it:
     python -m darbit.server.protocol --ts > packages/ui/src/lib/protocol.ts

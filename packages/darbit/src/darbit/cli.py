@@ -1,4 +1,4 @@
-"""The darbit command. See docs/tasks/T19-cli.md.
+"""The darbit command. See docs/archive/tasks/T19-cli.md.
 
 darbit new NAME | install GIT_URL | run [PATH]
 darbit capture … | guide [FILE] | check … | report …     the tools, same options as python -m darbit.<tool>

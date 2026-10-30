@@ -46,7 +46,7 @@ Python 3.11 or newer, Windows. The repo is a monorepo: the Python package is in 
 | [Logs, reports, library check](docs/guides/logs-and-reports.md) | what a run leaves behind, and picture health |
 | [The capture tool](docs/guides/capture.md) | taking images, regions and points |
 | [Architecture](docs/architecture/index.md) | how the code fits together |
-| [Decisions](docs/decisions/README.md), [roadmap](docs/roadmap.md), [tasks](docs/tasks/README.md) | why, what's next, and how to build it |
+| [Rebuild plan](docs/plan-rebuild.md), [decisions](docs/decisions/README.md), [archive](docs/archive/README.md) | what's next, why, and the earlier plans |
 
 The docs site: <https://faisalafks.github.io/darbit/> (or locally: `uv run --group docs mkdocs serve`).
 

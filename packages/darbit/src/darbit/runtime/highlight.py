@@ -2,7 +2,7 @@
 
     d.highlight("Gui.Play", "Gui.Bag")          # boxes and scores over the screen for 3 seconds
 
-Without the `app` extra it only logs the scores. Never raises. See docs/tasks/T11-highlight.md.
+Without the `app` extra it only logs the scores. Never raises. See docs/archive/tasks/T11-highlight.md.
 """
 
 from collections.abc import Iterator

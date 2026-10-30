@@ -1,4 +1,4 @@
-"""pywebview windows with the Win32 styles each kind needs. See docs/tasks/T06-desktop-windows.md.
+"""pywebview windows with the Win32 styles each kind needs. See docs/archive/tasks/T06-desktop-windows.md.
 
 Every window loads a UI app from the local server (or the Vite dev server with DARBIT_UI_DEV=1) with the
 server's port and token. pywebview runs on the main thread: `run()` starts it with the first window and

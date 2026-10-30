@@ -2,7 +2,7 @@
 
 **Goal:** while recording, pause and add a check at that exact point. An image check takes its picture with the capture tool and saves it into the bot's assets.
 
-**Depends on:** T09, T15. **Milestone:** v0.4. **Decision:** [ADR 0007](../decisions/0007-studio-flows-and-actions.md).
+**Depends on:** T09, T15. **Milestone:** v0.4. **Decision:** [ADR 0007](../../decisions/0007-studio-flows-and-actions.md).
 
 ## How it's used
 
