@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 
 from ..core.geometry import Region
 from ..core.placement import Place
-from ..core.targets import Target
+from ..core.targets import Pattern, Target
 from ..errors import Interrupted
 from ..platform import safety, screen
 from ..settings import settings
@@ -67,7 +67,7 @@ EVERY = 0.5  # seconds between looks
 def observe(what: What | Condition, name: str | None = None, region: Region | None = None) -> Observer:
     """Watch for an image (a target name) or a condition (a function returning True), and interrupt the script
     when it shows up. Returns the Observer, to stop() it later."""
-    if callable(what) and not isinstance(what, (str, Target)):
+    if callable(what) and not isinstance(what, (str, Target, Pattern)):
         observer = Observer(name or getattr(what, "__name__", "condition"), condition=what, region=region)
     else:
         loaded = _loaded((what,))

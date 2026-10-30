@@ -58,8 +58,3 @@ def scale_at(x: int, y: int) -> float:
         return dpi_x.value / 96
     except (AttributeError, OSError):
         return 1.0
-
-
-def Screen() -> Region:
-    """The whole screen, as a region: `exists("x.png", region=Screen())`."""
-    return desktop()

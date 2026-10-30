@@ -17,14 +17,23 @@ class Location:
         return round(self.x), round(self.y)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class Region:
-    """A rectangle on the screen."""
+    """A rectangle on the screen. `d.Region` (runtime/region.py) is this with the searches and clicks added; the
+    two are equal when their numbers are."""
 
     x: int
     y: int
     w: int
     h: int
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Region):
+            return NotImplemented
+        return (self.x, self.y, self.w, self.h) == (other.x, other.y, other.w, other.h)
+
+    def __hash__(self) -> int:
+        return hash((self.x, self.y, self.w, self.h))
 
     @property
     def right(self) -> int:
@@ -39,10 +48,10 @@ class Region:
         return Location(self.x + self.w / 2, self.y + self.h / 2)
 
     def moved(self, dx: int, dy: int) -> "Region":
-        return Region(self.x + dx, self.y + dy, self.w, self.h)
+        return type(self)(self.x + dx, self.y + dy, self.w, self.h)
 
     def grow(self, pixels: int) -> "Region":
-        return Region(self.x - pixels, self.y - pixels, self.w + 2 * pixels, self.h + 2 * pixels)
+        return type(self)(self.x - pixels, self.y - pixels, self.w + 2 * pixels, self.h + 2 * pixels)
 
     def contains(self, where: Location) -> bool:
         return self.x <= where.x < self.right and self.y <= where.y < self.bottom
@@ -52,4 +61,4 @@ class Region:
         right, bottom = min(self.right, other.right), min(self.bottom, other.bottom)
         if right <= left or bottom <= top:
             return None
-        return Region(left, top, right - left, bottom - top)
+        return type(self)(left, top, right - left, bottom - top)

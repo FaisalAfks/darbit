@@ -6,6 +6,9 @@ d.click("lobby/play")                  # True if clicked, False if not found in 
 if d.exists("run/enemies_left", 90):    # the Match, or None after 90 s
     d.press("tab")
 d.press(*"54132")
+
+game = d.App("Roblox").window           # a Region: game.exists(...), game.click(...)
+play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)
 """
 
 import atexit as _atexit
@@ -14,14 +17,13 @@ from .platform import screen as _screen
 
 _screen.enable_dpi_awareness()
 
-from .core.geometry import Location, Region
-from .core.targets import Match, Target
+from .core.geometry import Location
+from .core.targets import Match, Pattern, Target
 from .errors import DarbitError, Interrupted, Stopped, TargetError, UnknownKey
 from .platform import input as _input
 from .platform import safety as _safety
 from .platform.keys import Keys
 from .platform.safety import no_interrupts
-from .platform.screen import Screen
 from .runtime import apps
 from .runtime.actions import (
     click,
@@ -39,9 +41,11 @@ from .runtime.actions import (
     sleep,
     write,
 )
-from .runtime.find import check, exists, find_all, vanish, wait
+from .runtime.apps import App
+from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
+from .runtime.region import Region, Screen
 from .runtime.show import Record, next_up, plan, progress
 from .runtime.state import State, Timer
 from .runtime.steps import flow, step
@@ -68,12 +72,14 @@ from .project import manifest as _manifest
 _project = _manifest.setup(settings, __version__)  # layer 2 of the settings: the bot's darbit.toml, if it has one
 
 __all__ = [
+    "App",
     "DarbitError",
     "Interrupted",
     "Keys",
     "Location",
     "Match",
     "Observer",
+    "Pattern",
     "Region",
     "Screen",
     "State",
@@ -88,6 +94,7 @@ __all__ = [
     "double_click",
     "drag",
     "exists",
+    "find",
     "find_all",
     "flow",
     "hold",

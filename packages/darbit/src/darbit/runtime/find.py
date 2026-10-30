@@ -11,14 +11,14 @@ from pathlib import Path
 
 from ..core.geometry import Region
 from ..core.placement import SAME, Place, aspect_changed, placed, ratio
-from ..core.targets import Match, Target, find_file, load
+from ..core.targets import Match, Pattern, Target, find_file, load
 from ..errors import TargetError
 from ..platform import safety, screen, windows
 from ..settings import settings
 from . import matchers
 from .log import log, record, screenshot
 
-What = str | Path | Target
+What = str | Path | Target | Pattern
 
 
 NEARBY = (0.95, 1.05, 0.9, 1.1)  # sizes tried when a resized target isn't found
@@ -197,6 +197,11 @@ def exists(what: What, timeout: float = 0, region: Region | None = None) -> Matc
     return found
 
 
+def find(what: What, timeout: float | None = None, region: Region | None = None) -> Match | None:
+    """The target once it's on screen, waiting up to `timeout` seconds (default settings.timeout); None if not."""
+    return wait(what, timeout=timeout, region=region)
+
+
 def wait(*whats: What, timeout: float | None = None, region: Region | None = None) -> Match | None:
     """Wait for a target, or the first of several (`match.name` says which). None if time runs out."""
     timeout = settings.timeout if timeout is None else timeout
@@ -236,7 +241,7 @@ def check(*whats: What) -> list[str]:
     """Names of targets whose image file is missing, e.g. to check every image when a script starts."""
     missing = []
     for what in whats:
-        if isinstance(what, Target):
+        if isinstance(what, (Target, Pattern)):
             what = what.image
         if what is not None and find_file(what, settings.images) is None:
             missing.append(str(what))
@@ -244,7 +249,7 @@ def check(*whats: What) -> list[str]:
 
 
 def _names(whats: tuple[What, ...]) -> str:
-    return ", ".join(w.label if isinstance(w, Target) else str(w) for w in whats)
+    return ", ".join(w.label if isinstance(w, (Target, Pattern)) else str(w) for w in whats)
 
 
 def _report(kind: str, whats: tuple[What, ...], timeout: float, found: Match | None) -> None:
