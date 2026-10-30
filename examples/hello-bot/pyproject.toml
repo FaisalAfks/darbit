@@ -14,7 +14,7 @@ hello-bot = "hello_bot.bot:main"
 
 # A bot pins darbit to a release, so it only changes when upgraded on purpose (darbit decision 0001).
 [tool.uv.sources]
-darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.3.0", subdirectory = "packages/darbit" }
+darbit = { git = "https://github.com/FaisalAfks/darbit", tag = "v0.4.0", subdirectory = "packages/darbit" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hello_bot"]

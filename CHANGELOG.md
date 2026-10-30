@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-10-29
+
 ### Changed
 
 - Smoother Studio, Capture and recorder: real input now comes through Raw Input instead of low-level hooks, so a busy darbit can never make the mouse or the game's keys lag; blur only on the small top bars; glowing and pulsing effects animate opacity and transform instead of repainting shadows; the background is its own fixed layer; Capture dims the shot with four panels and reads the magnifier's colour from a CPU copy of the shot
