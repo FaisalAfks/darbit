@@ -2,7 +2,7 @@
 
 import ctypes
 
-from darbit.platform import hooks
+from darbit.platform.win32 import listener as hooks
 
 
 def mouse(flags=0, data=0, dx=0, dy=0, device=1):

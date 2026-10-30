@@ -126,7 +126,7 @@ def test_the_guide_gives_the_items_in_order(tmp_path):
 
 
 def test_hotkeys_read_like_the_keymap():
-    from darbit.platform.hotkeys import MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, parse
+    from darbit.platform.win32.hotkeys import MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, parse
 
     assert parse("ctrl+alt+c") == (MOD_NOREPEAT | MOD_CONTROL | MOD_ALT, ord("C"))
     assert parse("Shift+F1")[0] == MOD_NOREPEAT | MOD_SHIFT

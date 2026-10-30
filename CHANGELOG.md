@@ -10,6 +10,7 @@
 
 ### Changed
 
+- Everything that talks to the operating system sits behind small interfaces (`platform/backend.py`: Screen, Input, Windows, Listener, Hotkeys, System), with Windows' versions in `platform/win32/`. Each system's code loads the first time it's used, so `import darbit` works anywhere and another system is told plainly it isn't supported yet. The stop key, keeping the PC awake and the Studio's process handling go through the System piece instead of calling Windows themselves
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
 
 ### Docs

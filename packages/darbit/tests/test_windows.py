@@ -2,8 +2,8 @@
 
 import pytest
 
-from darbit.platform import windows
-from darbit.platform.windows import Window
+from darbit.platform.backend import Window
+from darbit.platform.win32 import windows
 
 
 @pytest.fixture(autouse=True)

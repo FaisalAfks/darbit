@@ -1,0 +1,143 @@
+"""The pieces of darbit that talk to the operating system, each a small interface, and the system's own versions.
+
+    backend.screen().grab(region)       # the Screen piece of the system darbit runs on
+
+Pieces: Screen (pixels, monitors, scaling), Input (mouse and keys), Windows (finding and focusing apps), Listener
+(real keys and mouse, for the recorder), Hotkeys (global shortcuts) and System (staying awake, processes). Windows
+is the only system so far; macOS and Linux come in milestone 6 of the rebuild plan. A system's modules are loaded
+the first time a piece is used, so `import darbit` works anywhere.
+"""
+
+import importlib
+import sys
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from types import ModuleType
+from typing import Protocol
+
+import numpy as np
+
+from ..core.geometry import Region
+
+
+class NotSupported(RuntimeError):
+    """darbit has no version of this piece for the system it runs on."""
+
+
+@dataclass(frozen=True)
+class Window:
+    """A top-level window: its handle, title, program file and process."""
+
+    handle: int
+    title: str
+    exe: str
+    pid: int
+
+
+class Screen(Protocol):
+    def enable_dpi_awareness(self) -> None: ...
+    def desktop(self) -> Region: ...
+    def monitors(self) -> list[Region]: ...
+    def grab(self, region: Region | None = None) -> tuple[np.ndarray, Region]: ...
+    def scale_at(self, x: int, y: int) -> float: ...
+
+
+class Input(Protocol):
+    def position(self) -> tuple[int, int]: ...
+    def desktop(self) -> tuple[int, int, int, int]: ...
+    def move(self, x: int, y: int, glide: float) -> None: ...
+    def move_by(self, dx: int, dy: int, seconds: float) -> None: ...
+    def mouse_down(self, button: str = "left") -> None: ...
+    def mouse_up(self, button: str = "left") -> None: ...
+    def click(self, x: int, y: int, glide: float, button: str = "left", times: int = 1) -> None: ...
+    def drag(self, from_x: int, from_y: int, to_x: int, to_y: int, glide: float) -> None: ...
+    def scroll(self, notches: int) -> None: ...
+    def key_down(self, what: object) -> None: ...
+    def key_up(self, what: object) -> None: ...
+    def tap(self, what: object) -> None: ...
+    def write(self, text: str) -> None: ...
+    def key_now(self, what: object, up: bool) -> None: ...
+    def button_now(self, button: str, up: bool) -> None: ...
+    def nudge(self, dx: int, dy: int) -> None: ...
+    def place(self, x: int, y: int) -> None: ...
+    def wheel_now(self, notches: int, sideways: bool = False) -> None: ...
+    def release_all(self) -> None: ...
+    def let_go_of_everything(self) -> None: ...
+
+
+class Windows(Protocol):
+    def windows(self) -> list[Window]: ...
+    def matching(self, name: str, loose: bool = False) -> list[Window]: ...
+    def in_front(self, handle: int) -> bool: ...
+    def bring_to_front(self, handle: int) -> bool: ...
+    def region(self, handle: int) -> Region: ...
+    def close(self, name: str, wait: float = 5.0) -> bool: ...
+
+
+class Listener(Protocol):
+    def start(self, on_event: Callable[[str, int, int, int, int], None], moves: bool = False) -> Callable[[], None]: ...
+    def watch_mouse(self, on_move: Callable[[int, int], None]) -> Callable[[], None]: ...
+
+
+class Hotkeys(Protocol):
+    def register(self, keys: dict[str, str], handlers: dict[str, Callable[[], None]]) -> object: ...
+
+
+class System(Protocol):
+    def keep_awake(self) -> None: ...
+    def allow_sleep(self) -> None: ...
+    def keys_down(self, codes: tuple[int, ...]) -> bool: ...
+    def process_alive(self, pid: int) -> bool: ...
+    def end_process_tree(self, pid: int) -> None: ...
+    def site_packages(self, venv: Path) -> Path: ...
+
+
+# each piece's module, per system
+MODULES = {
+    "win32": {
+        "screen": "darbit.platform.win32.screen",
+        "input": "darbit.platform.win32.input",
+        "windows": "darbit.platform.win32.windows",
+        "listener": "darbit.platform.win32.listener",
+        "hotkeys": "darbit.platform.win32.hotkeys",
+        "system": "darbit.platform.win32.system",
+    },
+}
+
+
+def _load(piece: str) -> ModuleType:
+    found = MODULES.get(sys.platform)
+    if found is None:
+        raise NotSupported(f"darbit runs on Windows for now; {sys.platform} comes later (rebuild plan, milestone 6)")
+    return importlib.import_module(found[piece])
+
+
+def screen() -> Screen:
+    return _load("screen")  # type: ignore[return-value]  # a module that has the piece's functions
+
+
+def input() -> Input:
+    return _load("input")  # type: ignore[return-value]
+
+
+def windows() -> Windows:
+    return _load("windows")  # type: ignore[return-value]
+
+
+def listener() -> Listener:
+    return _load("listener")  # type: ignore[return-value]
+
+
+def hotkeys() -> Hotkeys:
+    return _load("hotkeys")  # type: ignore[return-value]
+
+
+def system() -> System:
+    return _load("system")  # type: ignore[return-value]
+
+
+def loaded(piece: str) -> bool:
+    """Whether this system's version of a piece has been loaded (used, or about to be)."""
+    found = MODULES.get(sys.platform)
+    return found is not None and found[piece] in sys.modules

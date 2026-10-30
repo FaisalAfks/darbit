@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .. import paths
+from ..platform import system
 from ..project import bots
 from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
@@ -63,22 +64,7 @@ class Earlier:
 
 
 def _alive(pid: int) -> bool:
-    import ctypes
-
-    kernel32 = ctypes.windll.kernel32
-    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-    if not handle:
-        return False
-    code = ctypes.c_ulong()
-    try:
-        kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
-    finally:
-        kernel32.CloseHandle(handle)
-    return code.value == STILL_ACTIVE
-
-
-PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-STILL_ACTIVE = 259
+    return system.process_alive(pid)
 
 
 def _adopt(folder: Path) -> Run | None:
@@ -283,14 +269,14 @@ def project_stop(data: dict) -> dict:
 
 def end_tree(pid: int) -> None:
     """End a process and every process it started: `uv run` starts the bot as a child, which outlives its parent
-    on Windows if only the parent is ended."""
-    subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
+    if only the parent is ended."""
+    system.end_process_tree(pid)
 
 
 def understands_control(folder: Path) -> bool:
     """Whether the darbit in the bot's own environment takes the Studio's pause and stop (its control folder).
     A bot without its own environment runs with the Studio's darbit, which does."""
-    safety = folder / ".venv" / "Lib" / "site-packages" / "darbit" / "platform" / "safety.py"
+    safety = system.site_packages(folder / ".venv") / "darbit" / "platform" / "safety.py"
     if not safety.is_file():
         return True
     try:

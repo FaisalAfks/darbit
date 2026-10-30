@@ -9,8 +9,8 @@ import pytest
 import darbit as d
 from darbit.core.geometry import Region
 from darbit.core.targets import save
-from darbit.platform import input as device
 from darbit.platform import safety, screen
+from darbit.platform.win32 import input as device
 from darbit.runtime import observe as obs
 
 

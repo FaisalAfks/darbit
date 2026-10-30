@@ -3,8 +3,8 @@
 import pytest
 
 import darbit as d
-from darbit.platform import input as device
 from darbit.platform.keys import key
+from darbit.platform.win32 import input as device
 
 KEYUP, UNICODE = 0x0002, 0x0004
 
