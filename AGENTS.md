@@ -9,8 +9,6 @@ darbit: a Python library for automating any app from what's on its screen, an im
 | Path | What |
 |---|---|
 | `packages/darbit/` | the Python package (`src/darbit/`) and its tests |
-| `packages/ui/` | the v0.4 web UI (Svelte), to be replaced by the PySide6/QML Studio |
-| `packages/vscode/` | the VS Code extension (later) |
 | `docs/` | the docs site: the rebuild plan, guides, architecture, style, decisions, the archive |
 | `examples/` | the smallest working bot |
 | `scripts/` | dev helpers (`setup-dev.ps1`, `render_mockups.py`) |

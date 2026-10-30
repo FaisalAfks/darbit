@@ -38,13 +38,7 @@ if d.click("Gui.Play"):  # waits up to 10 s; False if it never shows
 
 ## Capturing targets
 
-```bash
-python -m darbit.capture Gui.Play                # one image: the screen freezes after 3 s, box it, Enter
-python -m darbit.capture menus/bag --region      # a region
-python -m darbit.capture afk/spot --location     # a point
-```
-
-Click a button to box it (click again for the next bigger thing), or drag a box; its edges snap onto borders. See [the capture tool](guides/capture.md).
+Targets are taken in darbit Studio's Capture: click a button to box it (click again for the next bigger thing), or drag a box. darbit Studio is being rebuilt; until then, use v0.4's. See [capturing targets](guides/capture.md).
 
 ## The smallest bot
 
@@ -56,7 +50,7 @@ Click a button to box it (click again for the next bigger thing), or drag a box;
 darbit new my-bot                                  # a project laid out like examples/hello-bot
 darbit install https://github.com/me/my-bot        # cloned at its newest release, with its own environment
 darbit run                                         # the project here (or above), with its environment
-darbit capture Gui.Play | guide | check | report   # the tools, same options as python -m darbit.<tool>
+darbit check | report                              # the tools, same options as python -m darbit.tools.<tool>
 ```
 
 `darbit install` puts bots in `%LOCALAPPDATA%\darbit\bots\<name>` and needs git and [uv](https://docs.astral.sh/uv/). See [bot projects](guides/projects.md) for `darbit.toml`.

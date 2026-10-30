@@ -1,8 +1,8 @@
-"""The darbit command. See docs/archive/tasks/T19-cli.md.
+"""The darbit command.
 
 darbit new NAME | install GIT_URL | run [PATH]
-darbit capture … | guide [FILE] | check … | report …     the tools, same options as python -m darbit.<tool>
-darbit app | keys | highlight | record | play             come with their tasks
+darbit check … | report …     the tools, same options as python -m darbit.tools.<tool>
+darbit app                    darbit Studio is being rebuilt (docs/plan-rebuild.md): says where v0.4's is
 
 Each command hands its arguments to the module that does the work: project/bots.py for new, install and
 run, and each tool's own main().
@@ -17,23 +17,19 @@ COMMANDS = {
     "new": "make a bot project",
     "install": "install a bot from its git link",
     "run": "run a bot",
-    "capture": "capture targets",
-    "guide": "walk through a bot's setup guide",
     "check": "check the image library",
     "report": "summarise a day's run report",
     "app": "open darbit Studio",
-    "keys": "show the keymap and its conflicts",
-    "highlight": "show what's found on screen",
-    "record": "record a run",
-    "play": "play a run file",
 }
 
-# commands whose task isn't done yet
-LATER = {"keys": "T04", "highlight": "T11", "record": "T15", "play": "T16"}
+STUDIO_MOVED = (
+    "darbit Studio is being rebuilt (docs/plan-rebuild.md). Until it's back, run v0.4's from a checkout of the "
+    "v0.4.0 tag: git clone --branch v0.4.0 https://github.com/FaisalAfks/darbit, then uv run --all-extras darbit app"
+)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="darbit", description="Simple GUI automation for Windows.")
+    parser = argparse.ArgumentParser(prog="darbit", description="Automate any app from what's on its screen.")
     lines = []
     for name, text in COMMANDS.items():
         lines.append(f"{name}: {text}")
@@ -42,11 +38,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     command = args.command
 
-    if command in LATER:
-        print(f"darbit {command} isn't built yet ({LATER[command]} in docs/tasks)")
-        return 2
     if command == "app":
-        return _app(args.rest)
+        print(STUDIO_MOVED)
+        return 2
     if command == "new":
         return _new(args.rest)
     if command == "install":
@@ -69,7 +63,7 @@ def _new(argv: list[str]) -> int:
         print(error)
         return 2
     print(f"made {folder}")
-    print(f"next: cd {folder}, take its pictures with darbit guide, then darbit run")
+    print(f"next: cd {folder}, take its pictures, then darbit run")
     return 0
 
 
@@ -92,8 +86,6 @@ def _install(argv: list[str]) -> int:
         print(f"{' '.join(error.cmd)} failed (exit code {error.returncode})")
         return 1
     print(f"installed in {folder}")
-    if (folder / "guide.toml").is_file():
-        print(f"next: take its pictures with darbit guide {folder / 'guide.toml'}")
     print(f"run it with: darbit run {folder}")
     return 0
 
@@ -111,43 +103,7 @@ def _run(argv: list[str]) -> int:
         return 2
 
 
-def _app(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="darbit app", description="Open darbit Studio.")
-    parser.add_argument("--debug", action="store_true", help="with the browser's developer tools")
-    args = parser.parse_args(argv)
-    from . import server
-
-    current = server.running()
-    if current is not None:
-        import ctypes
-
-        ctypes.windll.user32.AllowSetForegroundWindow(-1)  # this launch may come to the front; let the Studio instead
-    if current is not None and server.show_studio(current):
-        print("darbit Studio is already open (it was in the tray).")
-        return 0
-    try:
-        from .desktop import run
-        from .desktop.studio import open_studio
-
-        open_studio()
-    except ImportError:
-        print('darbit Studio needs the app extra: pip install "darbit[app]"')
-        return 2
-    run(args.debug)
-    return 0
-
-
 def _tool(command: str, argv: list[str]) -> int:
-    if command == "capture":
-        from .capture import main as capture
-
-        return capture(argv)
-    if command == "guide":
-        from .capture import main as capture
-
-        if not argv or argv[0].startswith("-"):
-            argv = ["guide.toml", *argv]
-        return capture(["--guide", *argv])
     if command == "check":
         from .tools.check import main as check
 

@@ -49,7 +49,10 @@ def new(name: str, where: Path) -> Path:
     ):
         text = (TEMPLATES / template).read_text(encoding="utf-8")
         text = text.replace("{name}", name).replace("{package}", package)
-        text = text.replace("{darbit}", f">={minor}").replace("{version}", __version__)
+        text = text.replace("{darbit}", f">={minor}")
+        if ".dev" in __version__:
+            text = text.replace('tag = "v{version}"', 'branch = "main"')  # a development darbit has no release tag
+        text = text.replace("{version}", __version__)
         (folder / target).write_text(text, encoding="utf-8", newline="\n")
     return folder
 

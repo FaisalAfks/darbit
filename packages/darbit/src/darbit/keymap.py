@@ -3,8 +3,7 @@
     keymap.load()                       # {"global": {"capture.freeze": "ctrl+alt+c", ...}, "capture": {...}, ...}
     keymap.load(project=Path("my-bot")) # with my-bot/darbit.toml [keys] on top
 
-The web UI gets the same table from the local server (GET /keymap), so a key changed here
-changes in every window, the hub and the IDE extension. See docs/archive/tasks/T04-keymap.md.
+The Studio reads the same table, so a key changed here changes everywhere it is shown.
 """
 
 import tomllib
@@ -38,16 +37,3 @@ def load(project: Path | None = None) -> Keymap:
         for scope, actions in data.items():
             keys.setdefault(scope, {}).update(actions)
     return keys
-
-
-def conflicts(keys: Keymap) -> list[tuple[str, str, str]]:
-    """Pairs of actions with the same keys where both can fire at once: (keys, action, other action).
-
-    Global keys clash with every scope; other scopes only clash inside themselves."""
-    raise NotImplementedError("TODO(T04)")
-
-
-def normalise(keys: str) -> str:
-    """One spelling for a key combination: "Alt+Ctrl+C" -> "ctrl+alt+c" (modifiers in the order ctrl, shift,
-    alt, win)."""
-    raise NotImplementedError("TODO(T04)")
