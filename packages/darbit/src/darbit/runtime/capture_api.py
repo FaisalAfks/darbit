@@ -1,4 +1,4 @@
-"""Opening the capture tool from a bot. See docs/tasks/T12-setup-guide.md.
+"""Opening the capture tool from a bot. See docs/archive/tasks/T12-setup-guide.md.
 
     d.capture("Event.Banner", say="Box this week's event banner")   # blocks until saved or cancelled
     d.guide("guide.toml")                                          # first-run setup

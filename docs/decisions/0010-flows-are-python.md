@@ -1,6 +1,6 @@
 # 0010 Run files and flows are saved as Python
 
-Accepted, 2026-10-26. Replaces the YAML run files of [design.md §8](../design.md) and the first T14 page.
+Accepted, 2026-10-26. Replaces the YAML run files of [design.md §8](../archive/design.md) and the first T14 page.
 
 ## Context
 

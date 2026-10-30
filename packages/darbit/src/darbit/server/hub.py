@@ -3,7 +3,7 @@
 Bots are the installed ones in %LOCALAPPDATA%\\darbit\\bots plus any project folder added by hand. A bot run from
 the Studio is its own process (its entry, in its environment), stopped and paused through a control folder
 the bot's darbit watches (platform/safety.py), so held keys are always let go. While a bot runs, its run
-report is watched and every change goes to the windows as `project.changed`. See docs/tasks/T20-hub.md.
+report is watched and every change goes to the windows as `project.changed`. See docs/archive/tasks/T20-hub.md.
 """
 
 import os

@@ -5,7 +5,7 @@
     box = boxes[pick(boxes)]                   # where a click starts; click again for the next
     box, guides = snap_box(prep.lines, box, {"right", "bottom"})
 
-See docs/tasks/T08-capture-engine.md.
+See docs/archive/tasks/T08-capture-engine.md.
 """
 
 from dataclasses import dataclass

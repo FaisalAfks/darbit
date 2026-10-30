@@ -4,19 +4,19 @@ How to work in this repo. Read by every coding tool (Claude Code, Antigravity, G
 
 ## What this is
 
-darbit: simple GUI automation for Windows, in Python, an improvement on SikuliX. Find images on screen, click, type, wait. It also becomes **darbit Studio**, an app that installs and runs bots, captures and highlights targets, and records and edits flows. A monorepo:
+darbit: a Python library for automating any app from what's on its screen, an improvement on SikuliX: find images on screen, click, type, wait. **darbit Studio** is its companion app: it runs bots, captures and highlights targets, and records and edits actions. darbit is being rebuilt by the [rebuild plan](docs/plan-rebuild.md) ([decision 0015](docs/decisions/0015-rebuild.md)); v0.x lives in the `v0.4.0` tag and the `maint/0.x` branch. A monorepo:
 
 | Path | What |
 |---|---|
 | `packages/darbit/` | the Python package (`src/darbit/`) and its tests |
-| `packages/ui/` | the web UI (Svelte), built into the Python package |
+| `packages/ui/` | the v0.4 web UI (Svelte), to be replaced by the PySide6/QML Studio |
 | `packages/vscode/` | the VS Code extension (later) |
-| `docs/` | the docs site: guides, architecture, style, decisions, roadmap, task pages |
+| `docs/` | the docs site: the rebuild plan, guides, architecture, style, decisions, the archive |
 | `examples/` | the smallest working bot |
 | `scripts/` | dev helpers (`setup-dev.ps1`, `render_mockups.py`) |
 | `.agents/skills/` | step-by-step how-tos for common jobs (release, new task, review, mockups) |
 
-Start with [docs/architecture/index.md](docs/architecture/index.md), then [docs/decisions/](docs/decisions/README.md) for why things are the way they are, and [docs/tasks/](docs/tasks/README.md) for what to build next.
+Start with [docs/plan-rebuild.md](docs/plan-rebuild.md) for what darbit is and what's built next, then [docs/decisions/](docs/decisions/README.md) for why things are the way they are.
 
 ## Commands
 
@@ -33,7 +33,7 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 
 **Git and GitHub**
 - Never commit or push to `main`. One branch per task (`feature/<issue>-<name>`, `fix/<issue>-<name>`, `docs/…`, `refactor/…`), and a PR into `main` that says `Closes #<issue>`.
-- Never merge. The owner merges; ask first.
+- Merge a PR once its checks pass.
 - Every change has an issue on the "Anime Dimensions" project board, in its milestone.
 - Releases: SemVer tags `vX.Y.Z` on `main`, with a GitHub release and short notes (`.agents/skills/release`).
 
@@ -44,12 +44,13 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 - Describe what changed and why it matters to the code. Details: [docs/style/writing.md](docs/style/writing.md).
 
 **Code**: see [docs/style/code.md](docs/style/code.md).
-- Plain, readable Python (decision 0008): no walrus, no lambdas beyond a one-word key, no tricky comprehensions, no `getattr` dispatch, no `from __future__ import annotations`. Small functions with verb names; small dataclasses instead of tuples.
+- Idiomatic, readable Python (decision 0015): small functions with verb names, small dataclasses instead of tuples, simple comprehensions and key lambdas are fine; no clever one-liners, walrus, `getattr` dispatch or `from __future__ import annotations`. Bot code and `examples/` stay the plainest.
+- Every detection change (grayscale, a downscaled pass, sizes, OCR, window space) is an option; the default stays as it is.
 - Every module starts with a 2–4 line summary. Docstrings are one line, plus arguments when they're not obvious; comments say why.
-- Layers only import downward: `core` ← `platform` ← `runtime` ← `tools`/`capture`/`runs`/`project` ← `server` ← `desktop`.
+- System-specific code sits behind the plan's interfaces (screen, input, windows, listener, hotkeys); layers only import downward.
 - The public API stays SikuliX-simple: `d.click("Play")`. Not finding something returns `None` or `False`; it never raises.
 - `import darbit` works without the `app` extra: import Studio-only packages inside functions.
-- Placeholder files (`TODO(Txx)`) belong to their task in `docs/tasks/`; fill them in, don't move them.
+- No stub files for future work: future work is an issue.
 - Keep files' line endings (LF in the repo, see `.gitattributes`).
 
 **Docs**

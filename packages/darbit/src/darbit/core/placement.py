@@ -3,7 +3,7 @@
 A target taken in an app window (its .json has `window` and `origin`) is moved with that window and
 scaled by how much wider the window is now. A target with only `scale` is resized by the change in
 display scaling, its region grown to fit. Anything else, or nothing changed, is used as it is.
-See docs/tasks/T22-window-targets.md.
+See docs/archive/tasks/T22-window-targets.md.
 """
 
 from dataclasses import dataclass, replace

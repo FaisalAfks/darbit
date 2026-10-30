@@ -1,4 +1,4 @@
-"""The recorder: keyboard and mouse events into an action's steps. See docs/tasks/T15-recorder.md.
+"""The recorder: keyboard and mouse events into an action's steps. See docs/archive/tasks/T15-recorder.md.
 
 The hooks (platform/hooks.py) only queue raw events; everything here is pure, so it's tested with lists of
 fake events. A key pressed and let go quickly is a press (with any modifiers held: shift+e); held longer it's a

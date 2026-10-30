@@ -1,6 +1,6 @@
 # The capture tool
 
-Taking target images, regions and points from a frozen screen. The web version is in [tasks T09–T12](../tasks/README.md).
+Taking target images, regions and points from a frozen screen. The web version is in [tasks T09–T12](../archive/tasks/README.md).
 
 ## Capture tool
 

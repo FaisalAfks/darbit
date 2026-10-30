@@ -2,7 +2,7 @@
 
 `new` writes a project from the templates next to this file. `install` clones a bot into darbit's bots
 folder at its newest release tag and gives it its own environment with uv (decision 0001). `run` starts a
-project's entry in that environment. See docs/tasks/T19-cli.md.
+project's entry in that environment. See docs/archive/tasks/T19-cli.md.
 """
 
 import shutil

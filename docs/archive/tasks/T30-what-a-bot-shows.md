@@ -4,7 +4,7 @@
 
 **Goal:** a bot's page in the Studio fills itself from what the bot already reports, plus two small calls for progress and what's next.
 
-**Depends on:** T17. **Milestone:** v0.5. **Decision:** [0011](../decisions/0011-what-a-bot-shows.md).
+**Depends on:** T17. **Milestone:** v0.5. **Decision:** [0011](../../decisions/0011-what-a-bot-shows.md).
 
 ## Files
 

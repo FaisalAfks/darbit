@@ -3,7 +3,7 @@
 Imported only when the server starts, so darbit works without the `app` extra. Each window opens one
 WebSocket with the server's token; a message with an `id` is a request and gets one reply, a message
 without one is an event. Handlers are plain functions (`@handles("ping")`) run in a thread pool, so
-screen work never blocks the other windows. See docs/tasks/T05-local-server.md.
+screen work never blocks the other windows. See docs/archive/tasks/T05-local-server.md.
 """
 
 import asyncio

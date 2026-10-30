@@ -2,7 +2,7 @@
 
 `serve()` starts it on a background thread, bound to 127.0.0.1 on a free port, and writes its port and token
 to %LOCALAPPDATA%\\darbit\\server.json; a second `serve()` for the same user reuses the one that answers.
-Needs the `app` extra (pip install "darbit[app]"). See docs/tasks/T05-local-server.md.
+Needs the `app` extra (pip install "darbit[app]"). See docs/archive/tasks/T05-local-server.md.
 """
 
 import atexit

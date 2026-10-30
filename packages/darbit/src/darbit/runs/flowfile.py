@@ -5,7 +5,7 @@
 
 An action is ordinary bot code: `with d.step("Wave 1"):` blocks are its sections, and every darbit call in them is
 a step. Anything else (a helper call, a calculation) is a Code step kept word for word, so a hand-edited file
-survives the editor. A step's note is the comment at the end of its line. See docs/tasks/T14-run-files.md.
+survives the editor. A step's note is the comment at the end of its line. See docs/archive/tasks/T14-run-files.md.
 """
 
 import ast

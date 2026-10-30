@@ -1,4 +1,4 @@
-"""The run file model: checkpoints, goals, steps and reusable actions. See docs/tasks/T14-run-files.md."""
+"""The run file model: checkpoints, goals, steps and reusable actions. See docs/archive/tasks/T14-run-files.md."""
 
 from dataclasses import dataclass, field
 from pathlib import Path

@@ -2,11 +2,11 @@
 
 **Goal:** a flow can become readable Python, and flow-shaped Python can be opened as a flow, so the same bot is edited in the Studio and in a code editor.
 
-**Depends on:** T14, T27. **Milestone:** v0.5. **Decision:** [ADR 0007](../decisions/0007-studio-flows-and-actions.md).
+**Depends on:** T14, T27. **Milestone:** v0.5. **Decision:** [ADR 0007](../../decisions/0007-studio-flows-and-actions.md).
 
 ## How
 
-- **Flow → Python:** one statement per step, in the plain style of [ADR 0008](../decisions/0008-readable-python.md). Functions become `def`s; checks become `if d.exists(...)` and `d.wait(...)`; loops become `for` and `while`. The file starts with `@d.flow`.
+- **Flow → Python:** one statement per step, in the plain style of [ADR 0008](../../decisions/0008-readable-python.md). Functions become `def`s; checks become `if d.exists(...)` and `d.wait(...)`; loops become `for` and `while`. The file starts with `@d.flow`.
 - **Python → flow:** the Studio parses the file with Python's own `ast` module, so no decompiler is needed. Inside a `@d.flow` function:
 
   | Python | Flow step |

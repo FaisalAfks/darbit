@@ -4,7 +4,7 @@
     keymap.load(project=Path("my-bot")) # with my-bot/darbit.toml [keys] on top
 
 The web UI gets the same table from the local server (GET /keymap), so a key changed here
-changes in every window, the hub and the IDE extension. See docs/tasks/T04-keymap.md.
+changes in every window, the hub and the IDE extension. See docs/archive/tasks/T04-keymap.md.
 """
 
 import tomllib

@@ -7,7 +7,7 @@
     save(name, kind, image, region, point) # write the target's files, like the old capture tool
 
 Coordinates are pixels of the frozen shot. server/capture_api.py turns these into requests; nothing here imports
-the server. See docs/tasks/T09-capture-overlay.md.
+the server. See docs/archive/tasks/T09-capture-overlay.md.
 """
 
 import json

@@ -1,10 +1,10 @@
 # T14 Flows: the file format and model
 
-> **Rewritten 2026-10-26** ([decision 0010](../decisions/0010-flows-are-python.md)): runs and flows are saved as `@d.flow` Python, not YAML. The first version of this page planned YAML with a JSON Schema.
+> **Rewritten 2026-10-26** ([decision 0010](../../decisions/0010-flows-are-python.md)): runs and flows are saved as `@d.flow` Python, not YAML. The first version of this page planned YAML with a JSON Schema.
 
 **Goal:** a recorded run, or a flow made in the Studio, is a Python file that plays by calling it. darbit reads it into a flow model (for the editor and the run panel) and writes it back.
 
-**Depends on:** nothing. **Issue:** #49. **Milestone:** v0.4. **Decisions:** [0007](../decisions/0007-studio-flows-and-actions.md), [0008](../decisions/0008-readable-python.md), [0010](../decisions/0010-flows-are-python.md).
+**Depends on:** nothing. **Issue:** #49. **Milestone:** v0.4. **Decisions:** [0007](../../decisions/0007-studio-flows-and-actions.md), [0008](../../decisions/0008-readable-python.md), [0010](../../decisions/0010-flows-are-python.md).
 
 ## The file: `runs/slime.py`
 
