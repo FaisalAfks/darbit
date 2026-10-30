@@ -55,6 +55,7 @@ The capture tool also saves `scale` (the display scaling) and, with `--window Ro
 | Call | Does | Returns |
 |---|---|---|
 | `exists(target, timeout=0, region=None)` | looks for a target, up to `timeout` seconds | `Match` or `None` |
+| `find(target, timeout=None, region=None)` | waits for a target, up to `settings.timeout` | `Match` or `None` |
 | `wait(*targets, timeout=None, region=None)` | waits for a target, or the first of several (`match.name` says which) | `Match` or `None` |
 | `vanish(target, timeout=None)` | waits until the target is gone | `True` / `False` |
 | `find_all(target)` | every place the target is | list of `Match` |
@@ -69,7 +70,26 @@ The capture tool also saves `scale` (the display scaling) and, with `--window Ro
 | `apps.open(path_or_url)`, `apps.close(app)`, `apps.running(app)`, `apps.focus(app)`, `apps.window(app)` | an app by window title (`"Roblox"`) or program (`"chrome.exe"`) | |
 | `log(text)`, `screenshot(label)` | a line or a screenshot in today's log | |
 
-`Region(x, y, w, h)`, `Location(x, y)` and `Screen()` (the whole screen) are there for `region=` and fixed points.
+`Location(x, y)` is a fixed point. A target can be a name, a `Target`, or a `Pattern`: a name with settings changed in code, on top of its `.json`:
+
+```python
+play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)  # also .exact(), .within(region), .options(fast=True)
+```
+
+### Regions, screens and apps
+
+A `Region(x, y, w, h)` searches and clicks inside itself, the SikuliX way: `exists`, `find`, `wait`, `vanish`, `find_all`, `click`, `double_click`, `right_click`, `hover`, `drag` and `observe` are the calls above with `region=` set to it.
+
+```python
+game = d.App("Roblox").window  # a Region, or None if it isn't open
+if game.exists(play, timeout=3):
+    game.click(play)
+d.Region.of(match).grow(40).exists("Close")  # around something found
+```
+
+`Screen()` is every monitor together, `Screen(0)` the first. `App(name)` has `window`, `running`, `focus()`, `close()` and `open()`.
+
+Loaded pictures stay in memory; their files are checked at most once a second, so a picture taken again is used from the next search on.
 
 Keys are sent by their position on the keyboard, so games get them and the keyboard language doesn't matter. The mouse glides to each spot, which some games need to register a click.
 

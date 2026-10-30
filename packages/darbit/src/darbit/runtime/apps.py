@@ -1,14 +1,40 @@
 """Opening, closing and switching to apps.
 
 An app is named by its window title ("Roblox") or by its program ("chrome.exe",
-or a full path to it).
+or a full path to it). `App("Roblox")` keeps the name: `App("Roblox").window` is its window as a Region.
 """
 
 import os
 
-from ..core.geometry import Region
 from ..platform import windows
 from .log import log
+from .region import Region
+
+
+class App:
+    """An app by window title or program, the SikuliX way: `game = App("Roblox").window`."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    @property
+    def window(self) -> Region | None:
+        """Its window area on screen, to search and click inside; None if it isn't open."""
+        return window(self.name)
+
+    @property
+    def running(self) -> bool:
+        return running(self.name)
+
+    def focus(self) -> bool:
+        return focus(self.name)
+
+    def close(self) -> bool:
+        return close(self.name)
+
+    def open(self) -> None:
+        """Start it: the name is a program, file or link here."""
+        open(self.name)
 
 
 def open(path_or_url: str) -> None:
@@ -40,4 +66,6 @@ def focus(app: str) -> bool:
 def window(app: str) -> Region | None:
     """The app's window area on screen, or None if it isn't open."""
     found = windows.matching(app, loose=True)
-    return windows.region(found[0].handle) if found else None
+    if not found:
+        return None
+    return Region.of(windows.region(found[0].handle))

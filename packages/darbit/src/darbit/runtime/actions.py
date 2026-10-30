@@ -4,7 +4,7 @@ import threading
 import time
 
 from ..core.geometry import Location, Region
-from ..core.targets import Match, Target
+from ..core.targets import Match, Pattern, Target
 from ..platform import input as device
 from ..platform import safety, windows
 from ..platform.keys import Key
@@ -43,7 +43,7 @@ def _point(what: Spot, timeout: float | None, region: Region | None) -> tuple[in
 def _label(what: Spot) -> str:
     if isinstance(what, Match):
         return what.name or "match"
-    if isinstance(what, Target):
+    if isinstance(what, (Target, Pattern)):
         return what.label
     return str(what)
 

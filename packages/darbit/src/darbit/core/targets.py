@@ -9,9 +9,13 @@ A target saved by the capture tool is two files with the same name:
 Every field is optional. A target with only a location and no image is a point.
 `window` and `origin` are the size and top-left corner of the app window it was taken in;
 with them, core/placement.py follows the window when it moves or changes size.
+
+A Pattern is a target by name with some settings changed in code. Loaded targets are kept in memory and
+their files checked at most once a second, so a picture taken again is used from the next search on.
 """
 
 import json
+import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -79,18 +83,60 @@ class Match:
         return self.center.moved(*self.target.offset)
 
 
-_cache: dict[tuple[Path, float], np.ndarray] = {}
+EXACT = 0.99  # Pattern.exact()
+
+
+@dataclass(frozen=True)
+class Pattern:
+    """A picture by name with settings changed in code: `Pattern("Lobby.Play").similar(0.85).offset(10, 0)`.
+    The picture's .json applies first, these on top."""
+
+    image: str | Path
+    similarity: float | None = None
+    click_offset: tuple[float, float] | None = None
+    region: Region | None = None
+    match: dict | None = None
+
+    def similar(self, similarity: float) -> "Pattern":
+        """The lowest score that counts as found, 0 to 1."""
+        return replace(self, similarity=similarity)
+
+    def exact(self) -> "Pattern":
+        return replace(self, similarity=EXACT)
+
+    def offset(self, dx: float, dy: float) -> "Pattern":
+        """Click this far from the picture's centre."""
+        return replace(self, click_offset=(dx, dy))
+
+    def within(self, region: Region) -> "Pattern":
+        """Search only here."""
+        return replace(self, region=region)
+
+    def options(self, **values: object) -> "Pattern":
+        """Matching options on top of the picture's own: `.options(fast=True, colour=True)`."""
+        merged = dict(self.match or {})
+        merged.update(values)
+        return replace(self, match=merged)
+
+    @property
+    def label(self) -> str:
+        return str(self.image)
+
+
+_images: dict[Path, tuple[float, np.ndarray]] = {}  # per file: its modified time and its pixels
 
 
 def read_image(path: Path) -> np.ndarray:
     """An image file as BGR pixels, cached until the file changes."""
-    key = (path, path.stat().st_mtime)
-    if key not in _cache:
-        pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
-        if pixels is None:
-            raise TargetError(f"can't read the image {path}")
-        _cache[key] = pixels
-    return _cache[key]
+    modified = path.stat().st_mtime
+    cached = _images.get(path)
+    if cached is not None and cached[0] == modified:
+        return cached[1]
+    pixels = cv2.imdecode(np.fromfile(str(path), dtype=np.uint8), cv2.IMREAD_COLOR)
+    if pixels is None:
+        raise TargetError(f"can't read the image {path}")
+    _images[path] = (modified, pixels)
+    return pixels
 
 
 IMAGE_TYPES = (".png", ".jpg", ".jpeg", ".bmp")
@@ -152,9 +198,72 @@ def _from_json(target: Target, path: Path) -> Target:
     return replace(target, **changes)
 
 
-def load(what: str | Path | Target, folders: list[Path]) -> Target:
-    """A ready target from a name, a file or a Target: its image read and its settings file applied."""
-    target = what if isinstance(what, Target) else Target(image=what)
+CHECK_EVERY = 1.0  # seconds between checks that a loaded target's files haven't changed
+
+
+@dataclass
+class _Loaded:
+    checked: float
+    files: tuple
+    target: Target
+
+
+_loaded: dict[tuple[str, tuple[Path, ...]], _Loaded] = {}
+
+
+def load(what: str | Path | Target | Pattern, folders: list[Path]) -> Target:
+    """A ready target from a name, a file, a Pattern or a Target: its image read and its settings file applied."""
+    if isinstance(what, Pattern):
+        return _changed(load(what.image, folders), what)
+    if isinstance(what, Target):
+        return _load(what, folders)
+    key = (str(what), tuple(folders))
+    now = time.monotonic()
+    kept = _loaded.get(key)
+    if kept is not None and now - kept.checked < CHECK_EVERY:
+        return kept.target
+    files = _files(what, folders)
+    if kept is not None and kept.files == files:
+        kept.checked = now
+        return kept.target
+    target = _load(Target(image=what), folders)
+    _loaded[key] = _Loaded(now, files, target)
+    return target
+
+
+def forget() -> None:
+    """Drop every loaded target, so the next search reads the files again."""
+    _loaded.clear()
+
+
+def _files(name: str | Path, folders: list[Path]) -> tuple:
+    """The target's image and settings files with their modified times: when these change, it's loaded again."""
+    stamps = []
+    for path in (find_file(name, folders), _settings_file(name, folders)):
+        if path is None:
+            stamps.append(None)
+        else:
+            stamps.append((path, path.stat().st_mtime))
+    return tuple(stamps)
+
+
+def _changed(target: Target, pattern: Pattern) -> Target:
+    """A loaded target with a Pattern's settings on top."""
+    changes: dict = {}
+    if pattern.similarity is not None:
+        changes["similarity"] = pattern.similarity
+    if pattern.click_offset is not None:
+        changes["offset"] = pattern.click_offset
+    if pattern.region is not None:
+        changes["region"] = pattern.region
+    if pattern.match:
+        merged = dict(target.match or {})
+        merged.update(pattern.match)
+        changes["match"] = merged
+    return replace(target, **changes)
+
+
+def _load(target: Target, folders: list[Path]) -> Target:
     if target.image is None:
         if target.location is None:
             raise TargetError("a target needs an image or a location")
@@ -182,3 +291,4 @@ def save(path: Path, image: np.ndarray | None, **fields) -> None:
     clean = {k: v for k, v in fields.items() if v is not None}
     if clean:
         _with(path, ".json").write_text(json.dumps(clean, indent=2) + "\n", encoding="utf-8")
+    forget()

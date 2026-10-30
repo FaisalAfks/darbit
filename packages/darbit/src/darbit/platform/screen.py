@@ -32,8 +32,3 @@ def grab(region: Region | None = None) -> tuple[np.ndarray, Region]:
 def scale_at(x: int, y: int) -> float:
     """The display scaling at a point, e.g. 1.5 for 150%."""
     return backend.screen().scale_at(x, y)
-
-
-def Screen() -> Region:
-    """The whole screen, as a region: `exists("x.png", region=Screen())`."""
-    return desktop()
