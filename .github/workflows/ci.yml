@@ -19,3 +19,26 @@ jobs:
       - run: uv run pre-commit run plain-python --all-files
       - run: uv run pre-commit run plain-bot-python --all-files
       - run: uv run pytest
+
+  bench:
+    runs-on: windows-latest
+    env:
+      HAS_BENCH_TOKEN: ${{ secrets.BENCH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        if: env.HAS_BENCH_TOKEN == 'true'
+        with:
+          repository: FaisalAfks/darbit-bench
+          token: ${{ secrets.BENCH_TOKEN }}
+          path: bench/private
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked
+      - run: uv run python bench/run.py --repeat 5 --json bench-results.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-results
+          path: bench-results.json

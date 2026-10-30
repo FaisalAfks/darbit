@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- The test bench (`bench/`): darbit's own search on saved screens with known answers, for accuracy and speed. Made-up cases are generated from code; real game screens live in the private darbit-bench repo, made from the screens darbit Studio saves (`bench/from_screens.py`); CI runs it. Today's baseline: right answers, but 0.4–0.8 s per whole-screen search against a 40 ms goal, a recoloured icon wrongly found, and targets at another screen size not found
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service
