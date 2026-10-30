@@ -7,6 +7,8 @@
 - The rebuild plan (draft): what darbit is, every feature to design for, the core API, the process layout, the Studio on PySide6 and the order of work
 - Decision 0015: rebuild around a fast, swappable core; the roadmap, design page, 2026-10-25 plan and task pages move to `docs/archive/`; the code style relaxes (simple comprehensions and key lambdas are fine, bot code stays the plainest)
 
+## 0.4.0 - 2026-10-29
+
 ### Changed
 
 - Smoother Studio, Capture and recorder: real input now comes through Raw Input instead of low-level hooks, so a busy darbit can never make the mouse or the game's keys lag; blur only on the small top bars; glowing and pulsing effects animate opacity and transform instead of repainting shadows; the background is its own fixed layer; Capture dims the shot with four panels and reads the magnifier's colour from a CPU copy of the shot
