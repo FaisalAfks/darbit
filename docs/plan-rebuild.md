@@ -1,6 +1,6 @@
 # darbit rebuild plan
 
-Draft, 2026-10-30. To be reviewed and changed before any code.
+Draft, 2026-10-30. To be reviewed and changed before any code. Decisions so far are in section 15.
 
 darbit is rebuilt around a fast, swappable core, with the Studio as a thin client over it. This page says what darbit is, every feature it has to be designed for from the start, how it's built, and in what order.
 
@@ -212,8 +212,10 @@ Each is a small interface with one class per system, picked when darbit starts:
 | **The input worker** | recording and tape playback, apart from the UI and Python's one-thread-at-a-time limit |
 | **The Studio** | a window onto the service: nothing is lost or left running when it closes |
 
-- **Between them:** one local channel (a named pipe or a local socket) with typed messages, defined once in Python.
+- **Between them:** one local socket on 127.0.0.1 with typed JSON messages, defined once in Python. Any language can connect, so a phone bridge, the VS Code extension or MCP can use the same channel later.
+- **The input worker** is a Python process running the Raw Input listener and tape playback, so nothing else in darbit can slow it down.
 - **Stopping a bot** asks it first (its next darbit call stops cleanly, keys let go), then ends its whole process tree.
+- **Several bots at once:** the service runs any number of bots, each with its own window (or account, or monitor) to work on. Two bots never share a window.
 
 ## 6. Files
 
@@ -229,7 +231,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 
 ## 7. Studio
 
-- **PySide6 with QML:** one language, one process for the UI.
+- **PySide6 with QML:** the screens are written in QML (Qt's declarative UI language, built for styled and animated interfaces and drawn on the GPU), with Python behind them for the data and logic. One process for the UI.
 - **Native overlays** for Capture, Highlight, the recorder bar and the run pill: real transparency and click-through on every system, screen pictures shown directly with no frames sent anywhere.
 - **The tray** through `QSystemTrayIcon`.
 - **Pages read from the service and SQLite,** and update from the service's events, not by polling.
@@ -258,7 +260,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 
 - **Code style:** idiomatic, readable Python: small functions, clear names, a summary at the top of each module, type hints, comments that say why. Simple comprehensions and key lambdas are fine; clever one-liners aren't. ruff checks it, pyright is strict for the core.
 - **Tests by layer:** pure functions (matching, placement, planning) tested directly, interfaces tested with fakes, a few real runs only when allowed.
-- **The test bench:** saved screens from real games with the expected matches and times; CI checks accuracy and speed.
+- **The test bench:** saved screens from real games with the expected matches and times, kept in a private repo that CI pulls with a token. The public repo keeps only small made-up screens. CI checks accuracy and speed.
 - **CI on Windows, macOS and Linux** once those systems are in.
 - **Profiling:** `darbit run --profile` shows where the time goes.
 - **Packaging:** a wheel for the library; a Studio installer (Briefcase or PyInstaller) that brings uv for the bots.
@@ -297,10 +299,44 @@ Each is a small interface with one class per system, picked when darbit starts:
 | **6. More systems** | macOS and Linux backends, CI on all three | the test bench and a sample bot pass on all three |
 | **After** | OCR targets, masks of any shape, element targets, the VS Code extension, MCP, the installer, a registry | |
 
-## 14. Open questions
+## 14. Also designed for from the start
 
-- QML or Widgets for the Studio's pages (QML for the look, Widgets for plainer code).
-- The local channel: named pipes, a local socket, or multiprocessing's own connections.
-- Whether the input worker records through Raw Input in its own process, or a small native helper.
-- What the test bench's saved screens are and where they live (private game screens can't go in the public repo).
-- Which matching options are worth their cost, decided from the bench's numbers.
+### Moving over
+- **Today's bots carry over:** `darbit migrate` converts a bot's pictures and settings files, `darbit.toml` and `config.toml` into `bot.toml`, and its actions and tapes to the new format. It keeps a copy of everything it changes.
+- **The live bot stays untouched:** it keeps running on its pinned release (v0.3.0, then v0.4.0) until ad-bot runs a full day on the new core (milestone 2). The new darbit is a new major version, so nothing moves by accident.
+
+### Several bots, monitors and a locked PC
+- **Several bots at once,** each on its own window, account or monitor (section 5).
+- **Monitors:** a bot names its monitor (or follows its window's). Display scaling is read per monitor, not once for the whole desktop.
+- **A locked screen, remote desktop or a virtual machine:** screen capture and input stop working when Windows is locked or a remote session is minimised. darbit detects it, pauses the bot, says why, and goes on when the screen is back. A `doctor` check warns before a run.
+
+### Secrets, recovery and keeping history small
+- **Secrets** (a private server link, webhook tokens) live in the environment or Windows' credential store, read through `d.secret("name")`. They never sit in `bot.toml` or git.
+- **Recovery policy, per bot:**
+  - after a crash: restart it, up to N times an hour;
+  - after a failure: go back to a known screen (the screen map), then retry;
+  - after many failures in a row, or targets that stopped matching (a game update): stop and notify.
+- **Retention:** run history kept N days (30 by default), screenshots M days or up to a size; cleaned by the service.
+
+### Updates, docs and scheduling
+- **Updates:** the Studio checks for a new release and offers it; channels are stable and preview. Bots move to a new darbit only when their pin moves.
+- **Docs:** a getting-started guide, a sample bot (`examples/`) that's tested in CI, and an API reference made from the docstrings.
+- **Scheduling in the core:** `d.schedule` with time zones (the game's UTC resets and your local clock), every N minutes, daily at a time, and windows like "the first 9 minutes of the hour", on APScheduler. The service runs schedules; a dry run shows what would run when.
+
+### Later
+- **Licenses:** PySide6 is LGPL (fine unmodified in an MIT/Apache app, to be noted), and OCR models have their own licenses.
+- **Game rules:** a README note that automating a game can go against its terms.
+- **Accessibility and language:** keyboard-only use, screen readers, translated text.
+
+## 15. Decided
+
+| Question | Decision |
+|---|---|
+| The Studio's screens | QML, with Python behind it |
+| How the processes talk | a local socket with typed JSON messages |
+| Recording input | Raw Input in its own Python worker process |
+| The test bench's game screens | a private repo, pulled by CI; small made-up screens in the public repo |
+
+## 16. Still open
+
+- Which matching options are worth their cost, decided from the test bench's numbers.
