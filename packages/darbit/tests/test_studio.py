@@ -338,3 +338,13 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tm
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_the_theme_chosen_is_used_next_time(qt):
+    studio = backend.Studio(FakeClient)
+    studio.setTheme("midnight")
+    assert studio.colors["bg"] == "#ff000000"
+    assert not studio.glass  # midnight draws no glass
+    assert backend.Studio(FakeClient).themeName == "midnight"
+    studio.setTheme("no such theme")
+    assert studio.themeName == theme.DEFAULT
