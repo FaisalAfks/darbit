@@ -7,6 +7,8 @@ blocks; windows opened later (from the server, say) appear as they're made.
 
 import ctypes
 import threading
+from ctypes import wintypes
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlencode
 
@@ -31,6 +33,13 @@ BAR_MIN_SIZE = (120, 32)
 BAR_BACKGROUND = "#0b0d12"  # a bar's window before its page draws, the Studio's own background
 DWMWA_WINDOW_CORNER_PREFERENCE = 33
 DWMWCP_ROUND = 2
+ICON = Path(__file__).with_name("darbit.ico")  # darbit's logo (assets/logo.svg) at every size Windows asks for
+APP_ID = "darbit.Studio"  # the taskbar groups darbit's windows under this, with darbit's icon, not Python's
+WM_SETICON = 0x0080
+ICON_SMALL, ICON_BIG = 0, 1
+IMAGE_ICON = 1
+LR_LOADFROMFILE = 0x00000010
+SM_CXICON, SM_CXSMICON = 11, 49
 
 
 def styles(kind: Kind) -> int:
@@ -102,6 +111,27 @@ def _add_styles(native: object, kind: Kind) -> None:
     user32.SetWindowLongPtrW(ctypes.c_void_p(handle), GWL_EXSTYLE, current | extra)
 
 
+def _set_icon(native: object) -> None:
+    """Give the window darbit's icon, for its title bar, the taskbar and Alt+Tab."""
+    handle = native.native.Handle.ToInt64()
+    user32 = ctypes.windll.user32
+    user32.LoadImageW.argtypes = (
+        wintypes.HINSTANCE,
+        wintypes.LPCWSTR,
+        wintypes.UINT,
+        ctypes.c_int,
+        ctypes.c_int,
+        wintypes.UINT,
+    )
+    user32.LoadImageW.restype = wintypes.HANDLE
+    user32.SendMessageW.argtypes = (wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+    for which, metric in ((ICON_BIG, SM_CXICON), (ICON_SMALL, SM_CXSMICON)):
+        size = user32.GetSystemMetrics(metric)
+        icon = user32.LoadImageW(None, str(ICON), IMAGE_ICON, size, size, LR_LOADFROMFILE)
+        if icon:
+            user32.SendMessageW(ctypes.c_void_p(handle), WM_SETICON, which, icon)
+
+
 def open_window(
     app: str, kind: Kind = "normal", monitor: int | None = None, query: dict | None = None, extra: dict | None = None
 ) -> Window:
@@ -133,6 +163,8 @@ def open_window(
 
     def shown() -> None:
         try:
+            if kind == "normal":
+                _set_icon(native)
             _add_styles(native, kind)
         except (AttributeError, OSError):
             pass  # without the styles the window still works; it may take focus when clicked
@@ -146,4 +178,8 @@ def run(debug: bool = False) -> None:
     """Start pywebview's loop on this (the main) thread; returns when the last window closes."""
     import webview
 
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+    except (AttributeError, OSError):
+        pass  # the taskbar then shows Python's icon; the windows still have darbit's
     webview.start(debug=debug)
