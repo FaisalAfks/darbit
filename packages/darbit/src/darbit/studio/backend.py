@@ -8,14 +8,17 @@ The Studio holds no state of its own about bots: closing it loses nothing.
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
+from .. import paths
 from ..server import ui_settings
 from ..service.client import Client, ServiceError
 from . import theme
 
 CHOSEN = "studio.bot"  # ui setting: the bot shown last
+THEME = "theme"  # ui setting: the theme, shared with the old Studio
 
 PAGES = ("overview", "library", "runs", "settings")
 
@@ -41,7 +44,7 @@ class Studio(QObject):
     _failed = Signal(str)
     _happened = Signal(str, object)  # (topic, data), from the client's reading thread
 
-    def __init__(self, connect: Callable[[], Client], theme_name: str = theme.DEFAULT, bot: str = "") -> None:
+    def __init__(self, connect: Callable[[], Client], theme_name: str = "", bot: str = "") -> None:
         super().__init__()
         self._connect = connect
         self._client: Client | None = None
@@ -55,8 +58,8 @@ class Studio(QObject):
         self._message = ""
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
-        self._theme_name = theme_name
-        self._colors = theme.colors(theme_name)
+        self._theme_name = theme_name or str(ui_settings.get(THEME, theme.DEFAULT))
+        self._colors = theme.colors(self._theme_name, _custom_theme())
         self._answered.connect(self._take)
         self._failed.connect(self._show_failure)
         self._happened.connect(self._on_event)
@@ -177,8 +180,10 @@ class Studio(QObject):
 
     @Slot(str)
     def setTheme(self, name: str) -> None:
+        """Use a theme from now on, and next time."""
         self._theme_name = name if name in theme.THEMES else theme.DEFAULT
-        self._colors = theme.colors(self._theme_name)
+        self._colors = theme.colors(self._theme_name, _custom_theme())
+        ui_settings.set_value(THEME, self._theme_name)
         self.themeChanged.emit()
 
     @Slot()
@@ -279,3 +284,8 @@ class Studio(QObject):
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         if topic == "project.changed" and data.get("path") == self._bot.get("path"):
             self.loadOverview()
+
+
+def _custom_theme() -> Path:
+    """theme.toml in darbit's settings folder: tokens laid over a base theme."""
+    return paths.config_dir() / "theme.toml"

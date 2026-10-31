@@ -18,6 +18,8 @@ darbit app
   Click something to box it (again for bigger, right-click for smaller) or drag a box; the handles and the arrow keys
   change it (Shift: 10 px, Ctrl: its size). Image, Region or Point; **T** tests it (every match, with its score);
   name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is shown.
+- **The gear** (top right): the theme: glass dark, glass light, midnight (the lightest to draw) or high contrast.
+  A `theme.toml` in darbit's settings folder lays tokens over it (`base = "glass-dark"`, `accent = "#ff7ab6"`).
 - **The run controls** (top right): Play, Pause or Go on, and Stop, with how long it has run.
 
 Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). The tray icon opens it again.

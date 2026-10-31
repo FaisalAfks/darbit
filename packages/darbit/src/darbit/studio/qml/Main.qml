@@ -38,7 +38,8 @@ ApplicationWindow {
             Tab { icon: "⚙"; label: "Settings"; current: window.page === "settings"; onClicked: window.go("settings") }
         }
 
-        RunPill { anchors.right: parent.right }
+        RunPill { anchors.right: menu.left; anchors.rightMargin: 12 }
+        StudioMenu { id: menu; anchors.right: parent.right }
     }
 
     // ---- the page
