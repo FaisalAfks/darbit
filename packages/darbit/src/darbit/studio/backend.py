@@ -6,9 +6,9 @@ The Studio holds no state of its own about bots: closing it loses nothing.
 """
 
 import threading
-from pathlib import Path
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
