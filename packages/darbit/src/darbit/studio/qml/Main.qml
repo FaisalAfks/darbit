@@ -77,6 +77,8 @@ ApplicationWindow {
         else if (name === "settings") studio.loadSettings()
     }
 
+    CaptureWindow { objectName: "captureWindow" }
+
     Shortcut { sequence: "Ctrl+1"; onActivated: window.go("overview") }
     Shortcut { sequence: "Ctrl+2"; onActivated: window.go("library") }
     Shortcut { sequence: "Ctrl+3"; onActivated: window.go("runs") }

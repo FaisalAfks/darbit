@@ -35,6 +35,8 @@ class Studio(QObject):
     themeChanged = Signal()
     clockChanged = Signal()
 
+    captureWanted = Signal(str, str)  # (the bot's folder, what to take: "any" or "guide"), for app.py
+
     _answered = Signal(str, object)  # (what, result), from a worker thread
     _failed = Signal(str)
     _happened = Signal(str, object)  # (topic, data), from the client's reading thread
@@ -142,6 +144,12 @@ class Studio(QObject):
     @Slot()
     def stop(self) -> None:
         self._ask("status", "bot.stop")
+
+    @Slot(str)
+    def openCapture(self, mode: str) -> None:
+        """Capture for the shown bot: anything, or the guide's pictures not taken yet."""
+        if self._bot.get("path"):
+            self.captureWanted.emit(self._bot["path"], mode)
 
     @Slot()
     def loadOverview(self) -> None:

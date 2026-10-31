@@ -44,6 +44,7 @@ Flickable {
         spacing: 20
 
         RowLayout {
+            Layout.fillWidth: true
             spacing: 16
             Text { text: "Library"; color: studio.colors.text; font.pixelSize: 30; font.weight: Font.Bold }
             Pill {
@@ -51,6 +52,13 @@ Flickable {
                 Tab { height: 30; label: "All " + page.count("all"); current: page.filter === "all"; onClicked: page.filter = "all" }
                 Tab { height: 30; label: "Risky " + page.count("risky"); current: page.filter === "risky"; onClicked: page.filter = "risky" }
                 Tab { height: 30; label: "Missing " + page.count("missing"); current: page.filter === "missing"; onClicked: page.filter = "missing" }
+            }
+            Item { Layout.fillWidth: true }
+            Button {
+                text: "▣  Capture"
+                onClicked: studio.openCapture("any")
+                contentItem: Text { text: parent.text; color: studio.colors.onAccent; font.weight: Font.Bold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                background: Rectangle { implicitHeight: 40; implicitWidth: 120; radius: 10; color: studio.colors.accent }
             }
         }
 

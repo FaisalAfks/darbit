@@ -267,7 +267,7 @@ def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     warnings = []
 
     def keep(kind, context, text):
-        if kind != QtCore.QtMsgType.QtDebugMsg:
+        if kind != QtCore.QtMsgType.QtDebugMsg and ".qml" in text:  # the QML's own, not Qt's (fonts offscreen)
             warnings.append(text)
 
     QtCore.qInstallMessageHandler(keep)
@@ -277,4 +277,64 @@ def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     finally:
         QtCore.qInstallMessageHandler(None)
     assert picture.stat().st_size > 10_000
+    assert warnings == []
+
+
+def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
+    import cv2
+    import numpy as np
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    screen = np.full((600, 900, 3), 30, np.uint8)
+    cv2.rectangle(screen, (400, 300), (520, 350), (90, 200, 90), -1)  # a green button
+    cv2.putText(screen, "PLAY", (420, 335), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+    capture = Capture(ShotProvider())
+    capture.start(tmp_path, shot=screen)
+    assert capture.isOpen and (capture.shotWidth, capture.shotHeight) == (900, 600)
+    assert capture.provider.image.width() == 900
+    found = capture.candidates(450, 320, "image")
+    box = found["boxes"][found["start"]]
+    assert box[0] <= 400 and box[1] <= 300 and box[0] + box[2] >= 520 and box[1] + box[3] >= 350
+    tested = capture.test(box, None)
+    assert len(tested["matches"]) == 1 and tested["matches"][0]["score"] > 0.99
+    assert capture.save("Lobby.Play", "image", box, None, None).get("error") is None
+    assert (tmp_path / "images" / "Lobby.Play.png").is_file()
+    assert capture.save("Lobby.Spot", "point", None, None, [10, 20]).get("error") is None
+    assert capture.save("", "image", box, None, None)["error"] == "give it a name"
+    capture.close()
+    assert not capture.isOpen
+
+
+def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+        screen = np.full((400, 600, 3), 30, np.uint8)
+        screen[200:240, 300:400] = (90, 200, 90)
+        capture = Capture(ShotProvider())
+        engine = app.load(backend.Studio(FakeClient), capture)
+        capture.start(tmp_path, shot=screen)
+        root = engine.rootObjects()[0]  # held: a temporary root lets PySide drop its child windows
+        window = root.findChild(QQuickWindow, "captureWindow")
+        scale = window.property("scale")
+        QMetaObject.invokeMethod(
+            window, "clicked", Q_ARG("QVariant", 350 * scale), Q_ARG("QVariant", 220 * scale), Q_ARG("QVariant", True)
+        )
+        QMetaObject.invokeMethod(window, "test")
+        wait_until(lambda: len(window.property("matches") or []) == 1)
+        assert window.grabWindow().width() > 0
+        capture.close()
+        QtCore.QCoreApplication.processEvents()
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
     assert warnings == []

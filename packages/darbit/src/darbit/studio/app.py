@@ -16,21 +16,29 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from ..service.client import Client
 from .backend import Studio
+from .capture import Capture, ShotProvider
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
 ICON = HERE / "logo.png"
 SHOT_WAIT_MS = 1500  # time for the pages to get their data and draw before a shot
+HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture grabs it
 
 
 def _client() -> Client:
     return Client("darbit Studio")
 
 
-def load(studio: Studio) -> QQmlApplicationEngine:
+def load(studio: Studio, capture: Capture | None = None) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
+    if capture is None:
+        capture = Capture(ShotProvider())
+    engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
+    engine.rootContext().setContextProperty("capture", capture)
+    studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
+    capture.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -43,12 +51,31 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     app.setDesktopFileName("darbit")
     app.setWindowIcon(QIcon(str(ICON)))
     studio = Studio(connect)
-    engine = load(studio)
+    capture = Capture(ShotProvider())
+    engine = load(studio, capture)
     window = engine.rootObjects()[0]
+    _connect_capture(studio, capture, window)
     tray = _tray(app, window)
     code = app.exec()
     tray.hide()
     return code
+
+
+def _connect_capture(studio: Studio, capture: Capture, window: object) -> None:
+    """Capture hides the Studio, grabs the screen without it, and brings it back when it closes."""
+
+    def wanted(folder: str, mode: str) -> None:
+        window.hide()
+        QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode))
+
+    def closed() -> None:
+        if not capture.isOpen:
+            _bring_forward(window)
+            studio.loadLibrary()
+
+    studio.captureWanted.connect(wanted)
+    capture.openChanged.connect(closed)
+    capture.saved.connect(lambda name: studio.loadLibrary())
 
 
 def _tray(app: QApplication, window: object) -> QSystemTrayIcon:
