@@ -37,7 +37,7 @@ jobs:
           python-version: "3.13"
       - run: uv sync --locked
       - run: uv run python bench/run.py --repeat 5 --json bench-results.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bench-results
