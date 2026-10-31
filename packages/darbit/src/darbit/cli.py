@@ -3,7 +3,7 @@
 darbit new NAME | install GIT_URL | run [PATH]
 darbit check … | report …     the tools, same options as python -m darbit.tools.<tool>
 darbit serve                  darbit's service: runs bots whether the Studio is open or not
-darbit bots | status BOT | start BOT | pause BOT | stop BOT
+darbit bots | status BOT | start BOT | pause BOT | stop BOT | history BOT [DAY]
                               bots through the service (started in the background if it isn't running)
 darbit app                    darbit Studio is being rebuilt (docs/plan-rebuild.md): says where v0.4's is
 
@@ -28,6 +28,7 @@ COMMANDS = {
     "start": "start a bot through the service",
     "pause": "pause a running bot, or go on",
     "stop": "stop a bot",
+    "history": "show what a bot did on a day",
     "app": "open darbit Studio",
 }
 BOT_COMMANDS = {"status": "bot.status", "start": "bot.start", "pause": "bot.pause", "stop": "bot.stop"}
@@ -61,6 +62,8 @@ def main(argv: list[str] | None = None) -> int:
         return _serve(args.rest)
     if command == "bots":
         return _bots(args.rest)
+    if command == "history":
+        return _history(args.rest)
     if command in BOT_COMMANDS:
         return _bot(command, args.rest)
     return _tool(command, args.rest)
@@ -173,6 +176,54 @@ def _bot(command: str, argv: list[str]) -> int:
         return 1
     print(f"{args.bot}: {result.get('status', result)}")
     return 0
+
+
+def _history(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="darbit history", description="Show what a bot did on a day.")
+    parser.add_argument("bot", help="the bot's name, or its folder")
+    parser.add_argument("day", nargs="?", help="the day, e.g. 2026-10-31 (default: the latest)")
+    parser.add_argument("--days", action="store_true", help="list the days instead")
+    args = parser.parse_args(argv)
+    days = _ask("bot.days", bot=args.bot)
+    if days is None:
+        return 1
+    if not days:
+        print(f"{args.bot} has no history yet")
+        return 0
+    if args.days:
+        for row in days:
+            lead = row.get("lead") or {}
+            gain = f"{lead.get('amount')} {lead.get('name')}" if lead else ""
+            print(f"{row['day']}  {_clock(row.get('seconds', 0)):>8}  problems {row.get('problems', 0):<4} {gain}")
+        return 0
+    found = _ask("bot.day", bot=args.bot, day=args.day or days[0]["day"])
+    if found is None:
+        return 1
+    for line in history_lines(found):
+        print(line)
+    return 0
+
+
+def history_lines(day: dict) -> list[str]:
+    """A day's results as lines of text."""
+    lines = [f"{day['day']}"]
+    if day.get("start") is not None and day.get("end") is not None:
+        lines[0] += f", {_clock(day['start'])} to {_clock(day['end'])}"
+    finished = day.get("finished") or {}
+    lines.append(f"steps finished: {finished.get('done', 0)} of {finished.get('total', 0)}")
+    for gain in day.get("gains", []):
+        total = f" (total {gain['total']})" if gain.get("total") is not None else ""
+        lines.append(f"gained {gain['today']} {gain['name']}{total}")
+    for problem in day.get("problems", []):
+        lines.append(f"problem x{problem['count']}: {problem['step']}: {problem['reason']}")
+    if day.get("lost_seconds"):
+        lines.append(f"time lost to failures: {_clock(day['lost_seconds'])}")
+    return lines
+
+
+def _clock(seconds: float) -> str:
+    whole = int(seconds)
+    return f"{whole // 3600}:{whole % 3600 // 60:02d}:{whole % 60:02d}"
 
 
 def _ask(method: str, **params: object) -> object:

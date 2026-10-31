@@ -7,6 +7,7 @@ report is watched and every change goes to the windows as `project.changed`. See
 """
 
 import os
+import sqlite3
 import subprocess
 import threading
 import time
@@ -19,7 +20,7 @@ from ..platform import system
 from ..project import bots
 from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, library, results, ui_settings
+from . import dashboard, history, library, results, ui_settings
 from .events import publish
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
@@ -292,15 +293,25 @@ def _watch(run: Run) -> None:
         report = _today_report(run.folder)
         if report.is_file() and report.stat().st_mtime != last_change:
             last_change = report.stat().st_mtime
+            _keep_history(run.folder)
             publish("project.changed", {"path": str(run.folder)})
         time.sleep(WATCH_EVERY)
     code = run.process.returncode
     (control_dir(run.folder) / "pid").unlink(missing_ok=True)
+    _keep_history(run.folder)
     ended = "failed"
     if code == 0 or run.stopping:
         ended = "stopped"
     publish("project.status", {"path": str(run.folder), "status": ended, "code": code})
     publish("project.changed", {"path": str(run.folder)})
+
+
+def _keep_history(folder: Path) -> None:
+    """Copy the bot's new report lines into its run history."""
+    try:
+        history.catch_up(load(folder))
+    except (ProjectError, OSError, sqlite3.Error):
+        pass  # the history catches up on the next look, or when it's asked for
 
 
 def _today_report(folder: Path) -> Path:
