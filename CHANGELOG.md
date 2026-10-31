@@ -4,6 +4,8 @@
 
 ### New
 
+- darbit's service (`darbit serve`): starts, pauses and stops bots whether the Studio is open or not, through one local socket with typed JSON messages and a token (`service/`). The CLI drives it: `darbit bots`, `start`, `pause`, `stop`, `status`, starting it in the background when needed. `python -m darbit` works too
+
 - The test bench (`bench/`): darbit's own search on saved screens with known answers, for accuracy and speed. Made-up cases are generated from code; real game screens live in the private darbit-bench repo, made from the screens darbit Studio saves (`bench/from_screens.py`); CI runs it. Today's baseline: right answers, but 0.4–0.8 s per whole-screen search against a 40 ms goal, a recoloured icon wrongly found, and targets at another screen size not found
 
 - Matching options, each off until asked for, per target (`"match"` in its `.json`) or per bot (`[settings.match]`): `grayscale`, `fast` (smaller copies first, then a full-size check), `colour` (an icon in other colours isn't a match) and `sizes` (other sizes in turn when the picture isn't found). On the bench, `fast` with `grayscale` takes a whole-screen search from about 0.6 s to 15 ms with the same answers; `colour` and `sizes` fix the recoloured icon and the 1920 x 1200 targets

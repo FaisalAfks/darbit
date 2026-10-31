@@ -2,6 +2,9 @@
 
 darbit new NAME | install GIT_URL | run [PATH]
 darbit check … | report …     the tools, same options as python -m darbit.tools.<tool>
+darbit serve                  darbit's service: runs bots whether the Studio is open or not
+darbit bots | status BOT | start BOT | pause BOT | stop BOT
+                              bots through the service (started in the background if it isn't running)
 darbit app                    darbit Studio is being rebuilt (docs/plan-rebuild.md): says where v0.4's is
 
 Each command hands its arguments to the module that does the work: project/bots.py for new, install and
@@ -19,8 +22,15 @@ COMMANDS = {
     "run": "run a bot",
     "check": "check the image library",
     "report": "summarise a day's run report",
+    "serve": "run darbit's service",
+    "bots": "list the bots the service knows",
+    "status": "show a bot: running, paused or stopped",
+    "start": "start a bot through the service",
+    "pause": "pause a running bot, or go on",
+    "stop": "stop a bot",
     "app": "open darbit Studio",
 }
+BOT_COMMANDS = {"status": "bot.status", "start": "bot.start", "pause": "bot.pause", "stop": "bot.stop"}
 
 STUDIO_MOVED = (
     "darbit Studio is being rebuilt (docs/plan-rebuild.md). Until it's back, run v0.4's from a checkout of the "
@@ -47,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
         return _install(args.rest)
     if command == "run":
         return _run(args.rest)
+    if command == "serve":
+        return _serve(args.rest)
+    if command == "bots":
+        return _bots(args.rest)
+    if command in BOT_COMMANDS:
+        return _bot(command, args.rest)
     return _tool(command, args.rest)
 
 
@@ -101,6 +117,75 @@ def _run(argv: list[str]) -> int:
     except (FileNotFoundError, ValueError) as error:
         print(error)
         return 2
+
+
+def _serve(argv: list[str]) -> int:
+    from .service import client
+    from .service.host import Service
+
+    parser = argparse.ArgumentParser(prog="darbit serve", description="Run darbit's service until it's stopped.")
+    parser.add_argument("--port", type=int, default=0, help="the port on 127.0.0.1 (default: any free one)")
+    parser.add_argument("--stop", action="store_true", help="stop the running service (its bots go on)")
+    args = parser.parse_args(argv)
+    if args.stop:
+        try:
+            with client.Client("darbit cli") as service:
+                service.call("service.stop")
+        except client.ServiceError as error:
+            print(error)
+            return 1
+        print("darbit's service is stopping")
+        return 0
+    if client.running():
+        print("darbit's service is already running")
+        return 0
+    service = Service(args.port)
+    print(f"darbit's service on 127.0.0.1:{service.port}; Ctrl+C stops it (running bots go on)")
+    try:
+        service.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    return 0
+
+
+def _bots(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="darbit bots", description="List the bots the service knows.")
+    parser.add_argument("--add", metavar="PATH", help="add a project folder (one with a darbit.toml) first")
+    args = parser.parse_args(argv)
+    if args.add and _ask("bots.add", path=str(Path(args.add).resolve())) is None:
+        return 1
+    found = _ask("bots.list")
+    if found is None:
+        return 1
+    if not found:
+        print("no bots yet: darbit install GIT_URL, or darbit new NAME")
+    for bot in found:
+        print(f"{bot.get('name', '?'):24} {bot.get('status', ''):8} {bot.get('path', '')}")
+    return 0
+
+
+def _bot(command: str, argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog=f"darbit {command}", description=COMMANDS[command] + ".")
+    parser.add_argument("bot", help="the bot's name, or its folder")
+    args = parser.parse_args(argv)
+    result = _ask(BOT_COMMANDS[command], bot=args.bot)
+    if result is None:
+        return 1
+    print(f"{args.bot}: {result.get('status', result)}")
+    return 0
+
+
+def _ask(method: str, **params: object) -> object:
+    """The service's answer, starting the service first if needed; None after printing why it failed."""
+    from .service import client
+
+    try:
+        client.ensure_running()
+        with client.Client("darbit cli") as service:
+            return service.call(method, **params)
+    except client.ServiceError as error:
+        print(error)
+        return None
 
 
 def _tool(command: str, argv: list[str]) -> int:
