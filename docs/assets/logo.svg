@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="darbit">
+  <!-- darbit's mark: a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile.
+       Drawn from shapes, not a font, so it looks the same everywhere. Colours: the accent pair (#5ac8fa, #a78bfa). -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a2142"/>
+      <stop offset="1" stop-color="#0a0e1f"/>
+    </linearGradient>
+    <linearGradient id="accent" gradientUnits="userSpaceOnUse" x1="60" y1="50" x2="200" y2="215">
+      <stop offset="0" stop-color="#5ac8fa"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5ac8fa" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#a78bfa" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0.8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.45" cy="0.58" r="0.5">
+      <stop offset="0" stop-color="#7aa8ff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7aa8ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <rect x="4" y="4" width="248" height="248" rx="60" fill="url(#tile)"/>
+  <rect x="4" y="4" width="248" height="248" rx="60" fill="url(#glow)"/>
+  <path d="M64 4h128a60 60 0 0 1 60 60v18H4V64A60 60 0 0 1 64 4z" fill="url(#sheen)"/>
+  <rect x="6" y="6" width="244" height="244" rx="58" fill="none" stroke="url(#edge)" stroke-width="4"/>
+
+  <!-- the glow behind the mark -->
+  <g filter="url(#soft)" opacity="0.75">
+    <circle cx="126" cy="150" r="56" fill="none" stroke="url(#accent)" stroke-width="30"/>
+    <rect x="167" y="44" width="30" height="166" rx="15" fill="url(#accent)"/>
+  </g>
+
+  <!-- the d: a ring and its stem -->
+  <circle cx="126" cy="150" r="56" fill="none" stroke="url(#accent)" stroke-width="30"/>
+  <rect x="167" y="44" width="30" height="166" rx="15" fill="url(#accent)"/>
+
+  <!-- the match: a dot at the ring's centre, with the reticle's four ticks -->
+  <circle cx="126" cy="150" r="13" fill="#eaf6ff"/>
+  <g stroke="#eaf6ff" stroke-width="6" stroke-linecap="round" opacity="0.55">
+    <line x1="126" y1="112" x2="126" y2="122"/>
+    <line x1="126" y1="178" x2="126" y2="188"/>
+    <line x1="88" y1="150" x2="98" y2="150"/>
+    <line x1="154" y1="150" x2="164" y2="150"/>
+  </g>
+</svg>

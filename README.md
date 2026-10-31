@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" alt="" width="96" align="right">
+
 # darbit
 
 Simple GUI automation for Windows, in Python. Find images on the screen, click, type and wait, the way SikuliX does it, with input that games like Roblox accept.
