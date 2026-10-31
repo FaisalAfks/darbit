@@ -11,6 +11,7 @@
 - `fast` checks its candidates at half size first and only the best at full size: 20–30% quicker with the same answers, a search inside the 1660 x 1080 panel from about 7.7 ms to 6 ms on the bench
 - Loaded pictures stay in memory and their files are checked at most once a second: loading a target per search went from about 0.8 ms to 1 µs
 - `settings.matcher` picks another matcher from a plugin (the `darbit.matchers` entry point)
+- darbit's new logo (`assets/logo.svg`, with `logo.png` and the Windows icon `darbit.ico`): a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile in the accent colours. The Studio uses it as its app icon
 
 ### Removed
 
@@ -21,6 +22,7 @@
 ### Changed
 
 - Everything that talks to the operating system sits behind small interfaces (`platform/backend.py`: Screen, Input, Windows, Listener, Hotkeys, System), with Windows' versions in `platform/win32/`. Each system's code loads the first time it's used, so `import darbit` works anywhere and another system is told plainly it isn't supported yet. The stop key, keeping the PC awake and the Studio's process handling go through the System piece instead of calling Windows themselves
+- Dependabot no longer watches npm packages: the web UI left `main`
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
 
 ### Docs
