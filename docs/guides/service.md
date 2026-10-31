@@ -9,11 +9,19 @@ darbit start ad-bot            # by name, or by folder
 darbit pause ad-bot            # pause; again to go on
 darbit stop ad-bot             # it lets go of every key; ended if it doesn't stop within 10 s
 darbit status ad-bot
+darbit history ad-bot          # what it did on its latest day: gains, steps, problems (or a DAY; --days lists them)
 darbit serve                   # run it in this terminal instead; Ctrl+C stops it
 darbit serve --stop            # stop the one running in the background
 ```
 
 Stopping the service leaves its bots running; the next one takes them over.
+
+## Run history
+
+Each bot's run report lines are copied into `.darbit/history.db` (SQLite) as the bot writes them, and again whenever
+history is asked for, so a bot on any darbit version has one. The Results page and `darbit history` query it
+instead of reading a day's report again. The tables are `events` (`day`, `time`, `kind`, and the report `line` as
+written) and `reports` (how far each report has been copied); `server/history.py` has the queries.
 
 ## Talking to it
 

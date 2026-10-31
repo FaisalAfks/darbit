@@ -3,14 +3,14 @@
 `days(project)` lists the days with a run report, newest first, each with its lead gain and run time.
 `day(project, "2026-10-26")` is one day in full: when it ran, its gains (today, each of the last 7 days, the
 last total), progress, how many top-level steps finished, the time lost to failures, the problems grouped by
-cause, and the timeline lanes. All of it comes from the run report: `d.record.gain`, `d.progress` and steps.
+cause, and the timeline lanes. All of it comes from the run report (`d.record.gain`, `d.progress` and steps), through the run history in SQLite
+(history.py).
 """
 
 from datetime import date, timedelta
-from pathlib import Path
 
 from ..project.manifest import Project
-from .dashboard import read_events, report_file
+from . import history
 
 WEEK = 7  # days in the gains' small bar charts
 DAYS_LISTED = 60  # days in the day list
@@ -55,13 +55,8 @@ def gains_of(events: list[dict]) -> dict[str, dict]:
 
 def report_days(project: Project) -> list[str]:
     """The days with a run report, newest first."""
-    logs = report_file(project, "x").parent
-    found = []
-    if logs.is_dir():
-        for path in logs.glob("report-*.jsonl"):
-            found.append(path.stem.removeprefix("report-"))
-    found.sort(reverse=True)
-    return found
+    history.catch_up(project)
+    return history.days(project)
 
 
 def _top_steps(events: list[dict]) -> list[dict]:
@@ -143,7 +138,8 @@ def _week_before(day: str) -> list[str]:
 
 def day(project: Project, day_name: str) -> dict:
     """One day of the Results page."""
-    events = read_events(report_file(project, day_name))
+    history.catch_up(project)
+    events = history.events(project, day_name)
     times = []
     for event in events:
         at = seconds_of(event.get("time"))
@@ -155,7 +151,9 @@ def day(project: Project, day_name: str) -> dict:
     for name in today:
         week[name] = []
     for other in week_days:
-        other_gains = today if other == day_name else gains_of(read_events(report_file(project, other)))
+        other_gains = today
+        if other != day_name:
+            other_gains = gains_of(history.events(project, other, kinds=("gain",)))
         for name, amounts in week.items():
             amount = 0
             if name in other_gains:
@@ -206,33 +204,22 @@ def days(project: Project) -> list[dict]:
     """The day list: each day with a report, its lead gain, how long it ran and how many problems it had."""
     found = []
     for name in report_days(project)[:DAYS_LISTED]:
-        path = report_file(project, name)
-        size = path.stat().st_size if path.is_file() else 0
-        known = _days_made.get(path)
-        if known is not None and known[0] == size:
-            found.append(known[1])  # that day's report hasn't changed
-            continue
-        events = read_events(path)
+        events = history.events(project, name, kinds=("gain", "step"))
         gains = gains_of(events)
         lead = None
         for gain_name, row in gains.items():
             lead = {"name": gain_name, "amount": row["amount"], "icon": row["icon"]}
             break
-        times = []
         failures = 0
         for event in events:
-            at = seconds_of(event.get("time"))
-            if at is not None:
-                times.append(at)
             if event.get("event") == "step" and event.get("state") == "failed":
                 failures += 1
         seconds = 0
-        if times:
-            seconds = round(max(times) - min(times))
-        row = {"day": name, "lead": lead, "seconds": seconds, "problems": failures}
-        _days_made[path] = (size, row)
-        found.append(row)
+        span = history.span(project, name)
+        if span is not None:
+            first = seconds_of(span[0])
+            last = seconds_of(span[1])
+            if first is not None and last is not None:
+                seconds = round(last - first)
+        found.append({"day": name, "lead": lead, "seconds": seconds, "problems": failures})
     return found
-
-
-_days_made: dict[Path, tuple[int, dict]] = {}  # each day's row, by its report's size

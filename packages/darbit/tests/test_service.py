@@ -123,3 +123,21 @@ def test_the_cli_talks_to_the_service(service, bot, capsys):  # noqa: F811
     assert capsys.readouterr().out.strip() == "tick-bot: stopped"
     assert cli.main(["start", "nobody"]) == 1
     assert "no bot called nobody" in capsys.readouterr().out
+
+
+def test_history_shows_a_day(service, bot, capsys):  # noqa: F811
+    from darbit import cli
+
+    logs = bot / ".darbit" / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / "report-2026-10-31.jsonl").write_text(
+        '{"time": "2026-10-31T09:00:00.000", "event": "gain", "name": "Gems", "amount": 40, "total": 900}\n'
+        '{"time": "2026-10-31T10:30:00.000", "event": "gain", "name": "Gems", "amount": 20}\n',
+        encoding="utf-8",
+    )
+    assert cli.main(["history", "tick-bot"]) == 0
+    out = capsys.readouterr().out
+    assert "2026-10-31, 9:00:00 to 10:30:00" in out
+    assert "gained 60 Gems (total 900)" in out
+    assert cli.main(["history", "tick-bot", "--days"]) == 0
+    assert "1:30:00" in capsys.readouterr().out
