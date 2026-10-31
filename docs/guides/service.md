@@ -16,6 +16,31 @@ darbit serve --stop            # stop the one running in the background
 
 Stopping the service leaves its bots running; the next one takes them over.
 
+## Notifications
+
+The service tells a phone when a bot fails, when a running bot's report has been quiet too long (it may be stuck),
+and sends a summary of each bot's day. Set the channels in `notify.toml` in darbit's settings folder
+(`%APPDATA%\darbit` on Windows), any of:
+
+```toml
+[ntfy]
+topic = "my-darbit-1234"          # the ntfy app, subscribed to this topic; server = "..." for your own
+[discord]
+webhook = "https://discord.com/api/webhooks/..."
+[telegram]
+token = "123:ABC"
+chat = "123456"
+
+[when]                            # the defaults
+failed = true
+ended = false                     # a bot stopping on its own or from the Studio
+stuck_minutes = 15                # 0 is off
+summary = "23:30"                 # "" is off
+```
+
+`darbit notify` sends a test message to each channel and says which ones it reached. The service reads the file
+when it starts.
+
 ## Run history
 
 Each bot's run report lines are copied into `.darbit/history.db` (SQLite) as the bot writes them, and again whenever

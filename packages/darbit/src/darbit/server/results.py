@@ -223,3 +223,25 @@ def days(project: Project) -> list[dict]:
                 seconds = round(last - first)
         found.append({"day": name, "lead": lead, "seconds": seconds, "problems": failures})
     return found
+
+
+def day_lines(day: dict) -> list[str]:
+    """A day's results as lines of text."""
+    lines = [f"{day['day']}"]
+    if day.get("start") is not None and day.get("end") is not None:
+        lines[0] += f", {clock(day['start'])} to {clock(day['end'])}"
+    finished = day.get("finished") or {}
+    lines.append(f"steps finished: {finished.get('done', 0)} of {finished.get('total', 0)}")
+    for gain in day.get("gains", []):
+        total = f" (total {gain['total']})" if gain.get("total") is not None else ""
+        lines.append(f"gained {gain['today']} {gain['name']}{total}")
+    for problem in day.get("problems", []):
+        lines.append(f"problem x{problem['count']}: {problem['step']}: {problem['reason']}")
+    if day.get("lost_seconds"):
+        lines.append(f"time lost to failures: {clock(day['lost_seconds'])}")
+    return lines
+
+
+def clock(seconds: float) -> str:
+    whole = int(seconds)
+    return f"{whole // 3600}:{whole % 3600 // 60:02d}:{whole % 60:02d}"
