@@ -43,3 +43,23 @@ function stateText(state) {
     if (state === "planned") return "next"
     return state || ""
 }
+
+function clockOf(seconds) {
+    // seconds since midnight -> "11:02"
+    if (seconds === null || seconds === undefined || isNaN(seconds)) return ""
+    var whole = Math.max(0, Math.round(seconds)) % 86400
+    var hours = Math.floor(whole / 3600), minutes = Math.floor(whole % 3600 / 60)
+    return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes
+}
+
+function dayName(day) {
+    // "2026-10-31" -> "Today", "Yesterday" or "Sat 31 Oct"
+    if (!day) return ""
+    var parts = String(day).split("-")
+    var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+    var today = new Date(); today.setHours(0, 0, 0, 0)
+    var days = Math.round((today - date) / 86400000)
+    if (days === 0) return "Today"
+    if (days === 1) return "Yesterday"
+    return Qt.formatDate(date, "ddd d MMM")
+}

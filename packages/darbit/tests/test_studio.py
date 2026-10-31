@@ -262,7 +262,7 @@ def test_a_refused_request_shows_its_reason(qt):
 
 
 @pytest.mark.parametrize("theme_name", ["glass-dark", "high-contrast"])
-@pytest.mark.parametrize("page", ["overview", "library", "runs", "settings"])
+@pytest.mark.parametrize("page", ["overview", "library", "results", "settings", "studio"])
 def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     warnings = []
 

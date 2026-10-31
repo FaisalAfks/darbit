@@ -64,9 +64,9 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
 def _connect_capture(studio: Studio, capture: Capture, window: object) -> None:
     """Capture hides the Studio, grabs the screen without it, and brings it back when it closes."""
 
-    def wanted(folder: str, mode: str) -> None:
+    def wanted(folder: str, mode: str, name: str, kind: str) -> None:
         window.hide()
-        QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode))
+        QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode, name, kind))
 
     def closed() -> None:
         if not capture.isOpen:

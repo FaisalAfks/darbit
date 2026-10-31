@@ -116,6 +116,23 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
   - no timeline, outline column or inspector column.
 - Actions are saved as plain Python in the bot's `actions/` folder (`with d.step(...)` sections), so they also open in VS Code. Play calls the function and follows it with a line trace (runs/player.py).
 
+### Round 9: the Qt Studio, simplified (round-9-qt-studio.html)
+
+- **One place for each control.** darbit's own settings live in the bot menu (or the sidebar's footer), not in a second ⚙;
+  the bot's are its Settings page. The run control changes shape (Play while stopped; Pause and Stop while running)
+  instead of showing buttons that can't be used. Customize and the Library's stacked rows are gone: the Library has
+  one toolbar.
+- **Bots:** a menu in the top bar by default; a sidebar is a darbit setting, and it folds to the bots' squares on a
+  narrow window. New bot is one sheet: from the template, from a git link, or a folder already on the PC.
+- **Bots that run other bots:** an idea, not built. It may become a general way to control bots from bots.
+- **Library:** one grid of every asset with its whole name, not grouped by the first part of the name by default.
+  Search, kind, Missing and Weak filter it; it sorts by name, weakest first or most used, and groups by name or kind
+  only when asked. The chosen card opens an inspector beside the grid: its numbers, last scores, Retake, Rename,
+  Delete and where it's used.
+- **Motion:** pages slide in, cards rise in turn, the page bar's highlight glides, the inspector and the save bar
+  slide, the progress ring sweeps. Only opacity and position are animated, and nothing moves while the Studio is idle
+  (0% of a core, measured). Smooth effects off makes everything show at once.
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.

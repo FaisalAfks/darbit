@@ -1,4 +1,5 @@
-// The Overview: the bot, then its tiles from today's run report: now, progress, the round, next up, gains, failures.
+// The Overview: what the bot is doing now, what needs you, then today's round beside progress, what's next and gains.
+// Everything comes from the bot's run report (d.step, d.plan, d.progress, d.next, d.record.gain).
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -6,8 +7,9 @@ import "format.js" as Format
 
 Flickable {
     id: page
-    contentHeight: column.height + 120
+    contentHeight: column.height + 60
     clip: true
+    boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar {}
 
     function tile(kind) {
@@ -22,232 +24,224 @@ Flickable {
     readonly property var gains: tile("gains")
     readonly property var upcoming: tile("next")
     readonly property var failures: tile("failures")
+    readonly property var setup: tile("setup")
+    readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
+    readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
+    readonly property var lastFailure: failures && failures.items.length ? failures.items[failures.items.length - 1] : null
 
     ColumnLayout {
         id: column
         x: 24; width: page.width - 48
-        spacing: 20
+        spacing: 16
 
-        // ---- the bot
+        // ---- now
+        Glass {
+            id: hero
+            Layout.fillWidth: true; Layout.preferredHeight: 196
+            padding: 26
+            content: Item {
+                anchors.fill: parent
+                Text {
+                    text: page.running ? "NOW · " + (studio.bot.status === "paused" ? "PAUSED" : "RUNNING " + Format.duration(studio.now - (studio.bot.since || studio.now)).toUpperCase())
+                                       : "NOW"
+                    color: studio.bot.status === "paused" ? studio.colors.warn : page.running ? studio.colors.ok : studio.colors.muted
+                    font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.3
+                }
+                Flow {
+                    id: crumbs
+                    y: 26; width: parent.width - 220
+                    spacing: 10
+                    visible: page.steps.length > 0
+                    Repeater {
+                        model: page.steps
+                        delegate: Row {
+                            required property var modelData
+                            required property int index
+                            spacing: 10
+                            Text { visible: index > 0; text: "›"; color: studio.colors.faint; font.pixelSize: 30; anchors.verticalCenter: parent.verticalCenter }
+                            Text {
+                                text: modelData
+                                color: index === page.steps.length - 1 ? studio.colors.accent : studio.colors.text
+                                font.pixelSize: 32; font.weight: Font.Bold
+                            }
+                        }
+                    }
+                }
+                Text {
+                    visible: page.steps.length === 0
+                    y: 26
+                    text: page.running ? "Starting…" : "Not running"
+                    color: page.running ? studio.colors.text : studio.colors.muted
+                    font.pixelSize: 32; font.weight: Font.Bold
+                }
+                Text {
+                    y: 76; width: parent.width - 220
+                    text: page.steps.length === 0 && !page.running ? "Press Play to start " + (studio.bot.name || "the bot") + ", or start it from a terminal: this page follows it either way."
+                        : page.now && page.now.since ? "since " + Format.clock(page.now.since) + " · " + Format.duration(Format.since(page.now.since, studio.now)) + " in this step" : ""
+                    color: studio.colors.muted; font.pixelSize: 14; elide: Text.ElideRight
+                }
+                // the round as segments: done, running, to come
+                Row {
+                    visible: page.round !== null
+                    anchors.bottom: parent.bottom
+                    width: parent.width - 220
+                    spacing: 6
+                    Repeater {
+                        model: page.round ? page.round.steps : []
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (parent.width - 6 * ((page.round ? page.round.steps.length : 1) - 1)) / Math.max(1, page.round ? page.round.steps.length : 1)
+                            height: 6; radius: 3
+                            color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
+                                : modelData.state === "failed" ? studio.colors.danger : studio.colors.raisedHover
+                        }
+                    }
+                }
+                // the main progress, as a ring
+                Ring {
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                    width: 132; height: 132; thickness: 11
+                    visible: page.ringItem() !== null
+                    done: page.ringItem() ? page.ringItem().done : 0
+                    total: page.ringItem() ? page.ringItem().total : 1
+                    caption: page.ringItem() ? page.ringItem().label : ""
+                }
+            }
+        }
+
+        // ---- what needs you
+        Banner {
+            readonly property int missing: page.setup && page.setup.total ? page.setup.total - page.setup.done : 0
+            visible: missing > 0
+            Layout.fillWidth: true
+            tone: "warn"; icon: "▣"
+            title: missing + (missing === 1 ? " picture" : " pictures") + " to take before the bot can run"
+            detail: page.setup && page.setup.current ? "Next: " + page.setup.current.name + " on " + page.setup.current.screen : ""
+            action: "Start setup"
+            onActed: studio.openCapture("guide")
+        }
+        Banner {
+            visible: page.lastFailure !== null
+            Layout.fillWidth: true
+            tone: "danger"; icon: "!"
+            title: page.lastFailure ? page.lastFailure.step + ": " + (page.lastFailure.reason || "failed") : ""
+            detail: page.lastFailure ? "at " + Format.clock(page.lastFailure.time) + (page.failures.items.length > 1 ? " · " + page.failures.items.length + " problems today" : "") : ""
+            action: "See in Results"
+            onActed: window.go("results")
+        }
+
+        // ---- the round, and the rest
         RowLayout {
             Layout.fillWidth: true
             spacing: 16
-            Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; size: 56 }
-            Column {
-                Layout.fillWidth: true
-                Text { text: studio.bot.name || ""; color: studio.colors.text; font.pixelSize: 28; font.weight: Font.Bold }
-                Text {
-                    text: studio.bot.summary || ""
-                    visible: text !== ""
-                    color: studio.colors.muted; font.pixelSize: 15
-                }
-            }
-            Chip { text: "v" + (studio.bot.version || "?"); visible: !!studio.bot.version }
-        }
 
-        // ---- now and progress
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 20
-            Glass {
-                title: "Now"
-                Layout.fillWidth: true; Layout.preferredWidth: 2; Layout.preferredHeight: 230
-                Chip {
-                    parent: parent
-                    anchors { right: parent.right; top: parent.top; margins: 18 }
-                    visible: !!(page.now && page.now.since) && studio.bot.status === "running"
-                    tone: "info"
-                    text: "FOR " + Format.duration(Format.since(page.now ? page.now.since : "", studio.now))
-                }
-                content: Column {
-                    width: parent.width
-                    spacing: 14
-                    Flow {
-                        width: parent.width
-                        spacing: 10
-                        Repeater {
-                            model: page.nowSteps()
-                            delegate: Row {
-                                required property var modelData
-                                required property int index
-                                spacing: 10
-                                Text {
-                                    visible: index > 0; text: "›"; color: studio.colors.faint
-                                    font.pixelSize: 26; anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    text: modelData
-                                    color: index === page.nowSteps().length - 1 ? studio.colors.accent : studio.colors.text
-                                    font.pixelSize: 28; font.weight: Font.Bold
-                                }
-                            }
-                        }
-                    }
-                    Text {
-                        text: page.nowSteps().length === 0
-                            ? (studio.bot.status === "running" ? "Starting…" : "Not running. Press Play to start " + (studio.bot.name || "the bot") + ".")
-                            : (page.round ? page.roundSummary() : "")
-                        color: studio.colors.muted; font.pixelSize: 14
-                        width: parent.width; wrapMode: Text.Wrap
-                    }
-                }
-            }
-            Glass {
-                title: "Progress"
-                visible: page.progress !== null
-                Layout.fillWidth: true; Layout.preferredWidth: 1; Layout.preferredHeight: 230
-                content: RowLayout {
-                    width: parent.width; height: parent.height
-                    spacing: 22
-                    Column {
-                        visible: page.ringItem() !== null
-                        spacing: 10
-                        Ring {
-                            done: page.ringItem() ? page.ringItem().done : 0
-                            total: page.ringItem() ? page.ringItem().total : 1
-                        }
-                        Text {
-                            text: page.ringItem() ? page.ringItem().label : ""
-                            color: studio.colors.muted; font.pixelSize: 13
-                            width: 120; wrapMode: Text.Wrap
-                        }
-                    }
-                    Column {
-                        Layout.fillWidth: true; Layout.alignment: Qt.AlignTop
-                        spacing: 16
-                        Repeater {
-                            model: page.barItems()
-                            delegate: Column {
-                                required property var modelData
-                                width: parent.width; spacing: 8
-                                RowLayout {
-                                    width: parent.width
-                                    Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                                    Text { text: modelData.done + " / " + modelData.total; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold }
-                                }
-                                Bar { width: parent.width; share: modelData.total > 0 ? modelData.done / modelData.total : 0 }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ---- the round and what's next
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 20
             Glass {
                 title: "Today's round"
+                delay: 60
+                note: page.round ? page.doneCount() + " of " + page.round.steps.length : ""
                 visible: page.round !== null
-                Layout.fillWidth: true; Layout.preferredWidth: 6
-                Layout.preferredHeight: 70 + (page.round ? page.round.steps.length : 0) * 48
+                Layout.fillWidth: true; Layout.preferredWidth: 6; Layout.alignment: Qt.AlignTop
+                Layout.preferredHeight: 72 + (page.round ? page.round.steps.length : 0) * 48
                 content: Column {
                     width: parent.width
                     Repeater {
                         model: page.round ? page.round.steps : []
                         delegate: Rectangle {
                             required property var modelData
-                            width: parent.width; height: 46; radius: 10
-                            color: modelData.state === "running" ? studio.colors.raised : "transparent"
+                            width: parent.width; height: 48; radius: 12
+                            color: modelData.state === "running" ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.09) : "transparent"
                             RowLayout {
                                 anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                                 spacing: 14
                                 Rectangle {
                                     width: 10; height: 10; radius: 5
-                                    color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.info
+                                    color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
                                         : modelData.state === "failed" ? studio.colors.danger : studio.colors.faint
                                 }
-                                Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                                Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
                                 Text {
-                                    text: modelData.started ? Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : modelData.state === "running" ? " · now" : "") : ""
-                                    color: studio.colors.muted; font.pixelSize: 13
+                                    text: modelData.state === "planned" ? "later"
+                                        : modelData.state === "running" ? "running"
+                                        : modelData.state === "failed" ? (modelData.reason || "failed")
+                                        : Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : "")
+                                    color: modelData.state === "running" ? studio.colors.accent : modelData.state === "failed" ? studio.colors.danger : studio.colors.muted
+                                    font.pixelSize: 13; font.weight: modelData.state === "running" ? Font.DemiBold : Font.Normal
                                 }
-                                Chip {
-                                    visible: modelData.state !== "planned"
-                                    text: Format.stateText(modelData.state)
-                                    tone: Format.tone(modelData.state)
-                                }
-                                Text { visible: modelData.state === "planned"; text: "next in this round"; color: studio.colors.muted; font.pixelSize: 13 }
                             }
                         }
                     }
                 }
             }
-            Glass {
-                title: "Next up"
-                visible: page.upcoming !== null
+
+            ColumnLayout {
                 Layout.fillWidth: true; Layout.preferredWidth: 5; Layout.alignment: Qt.AlignTop
-                Layout.preferredHeight: 70 + (page.upcoming ? page.upcoming.items.length : 0) * 76
-                content: Column {
-                    width: parent.width; spacing: 12
-                    Repeater {
-                        model: page.upcoming ? page.upcoming.items : []
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: parent.width; height: 64; radius: 12
-                            color: studio.colors.raised
-                            Column {
-                                anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
-                                Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold }
-                                Text { text: Format.clock(modelData.at); color: studio.colors.muted; font.pixelSize: 13 }
-                            }
-                            Text {
-                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                                text: Format.duration(modelData.in_seconds)
-                                color: studio.colors.accent; font.pixelSize: 17; font.weight: Font.Bold
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ---- gains and failures
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 20
-            Glass {
-                title: "Gains today"
-                visible: page.gains !== null
-                Layout.fillWidth: true; Layout.preferredWidth: 1; Layout.alignment: Qt.AlignTop
-                Layout.preferredHeight: 70 + (page.gains ? page.gains.items.length : 0) * 40
-                content: Column {
-                    width: parent.width
-                    Repeater {
-                        model: page.gains ? page.gains.items : []
-                        delegate: RowLayout {
-                            required property var modelData
-                            width: parent.width; height: 40
-                            Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true }
-                            Text { text: "+" + modelData.today; color: studio.colors.ok; font.pixelSize: 15; font.weight: Font.Bold }
-                            Text {
-                                visible: modelData.total !== null
-                                text: "total " + modelData.total
-                                color: studio.colors.muted; font.pixelSize: 13
-                                Layout.preferredWidth: 110; horizontalAlignment: Text.AlignRight
+                spacing: 16
+                Glass {
+                    title: "Progress"
+                    delay: 100
+                    visible: page.barItems().length > 0
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 70 + page.barItems().length * 44
+                    content: Column {
+                        width: parent.width
+                        Repeater {
+                            model: page.barItems()
+                            delegate: RowLayout {
+                                required property var modelData
+                                width: parent.width; height: 44; spacing: 14
+                                Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 14; Layout.fillWidth: true; elide: Text.ElideRight }
+                                Bar { Layout.preferredWidth: 130; share: modelData.total > 0 ? modelData.done / modelData.total : 0; gradientFill: true }
+                                Text { text: modelData.done + " / " + modelData.total; color: studio.colors.muted; font.pixelSize: 13; Layout.preferredWidth: 54; horizontalAlignment: Text.AlignRight }
                             }
                         }
                     }
                 }
-            }
-            Glass {
-                title: "Failures"
-                visible: page.failures !== null
-                Layout.fillWidth: true; Layout.preferredWidth: 1; Layout.alignment: Qt.AlignTop
-                Layout.preferredHeight: 70 + (page.failures ? page.failures.items.length : 0) * 40
-                content: Column {
-                    width: parent.width
-                    Repeater {
-                        model: page.failures ? page.failures.items : []
-                        delegate: RowLayout {
-                            required property var modelData
-                            width: parent.width; height: 40; spacing: 12
-                            Chip { text: Format.clock(modelData.time); tone: "danger" }
-                            Text {
-                                text: modelData.step + ": " + (modelData.reason || "failed")
-                                color: studio.colors.text; font.pixelSize: 14
-                                Layout.fillWidth: true; elide: Text.ElideRight
+                Glass {
+                    title: "Next up"
+                    delay: 140
+                    visible: page.upcoming !== null
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 70 + (page.upcoming ? page.upcoming.items.length : 0) * 44
+                    content: Column {
+                        width: parent.width
+                        Repeater {
+                            model: page.upcoming ? page.upcoming.items : []
+                            delegate: RowLayout {
+                                required property var modelData
+                                width: parent.width; height: 44; spacing: 12
+                                Text { text: "◷"; color: studio.colors.faint; font.pixelSize: 14 }
+                                Column {
+                                    Layout.fillWidth: true
+                                    Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold }
+                                    Text { text: Format.clock(modelData.at); color: studio.colors.faint; font.pixelSize: 12 }
+                                }
+                                Text { text: "in " + Format.duration(modelData.in_seconds); color: studio.colors.accent; font.pixelSize: 15; font.weight: Font.Bold }
+                            }
+                        }
+                    }
+                }
+                Glass {
+                    title: "Gains today"
+                    delay: 180
+                    visible: page.gains !== null
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 70 + (page.gains ? page.gains.items.length : 0) * 42
+                    content: Column {
+                        width: parent.width
+                        Repeater {
+                            model: page.gains ? page.gains.items : []
+                            delegate: RowLayout {
+                                required property var modelData
+                                width: parent.width; height: 42; spacing: 12
+                                Rectangle { width: 10; height: 10; rotation: 45; radius: 2; color: studio.colors.accent2 }
+                                Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                                Text { text: "+" + modelData.today; color: studio.colors.ok; font.pixelSize: 15; font.weight: Font.Bold }
+                                Text {
+                                    visible: modelData.total !== null
+                                    text: modelData.total !== null ? Number(modelData.total).toLocaleString(Qt.locale(), "f", 0) : ""
+                                    color: studio.colors.faint; font.pixelSize: 13
+                                    Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight
+                                }
                             }
                         }
                     }
@@ -256,17 +250,11 @@ Flickable {
         }
     }
 
-    function nowSteps() {
-        if (!now || !now.path) return []
-        return now.path.map(function (step) { return String(step).split(" > ").pop() })
-    }
-    function roundSummary() {
-        var done = 0, total = 0
-        for (var index = 0; index < round.steps.length; index++) {
-            total++
+    function doneCount() {
+        var done = 0
+        for (var index = 0; index < round.steps.length; index++)
             if (round.steps[index].state === "ok") done++
-        }
-        return done + " of " + total + " done in today's round"
+        return done
     }
     function ringItem() {
         if (!progress) return null

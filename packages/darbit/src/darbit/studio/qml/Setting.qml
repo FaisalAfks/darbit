@@ -7,6 +7,7 @@ Rectangle {
     id: row
     property var setting: ({})
     property var current
+    property bool changed: false  // not saved yet: a dot by its label
     signal edited(var value)
     readonly property string kind: setting.type || "str"
     height: kind === "bool" ? 66 : 92
@@ -19,7 +20,11 @@ Rectangle {
         anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
         Column {
             Layout.fillWidth: true
-            Text { text: row.setting.label || row.setting.key; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold }
+            Row {
+                spacing: 8
+                Text { text: row.setting.label || row.setting.key; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold }
+                Rectangle { visible: row.changed; width: 7; height: 7; radius: 3.5; color: studio.colors.warn; anchors.verticalCenter: parent.verticalCenter }
+            }
             Text { text: row.setting.help || ""; visible: text !== ""; color: studio.colors.muted; font.pixelSize: 13 }
         }
         Switch {
@@ -42,7 +47,11 @@ Rectangle {
     Column {
         visible: row.kind !== "bool"
         width: parent.width; spacing: 6
-        Text { text: row.setting.label || row.setting.key; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold }
+        Row {
+            spacing: 8
+            Text { text: row.setting.label || row.setting.key; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold }
+            Rectangle { visible: row.changed; width: 7; height: 7; radius: 3.5; color: studio.colors.warn; anchors.verticalCenter: parent.verticalCenter }
+        }
         Loader {
             width: parent.width; height: 40
             sourceComponent: row.kind === "choice" ? choice : field

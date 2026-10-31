@@ -19,8 +19,8 @@ from . import theme
 
 CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
-
-PAGES = ("overview", "library", "runs", "settings")
+PICKER = "studio.picker"  # ui setting: "dropdown" (the default) or "sidebar"
+EFFECTS = "studio.effects"  # ui setting: smooth effects (motion and glass); off for slower PCs
 
 
 class Studio(QObject):
@@ -37,8 +37,11 @@ class Studio(QObject):
     busyChanged = Signal()
     themeChanged = Signal()
     clockChanged = Signal()
+    usesChanged = Signal()
+    lookChanged = Signal()
+    madeBot = Signal(str)  # a bot made, installed or added: its name
 
-    captureWanted = Signal(str, str)  # (the bot's folder, what to take: "any" or "guide"), for app.py
+    captureWanted = Signal(str, str, str, str)  # (the bot's folder, "any", "guide" or "one", name, kind), for app.py
 
     _answered = Signal(str, object)  # (what, result), from a worker thread
     _failed = Signal(str)
@@ -55,6 +58,7 @@ class Studio(QObject):
         self._days: list[dict] = []
         self._day: dict = {}
         self._settings: dict = {}
+        self._uses: list[dict] = []
         self._message = ""
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
@@ -105,6 +109,20 @@ class Studio(QObject):
     def _get_now(self) -> float:
         return time.time()
 
+    def _get_uses(self) -> list:
+        return self._uses
+
+    def _get_sidebar(self) -> bool:
+        return ui_settings.get(PICKER, "dropdown") == "sidebar"
+
+    def _get_effects(self) -> bool:
+        return bool(ui_settings.get(EFFECTS, True))
+
+    def _get_version(self) -> str:
+        from .. import __version__
+
+        return __version__
+
     bots = Property(list, _get_bots, notify=botsChanged)
     bot = Property(dict, _get_bot, notify=botChanged)
     overview = Property(list, _get_overview, notify=overviewChanged)
@@ -118,6 +136,10 @@ class Studio(QObject):
     themeName = Property(str, _get_theme, notify=themeChanged)
     glass = Property(bool, _get_glass, notify=themeChanged)
     now = Property(float, _get_now, notify=clockChanged)
+    uses = Property(list, _get_uses, notify=usesChanged)
+    sidebar = Property(bool, _get_sidebar, notify=lookChanged)
+    effects = Property(bool, _get_effects, notify=lookChanged)
+    version = Property(str, _get_version, constant=True)
 
     # ---- what the pages ask for
 
@@ -152,7 +174,50 @@ class Studio(QObject):
     def openCapture(self, mode: str) -> None:
         """Capture for the shown bot: anything, or the guide's pictures not taken yet."""
         if self._bot.get("path"):
-            self.captureWanted.emit(self._bot["path"], mode)
+            self.captureWanted.emit(self._bot["path"], mode, "", "image")
+
+    @Slot(str, str)
+    def retake(self, name: str, kind: str) -> None:
+        """Capture one picture again, by its name."""
+        if self._bot.get("path"):
+            self.captureWanted.emit(self._bot["path"], "one", name, kind or "image")
+
+    @Slot(str)
+    def loadUses(self, name: str) -> None:
+        self._uses = []
+        self.usesChanged.emit()
+        self._ask("uses", "bot.library.uses", name=name)
+
+    @Slot(str, str)
+    def renameAsset(self, name: str, to: str) -> None:
+        self._ask("changed", "bot.library.rename", name=name, to=to)
+
+    @Slot(str)
+    def deleteAsset(self, name: str) -> None:
+        self._ask("changed", "bot.library.delete", name=name)
+
+    @Slot(str)
+    def newBot(self, name: str) -> None:
+        """Make a bot from darbit's template, in darbit's bots folder."""
+        self._everyone("made", "bots.new", name=name)
+
+    @Slot(str)
+    def installBot(self, url: str) -> None:
+        self._everyone("made", "bots.install", url=url)
+
+    @Slot(str)
+    def addBot(self, path: str) -> None:
+        self._everyone("made", "bots.add", path=_local_path(path))
+
+    @Slot(bool)
+    def setSidebar(self, on: bool) -> None:
+        ui_settings.set_value(PICKER, "sidebar" if on else "dropdown")
+        self.lookChanged.emit()
+
+    @Slot(bool)
+    def setEffects(self, on: bool) -> None:
+        ui_settings.set_value(EFFECTS, bool(on))
+        self.lookChanged.emit()
 
     @Slot()
     def loadOverview(self) -> None:
@@ -209,6 +274,13 @@ class Studio(QObject):
         bot = self._bot["path"]
         self._run(what, lambda: client.call(method, bot=bot, **params))
 
+    def _everyone(self, what: str, method: str, **params: object) -> None:
+        """A request about no bot in particular (making one)."""
+        client = self._client
+        if client is None:
+            return
+        self._run(what, lambda: client.call(method, **params))
+
     def _run(self, what: str, work: Callable[[], object]) -> None:
         self._busy += 1
         self.busyChanged.emit()
@@ -253,6 +325,16 @@ class Studio(QObject):
         elif what == "saved":
             self._show_failure("")
             self.loadSettings()
+        elif what == "uses" and isinstance(result, list):
+            self._uses = result
+            self.usesChanged.emit()
+        elif what == "changed":
+            self.loadLibrary()
+        elif what == "made" and isinstance(result, dict):
+            self._wanted = str(result.get("path", ""))
+            self._bot = {}
+            self.madeBot.emit(str(result.get("name", "")))
+            self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
 
     def _set_bots(self, found: list) -> None:
         self._bots = found
@@ -284,6 +366,15 @@ class Studio(QObject):
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         if topic == "project.changed" and data.get("path") == self._bot.get("path"):
             self.loadOverview()
+
+
+def _local_path(text: str) -> str:
+    """A folder from QML: a file:// URL or a plain path."""
+    if text.startswith("file://"):
+        from PySide6.QtCore import QUrl
+
+        return QUrl(text).toLocalFile()
+    return text
 
 
 def _custom_theme() -> Path:
