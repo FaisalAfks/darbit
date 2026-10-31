@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .. import events, paths
 from . import methods
+from .notify import Notifier
 from .protocol import HOST, VERSION, Event, Hello, ProtocolError, Reply, Request, decode, encode
 
 ADDRESS = "service.json"
@@ -34,6 +35,7 @@ class Service:
         self.connections: set[_Connection] = set()
         self.lock = threading.Lock()
         self.stop_listening = events.listen(self.broadcast)
+        self.notifier = Notifier()
 
     @property
     def port(self) -> int:
@@ -42,9 +44,11 @@ class Service:
     def serve_forever(self) -> None:
         """Write the address file and answer clients until shutdown()."""
         _write_address(self.port, self.token)
+        self.notifier.start()
         try:
             self.server.serve_forever(poll_interval=0.2)
         finally:
+            self.notifier.stop()
             self.stop_listening()
             self.server.server_close()
             _remove_address(self.port)
