@@ -8,6 +8,7 @@
 
 - Matching options, each off until asked for, per target (`"match"` in its `.json`) or per bot (`[settings.match]`): `grayscale`, `fast` (smaller copies first, then a full-size check), `colour` (an icon in other colours isn't a match) and `sizes` (other sizes in turn when the picture isn't found). On the bench, `fast` with `grayscale` takes a whole-screen search from about 0.6 s to 15 ms with the same answers; `colour` and `sizes` fix the recoloured icon and the 1920 x 1200 targets
 - The SikuliX-style API: `Pattern` (a picture with settings changed in code: `.similar()`, `.exact()`, `.offset()`, `.within()`, `.options()`), `Region` with `exists`, `find`, `wait`, `vanish`, `find_all`, `click` and the rest inside itself, `Screen(n)` for one monitor, `App(name).window` as a Region, and `d.find`
+- `fast` checks its candidates at half size first and only the best at full size: 20–30% quicker with the same answers, a search inside the 1660 x 1080 panel from about 7.7 ms to 6 ms on the bench
 - Loaded pictures stay in memory and their files are checked at most once a second: loading a target per search went from about 0.8 ms to 1 µs
 - `settings.matcher` picks another matcher from a plugin (the `darbit.matchers` entry point)
 

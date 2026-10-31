@@ -5,7 +5,7 @@ Options change how, per target (its .json's `"match"`) or for the whole bot (`se
 unless asked for, and each is measured on the test bench (bench/) before it's recommended:
 
     grayscale   match grey pixels: about a third of the work; colour is ignored
-    fast        find candidates on smaller copies of both, then check each at full size
+    fast        find candidates on smaller copies of both, then check them at half size and the best at full size
     sizes       when the image isn't found at its own size, try these sizes in turn (True: 0.75 to 1.33)
     colour      a match needs the right colours too: its score is the lower of the shape's and the share of
                 its pixels in the right colour (plain matching scores an icon in other colours about as high)
@@ -26,7 +26,11 @@ from .targets import Match, Target
 DEFAULT_SIZES = (0.9, 1.1, 0.8, 1.25, 0.75, 1.33)
 FAST_SMALLEST = 12  # px: the fast pass shrinks the image no smaller than this on its shorter side
 FAST_MOST = 4  # the fast pass shrinks by at most this much
-FAST_CANDIDATES = 5  # places from the small pass checked at full size
+FAST_CANDIDATES = 5  # places from the small pass checked again bigger
+FAST_HALF_FROM = 4  # from this much shrinking, candidates are checked at half size before full size
+HALF_MARGIN = 0.06  # candidates within this of the best half-size score are checked at full size; on the bench
+# a half-size score is within 0.05 of the full-size one
+FULL_REACH = 3  # px around a candidate's half-size place that its full-size check looks
 COLOUR_NEAR = 40  # a pixel is in the right colour when its distance from the image's (in BGR) is at most this;
 # on the bench, JPEG screens keep at least 93% of pixels this near and an icon in other colours under 10%
 
@@ -169,7 +173,10 @@ def _plain(image: np.ndarray, haystack: np.ndarray) -> Spot | None:
 
 
 def _fast(image: np.ndarray, haystack: np.ndarray) -> Spot | None:
-    """Candidates from smaller copies of both, each checked at full size in a small window around it."""
+    """Candidates from smaller copies of both, each checked again bigger in a small window around it.
+
+    With a lot of shrinking, candidates are checked at half size first (a quarter of the work), and only those
+    scoring near the best there are checked at full size, in a window a few pixels across."""
     h, w = image.shape[:2]
     shrink = min(FAST_MOST, min(h, w) // FAST_SMALLEST)
     if shrink < 2:
@@ -182,17 +189,46 @@ def _fast(image: np.ndarray, haystack: np.ndarray) -> Spot | None:
     if result is None:
         return _plain(image, haystack)
     small_h, small_w = small_image.shape[:2]
-    found: Spot | None = None
+    places = []  # the top-left corner of each candidate's window, in the haystack's pixels
     for _ in range(FAST_CANDIDATES):
         _, _, _, (x, y) = cv2.minMaxLoc(result)
         result[max(0, y - small_h + 1) : y + small_h, max(0, x - small_w + 1) : x + small_w] = -1
-        left = max(0, x * shrink - shrink * 2)
-        top = max(0, y * shrink - shrink * 2)
-        window = haystack[top : top + h + shrink * 4, left : left + w + shrink * 4]
+        places.append((max(0, x * shrink - shrink * 2), max(0, y * shrink - shrink * 2)))
+    reach = shrink * 2
+    if shrink >= FAST_HALF_FROM:
+        places = _nearest_at_half(image, haystack, places, reach)
+        reach = FULL_REACH
+    found: Spot | None = None
+    for left, top in places:
+        window = haystack[top : top + h + reach * 2, left : left + w + reach * 2]
         spot = _plain(image, window)
         if spot is not None and (found is None or spot.score > found.score):
             found = Spot(left + spot.x, top + spot.y, w, h, spot.score)
     return found
+
+
+def _nearest_at_half(
+    image: np.ndarray, haystack: np.ndarray, places: list[tuple[int, int]], reach: int
+) -> list[tuple[int, int]]:
+    """Check each candidate window (`reach` px around the image) at half size; return the window corners, for a
+    full-size check FULL_REACH px around, of the candidates scoring within HALF_MARGIN of the best."""
+    h, w = image.shape[:2]
+    half_image = cv2.resize(image, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
+    checked = []
+    for left, top in places:
+        window = haystack[top : top + h + reach * 2, left : left + w + reach * 2]
+        half_window = cv2.resize(window, (window.shape[1] // 2, window.shape[0] // 2), interpolation=cv2.INTER_AREA)
+        spot = _plain(half_image, half_window)
+        if spot is not None:
+            checked.append((spot.score, left + spot.x * 2, top + spot.y * 2))
+    if not checked:
+        return places
+    best_score = max(score for score, _, _ in checked)
+    near = []
+    for score, x, y in checked:
+        if score >= best_score - HALF_MARGIN:
+            near.append((max(0, x - FULL_REACH), max(0, y - FULL_REACH)))
+    return near
 
 
 def colour_score(image: np.ndarray, patch: np.ndarray) -> float:

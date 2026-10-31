@@ -70,6 +70,19 @@ def test_grayscale_and_fast_find_the_same_spot():
         assert (found.x, found.y) == (300, 200), options
 
 
+def test_fast_finds_the_target_and_not_a_look_alike_next_to_it():
+    screen = smooth_screen()
+    image = screen[200:260, 300:400].copy()
+    look_alike = image.copy()
+    look_alike[20:30, 40:50] = 255 - look_alike[20:30, 40:50]  # one small part differs
+    screen[40:100, 60:160] = look_alike
+    target = Target(image="x", _pixels=image)
+    for options in ({"fast": True}, {"fast": True, "grayscale": True}):
+        found = matching.best(target, screen, Region(0, 0, 600, 400), 0.9, matching.Options.from_dict(options))
+        assert (found.x, found.y) == (300, 200), options
+        assert found.score > 0.99
+
+
 def test_sizes_finds_a_target_taken_at_another_size():
     screen = smooth_screen()
     bigger = cv2.resize(screen[200:260, 300:400], (125, 75), interpolation=cv2.INTER_LINEAR)  # taken at 1.25x

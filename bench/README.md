@@ -46,3 +46,21 @@ a search of the 2560 x 1600 screen; "region" the searches inside a region (mostl
 - `colour` scores the share of pixels within a colour distance of 40: 0.94 and up on the JPEG screen, 0.07 for the recoloured icon
 - `sizes` costs a search per size tried when the picture is missing at its own size; with `fast` the slowest is a picture not on screen at all (157 ms)
 
+## `fast` checks candidates at half size first (2026-10-31)
+
+`fast` used to check each of its 5 candidates at full size, more than half the time of a search inside the 1660 x 1080
+panel. Now each is checked at half size (a quarter of the work), and only those within 0.06 of the best half-size
+score get a full-size check, a few pixels around. Half-size scores were within 0.05 of full-size ones on every case,
+the JPEG Raid screen included. The old and new `fast` matcher run back to back on the same machine, grayscale on,
+median of 30 each:
+
+| Target | Before | After |
+|---|---|---|
+| Char.3, Char.7 (in the panel) | 7.5–7.8 ms | 5.8–6.1 ms (−22%) |
+| Char.0, Char.9 (look-alikes, whole screen) | 9.4–9.8 ms | 7.9–8.2 ms (−13 to −20%) |
+| Menu targets (whole screen) | 8.7–12.8 ms | 6.3–8.5 ms (−28 to −33%) |
+| Raid (JPEG, whole screen) | 7.5–8.2 ms | 5.3–6.2 ms (−25 to −30%) |
+| Char.Missing | 9.6 ms | 9.2 ms |
+
+Every answer is the same as before. On the owner's PC the panel searches took about 12 ms against the 10 ms goal;
+22% less brings them to about 9.3 ms, to be measured there.
