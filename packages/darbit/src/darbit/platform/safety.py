@@ -20,6 +20,7 @@ from pathlib import Path
 
 from ..errors import Interrupted, Stopped
 from . import system
+from .backend import NotSupported
 from .keys import key
 
 CONTROL = "DARBIT_CONTROL"  # environment variable: the folder darbit Studio writes `stop` and `pause` into
@@ -187,9 +188,14 @@ def watch(combo: str) -> None:
 
     def run() -> None:
         last_look = 0.0
+        hotkey = True  # off on a system without a keyboard piece: the Studio's stop and pause still work
         while True:
-            if system.keys_down(_watch_keys[0]):
-                stop()
+            if hotkey:
+                try:
+                    if system.keys_down(_watch_keys[0]):
+                        stop()
+                except NotSupported:
+                    hotkey = False
             if folder is not None and time.monotonic() - last_look >= CONTROL_EVERY:
                 _look_at_control(folder)
                 last_look = time.monotonic()

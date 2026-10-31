@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from darbit import events, paths
-from darbit.platform import safety
+from darbit.platform import safety, system
 from darbit.server import hub, ui_settings
 
 BOT = """
@@ -175,7 +175,7 @@ def test_ui_settings_stay_in_the_temporary_folder(bot, tmp_path):
 def test_a_bot_with_an_older_darbit_is_ended_at_once(tmp_path, monkeypatch):
     from darbit.platform import input as device
 
-    safety = tmp_path / ".venv" / "Lib" / "site-packages" / "darbit" / "platform" / "safety.py"
+    safety = system.site_packages(tmp_path / ".venv") / "darbit" / "platform" / "safety.py"
     safety.parent.mkdir(parents=True)
     safety.write_text('"""v0.3.0: no control folder."""\n', encoding="utf-8")
     assert not hub.understands_control(tmp_path)
