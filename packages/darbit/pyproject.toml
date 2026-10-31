@@ -16,6 +16,9 @@ dependencies = [
     "platformdirs>=4.2",
 ]
 
+[project.optional-dependencies]
+studio = ["PySide6-Essentials>=6.8"]  # darbit Studio: darbit app
+
 [project.scripts]
 darbit = "darbit.cli:main"
 

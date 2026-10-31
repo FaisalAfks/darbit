@@ -5,13 +5,14 @@ darbit check … | report …     the tools, same options as python -m darbit.to
 darbit serve                  darbit's service: runs bots whether the Studio is open or not
 darbit bots | status BOT | start BOT | pause BOT | stop BOT | history BOT [DAY] | notify
                               bots through the service (started in the background if it isn't running)
-darbit app                    darbit Studio is being rebuilt (docs/plan-rebuild.md): says where v0.4's is
+darbit app                    darbit Studio (the studio extra: pip install "darbit[studio]")
 
 Each command hands its arguments to the module that does the work: project/bots.py for new, install and
 run, and each tool's own main().
 """
 
 import argparse
+import importlib
 import subprocess
 import sys
 from pathlib import Path
@@ -34,9 +35,8 @@ COMMANDS = {
 }
 BOT_COMMANDS = {"status": "bot.status", "start": "bot.start", "pause": "bot.pause", "stop": "bot.stop"}
 
-STUDIO_MOVED = (
-    "darbit Studio is being rebuilt (docs/plan-rebuild.md). Until it's back, run v0.4's from a checkout of the "
-    "v0.4.0 tag: git clone --branch v0.4.0 https://github.com/FaisalAfks/darbit, then uv run --all-extras darbit app"
+STUDIO_MISSING = (
+    'darbit Studio needs the studio extra: pip install "darbit[studio]" (or uv sync --extra studio in a checkout)'
 )
 
 
@@ -51,8 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     command = args.command
 
     if command == "app":
-        print(STUDIO_MOVED)
-        return 2
+        return _app(args.rest)
     if command == "new":
         return _new(args.rest)
     if command == "install":
@@ -123,6 +122,15 @@ def _run(argv: list[str]) -> int:
     except (FileNotFoundError, ValueError) as error:
         print(error)
         return 2
+
+
+def _app(argv: list[str]) -> int:
+    try:
+        app = importlib.import_module("darbit.studio.app")
+    except ImportError:
+        print(STUDIO_MISSING)
+        return 2
+    return app.main([sys.argv[0], *argv])
 
 
 def _serve(argv: list[str]) -> int:

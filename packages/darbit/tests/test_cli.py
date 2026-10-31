@@ -127,8 +127,21 @@ def test_run_without_a_project(tmp_path, capsys):
     assert "no darbit.toml" in capsys.readouterr().out
 
 
-def test_the_studio_command_says_where_the_studio_is(capsys):
+def test_the_studio_command_opens_the_studio_or_says_what_it_needs(capsys, monkeypatch):
+    import sys
+    import types
+
+    opened = []
+    studio = types.ModuleType("darbit.studio.app")
+    studio.main = lambda argv: opened.append(argv) or 0
+    monkeypatch.setitem(sys.modules, "darbit.studio.app", studio)
+    assert cli.main(["app"]) == 0
+    assert len(opened) == 1
+    monkeypatch.setitem(sys.modules, "darbit.studio.app", None)  # PySide6 not installed
     assert cli.main(["app"]) == 2
-    assert "v0.4.0" in capsys.readouterr().out
+    assert "darbit[studio]" in capsys.readouterr().out
+
+
+def test_an_unknown_command_is_refused():
     with pytest.raises(SystemExit):
         cli.main(["fly"])
