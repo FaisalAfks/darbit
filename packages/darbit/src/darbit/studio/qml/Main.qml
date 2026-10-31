@@ -1,87 +1,86 @@
-// darbit Studio's window: the bot picker, the page bar and the run controls on top, the chosen page below.
+// darbit Studio's window: the bots (a sidebar, or a menu in the top bar), the chosen bot's pages and its run control.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
-import "format.js" as Format
 
 ApplicationWindow {
     id: window
     width: 1400; height: 880
-    minimumWidth: 960; minimumHeight: 620
+    minimumWidth: 900; minimumHeight: 600
     visible: true
     title: "darbit Studio"
     color: studio.colors.bg
     font.pixelSize: 14
 
-    property string page: "overview"
-    readonly property var bot: studio.bot
-    readonly property bool running: bot.status === "running" || bot.status === "paused"
+    property string page: "overview"  // overview, library, results, settings, or studio (darbit's own settings)
+    readonly property var pages: ["overview", "library", "results", "settings", "studio"]
+    readonly property bool narrow: width < 1180
+    readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
 
-    Timer { interval: 1000; running: window.running; repeat: true; onTriggered: studio.tick() }
+    Timer { interval: 1000; running: window.running && window.visible; repeat: true; onTriggered: studio.tick() }
     Component.onCompleted: studio.connect()
+    Connections {
+        target: studio
+        function onMadeBot(name) { toast.show(name + " is ready") }
+    }
 
     Backdrop { anchors.fill: parent }
 
-    // ---- the top bar
-    Item {
-        id: top
-        x: 24; y: 18
-        width: parent.width - 48; height: 52
+    RowLayout {
+        anchors.fill: parent
+        spacing: 0
 
-        BotPicker { id: picker; anchors.left: parent.left }
-
-        Pill {
-            anchors.horizontalCenter: parent.horizontalCenter
-            Tab { icon: "◉"; label: "Overview"; current: window.page === "overview"; onClicked: window.go("overview") }
-            Tab { icon: "▣"; label: "Library"; current: window.page === "library"; onClicked: window.go("library") }
-            Tab { icon: "≡"; label: "Runs"; current: window.page === "runs"; onClicked: window.go("runs") }
-            Tab { icon: "⚙"; label: "Settings"; current: window.page === "settings"; onClicked: window.go("settings") }
+        Sidebar {
+            id: sidebar
+            visible: studio.sidebar
+            folded: window.narrow
+            Layout.fillHeight: true
+            onAddBot: sheet.open()
+            onOpenStudio: window.go("studio")
         }
 
-        RunPill { anchors.right: menu.left; anchors.rightMargin: 12 }
-        StudioMenu { id: menu; anchors.right: parent.right }
-    }
+        Item {
+            Layout.fillWidth: true; Layout.fillHeight: true
 
-    // ---- the page
-    StackLayout {
-        id: pages
-        anchors { left: parent.left; right: parent.right; top: top.bottom; bottom: parent.bottom; topMargin: 18 }
-        currentIndex: ["overview", "library", "runs", "settings"].indexOf(window.page)
-        OverviewPage {}
-        LibraryPage {}
-        RunsPage {}
-        SettingsPage {}
-    }
+            TopBar {
+                id: top
+                x: 24; y: 16; width: parent.width - 48
+                page: window.page
+                onPicked: function (name) { window.go(name) }
+                onAddBot: sheet.open()
+                onOpenStudio: window.go("studio")
+            }
 
-    // ---- what went wrong, if anything
-    Rectangle {
-        visible: studio.message !== ""
-        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 24 }
-        width: Math.min(text.implicitWidth + 40, parent.width - 80); height: 44; radius: 22
-        color: studio.colors.glassStrong
-        border.color: studio.colors.danger
-        Text {
-            id: text
-            anchors.centerIn: parent
-            width: Math.min(implicitWidth, parent.width - 40)
-            elide: Text.ElideRight
-            text: studio.message
-            color: studio.colors.text
+            StackLayout {
+                id: stack
+                anchors { left: parent.left; right: parent.right; top: top.bottom; bottom: parent.bottom; topMargin: 16 }
+                currentIndex: window.pages.indexOf(window.page)
+                PageFrame { OverviewPage { anchors.fill: parent } }
+                PageFrame { LibraryPage { objectName: "libraryPage"; anchors.fill: parent } }
+                PageFrame { ResultsPage { anchors.fill: parent } }
+                PageFrame { SettingsPage { anchors.fill: parent } }
+                PageFrame { StudioPage { anchors.fill: parent } }
+            }
         }
     }
+
+    Toast { id: toast }
+    NewBotSheet { id: sheet }
+    CaptureWindow { objectName: "captureWindow" }
 
     function go(name) {
         page = name
         if (name === "overview") studio.loadOverview()
         else if (name === "library") studio.loadLibrary()
-        else if (name === "runs") studio.loadDays()
+        else if (name === "results") studio.loadDays()
         else if (name === "settings") studio.loadSettings()
     }
 
-    CaptureWindow { objectName: "captureWindow" }
-
     Shortcut { sequence: "Ctrl+1"; onActivated: window.go("overview") }
     Shortcut { sequence: "Ctrl+2"; onActivated: window.go("library") }
-    Shortcut { sequence: "Ctrl+3"; onActivated: window.go("runs") }
+    Shortcut { sequence: "Ctrl+3"; onActivated: window.go("results") }
     Shortcut { sequence: "Ctrl+4"; onActivated: window.go("settings") }
+    Shortcut { sequence: "Ctrl+,"; onActivated: window.go("studio") }
+    Shortcut { sequence: "Ctrl+N"; onActivated: sheet.open() }
+    Shortcut { sequence: "F5"; onActivated: window.running ? null : studio.start() }
 }

@@ -141,3 +141,17 @@ def test_history_shows_a_day(service, bot, capsys):  # noqa: F811
     assert "gained 60 Gems (total 900)" in out
     assert cli.main(["history", "tick-bot", "--days"]) == 0
     assert "1:30:00" in capsys.readouterr().out
+
+
+def test_a_new_bot_is_made_and_listed(service, bot, tmp_path):  # noqa: F811
+    with client.Client("test") as connection:
+        made = connection.call("bots.new", name="fresh-bot")
+        assert made["name"] == "fresh-bot"
+        assert "fresh-bot" in [found["name"] for found in connection.call("bots.list")]
+        elsewhere = connection.call("bots.new", name="dev-bot", where=str(tmp_path / "dev"))
+        assert elsewhere["installed"] is False
+        assert "dev-bot" in [found["name"] for found in connection.call("bots.list")]
+        with pytest.raises(client.ServiceError, match="bot name"):
+            connection.call("bots.new", name="9 lives")
+        with pytest.raises(client.ServiceError, match="already exists"):
+            connection.call("bots.new", name="fresh-bot")

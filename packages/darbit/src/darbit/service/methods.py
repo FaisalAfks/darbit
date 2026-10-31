@@ -22,6 +22,37 @@ def _bots_add(params: dict) -> object:
     return hub.project_add({"path": params.get("path", "")})
 
 
+def _bots_new(params: dict) -> object:
+    """A new bot from darbit's template, in darbit's bots folder (or `where`)."""
+    from .. import paths
+    from ..project import bots
+
+    where = Path(str(params.get("where") or paths.bots_dir())).expanduser()
+    where.mkdir(parents=True, exist_ok=True)
+    try:
+        folder = bots.new(str(params.get("name", "")).strip(), where)
+    except FileExistsError as error:
+        raise ValueError(f"{error.filename or 'that folder'} already exists") from error
+    if folder.parent != paths.bots_dir():
+        hub.project_add({"path": str(folder)})
+    return hub.describe(folder)
+
+
+def _bots_install(params: dict) -> object:
+    """Install a bot from its git link into darbit's bots folder."""
+    import subprocess
+
+    from ..project import bots
+
+    try:
+        folder = bots.install(str(params.get("url", "")).strip())
+    except (FileExistsError, RuntimeError) as error:
+        raise ValueError(str(error)) from error
+    except subprocess.CalledProcessError as error:
+        raise ValueError(f"{' '.join(error.cmd)} failed (exit code {error.returncode})") from error
+    return hub.describe(folder)
+
+
 def _bot_status(params: dict) -> object:
     return hub.describe(Path(params["path"]))
 
@@ -29,6 +60,8 @@ def _bot_status(params: dict) -> object:
 METHODS: dict[str, Method] = {
     "bots.list": Method(hub.projects_list, "every bot: installed ones and added project folders", one_bot=False),
     "bots.add": Method(_bots_add, "add a project folder (`path`)", one_bot=False),
+    "bots.new": Method(_bots_new, "make a bot from the template (`name`, `where`)", one_bot=False),
+    "bots.install": Method(_bots_install, "install a bot from its git link (`url`)", one_bot=False),
     "bot.status": Method(_bot_status, "one bot: name, version, running, paused or stopped"),
     "bot.start": Method(hub.project_run, "start a bot in its own process"),
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),

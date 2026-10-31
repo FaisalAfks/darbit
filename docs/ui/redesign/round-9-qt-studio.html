@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Studio round 9: the Qt Studio, simplified</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+/* round 9's own pieces */
+.app { display: grid; grid-template-columns: 236px minmax(0, 1fr); height: 640px; border-radius: 14px; overflow: hidden;
+       border: 1px solid var(--line); box-shadow: var(--shadow);
+       background: radial-gradient(600px 340px at 85% -10%, rgb(167 139 250 / .14), transparent 70%),
+                   radial-gradient(500px 300px at 0% 110%, rgb(90 200 250 / .08), transparent 70%), #0e1117; }
+.r9side { border-right: 1px solid var(--line); background: rgb(255 255 255 / .025); display: flex; flex-direction: column; padding: 14px 10px; gap: 4px; }
+.brand { display: flex; align-items: center; gap: 8px; font: 700 14px var(--font-strong); padding: 2px 8px 12px; }
+.brand b { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, #1a2142, #0a0e1f); border: 1px solid rgb(90 200 250 / .5);
+           display: inline-grid; place-items: center; color: var(--accent); font: 800 12px var(--font-strong); }
+.r9side h6 { margin: 10px 8px 4px; font: 650 10.5px var(--font-strong); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.bot { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; font-size: 13px; }
+.bot.on { background: var(--raised-hover); box-shadow: inset 2px 0 0 var(--accent); }
+.bot .av { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font: 800 9.5px var(--font-strong); color: var(--on-bot); }
+.bot small { color: var(--muted); font-size: 11.5px; }
+.bot.child { margin-left: 14px; grid-template-columns: 14px 1fr auto; font-size: 12.5px; position: relative; }
+.bot.child::before { content: ""; position: absolute; left: -6px; top: -4px; bottom: 50%; width: 8px; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); display: inline-block; }
+.dot.r9run { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .dot.pause { background: var(--warn); } .dot.bad { background: var(--danger); }
+.r9side .grow { flex: 1; }
+.new { margin: 6px 4px; padding: 9px 10px; border-radius: 10px; border: 1px dashed rgb(255 255 255 / .18); color: var(--muted); font-size: 13px; text-align: center; }
+.foot { display: flex; align-items: center; gap: 8px; padding: 8px; border-top: 1px solid var(--line); margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+.r9main { display: flex; flex-direction: column; min-width: 0; }
+.r9bar { display: flex; align-items: center; gap: 14px; padding: 14px 18px; }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.who .av { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font: 800 13px var(--font-strong); color: var(--on-bot); background: #f472b6; }
+.who b { font: 700 17px var(--font-strong); display: block; } .who small { color: var(--muted); font-size: 12px; }
+.tabs { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); margin-left: 8px; }
+.tabs span { padding: 6px 13px; border-radius: 999px; font: 600 12.5px var(--font-strong); color: var(--muted); }
+.tabs span.on { background: var(--accent); color: var(--on-accent); }
+.spacer { flex: 1; }
+.r9run { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); }
+.r9run .state { padding: 0 10px 0 8px; font: 650 12.5px var(--font-strong); display: flex; align-items: center; gap: 7px; }
+.r9run .state em { font-style: normal; color: var(--muted); font-weight: 500; }
+.btn { height: 30px; min-width: 30px; padding: 0 10px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--raised); font: 650 12px var(--font-strong); color: var(--text); }
+.btn.go { background: var(--accent); color: var(--on-accent); } .btn.ghost { background: transparent; color: var(--muted); }
+.btn.edit { background: rgb(167 139 250 / .18); color: #d8ccff; }
+.r9page { flex: 1; padding: 4px 18px 18px; display: grid; gap: 12px; align-content: start; overflow: hidden; }
+.card { border-radius: 14px; background: var(--glass); border: 1px solid var(--line); padding: 14px 16px; }
+.card h5 { margin: 0 0 10px; font: 650 10.5px var(--font-strong); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.card h5 em { font-style: normal; letter-spacing: 0; text-transform: none; color: var(--faint); font-weight: 600; }
+.now { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+.now .path { font: 700 24px var(--font-strong); } .now .path i { color: var(--faint); font-style: normal; margin: 0 6px; } .now .path span { color: var(--accent); }
+.now small { color: var(--muted); font-size: 12.5px; }
+.cols { display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; }
+.row { display: grid; grid-template-columns: 16px 1fr auto auto; gap: 10px; align-items: center; padding: 7px 4px; border-top: 1px solid var(--line); font-size: 13px; }
+.row:first-of-type { border-top: 0; }
+.row.cur { background: rgb(90 200 250 / .07); border-radius: 8px; border-top-color: transparent; }
+.row small { color: var(--muted); font-size: 12px; }
+.chip { font: 650 11px var(--font-strong); padding: 2px 8px; border-radius: 999px; background: var(--raised); color: var(--muted); white-space: nowrap; }
+.chip.ok { color: var(--ok); background: rgb(74 222 128 / .12); } .chip.info { color: var(--info); background: rgb(96 165 250 / .14); }
+.chip.warn { color: var(--warn); background: rgb(251 191 36 / .14); } .chip.bad { color: var(--danger); background: rgb(248 113 113 / .14); }
+.chip.bot { color: var(--slot-bot); background: rgb(240 171 252 / .12); }
+.sw { width: 30px; height: 17px; border-radius: 9px; background: var(--accent); position: relative; display: inline-block; }
+.sw::after { content: ""; position: absolute; right: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--on-accent); }
+.sw.off { background: var(--raised-hover); } .sw.off::after { left: 2px; right: auto; background: var(--muted); }
+.bars { display: flex; gap: 3px; } .bars i { width: 44px; height: 6px; border-radius: 3px; background: var(--raised-hover); }
+.bars i.d { background: var(--ok); } .bars i.r { background: var(--accent); }
+.prog { display: grid; grid-template-columns: 1fr 120px auto; gap: 10px; align-items: center; font-size: 13px; padding: 6px 0; }
+.meter { height: 6px; border-radius: 3px; background: var(--raised-hover); overflow: hidden; } .meter b { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.hint { font-size: 12.5px; color: var(--muted); }
+/* library */
+.lib { display: grid; grid-template-columns: 200px minmax(0, 1fr) 250px; gap: 12px; height: 100%; }
+.screens { display: grid; gap: 8px; align-content: start; }
+.scr { border-radius: 10px; padding: 6px; background: var(--raised); font-size: 12px; }
+.scr.on { background: rgb(90 200 250 / .12); box-shadow: inset 0 0 0 1px rgb(90 200 250 / .5); }
+.scr .shot { height: 54px; border-radius: 7px; background: linear-gradient(135deg, #232845, #141827); position: relative; margin-bottom: 5px; }
+.scr .shot i { position: absolute; border: 1px solid var(--accent); border-radius: 2px; }
+.scr b { font: 650 12.5px var(--font-strong); } .scr small { color: var(--muted); float: right; }
+.stage { border-radius: 12px; background: linear-gradient(160deg, #20253d, #12152a 60%, #0d1020); position: relative; height: 300px; border: 1px solid var(--line); }
+.stage .a { position: absolute; border: 2px solid var(--accent); border-radius: 4px; }
+.stage .a.r { border: 1.5px dashed var(--accent-2); } .stage .a.sel { box-shadow: 0 0 0 3px rgb(90 200 250 / .35), 0 0 18px rgb(90 200 250 / .4); }
+.stage .a span { position: absolute; left: -2px; top: -20px; font: 650 10.5px var(--font-strong); background: rgb(10 14 31 / .85); padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+.stage .pt { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ok); }
+.strip { display: flex; gap: 8px; margin-top: 10px; }
+.tile { flex: 1; border-radius: 10px; background: var(--raised); padding: 6px; font-size: 11.5px; }
+.tile .th { height: 38px; border-radius: 6px; margin-bottom: 5px; }
+.tile .m { height: 4px; border-radius: 2px; background: var(--raised-hover); position: relative; margin-top: 5px; } .tile .m b { display: block; height: 100%; border-radius: 2px; background: var(--ok); }
+.tile .m i { position: absolute; top: -2px; width: 2px; height: 8px; background: #fff; }
+.tile.sel { box-shadow: inset 0 0 0 1px var(--accent); }
+.insp { display: grid; gap: 8px; align-content: start; font-size: 12.5px; }
+.insp .big { font: 700 15px var(--font-strong); } .insp .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.insp .nums div { background: var(--raised); border-radius: 8px; padding: 6px 8px; } .insp .nums small { color: var(--muted); display: block; font-size: 10.5px; }
+.insp .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .insp .acts span { text-align: center; padding: 6px; border-radius: 8px; background: var(--raised); font: 600 12px var(--font-strong); }
+.insp code { font: 11.5px var(--mono); color: var(--muted); }
+.filters { display: flex; gap: 6px; align-items: center; }
+.search { flex: 1; height: 30px; border-radius: 999px; background: var(--raised); color: var(--faint); font-size: 12.5px; padding: 0 12px; display: flex; align-items: center; }
+/* pills */
+.pills { display: grid; gap: 18px; padding: 26px; border-radius: 14px; border: 1px solid var(--line);
+         background: linear-gradient(160deg, #2a2f52, #161a30 55%, #0c0f1c); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line);
+        box-shadow: var(--shadow); font-size: 12.5px; }
+.pill .lbl { display: flex; align-items: center; gap: 7px; padding: 0 8px; font: 650 12.5px var(--font-strong); }
+.pill .lbl em { font-style: normal; color: var(--muted); font-weight: 500; }
+.pill .sep { width: 1px; height: 20px; background: var(--line); }
+.pill .rec { width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+.pill input { all: unset; width: 150px; height: 30px; padding: 0 10px; border-radius: 999px; background: var(--raised); font: 650 12.5px var(--font-strong); }
+.pill .seg { display: flex; gap: 2px; padding: 2px; border-radius: 999px; background: var(--raised); } .pill .seg span { padding: 5px 10px; border-radius: 999px; color: var(--muted); font: 600 12px var(--font-strong); }
+.pill .seg span.on { background: var(--accent); color: var(--on-accent); }
+.pillrow { display: flex; align-items: center; gap: 16px; } .pillrow small { color: var(--muted); font-size: 12.5px; max-width: 46ch; }
+.notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+.notes div { background: var(--glass); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--muted); }
+.notes b { color: var(--text); display: block; margin-bottom: 4px; font-family: var(--font-strong); }
+section { margin-top: 44px; } section > p { color: var(--muted); max-width: 90ch; margin: 8px 0 16px; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Studio round 9: <span>the Qt Studio, simplified</span></h1>
+<p class="lead">The v0.4 Studio grew two settings buttons, an Edit toggle in the run controls, a Customize button, and three rows of
+controls on top of the Library. This round keeps what works (bots front and centre, an easy way to make one, the Library's cards)
+and puts every control in one place. It also adds bots that run other bots, and a Library grouped by the screen each picture is on,
+not by the first part of its name.</p>
+
+<!-- ============================================================ 1 -->
+<section>
+<h2><span class="tag">1</span>One shell: bots on the left, one bar on top</h2>
+<p>The bot menu becomes a sidebar that's always there: every bot with its state, the bots it runs folded under it, <b>New bot</b>
+at the bottom and darbit's own settings in the footer (the only ⚙ left). The top bar belongs to the chosen bot: its name, its four
+pages, and one control group. Play, Pause and Stop become one button that changes (Play while stopped; Pause and Stop while running),
+and <b>Edit</b> sits beside it as the only way into editing: it shows Capture, Record, Customize and Rename on the page you're on.</p>
+<div class="app">
+  <aside class="r9side">
+    <div class="brand"><b>d</b>darbit Studio</div>
+    <h6>Bots</h6>
+    <div class="bot on"><span class="av" style="background:#f472b6">ad</span><span>ad-bot<br><small>Speed Raid · 3 h 12 m</small></span><span class="dot run"></span></div>
+    <div class="bot child"><span class="dot run"></span><span>Speed Raid</span><small>now</small></div>
+    <div class="bot child"><span class="dot"></span><span>Raid</span><small>12:00</small></div>
+    <div class="bot child"><span class="dot"></span><span>Dimension</span><small>till drop</small></div>
+    <div class="bot child"><span class="dot bad"></span><span>AFK</span><small>off</small></div>
+    <div class="bot"><span class="av" style="background:#a3e635">fi</span><span>fish-bot<br><small>stopped</small></span><span class="dot"></span></div>
+    <div class="bot"><span class="av" style="background:#fbbf24">de</span><span>demo-bot<br><small>1 picture to take</small></span><span class="dot pause"></span></div>
+    <div class="grow"></div>
+    <div class="new">＋ New bot</div>
+    <div class="foot">⚙ darbit settings<span class="spacer"></span><span class="chip">glass dark</span></div>
+  </aside>
+  <div class="r9main">
+    <div class="r9bar">
+      <div class="who"><span class="av">ad</span><span><b>ad-bot</b><small>v0.3.0 · runs 4 bots</small></span></div>
+      <div class="tabs"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+      <span class="spacer"></span>
+      <div class="r9run"><span class="state"><span class="dot run"></span>Running <em>3 h 12 m</em></span><span class="btn">❚❚</span><span class="btn">■</span></div>
+      <span class="btn edit">✎ Edit</span>
+    </div>
+    <div class="r9page">
+      <div class="card now"><div><h5>Now</h5><div class="path">Speed Raid<i>›</i>Sakura<i>›</i><span>Fight</span></div>
+        <small>since 11:24 · last found Dim.Game.Left (.84)</small></div><span class="chip info">for 0:42</span></div>
+      <div class="cols">
+        <div class="card"><h5>Bots it runs <em>in this order, one at a time</em></h5>
+          <div class="row"><span class="dot"></span><span>Raid<br><small>at the raid hour</small></span><small>12:00</small><span class="sw"></span></div>
+          <div class="row cur"><span class="dot run"></span><span>Speed Raid<br><small>every 30 minutes</small></span><span class="chip info">running</span><span class="sw"></span></div>
+          <div class="row"><span class="dot"></span><span>Dimension<br><small>until “Mythic drop” appears</small></span><small>next</small><span class="sw"></span></div>
+          <div class="row"><span class="dot bad"></span><span>AFK<br><small>after the round</small></span><span class="chip">off</span><span class="sw off"></span></div>
+        </div>
+        <div class="card"><h5>Progress</h5>
+          <div class="prog"><span>Speed Raid this week</span><span class="meter"><b style="width:24%"></b></span><small>32 / 133</small></div>
+          <div class="prog"><span>Boss Rush today</span><span class="meter"><b style="width:100%"></b></span><small>1 / 1</small></div>
+          <div class="prog"><span>Gems today</span><span class="meter"><b style="width:60%"></b></span><small>+120</small></div>
+          <h5 style="margin-top:12px">Next up</h5>
+          <div class="prog"><span>Raid hour</span><span></span><b style="color:var(--accent)">34 m</b></div>
+          <div class="prog"><span>Daily reset</span><span></span><b style="color:var(--accent)">11 h 48 m</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="notes">
+  <div><b>Gone</b>the ⚙ beside the picker (now the sidebar footer), Edit inside the run controls, the Customize button (it's in Edit), disabled buttons shown for nothing.</div>
+  <div><b>Kept</b>bots front and centre, the glass look, Overview's Now line, Results, Settings as the bot's own form.</div>
+  <div><b>New bot</b>opens one sheet: make one from a template, install one from a link, or add a folder you already have.</div>
+</div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section>
+<h2><span class="tag">2</span>Bots that run other bots</h2>
+<p>A bot can be made of other bots (ad-bot runs Raid, Speed Raid, Dimension and AFK, each its own bot with its own pictures and actions).
+In the sidebar they fold under the bot that runs them; on its Overview they're one list in the order they take turns, each with
+<b>when</b> it runs and an on/off switch. Picking one in the sidebar opens it like any bot: its own Library, Results and Settings.
+From there <b>Play</b> runs it alone (to test it), and the parent's Play runs the whole schedule.</p>
+<div class="app" style="height: 330px">
+  <aside class="r9side">
+    <h6>Bots</h6>
+    <div class="bot"><span class="av" style="background:#f472b6">ad</span><span>ad-bot<br><small>paused for Dimension</small></span><span class="dot pause"></span></div>
+    <div class="bot child"><span class="dot"></span><span>Speed Raid</span><small>14:30</small></div>
+    <div class="bot child on"><span class="dot run"></span><span>Dimension</span><small>alone</small></div>
+    <div class="bot child"><span class="dot"></span><span>AFK</span><small>off</small></div>
+  </aside>
+  <div class="r9main">
+    <div class="r9bar">
+      <div class="who"><span class="av" style="background:#c084fc">di</span><span><b>Dimension</b><small>run by ad-bot · until “Mythic drop” appears</small></span></div>
+      <div class="tabs"><span class="on">Overview</span><span>Results</span><span>Library</span><span>Settings</span></div>
+      <span class="spacer"></span>
+      <div class="r9run"><span class="state"><span class="dot run"></span>Running alone <em>6 m</em></span><span class="btn">❚❚</span><span class="btn">■</span></div>
+    </div>
+    <div class="r9page">
+      <div class="card"><h5>While it runs alone <em>ad-bot waits, paused, and goes on after</em></h5>
+        <div class="row"><span class="dot run"></span><span>Run 7 of the Dimension<br><small>the tape plays, then checks the drop</small></span><span class="bars"><i class="d"></i><i class="d"></i><i class="r"></i><i></i></span><span class="chip bot">until Mythic drop</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="notes">
+  <div><b>One at a time</b>a bot runs its bots in turns, never two on the same game window. Two bots on two windows are two top-level bots.</div>
+  <div><b>Run alone</b>pauses the parent, runs the one bot, then gives control back: a safe way to test a mode.</div>
+  <div><b>In code</b>the parent lists them (<code>d.r9run("dimension")</code> or <code>[bots]</code> in darbit.toml); the Studio shows that list and its switches write the parent's settings.</div>
+</div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section>
+<h2><span class="tag">3</span>The Library by screen</h2>
+<p>Pictures are grouped by the <b>screen they were taken on</b> (Capture already keeps that screenshot), not by the first part of their
+name. The screens are a column on the left; the chosen one is shown with every picture, area and point in its place, and their cards
+below. Names stay whole (<code>SR.Char.Sakura</code>, not “Char.Sakura” under “SR”). A picture taken on no screen goes under
+<b>Not on a screen</b>; one can be moved to another screen by dragging its card. Search and the filters work across every screen.</p>
+<div class="app" style="height: 520px">
+  <aside class="r9side">
+    <h6>Bots</h6>
+    <div class="bot on"><span class="av" style="background:#f472b6">ad</span><span>ad-bot<br><small>stopped</small></span><span class="dot"></span></div>
+    <div class="bot child"><span class="dot"></span><span>Speed Raid</span><small></small></div>
+    <div class="bot child"><span class="dot"></span><span>Dimension</span><small></small></div>
+  </aside>
+  <div class="r9main">
+    <div class="r9bar">
+      <div class="who"><span class="av">ad</span><span><b>ad-bot</b><small>172 pictures on 9 screens</small></span></div>
+      <div class="tabs"><span>Overview</span><span>Results</span><span class="on">Library</span><span>Settings</span></div>
+      <span class="spacer"></span>
+      <div class="r9run"><span class="state"><span class="dot"></span>Stopped</span><span class="btn go">▶</span></div>
+      <span class="btn edit">✎ Edit</span>
+    </div>
+    <div class="r9page" style="grid-template-rows: auto 1fr">
+      <div class="filters"><span class="search">⌕ Search every screen</span><span class="chip">Images</span><span class="chip">Areas</span><span class="chip">Points</span><span class="chip">Actions</span><span class="chip bad">Missing 2</span><span class="chip warn">Weak 3</span></div>
+      <div class="lib">
+        <div class="screens">
+          <div class="scr"><div class="shot"><i style="left:60%;top:60%;width:22%;height:22%"></i></div><b>Lobby</b><small>12</small></div>
+          <div class="scr on"><div class="shot"><i style="left:12%;top:20%;width:18%;height:30%"></i><i style="left:36%;top:20%;width:18%;height:30%"></i><i style="left:70%;top:72%;width:20%;height:16%"></i></div><b>Speed Raid list</b><small>41</small></div>
+          <div class="scr"><div class="shot"></div><b>Bag · Characters</b><small>18</small></div>
+          <div class="scr" style="background:transparent;border:1px dashed var(--line)"><b style="color:var(--muted)">Not on a screen</b><small>6</small></div>
+        </div>
+        <div>
+          <div class="stage">
+            <div class="a" style="left:7%;top:16%;width:17%;height:36%"><span>SR.Char.Naruto .99</span></div>
+            <div class="a sel" style="left:28%;top:16%;width:17%;height:36%"><span>SR.Char.Sakura .97</span></div>
+            <div class="a" style="left:49%;top:16%;width:17%;height:36%"><span>SR.Char.Goku .82</span></div>
+            <div class="a r" style="left:4%;top:9%;width:66%;height:50%"><span style="top:auto;bottom:-20px;color:var(--accent-2)">SR.List (area)</span></div>
+            <div class="a" style="left:72%;top:76%;width:20%;height:14%"><span>SR.Start 1.00</span></div>
+            <div class="pt" style="left:84%;top:30%"></div>
+          </div>
+          <div class="strip">
+            <div class="tile"><div class="th" style="background:linear-gradient(135deg,#fb7185,#f97316)"></div>SR.Char.Naruto<div class="m"><b style="width:99%"></b><i style="left:85%"></i></div></div>
+            <div class="tile sel"><div class="th" style="background:linear-gradient(135deg,#5ac8fa,#3b82f6)"></div>SR.Char.Sakura<div class="m"><b style="width:97%"></b><i style="left:85%"></i></div></div>
+            <div class="tile"><div class="th" style="background:linear-gradient(135deg,#a3e635,#22c55e)"></div>SR.Char.Goku<div class="m"><b style="width:82%;background:var(--warn)"></b><i style="left:85%"></i></div></div>
+            <div class="tile"><div class="th" style="background:linear-gradient(135deg,#4ade80,#16a34a)"></div>SR.Start<div class="m"><b style="width:100%"></b><i style="left:90%"></i></div></div>
+          </div>
+        </div>
+        <div class="insp card">
+          <div class="big">SR.Char.Sakura</div><span class="hint">image · 180 × 52 · in SR.List</span>
+          <div class="nums"><div><small>score</small>.97</div><div><small>needs</small>.85</div><div><small>found in</small>6 ms</div></div>
+          <div class="acts"><span>Test on screen</span><span>Retake</span><span>Rename</span><span>Move to…</span></div>
+          <span class="hint">Used in 2 places</span><code>modes/speed_raid.py:41<br>actions/dim_run.py:12</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section>
+<h2><span class="tag">4</span>Every floating bar is the same pill</h2>
+<p>The run pill (the Studio hidden while a bot plays), the recorder and Capture's toolbar share one shape: a state on the left, the few
+controls that matter, and the main action last in the accent colour. Each shows a hint once, then only on hover.</p>
+<div class="pills">
+  <div class="pillrow"><div class="pill"><span class="lbl"><span class="dot run"></span>ad-bot <em>Speed Raid › Fight · 3 h 12 m</em></span><span class="sep"></span><span class="btn">❚❚</span><span class="btn">■</span><span class="btn ghost">⤢</span></div>
+    <small><b>Run pill</b>: what runs and where it is; Pause, Stop, and ⤢ opens the Studio. It slides to an edge while the mouse is near.</small></div>
+  <div class="pillrow"><div class="pill"><span class="lbl"><span class="rec"></span>Recording <em>dim_run · 0:42 · 31 steps</em></span><span class="sep"></span><span class="btn">＋ Check</span><span class="btn">❚❚</span><span class="btn go">Done</span></div>
+    <small><b>Recorder</b>: Add check (a picture to wait for, an area changing, a wait) pauses first; Done saves the action.</small></div>
+  <div class="pillrow"><div class="pill"><input value="SR.Char.Sakura"><span class="seg"><span class="on">Image</span><span>Area</span><span>Point</span></span><span class="chip">in SR.List</span><span class="sep"></span><span class="btn">Test</span><span class="btn go">Save</span></div>
+    <small><b>Capture</b>: the name, the kind, the area it's searched in, Test, Save. The size and score readouts sit on the box itself.</small></div>
+</div>
+</section>
+
+<section>
+<h2>To decide</h2>
+<p>1. The sidebar always shown, or folding to icons (bots' squares only) on a narrow window? &nbsp; 2. A bot's bots: run in a fixed
+order (shown), or by the time each one is due? &nbsp; 3. Pictures shared by two screens: shown on each, or only on the first?</p>
+</section>
+</main>
+</body>
+</html>
