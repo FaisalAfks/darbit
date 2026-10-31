@@ -39,6 +39,13 @@
 - A bot on a system without a keyboard piece still takes the Studio's stop and pause: the stop hotkey is left off instead of ending the thread that watches both
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
 
+### Fixed
+
+- Tapes keep their timing when playing falls behind: an event more than 8 ms late moves the rest of the tape later instead of the next events going out at once, so waits and held keys (walking with W) stay as long as recorded
+- Pausing a running tape and going on presses its held keys and buttons again and carries on from where it was, instead of going on with nothing held and the paused stretch played at once
+- The recorder keeps the waits between inputs it got to late: their times come from Windows' message time when the moment they were read is clearly later
+- Each tape notes how the recording went (`"notes"`: inputs that came in late, the latest, inputs lost), to tell a bad recording from a bad replay
+
 ### Docs
 
 - The rebuild plan (draft): what darbit is, every feature to design for, the core API, the process layout, the Studio on PySide6 and the order of work

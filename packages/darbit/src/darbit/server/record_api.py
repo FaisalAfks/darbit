@@ -18,6 +18,7 @@ from pathlib import Path
 from .. import __version__
 from ..platform import hooks, switching
 from ..platform import input as device
+from ..platform.backend import NotSupported
 from ..project import manifest
 from ..runs.flowfile import Step, statement, to_dict
 from ..runs.recorder import RawEvent, Recorder, key_name
@@ -51,6 +52,7 @@ class Recording:
     cursor: tuple[int, int] = (0, 0)  # where the cursor last was
     window: list[int] | None = None  # the game window's client area when recording started
     screen: list[int] | None = None
+    health: dict | None = None  # how the listener kept up (hooks.health), for the tape's notes
     held: set[str] = field(default_factory=set)  # keys down right now
     hotkey_keys: set[str] = field(default_factory=set)  # keys of a darbit hotkey: their ups are dropped too
     running: threading.Event = field(default_factory=threading.Event)
@@ -147,6 +149,7 @@ def start(project: Path, name: str, replace: bool = False) -> dict:
     _recording = recording
     recording.slow_again = switching.fast()  # the raw input thread mustn't wait its turn: counts were lost
     recording.stop_hooks = hooks.start(_on_event, moves=True)  # the cursor's place goes with each mouse packet
+    _health(restart=True)
     recording.running.set()
     threading.Thread(target=_tick, args=(recording,), name="darbit-record-tick", daemon=True).start()
     return status()
@@ -265,6 +268,7 @@ def stop(keep: bool = True) -> dict:
     recording = _current()
     _recording = None
     recording.running.clear()
+    recording.health = _health()
     if recording.stop_hooks is not None:
         recording.stop_hooks()
     if recording.slow_again is not None:
@@ -318,7 +322,9 @@ def _write_part(recording: Recording, name: str, events: list, start: float, end
             kept.append(replace(event, t=round(event.t - start, 4)))
     folder = recording.project / "actions"
     folder.mkdir(parents=True, exist_ok=True)
-    tape.save(tape.path_for(folder / f"{name}.py"), tape.Tape(kept, recording.window, recording.screen))
+    tape.save(
+        tape.path_for(folder / f"{name}.py"), tape.Tape(kept, recording.window, recording.screen, recording.health)
+    )
     steps = recording.recorder.parts(end - start, start)
     step_dicts = []
     for step in steps:
@@ -331,6 +337,13 @@ def _write_part(recording: Recording, name: str, events: list, start: float, end
         timed=True,
     )
     return len(steps)
+
+
+def _health(restart: bool = False) -> dict | None:
+    try:
+        return hooks.health(restart)
+    except NotSupported:
+        return None
 
 
 def _title(name: str) -> str:
