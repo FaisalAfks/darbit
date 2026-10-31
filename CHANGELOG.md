@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- darbit's new logo (`assets/logo.svg`): a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile in the cyan-to-violet accent. It's darbit Studio's icon on its windows, the taskbar, Alt+Tab and the tray, where Python's icon showed before
+
 ## 0.4.0 - 2026-10-29
 
 ### Changed

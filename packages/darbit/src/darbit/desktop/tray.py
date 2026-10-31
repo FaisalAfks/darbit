@@ -1,7 +1,7 @@
 """darbit's icon in the Windows tray: open the Studio, control a running bot, quit.
 
 Built on Windows Forms' NotifyIcon through pythonnet, which pywebview already loads, so it needs nothing more.
-The icon is drawn here (darbit's gradient square with a "d") and gets a green dot while a bot runs.
+The icon is darbit's logo (desktop/darbit.ico), with a green dot while a bot runs.
 Double-click opens the Studio; right-click shows a menu made fresh each time it opens. See decision 0013.
 """
 
@@ -11,11 +11,9 @@ from collections.abc import Callable
 from ..server import hub
 from ..server.events import publish
 from .pill import RunPill
-from .windows import Window
+from .windows import ICON, Window
 
-ICON_SIZE = 32  # px, drawn once per state and scaled by Windows
-ACCENT = (90, 200, 250)  # the glass-dark accent, then accent-2
-ACCENT_2 = (167, 139, 250)
+ICON_SIZE = 32  # px, made once per state and scaled by Windows
 RUNNING_DOT = (74, 222, 128)
 
 
@@ -62,43 +60,14 @@ class Tray:
         import clr
 
         clr.AddReference("System.Drawing")
-        from System.Drawing import (
-            Bitmap,
-            Color,
-            Font,
-            FontStyle,
-            Graphics,
-            Icon,
-            PointF,
-            SolidBrush,
-            StringAlignment,
-            StringFormat,
-        )
-        from System.Drawing.Drawing2D import GraphicsPath, LinearGradientBrush, SmoothingMode
-        from System.Drawing.Text import TextRenderingHint
+        from System.Drawing import Bitmap, Color, Graphics, Icon, Size, SolidBrush
+        from System.Drawing.Drawing2D import SmoothingMode
 
-        picture = Bitmap(ICON_SIZE, ICON_SIZE)
+        logo = Icon(str(ICON), Size(ICON_SIZE, ICON_SIZE))
+        picture = Bitmap(logo.ToBitmap(), ICON_SIZE, ICON_SIZE)
+        logo.Dispose()
         canvas = Graphics.FromImage(picture)
         canvas.SmoothingMode = SmoothingMode.AntiAlias
-        canvas.TextRenderingHint = TextRenderingHint.AntiAliasGridFit
-        shape = GraphicsPath()
-        corner = 18
-        last = ICON_SIZE - 1 - corner
-        shape.AddArc(0, 0, corner, corner, 180, 90)
-        shape.AddArc(last, 0, corner, corner, 270, 90)
-        shape.AddArc(last, last, corner, corner, 0, 90)
-        shape.AddArc(0, last, corner, corner, 90, 90)
-        shape.CloseFigure()
-        start = Color.FromArgb(ACCENT[0], ACCENT[1], ACCENT[2])
-        end = Color.FromArgb(ACCENT_2[0], ACCENT_2[1], ACCENT_2[2])
-        fill = LinearGradientBrush(PointF(0, 0), PointF(ICON_SIZE, ICON_SIZE), start, end)
-        canvas.FillPath(fill, shape)
-        layout = StringFormat()
-        layout.Alignment = StringAlignment.Center
-        layout.LineAlignment = StringAlignment.Center
-        letter = Font("Segoe UI", 15, FontStyle.Bold)
-        ink = SolidBrush(Color.FromArgb(6, 18, 28))
-        canvas.DrawString("d", letter, ink, PointF(ICON_SIZE / 2, ICON_SIZE / 2 - 1), layout)
         if running:
             outline = SolidBrush(Color.FromArgb(32, 32, 32))
             dot = SolidBrush(Color.FromArgb(RUNNING_DOT[0], RUNNING_DOT[1], RUNNING_DOT[2]))
