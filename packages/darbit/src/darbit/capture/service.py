@@ -2,6 +2,7 @@
 
     start(project_folder, images, items)   # what to take: the guide's missing pictures, one asset, or anything
     freeze()                               # grab the screen once; everything after works on this shot
+    use_shot(pixels)                       # or work on a saved screen instead
     candidates(x, y, "image")              # boxes around a click, smallest first
     test(box, region, similarity)          # every place the boxed picture is found in its region, with scores
     save(name, kind, image, region, point) # write the target's files, like the old capture tool
@@ -89,6 +90,14 @@ def freeze() -> tuple[np.ndarray, Region]:
     session.origin = origin
     session.prepared = prepare(shot)
     return shot, origin
+
+
+def use_shot(shot: np.ndarray, origin: Region | None = None) -> None:
+    """Work on a saved screen instead of grabbing one (a retake from the bot's saved screens, or a test)."""
+    session = _current()
+    session.shot = shot
+    session.origin = origin or Region(0, 0, shot.shape[1], shot.shape[0])
+    session.prepared = prepare(shot)
 
 
 def _frozen() -> tuple[Session, np.ndarray, Region, Prepared]:

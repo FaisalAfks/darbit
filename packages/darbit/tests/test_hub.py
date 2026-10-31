@@ -61,6 +61,7 @@ def test_installed_bots_are_listed(bot):
             "summary": "",
             "installed": True,
             "status": "stopped",
+            "since": None,
         }
     ]
 

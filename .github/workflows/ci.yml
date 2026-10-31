@@ -13,7 +13,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
-      - run: uv sync --locked
+      - run: uv sync --locked --extra studio
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pre-commit run plain-python --all-files
@@ -22,12 +22,15 @@ jobs:
 
   python-linux:  # the tests off Windows, through tests/fake_system.py, so they stay system-independent
     runs-on: ubuntu-latest
+    env:
+      QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v7
+      - run: sudo apt-get install -y libegl1 libxkbcommon0  # what Qt needs to draw the Studio offscreen
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
-      - run: uv sync --locked
+      - run: uv sync --locked --extra studio
       - run: uv run pytest
 
   bench:

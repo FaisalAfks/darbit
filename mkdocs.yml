@@ -44,6 +44,7 @@ nav:
       - Capturing targets: guides/capture.md
       - Bot projects: guides/projects.md
       - The service: guides/service.md
+      - darbit Studio: guides/studio.md
   - Architecture: architecture/index.md
   - API reference: reference/api.md
   - Style:

@@ -132,6 +132,7 @@ def describe(folder: Path) -> dict:
         "summary": project.summary,
         "installed": installed,
         "status": status(folder),
+        "since": _started(folder),
     }
 
 
@@ -176,6 +177,15 @@ def status(folder: Path) -> str:
     if run.paused:
         return "paused"
     return "running"
+
+
+def _started(folder: Path) -> float | None:
+    """When the bot's run started (seconds since the epoch), while it runs."""
+    with _lock:
+        run = _runs.get(str(folder))
+    if run is None or run.process.poll() is not None:
+        return None
+    return run.started
 
 
 def running() -> list[Path]:
