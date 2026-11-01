@@ -24,6 +24,8 @@ Rectangle {
     clip: true
 
     Flickable {
+        id: scroller
+        SmoothWheel { view: scroller }
         anchors.fill: parent; anchors.margins: 18
         contentHeight: body.height
         clip: true
@@ -128,8 +130,14 @@ Rectangle {
                 visible: panel.asset !== null
                 Layout.fillWidth: true
                 columns: 2; columnSpacing: 8; rowSpacing: 8
-                PillButton { Layout.fillWidth: true; icon: "▣"; text: "Retake"; onClicked: studio.retake(panel.asset.name, panel.asset.kind === "location" ? "point" : panel.asset.kind) }
+                PillButton { Layout.fillWidth: true; icon: "▣"; text: "Retake"; onClicked: studio.retake(panel.asset.name, panel.asset.kind) }
                 PillButton { Layout.fillWidth: true; icon: "✎"; text: "Rename"; onClicked: { panel.renaming = true; nameField.text = panel.asset.name; nameField.forceActiveFocus() } }
+                PillButton {
+                    visible: panel.asset !== null && panel.asset.kind === "image" && !panel.asset.missing
+                    Layout.fillWidth: true; Layout.columnSpan: 2
+                    icon: "◎"; text: "Highlight on screen"
+                    onClicked: studio.highlightOne(panel.asset.name)
+                }
             }
             RowLayout {
                 visible: panel.renaming

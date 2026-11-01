@@ -152,10 +152,13 @@ class Highlight(QObject):
     alike = Property(int, _get_alike, notify=changed)  # found on the same spot as another picture
     origin = Property(list, _get_origin, notify=changed)  # the desktop's top left, where the overlay starts
 
-    def start(self, folder: Path, grab: object = None) -> None:
-        """Start highlighting the bot at `folder`'s pictures (`grab`: the screen, for tests)."""
+    def start(self, folder: Path, grab: object = None, only: str = "") -> None:
+        """Start highlighting the bot at `folder`'s pictures, or only the one called `only` (`grab`: the screen, for
+        tests)."""
         self.stop()
         targets = targets_of(folder)
+        if only:
+            targets = [target for target in targets if target.name == only]
         options = options_of(folder)
         self._running.set()
         self._on = True

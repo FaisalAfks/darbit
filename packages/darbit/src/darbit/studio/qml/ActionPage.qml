@@ -47,6 +47,8 @@ Item {
 
     // ---- the sections
     Flickable {
+        id: scroller
+        SmoothWheel { view: scroller }
         anchors { left: parent.left; right: parent.right; top: head.bottom; topMargin: 18; bottom: parent.bottom }
         contentHeight: sections.height + 120
         clip: true

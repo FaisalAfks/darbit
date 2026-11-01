@@ -223,13 +223,13 @@ def _connect_ghost(studio: Studio, ghost: Ghost) -> None:
 def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> tuple[object, QObject] | None:
     """Highlight hides the Studio while it's on; Ctrl+Alt+H turns it on and off with the game in front."""
 
-    def toggle(folder: str) -> None:
+    def toggle(folder: str, name: str) -> None:
         if highlight.isOn:
             highlight.stop()
             _bring_forward(window)
         else:
             window.hide()
-            QTimer.singleShot(HIDE_WAIT_MS, lambda: highlight.start(Path(folder)))
+            QTimer.singleShot(HIDE_WAIT_MS, lambda: highlight.start(Path(folder), only=name))
 
     studio.highlightWanted.connect(toggle)
     return _global_key("highlight.toggle", studio.toggleHighlight)
