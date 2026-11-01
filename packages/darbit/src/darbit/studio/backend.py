@@ -42,6 +42,7 @@ class Studio(QObject):
     madeBot = Signal(str)  # a bot made, installed or added: its name
     actionsChanged = Signal()
     said = Signal(str)  # something done, for the toast
+    highlightWanted = Signal(str)  # the bot's folder: turn Highlight on or off, for app.py
     recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
 
     captureWanted = Signal(str, str, str, str)  # (the bot's folder, "any", "guide" or "one", name, kind), for app.py
@@ -215,6 +216,12 @@ class Studio(QObject):
         """Record an action for the shown bot (app.py hides the Studio and shows the recorder)."""
         if self._bot.get("path"):
             self.recordWanted.emit(self._bot["path"], name, again)
+
+    @Slot()
+    def toggleHighlight(self) -> None:
+        """Highlight the shown bot's pictures on screen, or stop."""
+        if self._bot.get("path"):
+            self.highlightWanted.emit(self._bot["path"])
 
     @Slot(str)
     def say(self, text: str) -> None:

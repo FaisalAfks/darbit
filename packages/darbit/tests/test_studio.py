@@ -402,3 +402,47 @@ def test_the_recorder_records_checks_and_saves_an_action(qt, tmp_path, monkeypat
     recorder.finish(False)
     assert saved[-1] == "" and not (tmp_path / "actions" / "thrown.py").exists()
     recorder.close()
+
+
+def test_highlight_finds_the_bots_pictures_on_screen(qt, tmp_path):
+    import cv2
+    import numpy as np
+
+    from darbit.core.geometry import Region
+    from darbit.studio.highlight import Highlight
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
+    rng = np.random.default_rng(3)
+    screen = cv2.resize(rng.integers(0, 255, (60, 90, 3), dtype=np.uint8), (900, 600), interpolation=cv2.INTER_CUBIC)
+    (tmp_path / "images").mkdir()
+    cv2.imwrite(str(tmp_path / "images" / "Lobby.Play.png"), screen[200:260, 300:420])
+    stripes = np.zeros((40, 40, 3), np.uint8)
+    stripes[:, ::8] = (0, 0, 255)  # not on this screen
+    cv2.imwrite(str(tmp_path / "images" / "Lobby.Gone.png"), stripes)
+    highlight = Highlight()
+    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
+    wait_until(lambda: len(highlight.boxes) == 2)
+    boxes = {box["name"]: box for box in highlight.boxes}
+    assert boxes["Lobby.Play"]["found"] and (boxes["Lobby.Play"]["x"], boxes["Lobby.Play"]["y"]) == (300, 200)
+    assert not boxes["Lobby.Gone"]["found"]
+    assert highlight.found == 1 and highlight.isOn
+    highlight.stop()
+    assert not highlight.isOn and highlight.boxes == []
+
+
+def test_pictures_found_on_the_same_spot_are_look_alikes():
+    from darbit.studio.highlight import mark_look_alikes
+
+    boxes = mark_look_alikes(
+        [
+            {"name": "A", "found": True, "score": 0.99, "x": 10, "y": 10, "w": 50, "h": 40},
+            {"name": "B", "found": True, "score": 0.97, "x": 12, "y": 11, "w": 50, "h": 40},
+            {"name": "C", "found": True, "score": 0.95, "x": 300, "y": 10, "w": 50, "h": 40},
+            {"name": "D", "found": False, "score": 0.2, "needs": 0.7},
+        ]
+    )
+    named = {box["name"]: box for box in boxes}
+    assert named["A"]["with"] == ["B"] and named["B"]["with"] == ["A"]
+    assert named["A"]["shown"] and not named["B"]["shown"]  # the better one stands for the spot
+    assert named["C"]["with"] == [] and named["C"]["shown"]
+    assert not named["D"]["shown"]
