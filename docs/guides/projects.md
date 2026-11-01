@@ -59,8 +59,11 @@ says which:
 
 ```toml
 [run]
-restart = 3   # 0 (the default) leaves a failed bot stopped
+restart = 3     # 0 (the default) leaves a failed bot stopped
+keep_days = 30  # days of run history, run reports and daily logs kept (30 by default); older ones are deleted
 ```
+
+The service tidies when it starts and every six hours. Screenshots keep the newest few hundred whatever their age.
 
 For a failure the bot can get past itself, go back to a known screen and try again in its own code (`d.go`, see the
 screen map guide); `restart` is for when the bot itself ended.

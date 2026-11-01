@@ -142,3 +142,23 @@ def span(project: Project, day: str) -> tuple[str, str] | None:
     if first is None:
         return None
     return first, last
+
+
+def forget_before(project: Project, day: str) -> dict[str, int]:
+    """Drop the bot's history, run reports and daily logs from before `day` ("2026-10-02"): what went."""
+    gone = {"events": 0, "files": 0}
+    with closing(_open(project)) as connection, connection:
+        gone["events"] = connection.execute("delete from events where day < ?", (day,)).rowcount
+        connection.execute("delete from reports where day < ?", (day,))
+    folder = report_file(project, "x").parent
+    if not folder.is_dir():
+        return gone
+    for path in [*folder.glob(f"{PREFIX}*{SUFFIX}"), *folder.glob("????-??-??.log")]:
+        dated = path.name[len(PREFIX) : -len(SUFFIX)] if path.name.startswith(PREFIX) else path.stem
+        if dated < day:
+            try:
+                path.unlink()
+                gone["files"] += 1
+            except OSError:
+                continue  # open on Windows (today's, or a reader): next time
+    return gone

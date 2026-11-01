@@ -20,7 +20,7 @@ TABLES = {"bot", "settings", "images", "keys", "studio", "run"}
 BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
-RUN_KEYS = {"restart"}
+RUN_KEYS = {"restart", "keep_days"}
 # the tiles darbit Studio can show on a bot's Overview (decision 0011); "progress:<label>" picks one progress
 TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup")
 
@@ -69,6 +69,7 @@ class Project:
     summary: str = ""  # one line under the bot's name in the Studio
     tiles: list[str] = field(default_factory=list)  # the Overview's tiles in order; empty: the defaults
     restart: int = 0  # [run] restart: times an hour the service starts the bot again after it failed
+    keep_days: int = 30  # [run] keep_days: days of run history, reports and logs the service keeps
 
 
 def find(start: Path) -> Path | None:
@@ -113,6 +114,9 @@ def load(folder: Path) -> Project:
     restart = run.get("restart", 0)
     if not isinstance(restart, int) or isinstance(restart, bool) or restart < 0:
         raise ProjectError(f"{MANIFEST} [run]: restart is how many times an hour to start the bot again, e.g. 3")
+    keep_days = run.get("keep_days", 30)
+    if not isinstance(keep_days, int) or isinstance(keep_days, bool) or keep_days < 1:
+        raise ProjectError(f"{MANIFEST} [run]: keep_days is how many days of history to keep, e.g. 30")
 
     return Project(
         folder=folder,
@@ -129,6 +133,7 @@ def load(folder: Path) -> Project:
         summary=str(studio.get("summary", "")),
         tiles=tiles,
         restart=restart,
+        keep_days=keep_days,
     )
 
 

@@ -57,3 +57,32 @@ def test_days_are_newest_first_and_broken_lines_are_skipped(project):
     history.catch_up(project)
     assert history.days(project) == ["2026-10-31", "2026-10-30"]
     assert history.span(project, "2026-11-01") is None
+
+
+def test_old_days_are_forgotten_and_the_rest_kept(tmp_path, monkeypatch):
+    from datetime import date
+
+    from darbit.project.manifest import load
+    from darbit.server import hub
+    from darbit.service import tidy
+
+    folder = tmp_path / "old-bot"
+    folder.mkdir()
+    (folder / "darbit.toml").write_text('[bot]\nname = "old-bot"\n\n[run]\nkeep_days = 30\n', encoding="utf-8")
+    project = load(folder)
+    logs = history.report_file(project, "x").parent
+    logs.mkdir(parents=True)
+    for day in ("2026-09-01", "2026-10-02", "2026-10-31"):
+        (logs / f"report-{day}.jsonl").write_text(f'{{"time": "{day}T09:00:00", "event": "gain"}}\n', encoding="utf-8")
+        (logs / f"{day}.log").write_text("a line\n", encoding="utf-8")
+    history.catch_up(project)
+    monkeypatch.setattr(hub, "projects_list", lambda data: [{"path": str(folder)}])
+    done = tidy.tidy(date(2026, 11, 1))
+    assert done["old-bot"] == {"events": 1, "files": 2}  # 30 days back from 1 November is 2 October
+    assert history.days(project) == ["2026-10-31", "2026-10-02"]
+    assert sorted(path.name for path in logs.iterdir()) == [
+        "2026-10-02.log",
+        "2026-10-31.log",
+        "report-2026-10-02.jsonl",
+        "report-2026-10-31.jsonl",
+    ]
