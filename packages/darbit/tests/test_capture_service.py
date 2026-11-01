@@ -162,3 +162,20 @@ def test_a_saved_picture_is_tested_in_its_own_region(frozen):
     result = service.test(None, "Bag.Equip", None, 0.9)
     assert result["searched"] == [450, 350, 300, 150]  # its saved region, back in the shot's pixels
     assert len(result["matches"]) == 1
+
+
+def test_images_share_a_region_by_name(frozen):
+    from darbit.core.targets import load
+
+    service.save("Bag.List", "region", None, [450, 150, 300, 350], None)  # a region of its own
+    service.save("Bag.Other", "image", [100, 380, 200, 60], [90, 370, 220, 80], None)  # an image with its own region
+    found = service.regions()
+    assert found[0] == {"name": "Bag.List", "region": [450, 150, 300, 350], "used_by": []}  # shot pixels
+    assert found[1]["name"] == "" and found[1]["used_by"] == ["Bag.Other"]
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], [450, 150, 300, 350], None, region_name="Bag.List")
+    saved = json.loads((frozen / "Bag.Equip.json").read_text(encoding="utf-8"))
+    assert saved["region"] == "Bag.List"  # by name: moving Bag.List moves it too
+    assert service.regions()[0]["used_by"] == ["Bag.Equip"]
+    assert service.existing("Bag.Equip")["region_name"] == "Bag.List"
+    target = load("Bag.Equip", [frozen])
+    assert (target.region.x, target.region.w) == (1920 + 450, 300)  # the shared region's box, on the desktop

@@ -34,6 +34,7 @@ class Result:
     image: Region | None = None
     region: Region | None = None
     point: Location | None = None
+    region_name: str = ""  # the shared region target the image is searched in, by name, instead of its own box
 
 
 def distinct(image: np.ndarray, shot: np.ndarray, box: Region) -> float:

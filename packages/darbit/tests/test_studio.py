@@ -860,6 +860,21 @@ def test_capture_makes_an_image_its_region_and_its_location_together(qt, tmp_pat
         assert saved["kind"] == "image"
         assert saved["region"] == [250, 150, 250, 150]
         assert saved["offset"] == [30, 0]  # from the picture's centre
+        # another image searched in a region of the bot's, picked from Saved: shared by name
+        part("region", [250, 150, 250, 150])  # a region of its own first, then shared by an image
+        window.findChild(QObject, "nameField").setProperty("text", "Lobby.Area")
+        QMetaObject.invokeMethod(window, "save")
+        part("image", [300, 200, 100, 40])
+        QMetaObject.invokeMethod(
+            window,
+            "useRegion",
+            Q_ARG("QVariant", {"name": "Lobby.Area", "region": [250, 150, 250, 150], "used_by": []}),
+        )
+        assert window.property("regionName") == "Lobby.Area"
+        window.findChild(QObject, "nameField").setProperty("text", "Lobby.Other")
+        QMetaObject.invokeMethod(window, "save")
+        other = json.loads((tmp_path / "images" / "Lobby.Other.json").read_text(encoding="utf-8"))
+        assert other["region"] == "Lobby.Area"
         # a retake keeps its region, and its location once the new image is boxed
         QMetaObject.invokeMethod(window, "takeSaved", Q_ARG("QVariant", "Lobby.Play"))
         assert window.property("region") is not None
