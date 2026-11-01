@@ -113,12 +113,12 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Feature | Status |
 |---|---|
 | Freeze the screen; click to box what's there (again for bigger, right-click for smaller) | Have |
-| Edit the box by mouse and keys, 8 handles, scaling, nudging; exact number fields | Have, but number fields to do (#254) |
-| Image, region and point in one view; Shift+drag for the region, Ctrl+click for the point | Have, but Shift and Ctrl with the mouse to do (#254) |
+| Edit the box by mouse and keys, 8 handles, scaling, nudging; exact number fields | Have |
+| Image, region and point in one view; Shift+drag for the region, Ctrl+click for the point | Have |
 | A magnifier that follows the mouse | Have |
 | Test: find the boxed picture in its region and mark every match with its score | Have |
 | Snapping to edges and guide lines | Have (edges), planned (guides) |
-| The setup guide's next-picture bar and Ctrl+Alt+C to freeze again | Have, but Ctrl+Alt+C to do (#254) |
+| The setup guide's next-picture bar and Ctrl+Alt+C to freeze again | Have |
 | Highlight: what's found on screen right now, with scores | Planned |
 
 ### Studio
@@ -306,7 +306,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 | 1. Core | done |
 | 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
 | 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
-| 4. Studio | mostly done (#248–#255 left); idle on Windows 0.1% of a core, about 185 MB |
+| 4. Studio | mostly done (#248–#253 and #255 left); idle on Windows 0.1% of a core, about 185 MB |
 | 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
 | 6. More systems | not started |
 

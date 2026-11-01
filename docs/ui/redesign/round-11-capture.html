@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 11: Capture, one target at a time</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+/* the frozen game: made-up shapes only, never a real game screen */
+.shot { position: relative; height: 560px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow);
+        background: linear-gradient(160deg, #1b2a3a, #0f1720 60%, #18121f); }
+.shot .game { position: absolute; inset: 0; }
+.shot .game i { position: absolute; display: block; border-radius: 10px; }
+.dim { position: absolute; inset: 0; background: rgb(0 0 0 / .45); }
+.hole { position: absolute; box-shadow: 0 0 0 2000px rgb(0 0 0 / .45); }
+.pic { position: absolute; border: 2px solid var(--kind-image); border-radius: 3px; }
+.area { position: absolute; border: 2px dashed var(--kind-region); border-radius: 6px; }
+.pt { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+.pt::before, .pt::after { content: ""; position: absolute; background: var(--kind-point); }
+.pt::before { left: 10px; top: 0; width: 2px; height: 22px; } .pt::after { top: 10px; left: 0; height: 2px; width: 22px; }
+.pt b { position: absolute; inset: 6px; border-radius: 50%; border: 2px solid var(--kind-point); }
+.h { position: absolute; width: 9px; height: 9px; background: #fff; border: 2px solid var(--kind-image); border-radius: 2px; margin: -5px 0 0 -5px; }
+.read { position: absolute; font: 600 11px/1 var(--mono); padding: 4px 7px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line); white-space: nowrap; }
+.read.i { color: var(--kind-image); } .read.a { color: var(--kind-region); } .read.p { color: var(--kind-point); }
+.read u { text-decoration: none; border-bottom: 1px dashed currentColor; }
+.pill { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 6px;
+        border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); white-space: nowrap; }
+.pill .name { height: 32px; display: flex; align-items: center; padding: 0 14px; border-radius: 999px; background: var(--raised); font: 650 13px var(--font-strong); min-width: 150px; }
+.pill .sep { width: 1px; height: 22px; background: var(--line); }
+.pill .ib { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text); font-size: 13px; }
+.pill .ib.off { color: var(--faint); }
+.pill .ib small { position: absolute; font-size: 9px; }
+.layer { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border-radius: 999px; font: 650 12px var(--font-strong);
+         border: 1px solid var(--c); color: var(--c); background: color-mix(in oklab, var(--c) 14%, transparent); }
+.layer.i { --c: var(--kind-image); } .layer.a { --c: var(--kind-region); } .layer.p { --c: var(--kind-point); }
+.layer.empty { background: transparent; border-style: dashed; opacity: .7; }
+.layer kbd, .hint kbd, .tool kbd { font: 600 10px var(--mono); color: var(--muted); padding: 1px 5px; border-radius: 5px; background: var(--raised); border: 1px solid var(--line); }
+.btn.go { background: var(--accent); color: var(--on-accent); }
+.hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); font-size: 12px; color: var(--muted); padding: 7px 14px; border-radius: 999px;
+        background: var(--glass); border: 1px solid var(--line); white-space: nowrap; }
+.sliver { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 300px; height: 5px; border-radius: 0 0 6px 6px; background: var(--accent); opacity: .7; }
+.mag { position: absolute; width: 132px; height: 132px; border-radius: 14px; border: 2px solid var(--accent); overflow: hidden;
+       background-image: linear-gradient(rgb(255 255 255 / .12) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .12) 1px, transparent 1px),
+       linear-gradient(135deg, #3a5a7a 0 40%, #f3c14b 40% 60%, #2b3442 60%); background-size: 11px 11px, 11px 11px, 100% 100%; }
+.mag::after { content: ""; position: absolute; left: 60px; top: 60px; width: 11px; height: 11px; outline: 2px solid #fff; }
+.mag + .read { }
+.stepper { display: flex; align-items: center; gap: 4px; }
+.step { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px 0 5px; border-radius: 999px; font: 650 12px var(--font-strong); color: var(--muted); }
+.step b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: var(--raised); }
+.step.done { color: var(--text); } .step.done b { background: var(--ok); color: var(--on-accent); }
+.step.now { background: color-mix(in oklab, var(--kind-region) 18%, transparent); color: var(--kind-region); border: 1px solid var(--kind-region); }
+.step.now b { background: var(--kind-region); color: var(--on-accent); }
+.step.skip { opacity: .6; }
+.arrow { color: var(--faint); font-size: 11px; }
+.rail { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: grid; gap: 4px; padding: 6px; border-radius: 18px; background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.tool { position: relative; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 15px; color: var(--muted); }
+.tool.on { background: color-mix(in oklab, var(--c, var(--accent)) 20%, transparent); color: var(--c, var(--accent)); outline: 1px solid var(--c, var(--accent)); }
+.tool kbd { position: absolute; right: 1px; bottom: 1px; padding: 0 3px; font-size: 8px; }
+.rail hr { border: 0; height: 1px; background: var(--line); margin: 2px 4px; }
+.card2 { position: absolute; right: 12px; top: 64px; width: 230px; padding: 12px; border-radius: 16px; background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; gap: 9px; font-size: 12px; }
+.card2 h4 { margin: 0; font: 650 13px var(--font-strong); display: flex; align-items: center; gap: 6px; }
+.card2 .row { display: grid; grid-template-columns: 54px 1fr; gap: 6px; align-items: center; }
+.card2 .row span { color: var(--muted); }
+.nums { display: flex; gap: 4px; } .nums em { font: 600 11px var(--mono); font-style: normal; padding: 3px 6px; border-radius: 7px; background: var(--raised); border: 1px solid var(--line); }
+.hist { color: var(--muted); font-size: 11px; display: grid; gap: 3px; } .hist div::before { content: "• "; color: var(--faint); }
+.note { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.both { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.both .shot { height: 300px; }
+.cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Round 11: <span>Capture</span>, picture, area and point together</h1>
+  <p class="lead">One target is a picture, the area it's searched in, and where to click it. All three are made in one go, on the frozen
+  screen, and saved together. The pill sits at the top like the recorder's and slides away after a few seconds, so nothing
+  under it is out of reach. Ctrl+Z / Ctrl+Y undo and redo every change. Three ways to lay it out.</p>
+
+  <div class="options">
+
+  <!-- A -->
+  <section class="option">
+    <div>
+      <div class="shot">
+        <div class="game">
+          <i style="left:40px;top:60px;width:240px;height:380px;background:#22344a"></i>
+          <i style="left:62px;top:90px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:62px;top:150px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:62px;top:210px;width:196px;height:44px;background:#f3c14b"></i>
+          <i style="left:62px;top:270px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:430px;top:400px;width:180px;height:60px;background:#3fbf7a;border-radius:30px"></i>
+          <i style="left:680px;top:70px;width:120px;height:120px;background:#2a2340;border-radius:60px"></i>
+        </div>
+        <div class="area" style="left:48px;top:76px;width:224px;height:252px"></div>
+        <div class="hole" style="left:62px;top:210px;width:196px;height:44px"></div>
+        <div class="pic" style="left:62px;top:210px;width:196px;height:44px"></div>
+        <div class="h" style="left:62px;top:210px"></div><div class="h" style="left:258px;top:210px"></div><div class="h" style="left:62px;top:254px"></div><div class="h" style="left:258px;top:254px"></div>
+        <div class="pt" style="left:226px;top:232px"><b></b></div>
+        <div class="read a" style="left:48px;top:334px">area <u>48, 76 · 224 × 252</u> · picture inside ✓</div>
+        <div class="read i" style="left:270px;top:214px">picture <u>196 × 44</u></div>
+        <div class="read p" style="left:270px;top:240px">click <u>+66, 0</u> from its centre</div>
+        <div class="sliver" style="display:none"></div>
+        <div class="pill">
+          <div class="name">Bag.Slot.Main</div>
+          <span class="layer i">▣ Picture</span>
+          <span class="layer a">⬚ Area</span>
+          <span class="layer p">✛ Point</span>
+          <div class="sep"></div>
+          <div class="ib">↶</div><div class="ib off">↷</div>
+          <div class="sep"></div>
+          <span class="btn">⌕ Test</span><span class="btn go">Save</span><div class="ib">✕</div>
+        </div>
+        <div class="mag" style="left:640px;top:250px"></div>
+        <div class="read" style="left:640px;top:388px;color:var(--text)">226, 232 · 8× · #f3c14b</div>
+        <div class="hint">drag a picture · <kbd>Shift</kbd>+drag its area · <kbd>Ctrl</kbd>+click where to click · click a readout to type numbers</div>
+      </div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">A</span>Layers on the shot</h2>
+      <p>No modes to switch: the mouse does all three at once. Drag (or click) for the picture, Shift+drag for its area,
+      Ctrl+click for the point. The pill's three chips show what the target has; click one to redo that part, right-click to drop it.</p>
+      <ul>
+        <li class="plus">Fastest once known: a whole target in three gestures, as agreed in round 7.</li>
+        <li class="plus">Everything stays visible together, with editable readouts.</li>
+        <li class="minus">Shift and Ctrl have to be learned; the hint line says them.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="option">
+    <div>
+      <div class="shot">
+        <div class="game">
+          <i style="left:40px;top:60px;width:240px;height:380px;background:#22344a"></i>
+          <i style="left:62px;top:90px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:62px;top:150px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:62px;top:210px;width:196px;height:44px;background:#f3c14b"></i>
+          <i style="left:62px;top:270px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:430px;top:400px;width:180px;height:60px;background:#3fbf7a;border-radius:30px"></i>
+        </div>
+        <div class="dim"></div>
+        <div class="area" style="left:48px;top:76px;width:224px;height:252px;box-shadow:0 0 0 2000px rgb(0 0 0 / .0)"></div>
+        <div class="pic" style="left:62px;top:210px;width:196px;height:44px;background:rgb(255 255 255 / .06)"></div>
+        <div class="read a" style="left:48px;top:334px">area <u>48, 76 · 224 × 252</u> · drawing…</div>
+        <div class="pill">
+          <div class="name">Bag.Slot.Main</div>
+          <div class="stepper">
+            <span class="step done"><b>✓</b>Picture</span><span class="arrow">›</span>
+            <span class="step now"><b>2</b>Area</span><span class="arrow">›</span>
+            <span class="step"><b>3</b>Point</span>
+          </div>
+          <div class="sep"></div>
+          <div class="ib">↶</div><div class="ib off">↷</div>
+          <span class="btn">Skip</span><span class="btn go">Next ›</span>
+        </div>
+        <div class="hint">2 of 3 · drag the area this picture is searched in, or Skip to search the whole screen · <kbd>Enter</kbd> next</div>
+      </div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">B</span>Three steps</h2>
+      <p>The pill walks through Picture → Area → Point. Each step is one plain drag or click, and Area and Point can be
+      skipped. Back on a done step redoes it; the last step's Next saves.</p>
+      <ul>
+        <li class="plus">Nothing to learn: the pill says what to do next.</li>
+        <li class="plus">Good for setup guides and new users.</li>
+        <li class="minus">Slower for many targets; a fixed order.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="option">
+    <div>
+      <div class="shot">
+        <div class="game">
+          <i style="left:120px;top:60px;width:240px;height:380px;background:#22344a"></i>
+          <i style="left:142px;top:90px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:142px;top:150px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:142px;top:210px;width:196px;height:44px;background:#f3c14b"></i>
+          <i style="left:142px;top:270px;width:196px;height:44px;background:#2f4a66"></i>
+          <i style="left:470px;top:400px;width:180px;height:60px;background:#3fbf7a;border-radius:30px"></i>
+        </div>
+        <div class="area" style="left:128px;top:76px;width:224px;height:252px"></div>
+        <div class="hole" style="left:142px;top:210px;width:196px;height:44px"></div>
+        <div class="pic" style="left:142px;top:210px;width:196px;height:44px"></div>
+        <div class="h" style="left:142px;top:210px"></div><div class="h" style="left:338px;top:210px"></div><div class="h" style="left:142px;top:254px"></div><div class="h" style="left:338px;top:254px"></div>
+        <div class="pt" style="left:306px;top:232px"><b></b></div>
+        <div class="rail">
+          <div class="tool">⌖<kbd>V</kbd></div>
+          <div class="tool on" style="--c:var(--kind-image)">▣<kbd>I</kbd></div>
+          <div class="tool">⬚<kbd>A</kbd></div>
+          <div class="tool">✛<kbd>P</kbd></div>
+          <hr>
+          <div class="tool">⊞<kbd>S</kbd></div>
+          <div class="tool">⊙<kbd>Z</kbd></div>
+          <div class="tool">◐<kbd>C</kbd></div>
+          <hr>
+          <div class="tool">↶</div><div class="tool">↷</div>
+        </div>
+        <div class="pill">
+          <div class="name">Bag.Slot.Main</div>
+          <span class="btn">⌕ Test</span><span class="btn go">Save</span><div class="ib">✕</div>
+        </div>
+        <div class="card2">
+          <h4>▣ Bag.Slot.Main <span class="chip info" style="margin-left:auto">new</span></h4>
+          <div class="row"><span>Picture</span><div class="nums"><em>142</em><em>210</em><em>196</em><em>44</em></div></div>
+          <div class="row"><span>Area</span><div class="nums"><em>128</em><em>76</em><em>224</em><em>252</em></div></div>
+          <div class="row"><span>Click</span><div class="nums"><em>+66</em><em>0</em><span class="chip ok">inside ✓</span></div></div>
+          <div class="row"><span>Area</span><div><span class="chip">or use Bag.List ▾</span></div></div>
+          <div class="hist"><b style="color:var(--text);font-size:11px">History</b><div>Picture 196 × 44</div><div>Area drawn</div><div>Point moved +66, 0</div></div>
+        </div>
+        <div class="hint">picture tool · drag or click · <kbd>A</kbd> area · <kbd>P</kbd> point · <kbd>S</kbd> snap · <kbd>Z</kbd> pin the magnifier · hold <kbd>C</kbd> to compare a retake</div>
+      </div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">C</span>Tool rail and target card</h2>
+      <p>Like an image editor: a rail of tools on the left (select, picture, area, point; snap, magnifier pin, compare; undo,
+      redo), the pill at the top for name, Test and Save, and a card with exact numbers, a saved area to reuse, and the
+      history.</p>
+      <ul>
+        <li class="plus">Every tool in sight, with its key; exact numbers always shown.</li>
+        <li class="plus">Room for more tools later (colour pick, a text read).</li>
+        <li class="minus">More on screen; the rail and card hide with the pill but take a corner while shown.</li>
+      </ul>
+    </div>
+  </section>
+  </div>
+
+  <h2 style="margin-top:44px">In every option</h2>
+  <div class="both" style="margin-top:14px">
+    <div>
+      <div class="shot">
+        <div class="game">
+          <i style="left:40px;top:40px;width:200px;height:200px;background:#22344a"></i>
+          <i style="left:260px;top:12px;width:240px;height:40px;background:#f3c14b"></i>
+        </div>
+        <div class="sliver"></div>
+        <div class="hint" style="bottom:12px">the pill slid up after 3 s: the button under it (yellow) can be boxed · mouse to the top edge brings it back</div>
+      </div>
+      <div class="cap">The pill at the top, hiding like the recorder's and the run pill.</div>
+    </div>
+    <div>
+      <div class="shot">
+        <div class="game"><i style="left:40px;top:40px;width:200px;height:200px;background:#22344a"></i></div>
+        <div class="mag" style="left:60px;top:60px;width:180px;height:180px;background-size:20px 20px,20px 20px,100% 100%"></div>
+        <div class="read" style="left:60px;top:248px;color:var(--text)">812, 440 · 16× (Ctrl+wheel) · #f3c14b</div>
+        <div class="read" style="left:260px;top:60px;color:var(--muted);white-space:normal;width:250px;line-height:1.5">The magnifier shows the shot's real pixels with a grid, the boxes and the point too, and Ctrl+wheel zooms it (2× to 24×). Z pins it.</div>
+      </div>
+      <div class="cap">The magnifier, accurate to the pixel.</div>
+    </div>
+  </div>
+  <p class="note">Test (in all three) searches the target's own area, sweeps it, and says found once, more than once or not at all.
+  Saving writes one picture file and one settings file with the area and the click point, as targets already do.</p>
+</main>
+</body>
+</html>

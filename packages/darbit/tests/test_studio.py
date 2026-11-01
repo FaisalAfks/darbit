@@ -475,7 +475,7 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tm
         )
         QMetaObject.invokeMethod(window, "test")
         wait_until(lambda: window.property("note").startswith("Found once"))  # after the scan sweeps
-        assert window.property("note").startswith("Found once at 0.90 · nothing else close")
+        assert window.property("note").startswith("Found once at 0.90 on the whole screen · nothing else close")
         assert window.grabWindow().width() > 0
         capture.close()
         QtCore.QCoreApplication.processEvents()
@@ -824,3 +824,55 @@ def test_highlight_one_picture_from_the_library(qt):
     studio.highlightOne("Bag.Equip")
     studio.toggleHighlight()  # Ctrl+Alt+H: the same picture again
     assert wanted == [("/bots/ad-bot", "Bag.Equip"), ("/bots/ad-bot", "Bag.Equip")]
+
+
+def test_capture_makes_a_picture_its_area_and_its_point_together(qt, tmp_path):
+    import json
+
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+        screen = np.full((400, 600, 3), 30, np.uint8)
+        screen[200:240, 300:400] = (90, 200, 90)
+        capture = Capture(ShotProvider())
+        engine = app.load(backend.Studio(FakeClient), capture)
+        capture.start(tmp_path, shot=screen)
+        root = engine.rootObjects()[0]
+        window = root.findChild(QQuickWindow, "captureWindow")
+
+        def part(name, value):
+            QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", name), Q_ARG("QVariant", value))
+
+        part("picture", [300, 200, 100, 40])
+        part("area", [250, 150, 250, 150])
+        part("point", [380, 220])
+        assert window.property("kind") == "image"
+        QMetaObject.invokeMethod(window, "undo")
+        assert window.property("point") is None  # the last change undone
+        QMetaObject.invokeMethod(window, "redo")
+        assert window.property("point") is not None
+        window.findChild(QObject, "nameField").setProperty("text", "Lobby.Play")
+        QMetaObject.invokeMethod(window, "save")
+        saved = json.loads((tmp_path / "images" / "Lobby.Play.json").read_text(encoding="utf-8"))
+        assert saved["region"] == [250, 150, 250, 150]
+        assert saved["offset"] == [30, 0]  # from the picture's centre
+        # a retake keeps its area, and its point once the new picture is boxed
+        QMetaObject.invokeMethod(window, "takeSaved", Q_ARG("QVariant", "Lobby.Play"))
+        assert window.property("area") is not None
+        part("picture", [302, 200, 100, 40])
+        point = window.property("point")
+        point = point.toVariant() if hasattr(point, "toVariant") else point
+        assert [round(value) for value in point] == [382, 220]
+        capture.close()
+        QtCore.QCoreApplication.processEvents()
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []

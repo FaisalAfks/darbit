@@ -163,6 +163,35 @@ def test(box: list[int] | None, name: str | None, region: list[int] | None, simi
     }
 
 
+def existing(name: str) -> dict:
+    """What a target already has, in the shot's pixels, so a retake keeps it: its area, its click point (an offset
+    from the picture's centre, or a point of its own) and its saved picture's file. Empty for a new name."""
+    session, _, origin, _ = _frozen()
+    found: dict = {"region": None, "offset": None, "location": None, "picture": None}
+    picture = session.images / (name + ".png")
+    if picture.is_file():
+        found["picture"] = str(picture)
+    settings_file = session.images / (name + ".json")
+    if not settings_file.is_file():
+        return found
+    try:
+        saved = json.loads(settings_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return found
+    if not isinstance(saved, dict):
+        return found
+    area = saved.get("region")
+    if isinstance(area, list) and len(area) == 4:
+        found["region"] = [area[0] - origin.x, area[1] - origin.y, area[2], area[3]]
+    offset = saved.get("offset")
+    if isinstance(offset, list) and len(offset) == 2:
+        found["offset"] = [offset[0], offset[1]]
+    location = saved.get("location")
+    if isinstance(location, list) and len(location) == 2:
+        found["location"] = [location[0] - origin.x, location[1] - origin.y]
+    return found
+
+
 def _saved_region(session: Session, name: str) -> list[int] | None:
     """A saved picture's search region, moved into the shot's pixels."""
     settings_file = session.images / (name + ".json")
