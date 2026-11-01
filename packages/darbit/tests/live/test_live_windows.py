@@ -13,6 +13,7 @@ from darbit.platform import hooks
 from darbit.platform import windows as system_windows
 from darbit.runtime import tape
 
+SCREEN_JITTER = 1  # colour steps a display may move a pixel by between two grabs
 SHOTS = Path(os.environ.get("DARBIT_LIVE_SHOTS", "live-shots"))
 
 
@@ -215,9 +216,9 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
 
 
 def test_capture_takes_the_picture_pixel_for_pixel(target, pictures, tmp_path):
-    """The capture tool on the real screen: a click on the picture boxes it, and what it saves is the picture."""
+    """The capture tool on the real screen: a click on the picture boxes it, and what it saves is the picture. Some
+    displays move colours by 1 between grabs once a Direct3D app (the Studio) runs, so 1 either way is the same."""
     import cv2
-    import numpy as np
     from PySide6.QtCore import QCoreApplication
     from PySide6.QtGui import QGuiApplication
 
@@ -258,7 +259,8 @@ def test_capture_takes_the_picture_pixel_for_pixel(target, pictures, tmp_path):
         del engine
         app.processEvents()
     saved = next(folder.rglob("Live.Patch.png"))
-    assert np.array_equal(cv2.imread(str(saved)), cv2.imread(str(pictures / f"{PICTURE}.png")))
+    difference = cv2.absdiff(cv2.imread(str(saved)), cv2.imread(str(pictures / f"{PICTURE}.png")))
+    assert difference.max() <= SCREEN_JITTER
 
 
 def test_the_recorder_pill_shows_while_the_studio_is_hidden(tmp_path):
