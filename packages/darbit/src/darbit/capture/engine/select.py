@@ -24,6 +24,8 @@ MIN_SHAPE = 12  # smallest shape from edges
 SQUARENESS = 0.85  # a contour fills at least this much of its bounding box to count as a rectangle
 SAME = 0.9  # boxes overlapping more than this (IoU) are the same candidate
 FILL_DIFF = 12  # colour difference a fill spreads across
+TRIM_REACH = 4  # pixels each side of a traced shape can move in onto its content
+LOOSE = 6  # pixels of margin that make a box the same thing as the one inside it, only looser
 START = (40, 30)  # a click starts on the first box at least this big: a button, not a letter on it
 
 
@@ -103,6 +105,45 @@ def rectangles(edges_half: np.ndarray, x: int, y: int, minimum: tuple[int, int] 
     return found
 
 
+def trim(shot: np.ndarray, box: Region, reach: int = TRIM_REACH) -> Region:
+    """`box` without the plain margin around its content: a side moves in while its edge line is one colour and
+    the same as just outside it (background, not a border). A shape traced from edges is a pixel or two too big
+    around a picture with no border of its own, like an icon on a plain background."""
+    h, w = shot.shape[:2]
+    x0, y0, x1, y1 = box.x, box.y, box.right, box.bottom
+    for _ in range(reach):
+        moved = False
+        if x1 - x0 > 2 and x0 > 0 and _plain(shot[y0:y1, x0], shot[y0:y1, x0 - 1]):
+            x0 += 1
+            moved = True
+        if x1 - x0 > 2 and x1 < w and _plain(shot[y0:y1, x1 - 1], shot[y0:y1, x1]):
+            x1 -= 1
+            moved = True
+        if y1 - y0 > 2 and y0 > 0 and _plain(shot[y0, x0:x1], shot[y0 - 1, x0:x1]):
+            y0 += 1
+            moved = True
+        if y1 - y0 > 2 and y1 < h and _plain(shot[y1 - 1, x0:x1], shot[y1, x0:x1]):
+            y1 -= 1
+            moved = True
+        if not moved:
+            break
+    return Region(x0, y0, x1 - x0, y1 - y0)
+
+
+def _plain(line: np.ndarray, outside: np.ndarray) -> bool:
+    """Whether this line of pixels is one colour, and the same colour as the line outside it."""
+    line = line.astype(np.int16)
+    outside = outside.astype(np.int16)
+    first = line[0]
+    return bool(np.abs(line - first).max() <= FILL_DIFF and np.abs(outside - first).max() <= FILL_DIFF)
+
+
+def _loose(tight: Region, box: Region) -> bool:
+    """Whether `box` is `tight` with a few pixels of margin: the same thing, not its own outline."""
+    margins = (tight.x - box.x, tight.y - box.y, box.right - tight.right, box.bottom - tight.bottom)
+    return all(0 <= margin <= LOOSE for margin in margins)
+
+
 def _iou(a: Region, b: Region) -> float:
     both = a.intersect(b)
     if both is None:
@@ -151,7 +192,7 @@ def candidates(prep: "Prepared", x: int, y: int, kind: Kind) -> list[Region]:
     if kind == "image":
         shape = shape_at(shot, x, y)
         if shape is not None:
-            boxes.append(shape)  # traced from edge pixels: last, so exact boxes win over it
+            boxes.append(trim(shot, shape))  # traced from edge pixels: last, so exact boxes win over it
     screen = Region(0, 0, w, h)
     return [b for b in _distinct(boxes) if _iou(b, screen) <= SAME] + [screen]
 
@@ -160,7 +201,7 @@ def pick(boxes: list[Region], start: tuple[int, int] = START) -> int:
     """Which candidate a click selects first: the smallest at least `start` big, a button rather than a letter
     on it. A small first box is kept when the next is barely bigger (its own outline), so thin things like a
     scrollbar handle are selected too. Smaller ones stay in the list for "smaller"."""
-    if len(boxes) > 1 and boxes[1].w * boxes[1].h < 4 * boxes[0].w * boxes[0].h:
+    if len(boxes) > 1 and boxes[1].w * boxes[1].h < 4 * boxes[0].w * boxes[0].h and not _loose(boxes[0], boxes[1]):
         return 0
     for i, box in enumerate(boxes):
         if box.w >= start[0] and box.h >= start[1]:

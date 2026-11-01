@@ -109,3 +109,20 @@ def test_prepare_is_fast_enough():
     took = time.perf_counter() - started
     print(f"prepare 2560x1600: {took * 1000:.0f} ms")
     assert took < 1.0  # the target is 120 ms on the owner's PC; CI machines are slower
+
+
+def test_a_picture_with_no_border_is_boxed_to_its_edge():
+    """An icon on a plain background: the outline from the half-size edges is trimmed to the picture itself."""
+    shot = np.full((300, 400, 3), 30, np.uint8)
+    shot[90:138, 120:184] = np.random.default_rng(7).integers(0, 256, (48, 64, 3), dtype=np.uint8)
+    boxes = candidates(prepare(shot), 152, 114, "image")
+    assert boxes[pick(boxes)] == Region(120, 90, 64, 48)
+
+
+def test_a_button_keeps_its_border():
+    """A border is part of the button: trimming stops at it."""
+    shot = np.full((300, 400, 3), 30, np.uint8)
+    shot[80:140, 100:220] = (200, 200, 200)  # the border
+    shot[82:138, 102:218] = (90, 160, 90)
+    boxes = candidates(prepare(shot), 160, 110, "image")
+    assert Region(100, 80, 120, 60) in boxes

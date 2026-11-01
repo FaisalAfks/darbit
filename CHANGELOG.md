@@ -50,6 +50,7 @@
 
 ### Fixed
 
+- Capture boxes a picture with no border of its own (an icon on a plain background) to its edge: the box traced from its edges kept a pixel or two of background on every side, found by the live test on Windows
 - Highlight, the capture window and the recorder pill are windows of their own: they belonged to the Studio's window, which hides while they're on, and on Windows Highlight's overlay never showed
 - The Studio on Windows: icons drawn from symbols use Segoe UI Symbol (they came out tiny), and on a narrow window the Library's tools show only their icons and Missing and Weak only when there are some, so nothing runs off the edge
 - The live tests' skip no longer skips every other test too (CI ran none for two merges)
