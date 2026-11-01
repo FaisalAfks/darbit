@@ -1,6 +1,6 @@
 """{name}: wait for a button, click it, and repeat until stopped (Ctrl+Alt+Q).
 
-Take the button's picture first:  darbit guide --folder assets/images
+Take the button's picture first: open darbit Studio (darbit app), pick this bot, and use Capture in its Library.
 """
 
 import darbit as d

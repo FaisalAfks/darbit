@@ -205,6 +205,7 @@ Flickable {
                                     text: modelData.state === "planned" ? "later"
                                         : modelData.state === "running" ? "running"
                                         : modelData.state === "failed" ? (modelData.reason || "failed")
+                                        : modelData.state === "stopped" ? Format.clock(modelData.started) + " · stopped"
                                         : Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : "")
                                     color: modelData.state === "running" ? studio.colors.accent : modelData.state === "failed" ? studio.colors.danger : studio.colors.muted
                                     font.pixelSize: 13; font.weight: modelData.state === "running" ? Font.DemiBold : Font.Normal

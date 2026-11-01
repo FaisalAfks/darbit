@@ -195,3 +195,17 @@ def test_now_says_since_when_the_screen_is_locked():
     assert dashboard.now_tile([locked]).data["locked"] == "2026-11-01T02:10:00.000"
     assert dashboard.now_tile([locked, back]).data["locked"] is None
     assert dashboard.now_tile([]).data["locked"] is None
+
+
+def test_a_step_whose_bot_has_gone_isnt_running(monkeypatch):
+    """A bot killed mid-step never says the step ended: the Overview tells by its process."""
+    from darbit.platform import system
+
+    monkeypatch.setattr(system, "process_alive", lambda pid: pid == 1)
+    gone = {"time": "2026-11-01T13:15:00.000", "event": "step", "step": "AFK", "state": "started", "pid": 2}
+    alive = {"time": "2026-11-01T13:15:00.000", "event": "step", "step": "Raid", "state": "started", "pid": 1}
+    old = {"time": "2026-11-01T13:15:00.000", "event": "step", "step": "Speed Raid", "state": "started"}
+    rows = {row["name"]: row["state"] for row in dashboard.round_tile([gone, alive, old]).data["steps"]}
+    assert rows == {"AFK": "stopped", "Raid": "running", "Speed Raid": "running"}
+    assert dashboard.now_tile([gone]).data["path"] == []
+    assert dashboard.now_tile([alive]).data["path"] == ["Raid"]

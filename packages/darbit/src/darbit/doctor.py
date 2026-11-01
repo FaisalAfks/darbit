@@ -62,7 +62,11 @@ def _pictures(folder: Path, images: list[Path]) -> Check:
     more = len(missing) - MOST_MISSING
     if more > 0:
         shown += f" and {more} more"
-    return Check("pictures", False, f"{done.total - done.done} of {done.total} not taken: {shown} (darbit guide)")
+    return Check(
+        "pictures",
+        False,
+        f"{done.total - done.done} of {done.total} not taken: {shown} (take them with Capture in darbit Studio: darbit app)",
+    )
 
 
 def _scaling(images: list[Path]) -> Check:

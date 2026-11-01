@@ -311,10 +311,12 @@ def test_the_pages_get_the_services_answers(qt):
     wait_until(lambda: studio.bot.get("name") == "other")  # the bot asked for, not the first
     studio.selectBot("/bots/ad-bot")
     wait_until(lambda: len(studio.overview) == 6)
+    assert not studio.libraryReady  # the Library says it's loading, not that there are no pictures
     studio.loadLibrary()
     studio.loadDays()
     studio.loadSettings()
     wait_until(lambda: studio.library and studio.days and studio.settings)
+    assert studio.libraryReady
     studio.pause()
     wait_until(lambda: ("bot.pause", {"bot": "/bots/ad-bot"}) in client.asked)
     studio.saveSettings({"modes.raid": False})

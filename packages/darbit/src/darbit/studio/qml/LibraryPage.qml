@@ -197,17 +197,19 @@ Item {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: page.onActions ? (studio.actions.length === 0 ? "No actions yet" : "Nothing matches")
+                    : !studio.libraryReady ? "Loading the pictures…"
                     : studio.library.length === 0 ? "No pictures yet" : "Nothing matches"
                 color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: page.onActions || studio.libraryReady
                 text: page.onActions ? (studio.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
                     : studio.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
                 color: studio.colors.muted; font.pixelSize: 14
             }
             PillButton {
-                visible: page.onActions ? studio.actions.length === 0 : studio.library.length === 0
+                visible: page.onActions ? studio.actions.length === 0 : studio.libraryReady && studio.library.length === 0
                 anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"
                 icon: page.onActions ? "●" : "▣"; text: page.onActions ? "Record" : "Capture"
                 onClicked: page.onActions ? window.recordAction("") : studio.openCapture("any")

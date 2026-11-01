@@ -62,6 +62,7 @@ class Studio(QObject):
         self._bot: dict = {}
         self._overview: list[dict] = []
         self._library: list[dict] = []
+        self._library_bot = ""  # the bot the library was loaded for: until it's this one, the page says it's loading
         self._days: list[dict] = []
         self._day: dict = {}
         self._settings: dict = {}
@@ -91,6 +92,9 @@ class Studio(QObject):
 
     def _get_library(self) -> list:
         return self._library
+
+    def _get_library_ready(self) -> bool:
+        return bool(self._bot.get("path")) and self._library_bot == self._bot.get("path")
 
     def _get_days(self) -> list:
         return self._days
@@ -152,6 +156,7 @@ class Studio(QObject):
     bot = Property(dict, _get_bot, notify=botChanged)
     overview = Property(list, _get_overview, notify=overviewChanged)
     library = Property(list, _get_library, notify=libraryChanged)
+    libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
     days = Property(list, _get_days, notify=daysChanged)
     day = Property(dict, _get_day, notify=dayChanged)
     settings = Property(dict, _get_settings, notify=settingsChanged)
@@ -185,6 +190,7 @@ class Studio(QObject):
                 self._bot = found
                 ui_settings.set_value(CHOSEN, path)
                 self.botChanged.emit()
+                self.libraryChanged.emit()  # another bot's library isn't this one's
                 self.loadOverview()
                 return
 
@@ -393,6 +399,7 @@ class Studio(QObject):
             self.overviewChanged.emit()
         elif what == "library" and isinstance(result, list):
             self._library = result
+            self._library_bot = str(self._bot.get("path", ""))
             self.libraryChanged.emit()
         elif what == "days" and isinstance(result, list):
             self._days = result
@@ -442,6 +449,7 @@ class Studio(QObject):
             self._bot = chosen
             self.botChanged.emit()
             if changed:
+                self.libraryChanged.emit()
                 self.loadOverview()
 
     @Slot(str)

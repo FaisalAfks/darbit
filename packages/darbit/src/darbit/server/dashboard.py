@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 
 from .. import paths
+from ..platform import system
+from ..platform.backend import NotSupported
 from ..project.manifest import Project
 
 DEFAULT_TILES = ["now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup"]
@@ -166,12 +168,24 @@ def _steps(events: list[dict]) -> list[dict]:
     return found
 
 
+def _ended_without_saying(started: dict) -> bool:
+    """Whether a step's bot has gone (killed, crashed, closed) while the step was open: its process isn't running.
+    Steps from before steps carried their process stay as they were."""
+    pid = started.get("pid")
+    if not isinstance(pid, int):
+        return False
+    try:
+        return not system.process_alive(pid)
+    except NotSupported:
+        return False
+
+
 def now_tile(events: list[dict]) -> Tile:
     """The steps still open, deepest last: ["Speed Raid", "Sakura", "Fight"], since when, and since when the bot
     has been waiting for a locked screen (None when it isn't)."""
     open_steps: dict[str, str] = {}  # step path -> started
     for event in _steps(events):
-        if event.get("state") == "started":
+        if event.get("state") == "started" and not _ended_without_saying(event):
             open_steps[event["step"]] = event.get("time", "")
         else:
             open_steps.pop(event["step"], None)
@@ -211,7 +225,8 @@ def round_tile(events: list[dict]) -> Tile | None:
         if " > " in name:
             continue
         if event.get("state") == "started":
-            rows[name] = {"name": name, "started": event.get("time"), "state": "running", "seconds": None}
+            state = "stopped" if _ended_without_saying(event) else "running"
+            rows[name] = {"name": name, "started": event.get("time"), "state": state, "seconds": None}
         elif name in rows:
             rows[name]["state"] = event.get("state")
             rows[name]["seconds"] = event.get("seconds")
