@@ -301,6 +301,30 @@ def understands_control(folder: Path) -> bool:
         return True
 
 
+RESTART_AFTER = 5.0  # seconds before a failed bot is started again
+_restarts: dict[str, list[float]] = {}  # each bot's restarts in the last hour (time.time())
+
+
+def _restart_count(folder: Path, allowed: int, now: float) -> int:
+    """Take one of the bot's restarts for this hour: which one it is (1, 2...), or 0 when they're used up."""
+    with _lock:
+        recent = [at for at in _restarts.get(str(folder), []) if now - at < 3600]
+        if len(recent) >= allowed:
+            _restarts[str(folder)] = recent
+            return 0
+        recent.append(now)
+        _restarts[str(folder)] = recent
+        return len(recent)
+
+
+def _start_again(folder: Path) -> None:
+    time.sleep(RESTART_AFTER)
+    try:
+        project_run({"path": str(folder)})
+    except (ValueError, ProjectError, OSError) as error:  # already started from the Studio, or gone
+        publish("project.status", {"path": str(folder), "status": "failed", "code": None, "why": str(error)})
+
+
 def _watch(run: Run) -> None:
     """Tell the windows when the bot's report changes, and when it ends."""
     last_change = 0.0
@@ -317,8 +341,24 @@ def _watch(run: Run) -> None:
     ended = "failed"
     if code == 0 or run.stopping:
         ended = "stopped"
-    publish("project.status", {"path": str(run.folder), "status": ended, "code": code})
+    told: dict = {"path": str(run.folder), "status": ended, "code": code}
+    if ended == "failed":
+        allowed = _restart_allowed(run.folder)
+        if allowed:
+            count = _restart_count(run.folder, allowed, time.time())
+            told["restart"] = count  # 0: used up this hour, left stopped
+            told["restarts"] = allowed
+            if count:
+                threading.Thread(target=_start_again, args=(run.folder,), daemon=True).start()
+    publish("project.status", told)
     publish("project.changed", {"path": str(run.folder)})
+
+
+def _restart_allowed(folder: Path) -> int:
+    try:
+        return load(folder).restart
+    except (ProjectError, OSError):
+        return 0
 
 
 def _keep_history(folder: Path) -> None:

@@ -16,10 +16,11 @@ from ..runtime.log import log
 from ..settings import Settings, script_folder
 
 MANIFEST = "darbit.toml"
-TABLES = {"bot", "settings", "images", "keys", "studio"}
+TABLES = {"bot", "settings", "images", "keys", "studio", "run"}
 BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
+RUN_KEYS = {"restart"}
 # the tiles darbit Studio can show on a bot's Overview (decision 0011); "progress:<label>" picks one progress
 TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup")
 
@@ -67,6 +68,7 @@ class Project:
     keys: dict = field(default_factory=dict)  # keymap overrides
     summary: str = ""  # one line under the bot's name in the Studio
     tiles: list[str] = field(default_factory=list)  # the Overview's tiles in order; empty: the defaults
+    restart: int = 0  # [run] restart: times an hour the service starts the bot again after it failed
 
 
 def find(start: Path) -> Path | None:
@@ -106,6 +108,11 @@ def load(folder: Path) -> Project:
     _check_keys(studio, STUDIO_KEYS, "[studio]")
     tiles = studio.get("tiles", [])
     _check_tiles(tiles)
+    run = data.get("run", {})
+    _check_keys(run, RUN_KEYS, "[run]")
+    restart = run.get("restart", 0)
+    if not isinstance(restart, int) or isinstance(restart, bool) or restart < 0:
+        raise ProjectError(f"{MANIFEST} [run]: restart is how many times an hour to start the bot again, e.g. 3")
 
     return Project(
         folder=folder,
@@ -121,6 +128,7 @@ def load(folder: Path) -> Project:
         keys=data.get("keys", {}),
         summary=str(studio.get("summary", "")),
         tiles=tiles,
+        restart=restart,
     )
 
 

@@ -256,3 +256,33 @@ def test_polite_mode_steps_back_while_the_person_uses_the_mouse(monkeypatch):
         assert let_go == [True]  # held keys were let go
     finally:
         safety.stop_polite()
+
+
+def test_a_failed_bot_is_started_again_until_its_restarts_run_out(bot, monkeypatch):
+    """[run] restart = 1: the service starts a failed bot once more this hour, then leaves it stopped."""
+    (bot / "darbit.toml").write_text(
+        '[bot]\nname = "tick-bot"\nentry = "bot.py"\n\n[run]\nrestart = 1\n', encoding="utf-8"
+    )
+    (bot / "bot.py").write_text("raise SystemExit(3)\n", encoding="utf-8")
+    monkeypatch.setattr(hub, "RESTART_AFTER", 0.05)
+    monkeypatch.setattr(hub, "_restarts", {})
+    told = []
+    stop_listening = events.listen(lambda topic, data: told.append(data) if topic == "project.status" else None)
+    try:
+        hub.project_run({"path": str(bot)})
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and not any(data.get("restart") == 0 for data in told):
+            time.sleep(0.05)
+    finally:
+        stop_listening()
+    failures = [data for data in told if data["status"] == "failed"]
+    assert [(data["restart"], data["restarts"]) for data in failures] == [(1, 1), (0, 1)]
+    assert [data["status"] for data in told].count("running") == 2
+
+
+def test_restart_must_be_a_count(bot):
+    from darbit.project.manifest import ProjectError, load
+
+    (bot / "darbit.toml").write_text('[bot]\nname = "tick-bot"\n\n[run]\nrestart = "often"\n', encoding="utf-8")
+    with pytest.raises(ProjectError, match="restart"):
+        load(bot)

@@ -38,6 +38,8 @@
 
 - A bot waits while Windows is locked: at its next darbit call (looked at once a second) it lets go of its keys, writes `screen: locked` in its run report and waits, then writes `screen: back` and goes on. The Overview says it's waiting and since when
 
+- `[run] restart = 3` in a bot's `darbit.toml`: the service starts a bot that failed again a few seconds later, up to that many times an hour, then leaves it stopped. The failure's notification says which
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service
