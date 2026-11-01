@@ -166,8 +166,9 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
     studio = Studio(lambda: Client("live"), "glass-dark", "")
     highlight = Highlight()
     engine = load(studio, highlight=highlight)
-    overlay = engine.rootObjects()[0].findChild(QQuickWindow, "highlightWindow")
-    engine.rootObjects()[0].hide()
+    root = engine.rootObjects()[0]  # held, or Qt deletes it under findChild
+    overlay = root.findChild(QQuickWindow, "highlightWindow")
+    root.hide()
     highlight.start(folder)
 
     def spin(seconds: float) -> None:
