@@ -32,7 +32,8 @@ uv run ruff check .
 npm install && npm run dev # the web UI, once T01 starts
 ```
 
-- `uv run ruff check .` and `uv run pytest` must pass (CI runs both on Windows).
+- `uv run ruff check .` and `uv run pytest` must pass (CI runs both on Windows, and the tests on Linux too).
+- `packages/darbit/tests/live` runs darbit for real on a Windows desktop: it moves the mouse and types into a window of its own (`target.py`), and draws the Studio. It runs only with `DARBIT_LIVE=1`, which CI's `live-windows` job sets on its own fresh machine. The job keeps the Studio's pictures (`live-shots`).
 - `uv sync --extra app` adds the Studio's dependencies (server, desktop windows).
 - `npm run build` writes the web UI into `packages/darbit/src/darbit/ui/static/`, which is shipped in the wheel.
 

@@ -26,6 +26,7 @@ default-groups = ["dev"]
 
 [tool.pytest.ini_options]
 testpaths = ["packages/darbit/tests"]
+filterwarnings = ["error::pytest.PytestUnhandledThreadExceptionWarning"]  # a thread that crashed fails its test
 
 [tool.ruff]
 line-length = 120

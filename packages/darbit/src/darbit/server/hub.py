@@ -300,9 +300,9 @@ def _watch(run: Run) -> None:
     """Tell the windows when the bot's report changes, and when it ends."""
     last_change = 0.0
     while run.process.poll() is None:
-        report = _today_report(run.folder)
-        if report.is_file() and report.stat().st_mtime != last_change:
-            last_change = report.stat().st_mtime
+        changed = _report_time(run.folder)
+        if changed is not None and changed != last_change:
+            last_change = changed
             _keep_history(run.folder)
             publish("project.changed", {"path": str(run.folder)})
         time.sleep(WATCH_EVERY)
@@ -324,9 +324,13 @@ def _keep_history(folder: Path) -> None:
         pass  # the history catches up on the next look, or when it's asked for
 
 
-def _today_report(folder: Path) -> Path:
-    project = load(folder)
-    return dashboard.report_file(project, datetime.now().strftime("%Y-%m-%d"))
+def _report_time(folder: Path) -> float | None:
+    """When today's report last changed; None while there is none (or the bot's folder is gone)."""
+    try:
+        report = dashboard.report_file(load(folder), datetime.now().strftime("%Y-%m-%d"))
+        return report.stat().st_mtime
+    except (ProjectError, OSError):
+        return None
 
 
 # ---- a bot's pages

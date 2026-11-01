@@ -30,6 +30,7 @@
 - Loaded pictures stay in memory and their files are checked at most once a second: loading a target per search went from about 0.8 ms to 1 µs
 - `settings.matcher` picks another matcher from a plugin (the `darbit.matchers` entry point)
 - darbit's new logo (`assets/logo.svg`, with `logo.png` and the Windows icon `darbit.ico`): a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile in the accent colours. The Studio uses it as its app icon
+- Live tests on a real Windows desktop (`tests/live`, CI's `live-windows` job): screen capture, clicks, keys and text, window lookup and window space, a tape's timing, the listener leaving darbit's own input out, the input worker, and the Studio drawn on Windows, all on a window of the tests' own
 
 ### Removed
 
@@ -47,6 +48,7 @@
 
 ### Fixed
 
+- The service's watcher no longer crashes when a running bot's folder goes away; a test whose thread crashes now fails
 - Tapes keep their timing when playing falls behind: an event more than 8 ms late moves the rest of the tape later instead of the next events going out at once, so waits and held keys (walking with W) stay as long as recorded
 - Pausing a running tape and going on presses its held keys and buttons again and carries on from where it was, instead of going on with nothing held and the paused stretch played at once
 - The recorder keeps the waits between inputs it got to late: their times come from Windows' message time when the moment they were read is clearly later
