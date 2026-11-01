@@ -724,3 +724,72 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_the_window_opens_where_it_was_left_on_a_screen_still_there():
+    from PySide6.QtCore import QRect
+
+    from darbit.studio.window import fit
+
+    screen = QRect(0, 0, 1707, 1000)
+    assert fit(None, [screen]) == (None, False)  # the first start: the system picks
+    assert fit({"x": 100, "y": 50, "width": 1200, "height": 800}, [screen]) == (QRect(100, 50, 1200, 800), False)
+    # bigger than the screen, or hanging off it: made to fit
+    assert fit({"x": -6, "y": -6, "width": 1720, "height": 1032, "maximized": True}, [screen]) == (
+        QRect(0, 0, 1707, 1000),
+        True,
+    )
+    # on a screen that's gone: the system picks
+    assert fit({"x": 3000, "y": 0, "width": 1200, "height": 800}, [screen]) == (None, False)
+    assert fit({"x": "a"}, [screen]) == (None, False)
+
+
+def test_a_second_studio_brings_the_open_one_forward(qt):
+    from darbit.studio.window import Door
+
+    name = f"darbit-studio-test-{os.getpid()}"
+    assert not Door(name).knock()  # none open
+    first = Door(name)
+    assert first.open()
+    knocks = []
+    first.knocked.connect(lambda: knocks.append(1))
+    assert Door(name).knock()
+    wait_until(lambda: knocks == [1])
+    first.close()
+
+
+def test_closing_keeps_the_studio_in_the_tray_and_its_place(qt):
+    from PySide6.QtCore import QRect
+
+    from darbit.server import ui_settings
+    from darbit.studio.window import PLACE
+
+    class Tray:
+        def isVisible(self):
+            return True
+
+        def showMessage(self, *args):
+            self.told = args
+
+    class App:
+        quits = None
+
+        def setQuitOnLastWindowClosed(self, on):
+            self.quits = on
+
+        class aboutToQuit:
+            @staticmethod
+            def connect(slot):
+                pass
+
+    engine = app.load(backend.Studio(FakeClient), place=(QRect(120, 80, 1000, 700), False))
+    window = engine.rootObjects()[0]
+    assert (window.width(), window.height()) == (1000, 700)
+    tray, fake_app = Tray(), App()
+    app._keep_in_tray(fake_app, window, tray)
+    assert fake_app.quits is False
+    window.close()
+    wait_until(lambda: ui_settings.get(PLACE) is not None)
+    assert ui_settings.get(PLACE)["width"] == 1000
+    assert tray.told  # said once where it went
+    del engine
