@@ -46,6 +46,8 @@ from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
 from .runtime.region import Region, Screen
+from .runtime.screens import Map, go
+from .runtime.screens import default as screens
 from .runtime.show import Record, next_up, plan, progress
 from .runtime.state import State, Timer
 from .runtime.steps import flow, step
@@ -77,6 +79,7 @@ __all__ = [
     "Interrupted",
     "Keys",
     "Location",
+    "Map",
     "Match",
     "Observer",
     "Pattern",
@@ -97,6 +100,7 @@ __all__ = [
     "find",
     "find_all",
     "flow",
+    "go",
     "hold",
     "hover",
     "log",
@@ -114,6 +118,7 @@ __all__ = [
     "release",
     "replay",
     "right_click",
+    "screens",
     "screenshot",
     "scroll",
     "settings",
