@@ -136,6 +136,16 @@ def bring_to_front(handle: int) -> bool:
     return _wait_front(handle, 0.5)
 
 
+WDA_EXCLUDEFROMCAPTURE = 0x11  # Windows 10 2004 and later; older ones refuse it
+
+
+def keep_out_of_captures(handle: int) -> bool:
+    """Leave a window out of screen captures (BitBlt, mss, Snipping Tool): it still shows on the screen."""
+    _user32.SetWindowDisplayAffinity.argtypes = [wintypes.HWND, wintypes.DWORD]
+    _user32.SetWindowDisplayAffinity.restype = wintypes.BOOL
+    return bool(_user32.SetWindowDisplayAffinity(handle, WDA_EXCLUDEFROMCAPTURE))
+
+
 def region(handle: int) -> Region:
     """A window's content area (no title bar or borders) on screen."""
     rect, corner = wintypes.RECT(), wintypes.POINT(0, 0)

@@ -7,7 +7,7 @@ from ..core.geometry import Region
 from . import backend
 from .backend import Window
 
-__all__ = ["Window", "bring_to_front", "close", "in_front", "matching", "region", "windows"]
+__all__ = ["Window", "bring_to_front", "close", "in_front", "keep_out_of_captures", "matching", "region", "windows"]
 
 
 def windows() -> list[Window]:
@@ -33,3 +33,9 @@ def region(handle: int) -> Region:
 
 def close(name: str, wait: float = 5.0) -> bool:
     return backend.windows().close(name, wait)
+
+
+def keep_out_of_captures(handle: int) -> bool:
+    """Leave one of darbit's own windows out of every screen capture, darbit's included: an overlay drawn over the
+    game mustn't cover what a bot looks for. False where the system can't."""
+    return backend.windows().keep_out_of_captures(handle)

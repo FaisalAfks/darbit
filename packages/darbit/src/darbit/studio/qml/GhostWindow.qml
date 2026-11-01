@@ -12,6 +12,7 @@ Window {
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.WindowDoesNotAcceptFocus | Qt.Tool
     color: "transparent"
     title: "darbit ghost cursor"
+    Component.onCompleted: ghost.keepOutOfCaptures(ghostWindow)
     readonly property real ratio: Screen.devicePixelRatio  // marks come in screen pixels
     readonly property var keys: ghost.marks.filter(function (mark) { return mark.kind === "key" })
     function place(value, origin) { return value / ratio - origin }

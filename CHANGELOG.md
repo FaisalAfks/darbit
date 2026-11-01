@@ -64,6 +64,7 @@
 
 ### Fixed
 
+- The ghost cursor stays out of screen captures, darbit's own included: its ring sat on the button the bot had just clicked, and the bot's next look saw it (`windows.keep_out_of_captures`)
 - The live tests pass on a PC at 150%: Capture's saved picture may differ from the file by one colour step (some displays move colours by 1 between grabs once a Direct3D app runs), and the screenshots they save are git-ignored
 - The Studio's Library says it's loading until the bot's pictures arrive, instead of "No pictures yet"
 - A step left open by a bot that was killed or crashed shows as stopped on the Overview, not running: steps record their process
