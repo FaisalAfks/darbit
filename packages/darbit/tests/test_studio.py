@@ -376,11 +376,27 @@ def test_the_ghost_cursor_draws_without_a_qml_warning(qt, tmp_path):
         ghost.take({"kind": "click", "x": 500, "y": 200, "button": "right"})
         ghost.take({"kind": "key", "x": 300, "y": 200, "name": "e"})
         ghost.take({"kind": "key", "x": 300, "y": 200, "name": "shift"})
-        wait_until(lambda: root.findChild(QQuickWindow, "ghostWindow").isVisible())
+        window = root.findChild(QQuickWindow, "ghostWindow")
+        wait_until(lambda: window.isVisible() and len(ghost.marks) == 4)
+        # only around the marks, not the whole screen
+        assert window.width() < window.screen().size().width() / 2
         del engine
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_the_ghost_cursor_shows_a_burst_of_marks_together(qt):
+    from darbit.studio.ghost import Ghost
+
+    ghost = Ghost()
+    told = []
+    ghost.changed.connect(lambda: told.append(len(ghost.marks)))
+    for key in "12345":
+        ghost.take({"kind": "key", "x": 300, "y": 200, "name": key})
+    assert told == [1]  # the first at once, the rest wait for the next prune
+    wait_until(lambda: told[-1] == 5)
+    assert len(told) == 2
 
 
 class NoBots(FakeClient):

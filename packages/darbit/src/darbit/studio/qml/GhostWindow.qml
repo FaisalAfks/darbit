@@ -5,9 +5,11 @@ import QtQuick.Window
 
 Window {
     id: ghostWindow
-    // over the whole main screen, shown and hidden as it is (FullScreen would ask for the focus every time)
+    // only around its marks: a window the size of the screen redrew every pixel each frame while a bot pressed keys
+    // (shown and hidden as it is: FullScreen would ask for the focus every time)
     visible: studio.ghost && ghost.marks.length > 0
-    x: Screen.virtualX; y: Screen.virtualY; width: Screen.width; height: Screen.height
+    readonly property rect area: around(ghost.marks)
+    x: area.x; y: area.y; width: area.width; height: area.height
     transientParent: null  // its own window: it shows while the Studio is hidden or minimised
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.WindowDoesNotAcceptFocus | Qt.Tool
     color: "transparent"
@@ -16,6 +18,18 @@ Window {
     readonly property real ratio: Screen.devicePixelRatio  // marks come in screen pixels
     readonly property var keys: ghost.marks.filter(function (mark) { return mark.kind === "key" })
     function place(value, origin) { return value / ratio - origin }
+    // the marks' room: a ring and its button name around a click, the keycaps (at most 6) right of a key
+    function around(marks) {
+        var left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity
+        for (var i = 0; i < marks.length; i++) {
+            var x = marks[i].x / ratio, y = marks[i].y / ratio
+            left = Math.min(left, x - 40); top = Math.min(top, y - 40)
+            right = Math.max(right, x + (marks[i].kind === "key" ? 480 : 160)); bottom = Math.max(bottom, y + 70)
+        }
+        if (right < left)
+            return Qt.rect(Screen.virtualX, Screen.virtualY, 1, 1)
+        return Qt.rect(Math.floor(left), Math.floor(top), Math.ceil(right - left), Math.ceil(bottom - top))
+    }
 
     // a click: a ring that opens and fades, and a dot where it landed
     Repeater {
