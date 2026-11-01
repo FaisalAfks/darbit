@@ -65,6 +65,9 @@
 ### Fixed
 
 - The live tests pass on a PC at 150%: Capture's saved picture may differ from the file by one colour step (some displays move colours by 1 between grabs once a Direct3D app runs), and the screenshots they save are git-ignored
+- The Studio's Library says it's loading until the bot's pictures arrive, instead of "No pictures yet"
+- A step left open by a bot that was killed or crashed shows as stopped on the Overview, not running: steps record their process
+- `darbit doctor` and the bot template point to Capture in darbit Studio instead of the removed `darbit guide`
 - Display scaling is read again on scaled screens: `scale_at` used `ctypes.wintypes` without importing it, and since the system pieces load lazily it said 1.0, so on a 150% screen every picture taken at 150% was shrunk and not found
 - The Raw Input listener (the recorder, polite mode) no longer hits an access violation when it makes its window on 64-bit Windows: the module handle was cut to 32 bits
 - A pre-release darbit (`1.0.0.dev0`) counts as its release when a bot's `darbit` range is checked, instead of "can't read"

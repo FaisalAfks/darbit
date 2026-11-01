@@ -11,6 +11,7 @@ Bots can add their own events with d.record("speed raid done", character="Naruto
 """
 
 import functools
+import os
 import threading
 import time
 from collections.abc import Iterator
@@ -36,7 +37,7 @@ def step(name: str) -> Iterator[None]:
     path.append(name)
     where = " > ".join(path)
     started = time.monotonic()
-    record("step", step=where, state="started")
+    record("step", step=where, state="started", pid=os.getpid())  # the Overview tells a stopped bot's open step by it
 
     def end(outcome: str, **fields: object) -> None:
         record("step", step=where, state=outcome, seconds=round(time.monotonic() - started, 2), **fields)
