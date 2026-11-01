@@ -30,7 +30,7 @@
 - Loaded pictures stay in memory and their files are checked at most once a second: loading a target per search went from about 0.8 ms to 1 µs
 - `settings.matcher` picks another matcher from a plugin (the `darbit.matchers` entry point)
 - darbit's new logo (`assets/logo.svg`, with `logo.png` and the Windows icon `darbit.ico`): a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile in the accent colours. The Studio uses it as its app icon
-- Live tests on a real Windows desktop (`tests/live`, CI's `live-windows` job): screen capture, clicks, keys and text, window lookup and window space, a tape's timing, Highlight finding a picture and letting clicks through its overlay, the listener leaving darbit's own input out, the input worker, and the Studio drawn on Windows, all on a window of the tests' own
+- Live tests on a real Windows desktop (`tests/live`, CI's `live-windows` job): screen capture, clicks, keys and text, window lookup and window space, a tape's timing, Highlight finding a picture and letting clicks through its overlay, the capture tool saving a picture pixel for pixel, the recorder pill, the listener leaving darbit's own input out, the input worker, and the Studio drawn on Windows, all on a window of the tests' own
 
 - The Studio's Overview welcomes a first start: with no bots yet, darbit's logo and New bot, From a git link and Add a folder instead of "Not running"
 
