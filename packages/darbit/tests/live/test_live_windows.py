@@ -201,3 +201,90 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
         spin(0.2)
         del engine
         app.processEvents()
+
+
+def test_capture_takes_the_picture_pixel_for_pixel(target, pictures, tmp_path):
+    """The capture tool on the real screen: a click on the picture boxes it, and what it saves is the picture."""
+    import cv2
+    import numpy as np
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtGui import QGuiApplication
+
+    from darbit.platform import screen
+    from darbit.project import bots
+    from darbit.service.client import Client
+    from darbit.studio.app import load
+    from darbit.studio.backend import Studio
+    from darbit.studio.capture import Capture, ShotProvider
+
+    folder = bots.new("capture-bot", tmp_path)
+    front(target)
+    app = QGuiApplication.instance() or QGuiApplication(["live"])
+    provider = ShotProvider()
+    capture = Capture(provider)
+    engine = load(Studio(lambda: Client("live"), "glass-dark", ""), capture=capture)
+    root = engine.rootObjects()[0]  # held, or Qt deletes it
+    root.hide()
+    try:
+        capture.start(folder)
+        x, y, w, h = picture_box(target)
+        origin = screen.desktop()
+        box = [x - origin.x, y - origin.y, w, h]  # the shot starts at the desktop's top left
+        found = capture.candidates(box[0] + w // 2, box[1] + h // 2, "image")
+        assert box in found["boxes"], f"no candidate is the picture: {found}"
+        tested = capture.test(box, None)
+        assert len(tested["matches"]) == 1 and tested["matches"][0]["score"] > 0.99
+        deadline = time.monotonic() + 1
+        while time.monotonic() < deadline:
+            QCoreApplication.processEvents()
+            time.sleep(0.01)
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(SHOTS / "capture-on-windows.png"), screen.grab()[0])
+        assert capture.save("Live.Patch", "image", box, None, None).get("error") is None
+    finally:
+        capture.close()
+        QCoreApplication.processEvents()
+        del engine
+        app.processEvents()
+    saved = next(folder.rglob("Live.Patch.png"))
+    assert np.array_equal(cv2.imread(str(saved)), cv2.imread(str(pictures / f"{PICTURE}.png")))
+
+
+def test_the_recorder_pill_shows_while_the_studio_is_hidden(tmp_path):
+    """Recording: the worker records, and its pill shows on its own with the Studio out of the way."""
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.project import bots
+    from darbit.service.client import Client
+    from darbit.studio.app import load
+    from darbit.studio.backend import Studio
+    from darbit.studio.recorder import Recorder
+
+    def spin(seconds: float) -> None:
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            QCoreApplication.processEvents()
+            time.sleep(0.01)
+
+    folder = bots.new("record-bot", tmp_path)
+    app = QGuiApplication.instance() or QGuiApplication(["live"])
+    recorder = Recorder()
+    engine = load(Studio(lambda: Client("live"), "glass-dark", ""), recorder=recorder)
+    root = engine.rootObjects()[0]  # held, or Qt deletes it
+    pill = root.findChild(QQuickWindow, "recorderPill")
+    root.hide()
+    try:
+        assert recorder.start(folder, "walk") == ""
+        spin(1.5)
+        assert recorder.active
+        assert pill.isVisible(), "the recorder pill didn't show"
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        pill.grabWindow().save(str(SHOTS / "recorder-pill-on-windows.png"))
+    finally:
+        recorder.finish(False)
+        recorder.close()
+        spin(0.3)
+        del engine
+        app.processEvents()
