@@ -2,6 +2,7 @@
 
 import atexit
 import ctypes
+import os
 import subprocess
 from pathlib import Path
 
@@ -88,3 +89,43 @@ def end_process_tree(pid: int) -> None:
 def site_packages(venv: Path) -> Path:
     """Where a virtual environment keeps its installed packages."""
     return venv / "Lib" / "site-packages"
+
+
+def name_app(app_id: str) -> None:
+    """Give this process its own app id, so its taskbar button has its window's icon, not python.exe's."""
+    shell32 = ctypes.windll.shell32
+    shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = (ctypes.c_wchar_p,)
+    shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+
+# makes one .lnk through Windows' own shortcut object; the values come in environment variables, so a path with
+# spaces or quotes is never read as script
+_SHORTCUT_SCRIPT = """
+$place = [Environment]::GetFolderPath($env:LINK_FOLDER)
+$link = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $place ($env:LINK_NAME + '.lnk')))
+$link.TargetPath = $env:LINK_TARGET
+$link.Arguments = $env:LINK_ARGUMENTS
+$link.IconLocation = $env:LINK_ICON + ',0'
+$link.WorkingDirectory = Split-Path $env:LINK_TARGET
+$link.Save()
+$link.FullName
+"""
+
+
+def add_shortcut(name: str, target: Path, arguments: str, icon: Path) -> list[Path]:
+    """A shortcut in the Start menu and on the desktop; returns where they were made."""
+    made = []
+    for folder in ("Programs", "Desktop"):  # Programs is the person's own Start menu folder
+        values = {"LINK_FOLDER": folder, "LINK_NAME": name, "LINK_TARGET": str(target)}
+        values.update({"LINK_ARGUMENTS": arguments, "LINK_ICON": str(icon)})
+        done = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", _SHORTCUT_SCRIPT],
+            env={**os.environ, **values},
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        if done.returncode == 0 and done.stdout.strip():
+            made.append(Path(done.stdout.strip().splitlines()[-1]))
+    return made

@@ -5,7 +5,10 @@ darbit Studio is a window onto darbit's service: pick a bot, run, pause and stop
 ```bash
 pip install "darbit[studio]"     # or, in a checkout: uv sync --extra studio
 darbit app
+darbit app --shortcut            # once: darbit Studio in the Start menu and on the desktop
 ```
+
+The shortcut opens the Studio with the Python it was made from, without a console window. The Studio has darbit's icon in the taskbar, its own button rather than Python's.
 
 ![The Overview](../ui/images/qt-studio-overview.png)
 

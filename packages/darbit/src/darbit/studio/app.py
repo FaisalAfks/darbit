@@ -14,6 +14,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
+from ..platform import system
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
@@ -23,7 +24,8 @@ from .recorder import Recorder
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
-ICON = HERE / "logo.png"
+ICON = HERE / "darbit.ico"  # every size Windows asks for: taskbar, tray, Alt+Tab, shortcuts
+APP_ID = "darbit.studio"  # Windows' name for the Studio: its taskbar button is its own, not python.exe's
 SHOT_WAIT_MS = 1500  # time for the pages to get their data and draw before a shot
 HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture grabs it
 
@@ -67,6 +69,7 @@ def load(
 
 
 def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client) -> int:
+    system.name_app(APP_ID)  # before any window, or Windows has already grouped it with python.exe
     app = QApplication(argv if argv is not None else sys.argv)
     app.setApplicationName("darbit Studio")
     app.setDesktopFileName("darbit")
