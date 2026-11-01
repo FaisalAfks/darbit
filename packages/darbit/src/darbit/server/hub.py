@@ -221,7 +221,12 @@ def project_run(data: dict) -> dict:
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("ab") as sink:
         process = subprocess.Popen(
-            bots.entry_command(project.entry, folder), cwd=folder, env=environment, stdout=sink, stderr=sink
+            bots.entry_command(project.entry, folder),
+            cwd=folder,
+            env=environment,
+            stdout=sink,
+            stderr=sink,
+            creationflags=system.no_window(),  # the service has no console: without this a bot would open one
         )
     (control / "pid").write_text(str(process.pid), encoding="utf-8")  # a later Studio can still stop it
     run = Run(folder, process, time.time())

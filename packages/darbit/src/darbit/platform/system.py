@@ -1,8 +1,19 @@
 """Staying awake, the state of keys, and the processes darbit starts, through the system's System piece."""
 
+import subprocess
+import sys
 from pathlib import Path
 
 from . import backend
+
+
+def no_window() -> int:
+    """Popen's creationflags for a process of darbit's own (the service, a bot, the input worker) that must not open
+    a console window. On Windows: CREATE_NO_WINDOW, a console that's never shown (never with DETACHED_PROCESS, which
+    turns it off, so a venv's python.exe opened a window for the real one)."""
+    if sys.platform == "win32":
+        return subprocess.CREATE_NO_WINDOW
+    return 0
 
 
 def keep_awake() -> None:

@@ -10,6 +10,7 @@ import threading
 from collections.abc import Callable
 from typing import BinaryIO
 
+from ..platform import system
 from ..service.protocol import Event, ProtocolError, Reply, Request, decode, encode
 
 REPLY_WAIT = 15.0  # seconds for the worker's answer (saving a long recording takes a moment)
@@ -76,7 +77,7 @@ class WorkerLink:
         if self.streams is not None:
             self.reader, self.writer = self.streams
         else:
-            flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+            flags = system.no_window()
             self.process = subprocess.Popen(
                 [sys.executable, "-m", "darbit.worker"],
                 stdin=subprocess.PIPE,

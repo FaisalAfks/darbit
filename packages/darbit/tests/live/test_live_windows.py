@@ -10,6 +10,7 @@ from target import PICTURE, PICTURE_AT, TITLE
 
 import darbit as d
 from darbit.platform import hooks
+from darbit.platform import windows as system_windows
 from darbit.runtime import tape
 
 SHOTS = Path(os.environ.get("DARBIT_LIVE_SHOTS", "live-shots"))
@@ -341,7 +342,7 @@ def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
         app.processEvents()
 
 
-def _cpu_and_memory(process) -> tuple[float, int]:
+def _cpu_and_memory(pid: int) -> tuple[float, int]:
     """Seconds of CPU the process has used, and its working set in bytes (Windows' own numbers)."""
     import ctypes
     from ctypes import wintypes
@@ -360,16 +361,20 @@ def _cpu_and_memory(process) -> tuple[float, int]:
             ("PeakPagefileUsage", ctypes.c_size_t),
         ]
 
-    handle = wintypes.HANDLE(int(process._handle))
+    kernel32 = ctypes.windll.kernel32
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    handle = kernel32.OpenProcess(0x1000 | 0x0010, False, pid)  # query limited information, read memory
+    assert handle, f"can't open process {pid}"
     times = [wintypes.FILETIME() for _ in range(4)]
-    assert ctypes.windll.kernel32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times])
+    assert kernel32.GetProcessTimes(wintypes.HANDLE(handle), *[ctypes.byref(t) for t in times])
     kernel, user = times[2], times[3]
     cpu = (
         (kernel.dwHighDateTime << 32 | kernel.dwLowDateTime) + (user.dwHighDateTime << 32 | user.dwLowDateTime)
     ) / 1e7
     counters = Counters()
     counters.cb = ctypes.sizeof(Counters)
-    assert ctypes.windll.psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb)
+    assert ctypes.windll.psapi.GetProcessMemoryInfo(wintypes.HANDLE(handle), ctypes.byref(counters), counters.cb)
+    kernel32.CloseHandle(wintypes.HANDLE(handle))
     return cpu, counters.WorkingSetSize
 
 
@@ -382,9 +387,12 @@ def test_the_studio_meets_its_speed_goals_on_windows():
     try:
         time.sleep(10)  # started, connected, drawn
         assert studio.poll() is None, "the Studio closed by itself"
-        cpu_before, _ = _cpu_and_memory(studio)
+        found = system_windows.matching("darbit Studio")
+        assert found, "no darbit Studio window"
+        pid = found[0].pid  # the Studio itself: a venv's python.exe starts the real Python as its child
+        cpu_before, _ = _cpu_and_memory(pid)
         time.sleep(10)
-        cpu_after, memory = _cpu_and_memory(studio)
+        cpu_after, memory = _cpu_and_memory(pid)
         share = (cpu_after - cpu_before) / 10
         print(f"Studio idle on Windows: {share:.2%} of one core, {memory / 2**20:.0f} MB")
         assert share < 0.02
@@ -400,3 +408,31 @@ def test_the_screen_counts_as_unlocked():
     from darbit.platform import system
 
     assert system.screen_usable()
+
+
+def _shown_windows() -> set[int]:
+    return {window.handle for window in system_windows.windows()}
+
+
+def test_the_service_and_its_bots_open_no_window(target, tmp_path):
+    """Started from the Studio, the service and the bots it runs stay out of sight: no console pops up over the game."""
+    import subprocess
+    import sys
+
+    from darbit.project import bots
+    from darbit.service import client
+
+    subprocess.run([sys.executable, "-m", "darbit", "serve", "--stop"], timeout=30, check=False)
+    front(target)
+    before = _shown_windows()
+    client.ensure_running()
+    folder = bots.new("quiet-bot", tmp_path)
+    with client.Client("live") as connection:
+        connection.call("bots.add", path=str(folder))
+        connection.call("bot.start", bot=str(folder))
+        time.sleep(3)
+        new = _shown_windows() - before
+        titles = [window.title for window in system_windows.windows() if window.handle in new]
+        connection.call("bot.stop", bot=str(folder))
+        connection.call("service.stop")
+    assert titles == [], f"windows opened: {titles}"
