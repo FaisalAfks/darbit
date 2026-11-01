@@ -53,6 +53,18 @@ tiles = ["now", "progress:Speed Raid this week", "next", "round", "activity", "w
 
 Tiles: `now`, `round`, `progress` (or `progress:<label>` for one), `next`, `activity`, `failures`, `watching`, `setup`. Without the table, all of them in that order; a tile with nothing to show is left out.
 
+`[run]` is how darbit's service runs the bot. `restart` starts it again a few seconds after it fails (ends with an
+error, not a Stop), up to that many times an hour; after that it's left stopped. A phone notification (`notify.toml`)
+says which:
+
+```toml
+[run]
+restart = 3   # 0 (the default) leaves a failed bot stopped
+```
+
+For a failure the bot can get past itself, go back to a known screen and try again in its own code (`d.go`, see the
+screen map guide); `restart` is for when the bot itself ended.
+
 ## The bot's own settings: settings.toml
 
 A bot declares its settings once; the Studio shows a form for them and `config.toml` holds the values:

@@ -81,6 +81,14 @@ def test_a_failed_bot_is_told_and_a_stopped_one_only_when_asked(phone, monkeypat
     assert [body for _, _, body in got] == ["fish-bot failed\nFish: the rod wasn't found"]
 
 
+def test_a_failure_says_whether_the_bot_is_started_again():
+    assert notify._restarting({"status": "failed"}) == ""
+    again = notify._restarting({"status": "failed", "restart": 2, "restarts": 3})
+    assert again == "\nStarting it again in a few seconds (2 of 3 this hour)."
+    left = notify._restarting({"status": "failed", "restart": 0, "restarts": 3})
+    assert left == "\nIt failed 3 times this hour already: left stopped."
+
+
 def test_a_quiet_running_bot_is_told_once_and_the_summary_once_a_day(phone, monkeypatch, tmp_path):
     url, got = phone
     settings = notify.Settings([notify.Channel("ntfy", f"{url}/me", notify._ntfy_body)], stuck_minutes=1)

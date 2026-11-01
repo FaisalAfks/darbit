@@ -155,7 +155,7 @@ class Notifier:
             if status == "running":
                 self.last_change[folder] = time.monotonic()
             elif status == "failed" and self.settings.failed:
-                self.tell(f"{_name(folder)} failed", _last_problem(folder))
+                self.tell(f"{_name(folder)} failed", _last_problem(folder) + _restarting(data))
             elif status == "stopped" and self.settings.ended:
                 self.tell(f"{_name(folder)} stopped", "")
 
@@ -212,6 +212,15 @@ def _name(folder: str) -> str:
         return load(Path(folder)).name
     except (ProjectError, OSError):
         return Path(folder).name
+
+
+def _restarting(data: dict) -> str:
+    """What the service does about a failure, when the bot has [run] restart."""
+    if "restart" not in data:
+        return ""
+    if data["restart"]:
+        return f"\nStarting it again in a few seconds ({data['restart']} of {data['restarts']} this hour)."
+    return f"\nIt failed {data['restarts']} times this hour already: left stopped."
 
 
 def _last_problem(folder: str) -> str:
