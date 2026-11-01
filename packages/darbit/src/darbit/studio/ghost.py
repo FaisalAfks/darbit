@@ -27,6 +27,7 @@ class Ghost(QObject):
         self._socket: QUdpSocket | None = None
         self._marks: list[dict] = []
         self._next = 0
+        self._waiting = False  # marks taken since the window last heard
         self._timer = QTimer(self)
         self._timer.setInterval(PRUNE_MS)
         self._timer.timeout.connect(self._prune)
@@ -83,6 +84,7 @@ class Ghost(QObject):
         except OSError:
             pass
         self._marks = []
+        self._waiting = False
         self._timer.stop()
         self.changed.emit()
 
@@ -99,8 +101,11 @@ class Ghost(QObject):
         mark["at"] = time.monotonic()
         self._next += 1
         self._marks = (self._marks + [mark])[-MOST:]
-        if not self._timer.isActive():
-            self._timer.start()
+        if self._timer.isActive():
+            # shown at the next prune: a fight's stream of keys redraws the marks ten times a second, not per key
+            self._waiting = True
+            return
+        self._timer.start()
         self.changed.emit()
 
     def _read(self) -> None:
@@ -116,8 +121,9 @@ class Ghost(QObject):
     def _prune(self) -> None:
         now = time.monotonic()
         kept = [mark for mark in self._marks if now - mark["at"] < SHOWN]
-        if len(kept) != len(self._marks):
+        if len(kept) != len(self._marks) or self._waiting:
             self._marks = kept
+            self._waiting = False
             self.changed.emit()
         if not kept:
             self._timer.stop()
