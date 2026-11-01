@@ -6,7 +6,8 @@ A target saved by the capture tool is two files with the same name:
     {"kind": "image", "region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
      "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
 
-`kind` says what the target is: an image (searched in its region, the whole screen without one, and clicked at its
+`region` is a box, or the name of a region target in the same folder ("Bag.List"): images that are searched in the
+same place share one, and moving it moves them all. `kind` says what the target is: an image (searched in its region, the whole screen without one, and clicked at its
 centre moved by `offset`), a region, or a location. Files from before it say nothing; `kind_of` works it out from what
 they have. Every other field is optional.
 `window` and `origin` are the size and top-left corner of the app window it was taken in;
@@ -194,11 +195,31 @@ def kind_of(settings: dict, has_image: bool) -> str:
     return "location"
 
 
+def shared_region(name: str, folder: Path) -> list | None:
+    """The box of the region target called `name` in `folder`, for the images that name it; None if there's none."""
+    path = folder / (name + ".json")
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    region = data.get("region") if isinstance(data, dict) else None
+    if isinstance(region, list) and len(region) == 4:
+        return region
+    return None
+
+
 def _from_json(target: Target, path: Path) -> Target:
     data = json.loads(path.read_text(encoding="utf-8"))
     changes: dict = {}
-    if "region" in data:
-        changes["region"] = Region(*data["region"])
+    region = data.get("region")
+    if isinstance(region, str):
+        region = shared_region(region, path.parent)
+        if region is None:
+            raise TargetError(f"{path.name} names the region {data['region']!r}, and there's no region by that name")
+    if region is not None:
+        changes["region"] = Region(*region)
     if "similarity" in data and target.similarity is None:
         changes["similarity"] = float(data["similarity"])
     if "offset" in data:

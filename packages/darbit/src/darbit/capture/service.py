@@ -22,7 +22,7 @@ import numpy as np
 from .. import paths
 from ..core.geometry import Location, Region
 from ..core.matching import every
-from ..core.targets import Target, read_image
+from ..core.targets import Target, read_image, shared_region
 from ..platform import screen
 from .common import Item, Result, captured
 from .engine import Prepared, pick, prepare
@@ -179,6 +179,9 @@ def existing(name: str) -> dict:
     if not isinstance(saved, dict):
         return found
     area = saved.get("region")
+    if isinstance(area, str):
+        found["region_name"] = area
+        area = shared_region(area, session.images)
     if isinstance(area, list) and len(area) == 4:
         found["region"] = [area[0] - origin.x, area[1] - origin.y, area[2], area[3]]
     offset = saved.get("offset")
@@ -187,6 +190,38 @@ def existing(name: str) -> dict:
     location = saved.get("location")
     if isinstance(location, list) and len(location) == 2:
         found["location"] = [location[0] - origin.x, location[1] - origin.y]
+    return found
+
+
+def regions() -> list[dict]:
+    """The regions already in the bot, in the shot's pixels, to search a new image in: each region target (shared by
+    name: {"name", "region", "used_by"}), then the regions images have of their own that others could use the same way
+    ({"name": "", "region", "used_by"}), most used first."""
+    session, _, origin, _ = _frozen()
+    shared: dict[str, dict] = {}
+    own: dict[tuple, dict] = {}
+    for path in sorted(session.images.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        region = data.get("region")
+        has_image = path.with_suffix(".png").is_file()
+        if not has_image and isinstance(region, list) and len(region) == 4 and not data.get("location"):
+            shared.setdefault(path.stem, {"name": path.stem, "region": region, "used_by": []})
+        elif has_image and isinstance(region, str):
+            shared.setdefault(region, {"name": region, "region": shared_region(region, session.images), "used_by": []})
+            shared[region]["used_by"].append(path.stem)
+        elif has_image and isinstance(region, list) and len(region) == 4:
+            own.setdefault(tuple(region), {"name": "", "region": region, "used_by": []})["used_by"].append(path.stem)
+    found = []
+    for entry in list(shared.values()) + sorted(own.values(), key=lambda entry: -len(entry["used_by"])):
+        region = entry["region"]
+        if not region:
+            continue
+        found.append({**entry, "region": [region[0] - origin.x, region[1] - origin.y, region[2], region[3]]})
     return found
 
 
@@ -200,12 +235,21 @@ def _saved_region(session: Session, name: str) -> list[int] | None:
     except (OSError, ValueError):
         return None
     area = saved.get("region") if isinstance(saved, dict) else None
+    if isinstance(area, str):
+        area = shared_region(area, session.images)
     if not isinstance(area, list) or len(area) != 4:
         return None
     return [area[0] - session.origin.x, area[1] - session.origin.y, area[2], area[3]]
 
 
-def save(name: str, kind: str, image: list[int] | None, region: list[int] | None, point: list[float] | None) -> dict:
+def save(
+    name: str,
+    kind: str,
+    image: list[int] | None,
+    region: list[int] | None,
+    point: list[float] | None,
+    region_name: str = "",
+) -> dict:
     """Write a target's files from the frozen shot, then move on to the next item."""
     session, shot, origin, _ = _frozen()
     if not name:
@@ -229,6 +273,8 @@ def save(name: str, kind: str, image: list[int] | None, region: list[int] | None
         result.region = Region(part.x + origin.x, part.y + origin.y, part.w, part.h)
     elif capture_kind == "location" and result.point is None:
         raise CaptureError("click the location first")
+    if region_name and capture_kind == "image":
+        result.region_name = region_name
     item = Item(name, capture_kind)
     saved = save_result(session.images, item, result, shot, origin, None)
     remember_screen(session.project, name, capture_kind, shot, image, region, point)

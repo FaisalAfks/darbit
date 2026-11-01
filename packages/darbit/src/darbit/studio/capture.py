@@ -125,11 +125,22 @@ class Capture(QObject):
         except service.CaptureError as error:
             return {"matches": [], "error": str(error)}
 
-    @Slot(str, str, "QVariant", "QVariant", "QVariant", result="QVariantMap")
-    def save(self, name: str, kind: str, image: object, region: object, point: object) -> dict:
-        """Write the target's files; the message to show, and what's left to take."""
+    @Slot(result="QVariantList")
+    def regions(self) -> list:
+        """The bot's regions to search a new image in: shared region targets, then other images' own."""
         try:
-            result = service.save(name.strip(), kind, _box_or_none(image), _box_or_none(region), _point_or_none(point))
+            return service.regions()
+        except service.CaptureError:
+            return []
+
+    @Slot(str, str, "QVariant", "QVariant", "QVariant", str, result="QVariantMap")
+    def save(self, name: str, kind: str, image: object, region: object, point: object, region_name: str = "") -> dict:
+        """Write the target's files (the image searched in the shared region `region_name`, if one was picked); the
+        message to show, and what's left to take."""
+        try:
+            result = service.save(
+                name.strip(), kind, _box_or_none(image), _box_or_none(region), _point_or_none(point), region_name
+            )
         except (service.CaptureError, OSError) as error:
             return {"error": str(error)}
         self._items = result["items"]

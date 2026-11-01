@@ -33,7 +33,9 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   made together. Pick what you're making in the pill (**Image**, **Region**, **Location**, or **1**, **2**, **3**,
   **Tab**): a click boxes the image or region around it (again for bigger, right-click for smaller), a drag draws
   one, and with Location a click sets it. What's picked is what the handles, the arrow keys (Shift: 10 px, Ctrl: its
-  size), drag-to-move and **Delete** change; a ✓ marks each kind the target has. Click a readout to type exact
+  size), drag-to-move and **Delete** change; a ✓ marks each kind the target has. With Region picked, **Saved ▾** lists the bot's regions (pointing at one shows it
+  on the screen): a region target is shared by name, so every image searched in it moves with it; another image's
+  own region is copied. Click a readout to type exact
   numbers; **Ctrl+Z** and **Ctrl+Y** undo and redo. The pill slides out of sight a few seconds after the mouse leaves
   it: move the mouse to the top edge to bring it back. A retake keeps the target's region and location; hold **C** to
   see the saved image over the new one. A magnifier follows the mouse with the shot's own pixels (8×; Ctrl+wheel from

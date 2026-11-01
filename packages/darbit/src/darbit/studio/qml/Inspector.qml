@@ -80,7 +80,8 @@ Rectangle {
                     readonly property var offset: panel.asset ? panel.asset.offset : null
                     text: !panel.asset ? "" : panel.kindLabel + (panel.asset.size ? " · " + panel.asset.size[0] + " × " + panel.asset.size[1] : "")
                         + (panel.asset.kind !== "image" ? ""
-                           : (panel.asset.region ? "\nregion " + panel.asset.region.join(", ") : "\nregion: the whole screen")
+                           : (typeof panel.asset.region === "string" ? "\nregion " + panel.asset.region + " (shared)"
+                              : panel.asset.region ? "\nregion " + panel.asset.region.join(", ") : "\nregion: the whole screen")
                              + (offset && (offset[0] || offset[1]) ? "\nlocation " + offset[0] + ", " + offset[1] + " from its centre" : "\nlocation: its centre"))
                     color: studio.colors.muted; font.pixelSize: 13
                 }

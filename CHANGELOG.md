@@ -4,6 +4,8 @@
 
 ### New
 
+- Images can share a region: an image's `region` can name a region target (`"region": "Bag.List"`), and moving that region moves every image searched in it. Capture's **Saved ▾** (with Region picked) lists the bot's regions, shared ones first, then other images' own to copy; pointing at one shows it on the screen (`capture.service.regions`, `core.targets.shared_region`)
+
 - The Library tags each target: its kind, and for an image the region and location it names. The Regions and Locations tabs list the images with their own region or location too, and each card shows its tags in the kinds' colours (`library.tags_of`)
 
 - A bot's day can start at another time than midnight: `[settings] day_starts = "03:00"`, or `"00:00 UTC"` for a game that resets at midnight UTC. The run report and log files, history, the Studio's Overview and Results, and the daily summary go by it (`darbit.days`); the Results timeline runs on past midnight

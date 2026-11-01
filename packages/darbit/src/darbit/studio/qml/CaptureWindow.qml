@@ -20,6 +20,11 @@ Window {
     property var image: null
     property var region: null
     property var location: null
+    property string regionName: ""       // the shared region picked from the bot's (its box is `region`); "" for its own
+    property bool linking: false         // a shared region going in: changing `region` otherwise makes it the image's own
+    property var regionChoices: []       // the bot's regions to pick from: shared ones, then other images' own
+    property var previewRegion: null     // the region under the mouse in the picker
+    property bool regionsOpen: false     // the picker is open (its own flag: a child of a hidden item reads as hidden)
     property string tool: "image"        // the kind being made and changed: image, region or location
     property var past: []                // undo: the target as it was before each change
     property var future: []              // redo
@@ -47,13 +52,29 @@ Window {
 
     onVisibleChanged: if (visible) { reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
     onCurrentChanged: if (current && visible) { nameField.text = current.name; tool = kindOf(current.kind) }
+    onRegionChanged: if (!linking) regionName = ""
 
     function kindOf(name) { return name === "region" ? "region" : name === "location" || name === "point" ? "location" : "image" }
     function inkOf(name) { return name === "region" ? regionInk : name === "location" ? locationInk : imageInk }
 
     // ---- the target and its history
-    function snapshot() { return { image: image, region: region, location: location } }
-    function restore(state) { image = state.image; region = state.region; location = state.location; matches = [] }
+    function snapshot() { return { image: image, region: region, regionName: regionName, location: location } }
+    function restore(state) {
+        linking = true; image = state.image; region = state.region; regionName = state.regionName || ""; linking = false
+        location = state.location; matches = []
+    }
+    // a region the bot has already: shared by name (moving it later moves every image in it), or another image's own
+    function useRegion(entry) {
+        remember()
+        linking = true; region = entry.region; regionName = entry.name || ""; linking = false
+        tool = "region"; matches = []; previewRegion = null; regionsOpen = false
+        say(entry.name ? "Searched in " + entry.name + ", shared" : "Searched where " + entry.used_by.join(", ") + " are", false)
+    }
+    function openRegions() {
+        regionChoices = capture.regions()
+        if (!regionChoices.length) { say("The bot has no regions yet: draw one", false); return }
+        regionsOpen = !regionsOpen
+    }
     function remember() { past = past.concat([snapshot()]).slice(-200); future = [] }
     function undo() {
         if (!past.length) { say("Nothing to undo", false); return }
@@ -78,16 +99,17 @@ Window {
     }
     function partOf(name) { return name === "image" ? image : name === "region" ? region : location }
     function drop(name) { if (partOf(name)) setPart(name, null) }
-    function choose(name) { tool = name; stage.forceActiveFocus() }
+    function choose(name) { tool = name; if (name !== "region") regionsOpen = false; stage.forceActiveFocus() }
     function reset() {
         image = null; region = null; location = null; past = []; future = []; saved = ({})
+        regionName = ""; previewRegion = null; regionsOpen = false
         boxes = []; matches = []; waiting = null; note = ""; lastClick = null
         tool = current ? kindOf(current.kind) : "image"
     }
     // a retake: the target's saved region and location come back, and its image is there to compare with
     function takeSaved(name) {
         saved = name ? capture.existing(name) : ({})
-        if (saved.region && !region) region = saved.region
+        if (saved.region && !region) { linking = true; region = saved.region; regionName = saved.region_name || ""; linking = false }
         if (saved.location && !location) location = saved.location
     }
 
@@ -151,7 +173,7 @@ Window {
     function save() {
         var name = nameField.text.trim()
         if (!kind) { say("Make an image, a region or a location first", true); return }
-        var result = capture.save(name, kind, image, region, location)
+        var result = capture.save(name, kind, image, region, location, image && region ? regionName : "")
         if (result.error) { say(result.error, true); return }
         var told = result.message || ("Saved " + name), bad = !!result.risky
         reset()
@@ -297,6 +319,14 @@ Window {
             }
         }
         PartBox { part: "region"; value: shotWindow.region }
+        Rectangle {  // the bot's region the mouse is on in the picker
+            visible: !!shotWindow.previewRegion
+            readonly property var b: shotWindow.previewRegion || [0, 0, 0, 0]
+            x: b[0] * shotWindow.scale; y: b[1] * shotWindow.scale
+            width: b[2] * shotWindow.scale; height: b[3] * shotWindow.scale
+            color: Qt.rgba(shotWindow.regionInk.r, shotWindow.regionInk.g, shotWindow.regionInk.b, 0.12)
+            border.color: shotWindow.regionInk; border.width: 2; radius: 4
+        }
         PartBox { id: imageBox; part: "image"; value: shotWindow.image }
 
         // C held: the saved image over the new one
@@ -386,7 +416,8 @@ Window {
             y: (shotWindow.region ? shotWindow.region[1] + shotWindow.region[3] : 0) * shotWindow.scale + 8
             readonly property bool holds: !!shotWindow.region && !!shotWindow.image && shotWindow.inside(shotWindow.region, shotWindow.image)
             ink: shotWindow.image && !holds ? studio.colors.warn : shotWindow.regionInk
-            text: !shotWindow.region ? "" : "region " + shotWindow.region.join(", ").replace(/, (\d+), (\d+)$/, " · $1 × $2")
+            text: !shotWindow.region ? "" : "region " + (shotWindow.regionName ? shotWindow.regionName + " (shared) · " : "")
+                + shotWindow.region.join(", ").replace(/, (\d+), (\d+)$/, " · $1 × $2")
                 + (shotWindow.image ? (holds ? " · image inside ✓" : " · image outside ⚠") : "")
             value: shotWindow.region ? shotWindow.region.join(", ") : ""
             onEdited: function (numbers) { if (numbers.length === 4) shotWindow.setPart("region", shotWindow.clamp(numbers)) }
@@ -603,6 +634,11 @@ Window {
                     ]
                     onPicked: function (key) { shotWindow.choose(key) }
                 }
+                PillButton {
+                    visible: shotWindow.tool === "region"
+                    small: true; icon: "⬚"; text: "Saved ▾"
+                    onClicked: { shotWindow.openRegions(); stage.forceActiveFocus() }
+                }
                 IconButton {
                     glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"
                     enabled: !!shotWindow.partOf(shotWindow.tool)
@@ -618,9 +654,42 @@ Window {
             }
             Column {
                 id: under
-                visible: shotWindow.note !== "" || shotWindow.matches.length > 0
+                visible: shotWindow.note !== "" || shotWindow.matches.length > 0 || shotWindow.regionsOpen
                 anchors { horizontalCenter: pill.horizontalCenter; top: pill.bottom; topMargin: 10 }
                 spacing: 8
+                Rectangle {  // the bot's regions to search this image in
+                    id: regionMenu
+                    objectName: "regionMenu"
+                    visible: shotWindow.regionsOpen
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 340; height: Math.min(360, choices.implicitHeight + 16); radius: 16
+                    color: shotWindow.solid; border.color: studio.colors.line
+                    onVisibleChanged: if (!visible) shotWindow.previewRegion = null
+                    Flickable {
+                        id: choicesView
+                        anchors.fill: parent; anchors.margins: 8
+                        contentHeight: choices.implicitHeight; clip: true
+                        SmoothWheel { view: choicesView }
+                        Column {
+                            id: choices
+                            spacing: 2
+                            Repeater {
+                                model: shotWindow.regionChoices
+                                delegate: MenuLine {
+                                    required property var modelData
+                                    width: 324
+                                    icon: modelData.name ? "⬚" : "▣"
+                                    iconColor: shotWindow.regionInk
+                                    text: modelData.name || ("Like " + modelData.used_by[0] + (modelData.used_by.length > 1 ? " and " + (modelData.used_by.length - 1) + " more" : ""))
+                                    detail: modelData.region[2] + " × " + modelData.region[3]
+                                        + (modelData.name ? " · shared" + (modelData.used_by.length ? " by " + modelData.used_by.length : "") : " · copied, not shared")
+                                    onHoveredChanged: shotWindow.previewRegion = hovered ? modelData.region : null
+                                    onClicked: shotWindow.useRegion(modelData)
+                                }
+                            }
+                        }
+                    }
+                }
                 Rectangle {  // the last message
                     visible: shotWindow.note !== ""
                     anchors.horizontalCenter: parent.horizontalCenter

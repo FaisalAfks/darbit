@@ -73,6 +73,8 @@ def save_result(
         center = box.center
         offset = [round(result.point.x - center.x), round(result.point.y - center.y)]
     region = [result.region.x, result.region.y, result.region.w, result.region.h] if result.region else None
+    if result.region_name:
+        region = result.region_name
     scale = screen.scale_at(box.x, box.y)
     save(path, image, kind="image", region=region, offset=offset, scale=scale, window=window_size, origin=window_corner)
     elsewhere = distinct(image, shot, Region(box.x - origin.x, box.y - origin.y, box.w, box.h))
