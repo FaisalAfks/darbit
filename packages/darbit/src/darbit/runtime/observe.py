@@ -122,17 +122,36 @@ def _look(observer: Observer, frame: tuple | None, now: Place) -> object:
     return found
 
 
+def _covering(watching: list[Observer], now: Place) -> Region | None:
+    """The smallest area holding every image observer's area; None (the whole screen) when one has none."""
+    covering = None
+    for observer in watching:
+        if observer.target is None:
+            continue
+        area = observer.region or place(observer.target, now).region
+        if area is None:
+            return None
+        if covering is None:
+            covering = area
+        else:
+            left, top = min(covering.x, area.x), min(covering.y, area.y)
+            right, bottom = max(covering.right, area.right), max(covering.bottom, area.bottom)
+            covering = Region(left, top, right - left, bottom - top)
+    return covering
+
+
 def tick() -> None:
-    """One look at everything observed: one screen capture shared by all image observers."""
+    """One look at everything observed: one screen capture shared by all image observers, of just the area they
+    watch (a whole-screen grab twice a second was most of what an idle bot did)."""
     watching = [o for o in observers() if not o._stopped]
     targets = []
     for observer in watching:
         if observer.target is not None:
             targets.append(observer.target)
+    now = where_now(targets)
     frame = None
     if targets:
-        frame = screen.grab()
-    now = where_now(targets)
+        frame = screen.grab(_covering(watching, now))
     for observer in watching:
         try:
             hit = _look(observer, frame, now)
