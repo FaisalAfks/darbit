@@ -18,14 +18,6 @@ from .worker_link import WorkerGone, WorkerLink
 KEYS = {"record.toggle": "finish", "record.mark": "mark", "run.pause": "pause"}  # global keys while recording
 
 
-def _combo(action: str) -> str:
-    """The keys an action has in the user's keymap, in whichever scope it's listed."""
-    for scope in keymap.load().values():
-        if action in scope:
-            return str(scope[action])
-    return ""
-
-
 class Recorder(QObject):
     """One recording at a time, for QML."""
 
@@ -163,7 +155,7 @@ class Recorder(QObject):
         keys = {}
         handlers = {}
         for action, what in KEYS.items():
-            keys[action] = _combo(action)
+            keys[action] = keymap.combo(action)
             handlers[action] = lambda what=what: self._keyed.emit(what)
         shortcuts = {}
         for action, combo in keys.items():

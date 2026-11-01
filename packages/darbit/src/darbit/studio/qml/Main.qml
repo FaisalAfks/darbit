@@ -70,6 +70,7 @@ ApplicationWindow {
     RecordSheet { id: recordSheet }
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
+    HighlightWindow { objectName: "highlightWindow" }
 
     function go(name) {
         page = name

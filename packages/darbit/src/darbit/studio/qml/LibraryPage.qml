@@ -124,6 +124,7 @@ Item {
                 }
             }
         }
+        PillButton { icon: "◎"; text: "Highlight"; onClicked: studio.toggleHighlight() }
         PillButton { icon: "●"; text: "Record"; onClicked: window.recordAction("") }
         PillButton { kind: "primary"; icon: "▣"; text: "Capture"; onClicked: studio.openCapture("any") }
     }

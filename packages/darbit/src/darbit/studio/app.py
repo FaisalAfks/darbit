@@ -8,7 +8,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QTimer, QUrl
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QTimer, QUrl, Signal
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
+from .highlight import Highlight
 from .recorder import Recorder
 
 HERE = Path(__file__).parent
@@ -30,20 +31,26 @@ def _client() -> Client:
     return Client("darbit Studio")
 
 
-def load(studio: Studio, capture: Capture | None = None, recorder: Recorder | None = None) -> QQmlApplicationEngine:
+def load(
+    studio: Studio, capture: Capture | None = None, recorder: Recorder | None = None, highlight: Highlight | None = None
+) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
     if capture is None:
         capture = Capture(ShotProvider())
     if recorder is None:
         recorder = Recorder()
+    if highlight is None:
+        highlight = Highlight()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
     engine.rootContext().setContextProperty("recorder", recorder)
+    engine.rootContext().setContextProperty("highlight", highlight)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
+    highlight.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -58,12 +65,18 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     studio = Studio(connect)
     capture = Capture(ShotProvider())
     recorder = Recorder()
-    engine = load(studio, capture, recorder)
+    highlight = Highlight()
+    engine = load(studio, capture, recorder, highlight)
     window = engine.rootObjects()[0]
+    keys = _connect_highlight(studio, highlight, window)
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
     tray = _tray(app, window)
     code = app.exec()
+    highlight.stop()
+    recorder.close()
+    if keys is not None:
+        keys[0].stop()
     tray.hide()
     return code
 
@@ -120,6 +133,45 @@ def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, wind
     recorder.finished.connect(finished)
     recorder.pictureWanted.connect(picture)
     capture.saved.connect(saved)
+
+
+def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> tuple[object, QObject] | None:
+    """Highlight hides the Studio while it's on; Ctrl+Alt+H turns it on and off with the game in front."""
+
+    def toggle(folder: str) -> None:
+        if highlight.isOn:
+            highlight.stop()
+            _bring_forward(window)
+        else:
+            window.hide()
+            QTimer.singleShot(HIDE_WAIT_MS, lambda: highlight.start(Path(folder)))
+
+    studio.highlightWanted.connect(toggle)
+    return _global_key("highlight.toggle", studio.toggleHighlight)
+
+
+class _Key(QObject):
+    """A global key's press, as a signal: pressed on the hotkeys' thread, handled on the window's."""
+
+    pressed = Signal()
+
+
+def _global_key(action: str, slot: object) -> tuple[object, _Key] | None:
+    """Call a QObject's `slot` when an action's global key (from the user's keymap) is pressed; None without one."""
+    from .. import keymap
+    from ..platform import hotkeys
+    from ..platform.backend import NotSupported
+
+    combo = keymap.combo(action)
+    if not combo:
+        return None
+    key = _Key()
+    key.pressed.connect(slot)  # a slot of an object on the window's thread: Qt queues the call there
+    try:
+        registered = hotkeys.register({action: combo}, {action: key.pressed.emit})
+    except NotSupported:
+        return None
+    return registered, key
 
 
 def _tray(app: QApplication, window: object) -> QSystemTrayIcon:

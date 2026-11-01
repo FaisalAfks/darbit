@@ -26,6 +26,13 @@ darbit app
   Image, Area or Point; **T** tests it: every match with its score, and a slider for the similarity it needs (matches
   under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is
   shown.
+- **Highlight** (the Library's Highlight button, or Ctrl+Alt+H with the game in front): what's found on screen right
+  now. The Studio steps aside and each of the bot's pictures found gets its box and score over the game, a couple of
+  times a second; one just under what it needs gets a faint one. Pictures found on the same spot are marked ⚠ with
+  the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to the
+  game. Ctrl+Alt+H again hides it.
+
+  ![Highlight](../ui/images/qt-studio-highlight.png)
 - **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill at the top of the
   screen shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
   **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for a picture or until it's gone (Capture opens on that

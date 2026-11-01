@@ -37,3 +37,11 @@ def load(project: Path | None = None) -> Keymap:
         for scope, actions in data.items():
             keys.setdefault(scope, {}).update(actions)
     return keys
+
+
+def combo(action: str, project: Path | None = None) -> str:
+    """The keys an action has (`"record.toggle"` -> `"ctrl+alt+r"`), in whichever scope it's listed; "" when none."""
+    for scope in load(project).values():
+        if action in scope:
+            return str(scope[action])
+    return ""
