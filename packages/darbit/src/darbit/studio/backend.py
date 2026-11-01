@@ -75,6 +75,10 @@ class Studio(QObject):
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
         self._theme_name = theme_name or str(ui_settings.get(THEME, theme.DEFAULT))
         self._colors = theme.colors(self._theme_name, _custom_theme())
+        # read once: the ghost cursor's marks read these several times a second while a bot runs
+        self._sidebar = ui_settings.get(PICKER, "dropdown") == "sidebar"
+        self._effects = bool(ui_settings.get(EFFECTS, True))
+        self._ghost = bool(ui_settings.get(GHOST, True))
         self._answered.connect(self._take)
         self._failed.connect(self._show_failure)
         self._happened.connect(self._on_event)
@@ -136,13 +140,13 @@ class Studio(QObject):
         return self._playing
 
     def _get_sidebar(self) -> bool:
-        return ui_settings.get(PICKER, "dropdown") == "sidebar"
+        return self._sidebar
 
     def _get_effects(self) -> bool:
-        return bool(ui_settings.get(EFFECTS, True))
+        return self._effects
 
     def _get_ghost(self) -> bool:
-        return bool(ui_settings.get(GHOST, True))
+        return self._ghost
 
     def _get_symbols(self) -> str:
         return symbol_font()
@@ -293,17 +297,20 @@ class Studio(QObject):
 
     @Slot(bool)
     def setSidebar(self, on: bool) -> None:
+        self._sidebar = bool(on)
         ui_settings.set_value(PICKER, "sidebar" if on else "dropdown")
         self.lookChanged.emit()
 
     @Slot(bool)
     def setEffects(self, on: bool) -> None:
-        ui_settings.set_value(EFFECTS, bool(on))
+        self._effects = bool(on)
+        ui_settings.set_value(EFFECTS, self._effects)
         self.lookChanged.emit()
 
     @Slot(bool)
     def setGhost(self, on: bool) -> None:
-        ui_settings.set_value(GHOST, bool(on))
+        self._ghost = bool(on)
+        ui_settings.set_value(GHOST, self._ghost)
         self.lookChanged.emit()
 
     @Slot()
