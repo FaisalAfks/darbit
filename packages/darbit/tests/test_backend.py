@@ -1,7 +1,10 @@
 """The platform pieces: each forwards to the system's own version, and a system without one says so clearly."""
 
+from pathlib import Path
+
 import pytest
 
+import darbit
 from darbit.platform import backend, input, screen, system
 
 
@@ -27,3 +30,14 @@ def test_what_runs_on_import_or_exit_never_fails_elsewhere(elsewhere):
 def test_windows_has_every_piece():
     for piece in ("screen", "input", "windows", "listener", "hotkeys", "system"):
         assert piece in backend.MODULES["win32"]
+
+
+def test_windows_modules_import_what_they_use_of_ctypes():
+    """`ctypes.wintypes` works only once something has imported it: a module that leans on another having done so
+    breaks when the pieces load lazily (scale_at said 1.0 on a 150% screen that way)."""
+    folder = Path(darbit.__file__).parent / "platform" / "win32"
+    for module in folder.glob("*.py"):
+        text = module.read_text(encoding="utf-8")
+        assert "ctypes.wintypes." not in text, f"{module.name}: use `from ctypes import wintypes`"
+        if "wintypes." in text:
+            assert "from ctypes import wintypes" in text, f"{module.name} uses wintypes without importing it"

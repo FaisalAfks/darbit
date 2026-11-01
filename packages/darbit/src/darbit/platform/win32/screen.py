@@ -2,6 +2,7 @@
 
 import ctypes
 import threading
+from ctypes import wintypes
 
 import mss
 import numpy as np
@@ -48,13 +49,23 @@ def grab(region: Region | None = None) -> tuple[np.ndarray, Region]:
     return np.ascontiguousarray(np.asarray(shot)[:, :, :3]), region
 
 
+MONITOR_DEFAULTTONEAREST = 2
+MDT_EFFECTIVE_DPI = 0
+
+
 def scale_at(x: int, y: int) -> float:
     """Windows' display scaling at a point, e.g. 1.5 for 150%."""
+    user32 = ctypes.windll.user32
+    user32.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+    user32.MonitorFromPoint.restype = wintypes.HMONITOR
+    monitor = user32.MonitorFromPoint(wintypes.POINT(x, y), MONITOR_DEFAULTTONEAREST)
+    dpi_x, dpi_y = ctypes.c_uint(), ctypes.c_uint()
     try:
-        point = ctypes.wintypes.POINT(x, y)
-        monitor = ctypes.windll.user32.MonitorFromPoint(point, 2)
-        dpi_x, dpi_y = ctypes.c_uint(), ctypes.c_uint()
-        ctypes.windll.shcore.GetDpiForMonitor(monitor, 0, ctypes.byref(dpi_x), ctypes.byref(dpi_y))
-        return dpi_x.value / 96
-    except (AttributeError, OSError):
+        failed = ctypes.windll.shcore.GetDpiForMonitor(
+            monitor, MDT_EFFECTIVE_DPI, ctypes.byref(dpi_x), ctypes.byref(dpi_y)
+        )
+    except OSError:  # no shcore.dll: Windows older than 8.1
         return 1.0
+    if failed or not dpi_x.value:
+        return 1.0
+    return dpi_x.value / 96
