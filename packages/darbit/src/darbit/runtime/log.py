@@ -14,7 +14,7 @@ from pathlib import Path
 
 import cv2
 
-from ..events import publish
+from ..events import listen, publish
 from ..platform import screen
 from ..settings import settings
 
@@ -99,3 +99,18 @@ def since(started: float) -> str:
 
 def _modified_time(path: Path) -> float:
     return path.stat().st_mtime
+
+
+def _on_event(topic: str, data: dict) -> None:
+    """What the platform layer tells that belongs in the log and the run report."""
+    if topic != "screen.locked":
+        return
+    if data.get("locked"):
+        log("the screen is locked: waiting until it's back")
+        record("screen", state="locked")
+    else:
+        log("the screen is back: going on")
+        record("screen", state="back")
+
+
+listen(_on_event)

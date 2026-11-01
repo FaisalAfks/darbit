@@ -7,6 +7,8 @@ from pathlib import Path
 
 _ES_CONTINUOUS, _ES_SYSTEM_REQUIRED, _ES_DISPLAY_REQUIRED = 0x80000000, 0x00000001, 0x00000002
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+DESKTOP_READOBJECTS = 0x0001
+UOI_NAME = 2
 STILL_ACTIVE = 259  # GetExitCodeProcess's code for a process that hasn't ended
 
 
@@ -33,6 +35,35 @@ def keys_down(codes: tuple[int, ...]) -> bool:
         if not get_state(code) & 0x8000:
             return False
     return True
+
+
+def screen_usable() -> bool:
+    """False while Windows is locked, or shows its sign-in or a UAC prompt: the desktop taking input then isn't
+    the person's ("Default"), and screen grabs and input don't reach the game."""
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    user32.OpenInputDesktop.restype = wintypes.HANDLE
+    user32.OpenInputDesktop.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    user32.GetUserObjectInformationW.argtypes = (
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD),
+    )
+    user32.CloseDesktop.argtypes = (wintypes.HANDLE,)
+    desktop = user32.OpenInputDesktop(0, False, DESKTOP_READOBJECTS)
+    if not desktop:
+        return False  # the secure desktop (locked, sign-in, UAC) can't be opened from here
+    try:
+        name = ctypes.create_unicode_buffer(64)
+        needed = wintypes.DWORD()
+        if not user32.GetUserObjectInformationW(desktop, UOI_NAME, name, ctypes.sizeof(name), ctypes.byref(needed)):
+            return True
+        return name.value.lower() == "default"
+    finally:
+        user32.CloseDesktop(desktop)
 
 
 def process_alive(pid: int) -> bool:

@@ -54,6 +54,11 @@ your mouse or keys. darbit's own clicks and keys don't count.
 polite = 5   # seconds without your mouse or keys before the bot goes on; 0 (the default) is off
 ```
 
+When Windows is locked (or shows its sign-in or a UAC prompt), nothing a bot sees or presses reaches the game. A bot
+notices at its next darbit call (it looks once a second), lets go of its keys, writes `screen: locked` in its run
+report and waits; when the screen is back it writes `screen: back` and goes on where it was. darbit Studio's Overview
+says it's waiting, and since when. The stop hotkey and the Studio's Stop still work while it waits.
+
 With darbit Studio open, its **ghost cursor** shows where a bot clicks (a ripple) and the keys it presses (keycaps by
 the cursor) over the game, for a moment each, so you can tell the bot's input from your own. Clicks go through it. It's
 on by default; turn it off in darbit settings. A bot sends each one as a small message to the Studio and never waits

@@ -119,6 +119,10 @@ def keys_down(codes: tuple[int, ...]) -> bool:
     return False
 
 
+def screen_usable() -> bool:
+    return True
+
+
 def process_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)

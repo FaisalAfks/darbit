@@ -152,15 +152,14 @@ def ensure_running() -> None:
     """Start the service in the background unless one already answers."""
     if running():
         return
-    flags = 0
-    if sys.platform == "win32":
-        flags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+    from ..platform import system
+
     subprocess.Popen(
         [sys.executable, "-m", "darbit", "serve"],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        creationflags=flags,
+        creationflags=system.no_window(),
         start_new_session=sys.platform != "win32",
     )
     deadline = time.monotonic() + START_WAIT

@@ -36,6 +36,8 @@
 
 - The ghost cursor (#117): darbit Studio shows a ripple where a running bot clicks and keycaps for the keys it presses, over the game, so a person sharing the PC can tell the bot's input from their own. Bots tell the Studio over a local UDP port and never wait for it; on by default, off in darbit settings
 
+- A bot waits while Windows is locked: at its next darbit call (looked at once a second) it lets go of its keys, writes `screen: locked` in its run report and waits, then writes `screen: back` and goes on. The Overview says it's waiting and since when
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service
@@ -52,6 +54,7 @@
 
 ### Fixed
 
+- No console window on Windows when the Studio starts darbit's service, or the service starts a bot: a venv's python.exe opened one for the real Python, over the game (seen live on Windows; CREATE_NO_WINDOW doesn't work with DETACHED_PROCESS)
 - Highlight's boxes sit on the pictures at any Windows display scaling (125%, 150%) and with a monitor left of the main one; they were drawn at 100% from the desktop's corner. CI checks it at 150%
 - Capture boxes a picture with no border of its own (an icon on a plain background) to its edge: the box traced from its edges kept a pixel or two of background on every side, found by the live test on Windows
 - Highlight, the capture window and the recorder pill are windows of their own: they belonged to the Studio's window, which hides while they're on, and on Windows Highlight's overlay never showed

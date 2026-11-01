@@ -66,7 +66,7 @@ EVENTS = [
 
 def test_every_tile_from_a_report(tmp_path):
     tiles = by_kind(dashboard.tiles(project_with(tmp_path, EVENTS), TODAY, NOON))
-    assert tiles["now"].data == {"path": ["Speed Raid", "Sakura", "Fight"], "since": "11:24:41"}
+    assert tiles["now"].data == {"path": ["Speed Raid", "Sakura", "Fight"], "since": "11:24:41", "locked": None}
     steps = tiles["round"].data["steps"]
     assert [row["name"] for row in steps] == ["Boss Rush", "AFK", "Speed Raid"]
     assert steps[0]["state"] == "ok" and steps[1]["reason"] == "no rewards" and steps[2]["state"] == "running"
@@ -93,7 +93,7 @@ def test_every_tile_from_a_report(tmp_path):
 def test_a_quiet_day_shows_only_now(tmp_path):
     tiles = dashboard.tiles(project_with(tmp_path, []), TODAY, NOON)
     assert [tile.kind for tile in tiles] == ["now"]
-    assert tiles[0].data == {"path": [], "since": None}
+    assert tiles[0].data == {"path": [], "since": None, "locked": None}
 
 
 def test_studio_table_picks_and_orders_tiles(tmp_path):
@@ -187,3 +187,11 @@ def test_a_growing_report_is_read_a_bit_at_a_time(tmp_path):
     assert [event["event"] for event in board.read_events(report)] == ["a", "b", "c", "d"]
     report.write_text('{"event": "new day"}\n', encoding="utf-8")  # shorter: started again
     assert [event["event"] for event in board.read_events(report)] == ["new day"]
+
+
+def test_now_says_since_when_the_screen_is_locked():
+    locked = {"event": "screen", "state": "locked", "time": "2026-11-01T02:10:00.000"}
+    back = {"event": "screen", "state": "back", "time": "2026-11-01T06:30:00.000"}
+    assert dashboard.now_tile([locked]).data["locked"] == "2026-11-01T02:10:00.000"
+    assert dashboard.now_tile([locked, back]).data["locked"] is None
+    assert dashboard.now_tile([]).data["locked"] is None
