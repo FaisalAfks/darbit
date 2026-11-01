@@ -41,6 +41,7 @@ SETTING_KINDS = {
     "matcher": "text",
     "match": "table",  # matching options: [settings.match] fast = true
     "space": "text",  # "screen" (the default) or "window"
+    "day_starts": "text",  # when the bot's day starts: "03:00", or "00:00 UTC"
     "polite": "number",  # polite mode: seconds of quiet before the bot goes on after the person used the mouse
 }
 
@@ -166,6 +167,13 @@ def _check_setting(key: str, value: object) -> None:
         raise ProjectError(f"{MANIFEST} [settings]: {key} should be a {kind}, not {value!r}")
     if key == "space" and value not in SPACES:
         raise ProjectError(f'{MANIFEST} [settings]: space is "screen" or "window", not {value!r}')
+    if key == "day_starts":
+        from .. import days
+
+        try:
+            days.parse(value)
+        except ValueError as error:
+            raise ProjectError(f"{MANIFEST} [settings]: {error}") from None
 
 
 def apply(project: Project, settings: Settings) -> list[str]:

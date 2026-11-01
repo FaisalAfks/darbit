@@ -4,6 +4,8 @@
 
 ### New
 
+- A bot's day can start at another time than midnight: `[settings] day_starts = "03:00"`, or `"00:00 UTC"` for a game that resets at midnight UTC. The run report and log files, history, the Studio's Overview and Results, and the daily summary go by it (`darbit.days`); the Results timeline runs on past midnight
+
 - One set of names everywhere: **image**, **region** and **location** (the Studio said picture, area and point). Each target's settings file names its `kind`; the Library sorts by it (`core.targets.kind_of` works it out for files from before), and `darbit kinds BOT` writes it in. An image's inspector says its region and location, the defaults too: the whole screen and its centre
 - Capture works on the kind picked in its pill (Image, Region, Location; 1, 2, 3 or Tab): a click or drag makes it, and the handles, arrows, drag-to-move and Delete change it. The pill is solid instead of see-through, hides fully, and shows a message only for a few seconds instead of a standing hint
 - One pill for every tool over the game (`FloatingPill.qml` in `PillWindow.qml`): Capture's, the recorder's and the run pill. The recorder's pill now hides like the run pill (`studio/hiding.py`, which the run pill's code became)
@@ -75,6 +77,7 @@
 
 ### Fixed
 
+- Target settings files written on Windows had Windows line endings; they're written with LF, like the repos keep them
 - The Library's Actions tab was always empty: its property was named `onActions`, which QML reads as a signal handler. A test now checks no QML property is named that way. Actions also come first under All
 
 - The Library counted points as images: it looked for the kind `location` where the service says `point`, so the Points tab missed them

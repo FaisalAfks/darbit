@@ -308,5 +308,5 @@ def save(path: Path, image: np.ndarray | None, **fields) -> None:
         data.tofile(str(_with(path, ".png")))
     clean = {k: v for k, v in fields.items() if v is not None}
     if clean:
-        _with(path, ".json").write_text(json.dumps(clean, indent=2) + "\n", encoding="utf-8")
+        _with(path, ".json").write_text(json.dumps(clean, indent=2) + "\n", encoding="utf-8", newline="\n")
     forget()
