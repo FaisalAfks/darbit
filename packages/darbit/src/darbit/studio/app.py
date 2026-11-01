@@ -34,6 +34,11 @@ HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture gra
 
 
 def _client() -> Client:
+    """The real service, started in the background first if it isn't running. (Only here: a Studio given another
+    connection, a test's or a probe's, never starts one.)"""
+    from ..service.client import ensure_running
+
+    ensure_running()
     return Client("darbit Studio")
 
 

@@ -54,6 +54,8 @@ Item {
     }
     function count(test) { return page.library.filter(test).length }
     function kindLabel(kind) { return kind }
+    // the tabs an asset shows under: its kind, and an image's own region and location (the service's tags)
+    function tagged(asset, tab) { return (asset.tags || [asset.kind]).indexOf(tab) >= 0 }
 
     readonly property bool actionsTab: kind === "action"
     // actions as items of the library: All shows them with the pictures, areas and points
@@ -64,7 +66,7 @@ Item {
         if (actionsTab)
             return page.actionItems.filter(matching)
         var found = page.library.filter(function (asset) {
-            if (kind !== "all" && asset.kind !== kind) return false
+            if (kind !== "all" && !page.tagged(asset, kind)) return false
             if (missingOnly && !asset.missing) return false
             if (weakOnly && !page.weak(asset)) return false
             return words === "" || asset.name.toLowerCase().indexOf(words) >= 0
@@ -120,9 +122,9 @@ Item {
             current: page.kind
             model: [
                 { key: "all", label: "All", count: page.library.length + page.actions.length },
-                { key: "image", label: "Images", count: page.count(function (a) { return a.kind === "image" }) },
-                { key: "region", label: "Regions", count: page.count(function (a) { return a.kind === "region" }) },
-                { key: "location", label: "Locations", count: page.count(function (a) { return a.kind === "location" }) },
+                { key: "image", label: "Images", count: page.count(function (a) { return page.tagged(a, "image") }) },
+                { key: "region", label: "Regions", count: page.count(function (a) { return page.tagged(a, "region") }) },
+                { key: "location", label: "Locations", count: page.count(function (a) { return page.tagged(a, "location") }) },
                 { key: "action", label: "Actions", count: page.actions.length }
             ]
             onPicked: function (key) { page.kind = key; page.chosen = "" }

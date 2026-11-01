@@ -148,3 +148,10 @@ def test_a_target_names_its_kind_and_old_files_get_it_written(project):
     assert json.loads((images / "Fight.Slot.json").read_text(encoding="utf-8"))["kind"] == "location"
     assert json.loads((images / "Lobby.Play.json").read_text(encoding="utf-8"))["kind"] == "image"
     assert library.write_kinds(project) == []  # named now
+
+
+def test_an_image_with_its_own_region_or_location_is_tagged_for_those_tabs():
+    assert library.tags_of("image", {}) == ["image"]  # the whole screen, its centre
+    assert library.tags_of("image", {"region": [0, 0, 9, 9], "offset": [4, 0]}) == ["image", "region", "location"]
+    assert library.tags_of("image", {"offset": [0, 0]}) == ["image"]
+    assert library.tags_of("location", {"location": [1, 2]}) == ["location"]

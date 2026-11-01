@@ -374,9 +374,6 @@ class Studio(QObject):
 
     def _open(self) -> object:
         if self._client is None:
-            from ..service.client import ensure_running
-
-            ensure_running()
             self._client = self._connect()
             self._client.on_event(self._from_service)
         return self._client.call("bots.list")

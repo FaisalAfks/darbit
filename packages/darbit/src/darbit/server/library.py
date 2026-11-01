@@ -147,6 +147,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                     "size": size,
                     "region": settings.get("region"),  # none: the whole screen
                     "offset": settings.get("offset"),  # none: its centre
+                    "tags": tags_of(kind_of(settings, True), settings),
                     "similarity": settings.get("similarity"),
                     "scores": scores.get(name, []),
                     "missing": False,
@@ -165,6 +166,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                 "size": None,
                 "region": settings.get("region"),
                 "location": settings.get("location"),
+                "tags": [kind],
                 "similarity": None,
                 "scores": [],
                 "missing": False,
@@ -177,6 +179,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                 "group": group_of(name),
                 "thumbnail": None,
                 "size": None,
+                "tags": [kind],
                 "scores": [],
                 "missing": True,
             }
@@ -392,6 +395,18 @@ def screens(project: Project) -> list[dict]:
             {"screen": path.stem, "picture": picture, "w": width, "h": height, "assets": places.get("assets", {})}
         )
     return found
+
+
+def tags_of(kind: str, settings: dict) -> list[str]:
+    """The Library tabs a target shows under: its kind, and for an image the region and location it names (an image
+    without them is searched on the whole screen and clicked at its centre, so it's only an image)."""
+    tags = [kind]
+    if kind == "image" and settings.get("region"):
+        tags.append("region")
+    offset = settings.get("offset")
+    if kind == "image" and offset and (offset[0] or offset[1]):
+        tags.append("location")
+    return tags
 
 
 def write_kinds(project: Project) -> list[str]:

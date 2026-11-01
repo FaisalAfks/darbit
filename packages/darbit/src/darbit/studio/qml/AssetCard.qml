@@ -43,12 +43,20 @@ Rectangle {
             color: card.asset.missing ? studio.colors.danger : card.kindInk
             font.pixelSize: card.asset.kind === "location" ? 26 : 13; font.weight: Font.DemiBold
         }
-        Rectangle {
-            visible: card.asset.kind !== "image"
+        // its tags: the kind, and an image's own region and location, in the kinds' colours
+        Row {
             anchors { right: parent.right; top: parent.top; margins: 6 }
-            width: kindText.implicitWidth + 12; height: 18; radius: 9
-            color: Qt.rgba(card.kindInk.r, card.kindInk.g, card.kindInk.b, 0.2)
-            Text { id: kindText; anchors.centerIn: parent; text: card.asset.kind === "region" ? "REGION" : "LOCATION"; color: card.kindInk; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.6 }
+            spacing: 4
+            Repeater {
+                model: card.asset.tags || [card.asset.kind]
+                delegate: Rectangle {
+                    required property string modelData
+                    readonly property color ink: modelData === "region" ? studio.colors.accent2 : modelData === "location" ? studio.colors.ok : studio.colors.accent
+                    width: tagText.implicitWidth + 12; height: 18; radius: 9
+                    color: Qt.rgba(ink.r, ink.g, ink.b, 0.22)
+                    Text { id: tagText; anchors.centerIn: parent; text: modelData.toUpperCase(); color: parent.ink; font.pixelSize: 9; font.weight: Font.Bold; font.letterSpacing: 0.6 }
+                }
+            }
         }
     }
     Text {
