@@ -8,7 +8,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, QTimer, QUrl, Signal
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
@@ -105,7 +105,10 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     engine = load(studio, capture, recorder, highlight, ghost, run_pill, fit(ui_settings.get(PLACE), screens()))
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
-    keys = _connect_highlight(studio, highlight, window)
+    _connect_highlight(studio, highlight, window)
+    keys = _global_keys(
+        {"highlight.toggle": studio.toggleHighlight, "capture.freeze": lambda: _capture_now(studio, capture)}
+    )
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
     _connect_run_pill(studio, run_pill, window)
@@ -220,7 +223,7 @@ def _connect_ghost(studio: Studio, ghost: Ghost) -> None:
     follow()
 
 
-def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> tuple[object, QObject] | None:
+def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> None:
     """Highlight hides the Studio while it's on; Ctrl+Alt+H turns it on and off with the game in front."""
 
     def toggle(folder: str, name: str) -> None:
@@ -232,7 +235,12 @@ def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> 
             QTimer.singleShot(HIDE_WAIT_MS, lambda: highlight.start(Path(folder), only=name))
 
     studio.highlightWanted.connect(toggle)
-    return _global_key("highlight.toggle", studio.toggleHighlight)
+
+
+def _capture_now(studio: Studio, capture: Capture) -> None:
+    """Ctrl+Alt+C with the game in front: Capture on the screen as it is (unless it's open already)."""
+    if not capture.isOpen:
+        studio.openCapture("any")
 
 
 class _Key(QObject):
@@ -241,22 +249,33 @@ class _Key(QObject):
     pressed = Signal()
 
 
-def _global_key(action: str, slot: object) -> tuple[object, _Key] | None:
-    """Call a QObject's `slot` when an action's global key (from the user's keymap) is pressed; None without one."""
+def _global_keys(slots: dict[str, Callable[[], None]]) -> tuple[object, list[_Key]] | None:
+    """Call each action's function when its global key (from the user's keymap) is pressed; None without any."""
     from .. import keymap
     from ..platform import hotkeys
     from ..platform.backend import NotSupported
 
-    combo = keymap.combo(action)
-    if not combo:
+    combos = {}
+    handlers = {}
+    kept = []
+    for action, slot in slots.items():
+        combo = keymap.combo(action)
+        if not combo:
+            continue
+        key = _Key()
+        key.pressed.connect(
+            slot, Qt.ConnectionType.QueuedConnection
+        )  # pressed on the hotkeys' thread, run on the window's
+        combos[action] = combo
+        handlers[action] = key.pressed.emit
+        kept.append(key)
+    if not combos:
         return None
-    key = _Key()
-    key.pressed.connect(slot)  # a slot of an object on the window's thread: Qt queues the call there
     try:
-        registered = hotkeys.register({action: combo}, {action: key.pressed.emit})
+        registered = hotkeys.register(combos, handlers)
     except NotSupported:
         return None
-    return registered, key
+    return registered, kept
 
 
 def _tray(app: QApplication, open_studio: Callable[[], None]) -> QSystemTrayIcon:

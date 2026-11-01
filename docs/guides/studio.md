@@ -23,10 +23,17 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   too), **Delete**, and where it's used.
 
   ![The Library](../ui/images/qt-studio-library.png)
-- **Capture** (the Library's Capture button): the Studio steps aside, the screen is frozen, and it opens full screen.
-  Click something to box it (again for bigger, right-click for smaller) or drag a box; the handles and the arrow keys
-  change it (Shift: 10 px, Ctrl: its size). A magnifier follows the mouse with the shot's own pixels (8×; Ctrl+wheel from 2× to 24×) and
-  the place and colour of the pixel under it. Image, Area or Point; **T** tests it: a line sweeps the searched area,
+- **Capture** (the Library's Capture button, or Ctrl+Alt+C with the game in front): the Studio steps aside, the screen
+  is frozen, and it opens full screen. A target is a picture, the area it's searched in and where to click it, made
+  together: click something to box the picture (again for bigger, right-click for smaller) or drag a box,
+  **Shift+drag** its area, **Ctrl+click** where to click. The pill at the top shows which of the three the target
+  has (click one to work on it, right-click to drop it; Tab goes to the next), and slides away a few seconds after
+  the mouse leaves it: move the mouse to the top edge to bring it back. Drag inside a box to move it; the handles
+  and the arrow keys change it (Shift: 10 px, Ctrl: its size). Click a readout to type exact numbers. **Ctrl+Z** and
+  **Ctrl+Y** undo and redo. A retake keeps the target's area and point; hold **C** to see the saved picture over the
+  new one. A magnifier follows the mouse with the shot's own pixels (8×; Ctrl+wheel from 2× to 24×) and
+  the place and colour of the pixel under it, with the target's parts on it; **Z** pins it. **T** tests the picture
+  in its area: a line sweeps the searched area,
   then it says whether the picture was found once, more than once or not at all, and how many look-alikes score
   under the line (the box itself is the one found), with each match and its score and a slider for the similarity it needs (matches
   under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is

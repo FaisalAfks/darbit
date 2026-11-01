@@ -145,6 +145,22 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
 - **Recorder:** a pill at the top of the screen with the time, steps and checks; Checkpoint, Pause (and the check
   menu while paused), Done and ✕; ≡ unfolds the steps as they're caught.
 
+### Round 11: Capture, picture, area and point together (round-11-capture.html)
+
+- **A, layers on the shot.** One target is a picture, the area it's searched in and where to click it, made together
+  with no modes: drag or click for the picture, Shift+drag for its area, Ctrl+click for the point. The pill's three
+  chips show what the target has; a click on one works on that part, a right-click drops it. Tab goes to the next
+  part.
+- **The pill moves to the top** and slides away 3 s after the mouse leaves it, like the recorder's and the run pill,
+  so what's under it can be boxed; the top edge brings it back.
+- **Undo and redo** (Ctrl+Z, Ctrl+Y) for every change; a burst of arrow presses is one step.
+- **Readouts** on each part (picture size, area with "picture inside ✓" or "outside ⚠", the click's offset from the
+  picture's centre); click one to type exact numbers.
+- **A retake keeps** the target's saved area and point, and C held shows the saved picture over the new one.
+- **The magnifier** shows the shot's own pixels with the parts on them, Ctrl+wheel zooms it (2× to 24×), Z pins it.
+- **Test** searches the picture's own area and says whether it's found once, more or not at all.
+- Not chosen: B (three steps in order) and C (a tool rail and a card of numbers).
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.

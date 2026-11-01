@@ -106,6 +106,17 @@ class Capture(QObject):
             return ""
         return image.pixelColor(x, y).name()
 
+    @Slot(str, result="QVariantMap")
+    def existing(self, name: str) -> dict:
+        """What a target called `name` already has (area, point, picture file), for a retake to keep."""
+        try:
+            found = service.existing(name.strip())
+        except service.CaptureError:
+            return {}
+        if found["picture"]:
+            found["picture"] = Path(found["picture"]).as_uri()
+        return found
+
     @Slot("QVariantList", "QVariant", result="QVariantMap")
     def test(self, box: list, region: object) -> dict:
         """Every place the boxed picture is found (in `region`, else the whole shot), with scores."""

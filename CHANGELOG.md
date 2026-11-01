@@ -4,6 +4,8 @@
 
 ### New
 
+- Capture makes a target's picture, its area and its click point together (round 11, A): drag or click for the picture, Shift+drag for its area, Ctrl+click for the point. The pill moved to the top, shows the three parts, and slides away until the mouse comes to the top edge, so what was under it can be boxed. Ctrl+Z and Ctrl+Y undo and redo every change; readouts take exact numbers; a retake keeps the target's area and point, and C shows the saved picture over the new one; the magnifier draws the parts and Z pins it; Test searches the picture's own area. Ctrl+Alt+C opens Capture with the game in front. The service tells what a target already has (`capture.service.existing`)
+
 - darbit Studio's window: closing it keeps darbit in the tray (it says so once), it opens where it was left at the same size (made to fit a screen still there), and a second `darbit app` brings the open Studio forward
 
 - The run pill in the Qt Studio: Play hides the Studio behind a pill at the top of the screen (the bot, where it is, Pause, Stop, ⤢) that slides away until the real mouse comes to that edge and stays out of the bot's screenshots. The bot stopping or failing brings the Studio back. A darbit setting turns it off
