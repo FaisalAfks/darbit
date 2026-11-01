@@ -3,10 +3,12 @@
 A target saved by the capture tool is two files with the same name:
 `lobby/play.png` (the image) and `lobby/play.json` (its settings):
 
-    {"region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
+    {"kind": "image", "region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
      "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
 
-Every field is optional. A target with only a location and no image is a point; with only a region, an area.
+`kind` says what the target is: an image (searched in its region, the whole screen without one, and clicked at its
+centre moved by `offset`), a region, or a location. Files from before it say nothing; `kind_of` works it out from what
+they have. Every other field is optional.
 `window` and `origin` are the size and top-left corner of the app window it was taken in;
 with them, core/placement.py follows the window when it moves or changes size.
 
@@ -174,6 +176,22 @@ def find_file(name: str | Path, folders: list[Path]) -> Path | None:
 
 def _settings_file(name: str | Path, folders: list[Path]) -> Path | None:
     return _look([_with(_stem(name), ".json")], folders)
+
+
+KINDS = ("image", "region", "location")
+
+
+def kind_of(settings: dict, has_image: bool) -> str:
+    """What a target is: the kind its settings file names, else worked out from what it has (an image; a region
+    without a location; else a location)."""
+    named = settings.get("kind")
+    if named in KINDS:
+        return named
+    if has_image:
+        return "image"
+    if settings.get("region") and not settings.get("location"):
+        return "region"
+    return "location"
 
 
 def _from_json(target: Target, path: Path) -> Target:

@@ -69,8 +69,6 @@ def describe(items: list[Item]) -> list[dict]:
     found = []
     for item in items:
         kind = item.kind
-        if kind == "location":
-            kind = "point"
         found.append({"name": item.name, "kind": kind, "say": item.note, "screen": item.screen})
     return found
 
@@ -223,14 +221,14 @@ def save(name: str, kind: str, image: list[int] | None, region: list[int] | None
         result.point = Location(point[0] + origin.x, point[1] + origin.y)
     if capture_kind == "image":
         if image is None:
-            raise CaptureError("box the picture first")
+            raise CaptureError("box the image first")
         part = _inside(image, shot)
         result.image = Region(part.x + origin.x, part.y + origin.y, part.w, part.h)
     elif capture_kind == "region" and result.region is None and image is not None:
         part = _inside(image, shot)
         result.region = Region(part.x + origin.x, part.y + origin.y, part.w, part.h)
     elif capture_kind == "location" and result.point is None:
-        raise CaptureError("click the point first")
+        raise CaptureError("click the location first")
     item = Item(name, capture_kind)
     saved = save_result(session.images, item, result, shot, origin, None)
     remember_screen(session.project, name, capture_kind, shot, image, region, point)
@@ -288,7 +286,7 @@ def stop() -> None:
 def items_for(folder: Path, mode: str, name: str, kind: str) -> list[Item]:
     """What to take: the guide's pictures not taken yet, one named asset, or nothing set (anything)."""
     if mode == "one" and name:
-        capture_kind = "location" if kind == "point" else kind
+        capture_kind = "location" if kind == "point" else kind  # "point": the old name
         return [Item(name, capture_kind or "image")]
     if mode != "guide":
         return []

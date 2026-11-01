@@ -20,9 +20,9 @@ from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
 from .ghost import Ghost
+from .hiding import HidingPill
 from .highlight import Highlight
 from .recorder import Recorder
-from .runpill import RunPill
 from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
@@ -43,7 +43,8 @@ def load(
     recorder: Recorder | None = None,
     highlight: Highlight | None = None,
     ghost: Ghost | None = None,
-    run_pill: RunPill | None = None,
+    run_pill: HidingPill | None = None,
+    recorder_hiding: HidingPill | None = None,
     place: tuple[QRect | None, bool] = (None, False),
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
@@ -58,7 +59,9 @@ def load(
     if ghost is None:
         ghost = Ghost()
     if run_pill is None:
-        run_pill = RunPill()
+        run_pill = HidingPill()
+    if recorder_hiding is None:
+        recorder_hiding = HidingPill()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
@@ -66,12 +69,14 @@ def load(
     engine.rootContext().setContextProperty("highlight", highlight)
     engine.rootContext().setContextProperty("ghost", ghost)
     engine.rootContext().setContextProperty("runPill", run_pill)
+    engine.rootContext().setContextProperty("recorderHiding", recorder_hiding)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
     highlight.setParent(engine)
     ghost.setParent(engine)
     run_pill.setParent(engine)
+    recorder_hiding.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -101,8 +106,10 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     recorder = Recorder()
     highlight = Highlight()
     ghost = Ghost()
-    run_pill = RunPill()
-    engine = load(studio, capture, recorder, highlight, ghost, run_pill, fit(ui_settings.get(PLACE), screens()))
+    run_pill = HidingPill()
+    recorder_hiding = HidingPill()
+    place = fit(ui_settings.get(PLACE), screens())
+    engine = load(studio, capture, recorder, highlight, ghost, run_pill, recorder_hiding, place)
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     _connect_highlight(studio, highlight, window)
@@ -111,13 +118,14 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     )
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
+    _connect_recorder_hiding(recorder, capture, recorder_hiding)
     _connect_run_pill(studio, run_pill, window)
 
     def open_studio() -> None:
         run_pill.close()  # the Studio comes back in its place
         _bring_forward(window)
 
-    tray = _tray(app, open_studio)
+    tray = _tray(app, studio, window, open_studio)
     door.knocked.connect(open_studio)
     _keep_in_tray(app, window, tray)
     code = app.exec()
@@ -125,6 +133,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     highlight.stop()
     ghost.stop()
     run_pill.close()
+    recorder_hiding.close()
     recorder.close()
     if keys is not None:
         keys[0].stop()
@@ -186,7 +195,20 @@ def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, wind
     capture.saved.connect(saved)
 
 
-def _connect_run_pill(studio: Studio, run_pill: RunPill, window: object) -> None:
+def _connect_recorder_hiding(recorder: Recorder, capture: Capture, hiding: HidingPill) -> None:
+    """The recorder's pill hides like the run pill while a recording goes on (not while Capture takes an image)."""
+
+    def follow() -> None:
+        if recorder.active and not capture.isOpen:
+            hiding.open()
+        else:
+            hiding.close()
+
+    recorder.stateChanged.connect(follow)
+    capture.openChanged.connect(follow)
+
+
+def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> None:
     """Play hides the Studio behind the run pill; the bot stopping or failing, or the pill's ⤢, brings it back."""
     seen_running: list[bool] = []  # the bot ran since Play: until then, "stopped" is the status from before
 
@@ -278,13 +300,51 @@ def _global_keys(slots: dict[str, Callable[[], None]]) -> tuple[object, list[_Ke
     return registered, kept
 
 
-def _tray(app: QApplication, open_studio: Callable[[], None]) -> QSystemTrayIcon:
+PAGES = [("overview", "Overview"), ("library", "Library"), ("results", "Results"), ("settings", "Settings")]
+
+
+def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callable[[], None]) -> QSystemTrayIcon:
+    """darbit in the tray: a click opens the Studio; the menu holds the shown bot's controls, its pages and the tools."""
     tray = QSystemTrayIcon(QIcon(str(ICON)), app)
     tray.setToolTip("darbit Studio")
     menu = QMenu()
-    menu.addAction("Open darbit Studio", open_studio)
-    menu.addSeparator()
-    menu.addAction("Quit (bots go on)", app.quit)
+
+    def open_page(name: str) -> None:
+        open_studio()
+        QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", name))
+
+    def record() -> None:
+        open_page("library")
+        QMetaObject.invokeMethod(window, "recordAction", Q_ARG("QVariant", ""))
+
+    def fill() -> None:
+        """The menu as things are now: built each time it opens, so the bot's state is never stale."""
+        menu.clear()
+        bot = studio.bot
+        state = str(bot.get("status") or "stopped")
+        running = state in ("running", "paused")
+        if bot.get("name"):
+            menu.addAction(f"{bot['name']}: {state}").setEnabled(False)
+            if running:
+                menu.addAction("Go on" if state == "paused" else "Pause", studio.pause)
+                menu.addAction("Stop", studio.stop)
+            else:
+                menu.addAction("Play", studio.start)
+            menu.addSeparator()
+        menu.addAction("Open darbit Studio", open_studio)
+        pages = menu.addMenu("Go to")
+        for name, label in PAGES:
+            pages.addAction(label, lambda name=name: open_page(name))
+        tools = menu.addMenu("Tools")
+        tools.addAction("Capture (Ctrl+Alt+C)", lambda: studio.openCapture("any"))
+        tools.addAction("Highlight the last image (Ctrl+Alt+H)", studio.toggleHighlight)
+        tools.addAction("Record an action…", record)
+        menu.addAction("darbit settings", lambda: open_page("studio"))
+        menu.addSeparator()
+        menu.addAction("Quit darbit Studio (bots go on)", app.quit)
+
+    menu.aboutToShow.connect(fill)
+    fill()
     tray.setContextMenu(menu)
     tray.activated.connect(lambda reason: open_studio() if reason == QSystemTrayIcon.Trigger else None)
     if QSystemTrayIcon.isSystemTrayAvailable():

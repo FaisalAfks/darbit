@@ -632,7 +632,7 @@ def test_the_library_keeps_its_columns_when_the_inspector_opens(qt):
 
 
 def test_the_run_pill_tucks_away_and_only_a_real_move_brings_it_back():
-    from darbit.studio.runpill import HIDE_AFTER, Peek
+    from darbit.studio.hiding import HIDE_AFTER, Peek
 
     peek = Peek(left=1000, top=0, width=400, height=80, left_at=0.0)
     assert not peek.time_to_tuck(HIDE_AFTER - 0.1)
@@ -681,12 +681,12 @@ class Window:
 
 
 def test_play_hides_the_studio_behind_the_run_pill_until_the_bot_stops(qt):
-    from darbit.studio.runpill import RunPill
+    from darbit.studio.hiding import HidingPill
 
     moves = []
     client = Runs()
     studio = backend.Studio(lambda: client)
-    pill = RunPill(watch=lambda on_move: moves.append(on_move) or (lambda: moves.remove(on_move)))
+    pill = HidingPill(watch=lambda on_move: moves.append(on_move) or (lambda: moves.remove(on_move)))
     window = Window()
     app._connect_run_pill(studio, pill, window)
     studio.connect()
@@ -707,12 +707,12 @@ def test_play_hides_the_studio_behind_the_run_pill_until_the_bot_stops(qt):
 def test_the_run_pill_draws_without_a_qml_warning(qt):
     from PySide6.QtQuick import QQuickWindow
 
-    from darbit.studio.runpill import RunPill
+    from darbit.studio.hiding import HidingPill
 
     warnings = []
     QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
     try:
-        pill = RunPill(watch=lambda on_move: None)
+        pill = HidingPill(watch=lambda on_move: None)
         studio = backend.Studio(FakeClient)
         engine = app.load(studio, run_pill=pill)
         root = engine.rootObjects()[0]  # held, or Qt deletes it
@@ -802,15 +802,11 @@ def test_closing_keeps_the_studio_in_the_tray_and_its_place(qt):
 
 
 def test_the_library_sorts_assets_by_the_kinds_the_service_names():
-    import re
+    from darbit.core.targets import KINDS
 
-    from darbit.server import library
-
-    source = Path(library.__file__).read_text(encoding="utf-8")
     page = (Path(app.__file__).parent / "qml" / "LibraryPage.qml").read_text(encoding="utf-8")
-    kinds = set(re.findall(r'kind = "(\w+)"', source)) | {"image"}
-    assert kinds == {"image", "point", "region"}
-    for kind in kinds:
+    assert KINDS == ("image", "region", "location")
+    for kind in KINDS:
         assert f'key: "{kind}"' in page  # a tab for each kind the service sends
 
 
@@ -826,7 +822,7 @@ def test_highlight_one_picture_from_the_library(qt):
     assert wanted == [("/bots/ad-bot", "Bag.Equip"), ("/bots/ad-bot", "Bag.Equip")]
 
 
-def test_capture_makes_a_picture_its_area_and_its_point_together(qt, tmp_path):
+def test_capture_makes_an_image_its_region_and_its_location_together(qt, tmp_path):
     import json
 
     import numpy as np
@@ -850,24 +846,25 @@ def test_capture_makes_a_picture_its_area_and_its_point_together(qt, tmp_path):
         def part(name, value):
             QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", name), Q_ARG("QVariant", value))
 
-        part("picture", [300, 200, 100, 40])
-        part("area", [250, 150, 250, 150])
-        part("point", [380, 220])
+        part("image", [300, 200, 100, 40])
+        part("region", [250, 150, 250, 150])
+        part("location", [380, 220])
         assert window.property("kind") == "image"
         QMetaObject.invokeMethod(window, "undo")
-        assert window.property("point") is None  # the last change undone
+        assert window.property("location") is None  # the last change undone
         QMetaObject.invokeMethod(window, "redo")
-        assert window.property("point") is not None
+        assert window.property("location") is not None
         window.findChild(QObject, "nameField").setProperty("text", "Lobby.Play")
         QMetaObject.invokeMethod(window, "save")
         saved = json.loads((tmp_path / "images" / "Lobby.Play.json").read_text(encoding="utf-8"))
+        assert saved["kind"] == "image"
         assert saved["region"] == [250, 150, 250, 150]
         assert saved["offset"] == [30, 0]  # from the picture's centre
-        # a retake keeps its area, and its point once the new picture is boxed
+        # a retake keeps its region, and its location once the new image is boxed
         QMetaObject.invokeMethod(window, "takeSaved", Q_ARG("QVariant", "Lobby.Play"))
-        assert window.property("area") is not None
-        part("picture", [302, 200, 100, 40])
-        point = window.property("point")
+        assert window.property("region") is not None
+        part("image", [302, 200, 100, 40])
+        point = window.property("location")
         point = point.toVariant() if hasattr(point, "toVariant") else point
         assert [round(value) for value in point] == [382, 220]
         capture.close()
@@ -876,3 +873,13 @@ def test_capture_makes_a_picture_its_area_and_its_point_together(qt, tmp_path):
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_no_qml_property_is_named_like_a_signal_handler():
+    import re
+
+    # QML reads `onSomething` as a signal handler, so a property named that way is never bound (the Library's Actions
+    # tab stayed empty behind one)
+    for page in (Path(app.__file__).parent / "qml").glob("*.qml"):
+        found = re.findall(r"property\s+\w+\s+(on[A-Z]\w*)", page.read_text(encoding="utf-8"))
+        assert found == [], f"{page.name}: {found}"

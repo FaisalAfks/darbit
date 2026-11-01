@@ -1,9 +1,8 @@
-"""The run pill (#130, #245): while a bot runs, darbit Studio hides and a small pill at the top of the screen shows
-the bot, where it is, Pause, Stop and a way back to the Studio.
+"""A floating pill that hides over the game (#245): the run pill while a bot runs, and the recorder's pill.
 
-A few seconds after the mouse leaves it, the pill slides up and leaves a sliver at the top edge. A real mouse move
-to that edge brings it back: the listener leaves out input a program sends, so the bot's own moves never show it.
-RunPill.qml draws it; app.py opens it on Play and brings the Studio back when it closes.
+Open, it shows; a few seconds after the real mouse leaves it, it slides out of sight above the screen. A real mouse
+move to the top edge above it brings it back: the listener leaves out input a program sends, so a bot's own moves
+never show it. RunPill.qml and RecorderPill.qml draw the pills; app.py opens and closes them.
 """
 
 import threading
@@ -63,9 +62,9 @@ def _watch_mouse(on_move: Callable[[int, int], None]) -> Callable[[], None] | No
         return None
 
 
-class RunPill(QObject):
+class HidingPill(QObject):
     changed = Signal()
-    closed = Signal()  # the pill went away: app.py brings the Studio back
+    closed = Signal()  # the pill went away (the run pill's: app.py brings the Studio back)
     _shown = Signal()  # from the listener's thread
 
     def __init__(self, watch: Callable[[Callable[[int, int], None]], Callable[[], None] | None] = _watch_mouse) -> None:

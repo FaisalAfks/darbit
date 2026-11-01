@@ -1,20 +1,20 @@
 # Capturing targets
 
-Targets (pictures, regions and points) are taken from a frozen screen in darbit Studio's Capture. darbit Studio is being rebuilt ([rebuild plan](../plan-rebuild.md), milestone 4); until the new one is out, capture with v0.4's Studio from a checkout of the `v0.4.0` tag:
+A target is an **image**, a **region** or a **location**, taken from a frozen screen in darbit Studio's Capture
+(the Library's Capture button, or Ctrl+Alt+C with the game in front). An image is searched in its region (the whole
+screen without one) and clicked at its location (its centre unless moved), and all three are made together:
 
-```bash
-git clone --branch v0.4.0 https://github.com/FaisalAfks/darbit darbit-0.4
-cd darbit-0.4
-uv run --all-extras darbit app        # Library › Edit › Capture, Retake, or Start setup for a guide
-```
+- Pick the kind in the pill: **Image**, **Region** or **Location** (1, 2, 3, or Tab). A ✓ marks each one the target has
+- Image or Region: click something to box it, click the same spot again for the next bigger thing, right-click for
+  smaller, or drag a box. Location: click where to click
+- The kind picked is the one you change: drag inside it to move it, drag its handles, nudge it with the arrows (Shift:
+  10 px, Ctrl: its size), Delete removes it. Click a readout to type exact numbers. Ctrl+Z and Ctrl+Y undo and redo
+- **T** tests the image in its region and marks every match with its score
+- **Enter** saves the target's `.png` (an image) and `.json` (its kind, region and location) into the bot's images
+  folder
 
-In Capture:
-
-- Click a button to box it; click the same spot again for the next bigger thing, right-click for smaller
-- Drag a box, move it, resize it from its handles, scale it with the wheel, nudge it with the arrows
-- Shift+drag sets the search region, Ctrl+click sets the click point
-- Test finds the boxed picture in its region and marks every match with its score
-- Save writes the target's `.png` and `.json` into the bot's images folder
+The pill slides out of sight a few seconds after the mouse leaves it; the top edge brings it back. More in the
+[Studio guide](studio.md).
 
 ## Setup guides
 

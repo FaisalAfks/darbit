@@ -19,5 +19,6 @@ Architecture decision records: one short file per decision, with its context, th
 | [0013](0013-studio-redesign.md) | darbit Studio's redesign | 2026-10-26 |
 | [0014](0014-input-tapes.md) | Recorded input is a tape | 2026-10-28 |
 | [0015](0015-rebuild.md) | Rebuild around a fast, swappable core | 2026-10-30 |
+| [0016](0016-names-and-one-look.md) | Image, region, location; and one look for the Studio | 2026-11-02 |
 
 0001 to 0014 came from the [2026-10-25 plan](../archive/plan-2026-10-25.md); 0015 and later from the [rebuild plan](../plan-rebuild.md).

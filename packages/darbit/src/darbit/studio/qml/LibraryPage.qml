@@ -53,15 +53,15 @@ Item {
         return null
     }
     function count(test) { return page.library.filter(test).length }
-    function kindLabel(kind) { return kind === "region" ? "area" : kind === "point" ? "point" : kind }
+    function kindLabel(kind) { return kind }
 
-    readonly property bool onActions: kind === "action"
+    readonly property bool actionsTab: kind === "action"
     // actions as items of the library: All shows them with the pictures, areas and points
     readonly property var actionItems: page.actions.map(function (action) { return Object.assign({ kind: "action" }, action) })
     readonly property var shown: {
         var words = query.toLowerCase()
         var matching = function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 }
-        if (onActions)
+        if (actionsTab)
             return page.actionItems.filter(matching)
         var found = page.library.filter(function (asset) {
             if (kind !== "all" && asset.kind !== kind) return false
@@ -72,6 +72,7 @@ Item {
         if (kind === "all" && !missingOnly && !weakOnly)
             found = found.concat(page.actionItems.filter(matching))
         found.sort(function (a, b) {
+            if ((a.kind === "action") !== (b.kind === "action")) return a.kind === "action" ? -1 : 1
             if (sort === "score") return (a.kind === "action" || page.score(a) === null ? 2 : page.score(a)) - (b.kind === "action" || page.score(b) === null ? 2 : page.score(b))
             if (sort === "uses") return (b.uses || 0) - (a.uses || 0)
             return a.name.localeCompare(b.name)
@@ -83,7 +84,7 @@ Item {
         var groups = [], index = {}
         for (var at = 0; at < shown.length; at++) {
             var asset = shown[at]
-            var name = page.onActions ? "" : group === "name" ? (asset.name.indexOf(".") > 0 ? asset.name.split(".")[0] : "Other")
+            var name = page.actionsTab ? "" : group === "name" ? (asset.name.indexOf(".") > 0 ? asset.name.split(".")[0] : "Other")
                 : group === "kind" ? page.kindLabel(asset.kind) + "s" : ""
             if (!(name in index)) { index[name] = groups.length; groups.push({ name: name, assets: [] }) }
             groups[index[name]].assets.push(asset)
@@ -120,8 +121,8 @@ Item {
             model: [
                 { key: "all", label: "All", count: page.library.length + page.actions.length },
                 { key: "image", label: "Images", count: page.count(function (a) { return a.kind === "image" }) },
-                { key: "region", label: "Areas", count: page.count(function (a) { return a.kind === "region" }) },
-                { key: "point", label: "Points", count: page.count(function (a) { return a.kind === "point" }) },
+                { key: "region", label: "Regions", count: page.count(function (a) { return a.kind === "region" }) },
+                { key: "location", label: "Locations", count: page.count(function (a) { return a.kind === "location" }) },
                 { key: "action", label: "Actions", count: page.actions.length }
             ]
             onPicked: function (key) { page.kind = key; page.chosen = "" }
@@ -229,23 +230,23 @@ Item {
             spacing: 14
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: page.onActions ? (page.actions.length === 0 ? "No actions yet" : "Nothing matches")
+                text: page.actionsTab ? (page.actions.length === 0 ? "No actions yet" : "Nothing matches")
                     : !studio.libraryReady ? "Loading the pictures…"
-                    : page.library.length === 0 ? "No pictures yet" : "Nothing matches"
+                    : page.library.length === 0 ? "No images yet" : "Nothing matches"
                 color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                visible: page.onActions || studio.libraryReady
-                text: page.onActions ? (page.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
+                visible: page.actionsTab || studio.libraryReady
+                text: page.actionsTab ? (page.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
                     : page.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
                 color: studio.colors.muted; font.pixelSize: 14
             }
             PillButton {
-                visible: page.onActions ? page.actions.length === 0 : studio.libraryReady && page.library.length === 0
+                visible: page.actionsTab ? page.actions.length === 0 : studio.libraryReady && page.library.length === 0
                 anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"
-                icon: page.onActions ? "●" : "▣"; text: page.onActions ? "Record" : "Capture"
-                onClicked: page.onActions ? window.recordAction("") : studio.openCapture("any")
+                icon: page.actionsTab ? "●" : "▣"; text: page.actionsTab ? "Record" : "Capture"
+                onClicked: page.actionsTab ? window.recordAction("") : studio.openCapture("any")
             }
         }
     }
