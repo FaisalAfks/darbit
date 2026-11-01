@@ -1,7 +1,7 @@
 """Placing a target on today's screen: following its window, and resizing it to the current scaling.
 
 A target taken in an app window (its .json has `window` and `origin`) is moved with that window and
-scaled by how much wider the window is now. A target with only `scale` is resized by the change in
+scaled by how much wider the window is now, and one with no region of its own is searched only inside the window. A target with only `scale` is resized by the change in
 display scaling, its region grown to fit. Anything else, or nothing changed, is used as it is.
 See docs/archive/tasks/T22-window-targets.md.
 """
@@ -74,6 +74,8 @@ def placed(target: Target, place: Place, extra: float = 1.0) -> Target:
     if moves:
         if region is not None:
             region = _moved_region(region, target.origin, place.window, size)
+        elif target._pixels is not None:
+            region = place.window  # taken in the window: it's somewhere in it, so only the window is searched
         if location is not None:
             location = _moved_location(location, target.origin, place.window, size)
     elif region is not None and size > 1:

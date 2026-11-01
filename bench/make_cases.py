@@ -97,6 +97,7 @@ def write_case(
     settings: dict[str, dict],
     finds: list[dict],
     note: str,
+    window: list[int] | None = None,
 ) -> None:
     folder = HERE / name
     images = folder / "images"
@@ -107,7 +108,10 @@ def write_case(
         extra = settings.get(target_name)
         if extra:
             (images / f"{target_name}.json").write_text(json.dumps(extra, indent=2) + "\n", encoding="utf-8")
-    lines = [f"# {note}", 'screen = "screen.png"', 'images = "images"', ""]
+    lines = [f"# {note}", 'screen = "screen.png"', 'images = "images"']
+    if window is not None:
+        lines.append(f"window = {window}  # where the app's window is on this screen: x, y, width, height")
+    lines.append("")
     for find in finds:
         lines.append("[[find]]")
         lines.append(f'target = "{find["target"]}"')
@@ -157,6 +161,31 @@ def main() -> None:
         {},
         scaled_finds,
         "the same menus at 1920 x 1200 with targets taken at 2560: found only with a resizing option",
+    )
+    # the game's window moved and made smaller on the same desktop, targets taken with it at 0, 0 and full size:
+    # found by following the window (space = "window"), or by trying other sizes on screen pixels (sizes)
+    moved = np.full_like(screen, 18)
+    left, top = 240, 180
+    moved[top : top + 1200, left : left + 1920] = scaled
+    moved_names = ["Menu.Play", "Menu.Shop", "Menu.Bag", "Char.0", "Char.3"]
+    moved_settings = {}
+    moved_finds = []
+    for name in moved_names:
+        x, y, w, h = boxes[name]
+        extra = {"window": [2560, 1600], "origin": [0, 0]}
+        if name in settings:
+            extra.update(settings[name])
+        moved_settings[name] = extra
+        at = [left + round(x * 0.75), top + round(y * 0.75), round(w * 0.75), round(h * 0.75)]
+        moved_finds.append({"target": name, "at": at, "option": "window|sizes"})
+    write_case(
+        "window-moved",
+        moved,
+        {name: targets[name] for name in moved_names},
+        moved_settings,
+        moved_finds,
+        "the game's window moved to 240, 180 and made 1920 x 1200; targets taken in it at 0, 0, full size",
+        window=[left, top, 1920, 1200],
     )
     print(f"cases written to {HERE}")
 

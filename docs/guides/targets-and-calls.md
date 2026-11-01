@@ -43,7 +43,7 @@ On the test bench (`bench/README.md`), `fast` and `grayscale` together bring a w
 
 The capture tool also saves `scale` (the display scaling) and, with `--window Roblox`, the window's size and corner (`window`, `origin`). Before each search the target is placed on the screen as it is now:
 
-- **Taken in a window** (`window` and `origin` saved) and `settings.window` set (or `[bot] window` in `darbit.toml`): its region, location and click offset follow the window, and the picture is resized by how much wider the window is now
+- **Taken in a window** (`window` and `origin` saved), `settings.window` set (or `[bot] window` in `darbit.toml`) and window space on (`[settings] space = "window"`; the default is `"screen"`, screen pixels): its region, location and click offset follow the window, the picture is resized by how much wider the window is now, and with no region of its own it's searched only inside the window
 - **Only `scale` saved:** the picture is resized by the change in scaling, and its region grown to fit
 - **Nothing changed**, or neither saved: used exactly as it is
 - A resized picture that isn't found is tried once at 90–110% of that size; a size that works is kept for the rest of the run

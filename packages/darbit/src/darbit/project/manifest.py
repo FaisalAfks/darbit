@@ -24,6 +24,7 @@ STUDIO_KEYS = {"summary", "tiles"}
 TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup")
 
 # what each darbit setting takes in [settings]; images come from [images] instead
+SPACES = ("screen", "window")  # where targets' places are kept: screen pixels, or the app window's
 SETTING_KINDS = {
     "timeout": "number",
     "similarity": "number",
@@ -38,6 +39,7 @@ SETTING_KINDS = {
     "state": "folder",
     "matcher": "text",
     "match": "table",  # matching options: [settings.match] fast = true
+    "space": "text",  # "screen" (the default) or "window"
 }
 
 
@@ -148,6 +150,8 @@ def _check_setting(key: str, value: object) -> None:
         ok = isinstance(value, str)
     if not ok:
         raise ProjectError(f"{MANIFEST} [settings]: {key} should be a {kind}, not {value!r}")
+    if key == "space" and value not in SPACES:
+        raise ProjectError(f'{MANIFEST} [settings]: space is "screen" or "window", not {value!r}')
 
 
 def apply(project: Project, settings: Settings) -> list[str]:
