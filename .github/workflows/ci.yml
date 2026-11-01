@@ -33,6 +33,24 @@ jobs:
       - run: uv sync --locked --extra studio
       - run: uv run pytest
 
+  live-windows:  # darbit on a real Windows desktop: tests/live moves the mouse and types into a window of its own
+    runs-on: windows-latest
+    env:
+      DARBIT_LIVE: "1"
+      DARBIT_LIVE_SHOTS: live-shots
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked --extra studio
+      - run: uv run pytest packages/darbit/tests/live -v -s
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: live-shots
+          path: live-shots
+
   bench:
     runs-on: windows-latest
     env:
