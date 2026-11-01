@@ -136,6 +136,9 @@ class Studio(QObject):
     def _get_effects(self) -> bool:
         return bool(ui_settings.get(EFFECTS, True))
 
+    def _get_symbols(self) -> str:
+        return symbol_font()
+
     def _get_version(self) -> str:
         from .. import __version__
 
@@ -161,6 +164,7 @@ class Studio(QObject):
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
+    symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
 
     # ---- what the pages ask for
 
@@ -453,6 +457,18 @@ class Studio(QObject):
                 self.said.emit(
                     f"{data.get('action', 'The action')} stopped: {data.get('reason') or data.get('status')}"
                 )
+
+
+def symbol_font() -> str:
+    """The font the icons come from: on Windows, Segoe UI Symbol (Segoe UI's own fallback draws ⌕ ▣ ⇅ tiny);
+    elsewhere the app's own font, which has them."""
+    import sys
+
+    if sys.platform == "win32":
+        return "Segoe UI Symbol"
+    from PySide6.QtGui import QGuiApplication
+
+    return QGuiApplication.font().family()
 
 
 def _local_path(text: str) -> str:

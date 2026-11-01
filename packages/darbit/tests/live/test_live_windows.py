@@ -141,3 +141,62 @@ def test_the_studio_draws_on_windows(page, tmp_path):
     path = SHOTS / f"studio-{page}.png"
     app.shot(path, page)
     assert path.is_file() and path.stat().st_size > 10_000
+
+
+def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, tmp_path):
+    """Highlight on the real screen: it boxes the picture where it is, and its overlay doesn't take the clicks."""
+    import shutil
+
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.platform import input as device
+    from darbit.platform import screen
+    from darbit.project import bots
+    from darbit.service.client import Client
+    from darbit.studio.app import load
+    from darbit.studio.backend import Studio
+    from darbit.studio.highlight import Highlight
+
+    folder = bots.new("highlight-bot", tmp_path)
+    shutil.copy(pictures / f"{PICTURE}.png", folder / "assets" / "images" / f"{PICTURE}.png")
+    front(target)
+    app = QGuiApplication.instance() or QGuiApplication(["live"])
+    studio = Studio(lambda: Client("live"), "glass-dark", "")
+    highlight = Highlight()
+    engine = load(studio, highlight=highlight)
+    overlay = engine.rootObjects()[0].findChild(QQuickWindow, "highlightWindow")
+    engine.rootObjects()[0].hide()
+    highlight.start(folder)
+
+    def spin(seconds: float) -> None:
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            QCoreApplication.processEvents()
+            time.sleep(0.01)
+
+    try:
+        deadline = time.monotonic() + 10
+        while highlight.found < 1 and time.monotonic() < deadline:
+            spin(0.1)
+        boxes = [box for box in highlight.boxes if box["name"] == PICTURE]
+        assert boxes and boxes[0]["found"], f"Highlight didn't find the picture: {highlight.boxes}"
+        assert (boxes[0]["x"], boxes[0]["y"], boxes[0]["w"], boxes[0]["h"]) == picture_box(target)
+        assert overlay.isVisible()
+        spin(0.5)
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        pixels, _ = screen.grab()
+        import cv2
+
+        cv2.imwrite(str(SHOTS / "highlight-on-windows.png"), pixels)
+        before = len(target.events("click"))
+        x, y, w, h = picture_box(target)
+        device.click(x + w // 2, y + h // 2, 0.0)
+        spin(0.4)
+        assert len(target.events("click")) == before + 1, "the click stopped at Highlight's overlay"
+    finally:
+        highlight.stop()
+        spin(0.2)
+        del engine
+        app.processEvents()

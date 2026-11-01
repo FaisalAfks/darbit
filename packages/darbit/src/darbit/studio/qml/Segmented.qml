@@ -60,7 +60,7 @@ Rectangle {
                         visible: !!item.modelData.icon
                         text: item.modelData.icon || ""
                         color: item.on && seg.strong ? studio.colors.onAccent : studio.colors.muted
-                        font.pixelSize: 13
+                        font.pixelSize: 13; font.family: studio.symbols
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {

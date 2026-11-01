@@ -61,8 +61,8 @@ Flickable {
                     Row {
                         spacing: 10
                         PillButton { kind: "primary"; icon: "+"; text: "New bot"; onClicked: window.newBot("new") }
-                        PillButton { icon: "⇩"; text: "From a git link"; onClicked: window.newBot("link") }
-                        PillButton { kind: "quiet"; icon: "▤"; text: "Add a folder"; onClicked: window.newBot("folder") }
+                        PillButton { icon: "↓"; text: "From a git link"; onClicked: window.newBot("link") }
+                        PillButton { kind: "quiet"; text: "Add a folder"; onClicked: window.newBot("folder") }
                     }
                 }
             }
