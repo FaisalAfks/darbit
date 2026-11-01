@@ -339,3 +339,64 @@ def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
         spin(0.2)
         del engine
         app.processEvents()
+
+
+def _cpu_and_memory(process) -> tuple[float, int]:
+    """Seconds of CPU the process has used, and its working set in bytes (Windows' own numbers)."""
+    import ctypes
+    from ctypes import wintypes
+
+    class Counters(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD),
+            ("PageFaultCount", wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t),
+            ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t),
+            ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    handle = wintypes.HANDLE(int(process._handle))
+    times = [wintypes.FILETIME() for _ in range(4)]
+    assert ctypes.windll.kernel32.GetProcessTimes(handle, *[ctypes.byref(t) for t in times])
+    kernel, user = times[2], times[3]
+    cpu = (
+        (kernel.dwHighDateTime << 32 | kernel.dwLowDateTime) + (user.dwHighDateTime << 32 | user.dwLowDateTime)
+    ) / 1e7
+    counters = Counters()
+    counters.cb = ctypes.sizeof(Counters)
+    assert ctypes.windll.psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb)
+    return cpu, counters.WorkingSetSize
+
+
+def test_the_studio_meets_its_speed_goals_on_windows():
+    """darbit app, left alone: under 2% of one core and under 200 MB (the plan's goals for the Studio, idle)."""
+    import subprocess
+    import sys
+
+    studio = subprocess.Popen([sys.executable, "-m", "darbit", "app"])
+    try:
+        time.sleep(10)  # started, connected, drawn
+        assert studio.poll() is None, "the Studio closed by itself"
+        cpu_before, _ = _cpu_and_memory(studio)
+        time.sleep(10)
+        cpu_after, memory = _cpu_and_memory(studio)
+        share = (cpu_after - cpu_before) / 10
+        print(f"Studio idle on Windows: {share:.2%} of one core, {memory / 2**20:.0f} MB")
+        assert share < 0.02
+        assert memory < 200 * 2**20
+    finally:
+        studio.terminate()
+        studio.wait(10)
+        subprocess.run([sys.executable, "-m", "darbit", "serve", "--stop"], timeout=30, check=False)
+
+
+def test_the_screen_counts_as_unlocked():
+    """The desktop taking input is the person's: a bot goes on (a locked one would wait)."""
+    from darbit.platform import system
+
+    assert system.screen_usable()

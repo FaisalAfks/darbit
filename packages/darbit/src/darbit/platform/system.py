@@ -18,6 +18,14 @@ def keys_down(codes: tuple[int, ...]) -> bool:
     return backend.system().keys_down(codes)
 
 
+def screen_usable() -> bool:
+    """Whether screen grabs and input reach the person's desktop: False while it's locked."""
+    try:
+        return backend.system().screen_usable()
+    except backend.NotSupported:
+        return True
+
+
 def process_alive(pid: int) -> bool:
     return backend.system().process_alive(pid)
 

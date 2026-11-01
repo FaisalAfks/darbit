@@ -146,6 +146,13 @@ Flickable {
 
         // ---- what needs you
         Banner {
+            visible: page.running && page.now !== null && !!page.now.locked
+            Layout.fillWidth: true
+            tone: "warn"; icon: "⏸"
+            title: "The screen is locked: the bot is waiting until it's back"
+            detail: page.now && page.now.locked ? "since " + Format.clock(page.now.locked) + ". Nothing it sees or presses reaches the game while Windows is locked." : ""
+        }
+        Banner {
             readonly property int missing: page.setup && page.setup.total ? page.setup.total - page.setup.done : 0
             visible: missing > 0
             Layout.fillWidth: true

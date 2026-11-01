@@ -167,7 +167,8 @@ def _steps(events: list[dict]) -> list[dict]:
 
 
 def now_tile(events: list[dict]) -> Tile:
-    """The steps still open, deepest last: ["Speed Raid", "Sakura", "Fight"], and since when."""
+    """The steps still open, deepest last: ["Speed Raid", "Sakura", "Fight"], since when, and since when the bot
+    has been waiting for a locked screen (None when it isn't)."""
     open_steps: dict[str, str] = {}  # step path -> started
     for event in _steps(events):
         if event.get("state") == "started":
@@ -178,9 +179,21 @@ def now_tile(events: list[dict]) -> Tile:
     for step in open_steps:
         if step.count(" > ") >= deepest.count(" > "):
             deepest = step
+    locked = _locked_since(events)
     if not deepest:
-        return Tile("now", "Now", {"path": [], "since": None})
-    return Tile("now", "Now", {"path": deepest.split(" > "), "since": open_steps[deepest]})
+        return Tile("now", "Now", {"path": [], "since": None, "locked": locked})
+    return Tile("now", "Now", {"path": deepest.split(" > "), "since": open_steps[deepest], "locked": locked})
+
+
+def _locked_since(events: list[dict]) -> str | None:
+    """When the screen was locked, if the bot is still waiting for it (its last `screen` event)."""
+    last = None
+    for event in events:
+        if event.get("event") == "screen":
+            last = event
+    if last is not None and last.get("state") == "locked":
+        return last.get("time")
+    return None
 
 
 def round_tile(events: list[dict]) -> Tile | None:

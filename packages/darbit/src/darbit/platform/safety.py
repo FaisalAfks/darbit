@@ -26,6 +26,7 @@ from .keys import key
 
 CONTROL = "DARBIT_CONTROL"  # environment variable: the folder darbit Studio writes `stop` and `pause` into
 CONTROL_EVERY = 0.25  # seconds between looks at the control folder
+SCREEN_EVERY = 1.0  # seconds between looks at whether the screen is locked
 
 _stopped = threading.Event()
 _paused = threading.Event()
@@ -39,6 +40,7 @@ _armed = False
 _polite_quiet = 0.0  # polite mode: seconds without the person's input before the bot goes on (0: off)
 _polite_until = 0.0  # monotonic time the bot may go on at
 _polite_stop: Callable[[], None] | None = None
+_screen_looked = 0.0  # monotonic time of the last look at whether the screen is locked
 
 
 def on_stop(callback: Callable[[], None]) -> None:
@@ -130,6 +132,8 @@ def check() -> None:
         _wait_while_paused()
     if _polite_until > time.monotonic():
         _wait_politely()
+    if time.monotonic() - _screen_looked >= SCREEN_EVERY:
+        _wait_for_the_screen()
     _take_interrupt()
 
 
@@ -177,6 +181,27 @@ def _wait_politely() -> None:
         time.sleep(min(0.1, max(0.0, _polite_until - time.monotonic())))
     if _stopped.is_set():
         raise Stopped("stopped while waiting for the mouse")
+    with _lock:
+        if not _pending:
+            _wake.clear()
+
+
+def _wait_for_the_screen() -> None:
+    """While Windows is locked nothing the bot sees or sends is real: let go of everything, wait, and go on when
+    it's back. `screen.locked` events say when (runtime/log.py writes them in the run report)."""
+    global _screen_looked
+    _screen_looked = time.monotonic()
+    if system.screen_usable():
+        return
+    for callback in _on_stop:
+        callback()
+    publish("screen.locked", {"locked": True})
+    while not _stopped.is_set() and not system.screen_usable():
+        _stopped.wait(SCREEN_EVERY)
+    _screen_looked = time.monotonic()
+    publish("screen.locked", {"locked": False})
+    if _stopped.is_set():
+        raise Stopped("stopped while the screen was locked")
     with _lock:
         if not _pending:
             _wake.clear()
