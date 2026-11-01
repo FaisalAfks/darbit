@@ -43,6 +43,7 @@ nav:
       - Logs, reports, library check: guides/logs-and-reports.md
       - Capturing targets: guides/capture.md
       - Bot projects: guides/projects.md
+      - The screen map: guides/screen-map.md
       - The service: guides/service.md
       - darbit Studio: guides/studio.md
   - Architecture: architecture/index.md
