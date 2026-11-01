@@ -63,3 +63,12 @@ function dayName(day) {
     if (days === 1) return "Yesterday"
     return Qt.formatDate(date, "ddd d MMM")
 }
+
+function timer(seconds) {
+    // 42.5 -> "0:42", 3725 -> "1:02:05"
+    var whole = Math.max(0, Math.floor(seconds || 0))
+    var hours = Math.floor(whole / 3600), minutes = Math.floor(whole % 3600 / 60), rest = whole % 60
+    var tail = (rest < 10 ? "0" : "") + rest
+    if (hours > 0) return hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + tail
+    return minutes + ":" + tail
+}

@@ -155,3 +155,17 @@ def test_a_new_bot_is_made_and_listed(service, bot, tmp_path):  # noqa: F811
             connection.call("bots.new", name="9 lives")
         with pytest.raises(client.ServiceError, match="already exists"):
             connection.call("bots.new", name="fresh-bot")
+
+
+def test_actions_are_listed_renamed_and_deleted(service, bot):  # noqa: F811
+    from darbit.server import actions_api
+
+    steps = [{"kind": "key", "verb": "press", "keys": ["e"]}, {"kind": "wait", "seconds": 0.5}]
+    actions_api.save(bot, "open_bag", [{"name": "Open the bag", "steps": steps}])
+    with client.Client("test") as connection:
+        listed = connection.call("bot.actions", bot="tick-bot")
+        assert [(found["name"], found["steps"]) for found in listed] == [("open_bag", 2)]
+        connection.call("bot.action.rename", bot="tick-bot", name="open_bag", to="bag_open")
+        assert [found["name"] for found in connection.call("bot.actions", bot="tick-bot")] == ["bag_open"]
+        connection.call("bot.action.delete", bot="tick-bot", name="bag_open")
+        assert connection.call("bot.actions", bot="tick-bot") == []

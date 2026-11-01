@@ -98,6 +98,14 @@ class Capture(QObject):
         except service.CaptureError:
             return {"boxes": [], "start": 0}
 
+    @Slot(int, int, result=str)
+    def colour(self, x: int, y: int) -> str:
+        """The colour of the shot at (x, y), as #rrggbb, for the magnifier."""
+        image = self.provider.image
+        if image.isNull() or not (0 <= x < image.width() and 0 <= y < image.height()):
+            return ""
+        return image.pixelColor(x, y).name()
+
     @Slot("QVariantList", "QVariant", result="QVariantMap")
     def test(self, box: list, region: object) -> dict:
         """Every place the boxed picture is found (in `region`, else the whole shot), with scores."""

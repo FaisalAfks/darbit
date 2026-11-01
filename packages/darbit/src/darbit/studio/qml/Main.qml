@@ -22,6 +22,7 @@ ApplicationWindow {
     Connections {
         target: studio
         function onMadeBot(name) { toast.show(name + " is ready") }
+        function onSaid(text) { toast.show(text) }
     }
 
     Backdrop { anchors.fill: parent }
@@ -66,12 +67,14 @@ ApplicationWindow {
 
     Toast { id: toast }
     NewBotSheet { id: sheet }
+    RecordSheet { id: recordSheet }
     CaptureWindow { objectName: "captureWindow" }
+    RecorderPill { objectName: "recorderPill" }
 
     function go(name) {
         page = name
         if (name === "overview") studio.loadOverview()
-        else if (name === "library") studio.loadLibrary()
+        else if (name === "library") { studio.loadLibrary(); studio.loadActions() }
         else if (name === "results") studio.loadDays()
         else if (name === "settings") studio.loadSettings()
     }
@@ -82,5 +85,6 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+4"; onActivated: window.go("settings") }
     Shortcut { sequence: "Ctrl+,"; onActivated: window.go("studio") }
     Shortcut { sequence: "Ctrl+N"; onActivated: sheet.open() }
+    function recordAction(name) { recordSheet.openFor(name || "") }
     Shortcut { sequence: "F5"; onActivated: window.running ? null : studio.start() }
 }

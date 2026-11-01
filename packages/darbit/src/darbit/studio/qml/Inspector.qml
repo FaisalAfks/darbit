@@ -6,6 +6,7 @@ import QtQuick.Layouts
 Rectangle {
     id: panel
     property var asset: null
+    property var action: null  // an action instead of an asset
     property var score: null
     property real needs: 0.9
     property string kindLabel: ""
@@ -15,6 +16,8 @@ Rectangle {
     signal renamed(string to)
     signal deleted()
     onAssetChanged: { renaming = false; confirming = false }
+    onActionChanged: { renaming = false; confirming = false }
+    readonly property string shownName: asset ? asset.name : action ? action.name : ""
     radius: 18
     color: studio.colors.glassStrong
     border.color: studio.colors.line
@@ -29,9 +32,10 @@ Rectangle {
             id: body
             width: parent.width
             spacing: 14
-            visible: panel.asset !== null
+            visible: panel.asset !== null || panel.action !== null
 
             Rectangle {
+                visible: panel.asset !== null
                 Layout.fillWidth: true; Layout.preferredHeight: 170
                 radius: 12; color: studio.colors.bg
                 Image {
@@ -51,8 +55,24 @@ Rectangle {
             Column {
                 Layout.fillWidth: true
                 spacing: 4
-                Text { width: parent.width; text: panel.asset ? panel.asset.name : ""; color: studio.colors.text; font.pixelSize: 18; font.weight: Font.Bold; wrapMode: Text.WrapAnywhere }
+                Row {
+                    width: parent.width
+                    Text { width: parent.width - (closeAction.visible ? 40 : 0); text: panel.shownName; color: studio.colors.text; font.pixelSize: 18; font.weight: Font.Bold; wrapMode: Text.WrapAnywhere }
+                    PillButton { id: closeAction; visible: panel.action !== null; icon: "✕"; kind: "quiet"; small: true; onClicked: panel.closed() }
+                }
                 Text {
+                    visible: panel.action !== null
+                    text: panel.action ? "action · " + (panel.action.steps || 0) + " steps" + (panel.action.sections > 1 ? " in " + panel.action.sections + " sections" : "") : ""
+                    color: studio.colors.muted; font.pixelSize: 13
+                }
+                Text {
+                    visible: panel.action !== null && panel.action.used_by && panel.action.used_by.length > 0
+                    width: parent.width; wrapMode: Text.Wrap
+                    text: panel.action && panel.action.used_by ? "Called by " + panel.action.used_by.join(", ") : ""
+                    color: studio.colors.faint; font.pixelSize: 12
+                }
+                Text {
+                    visible: panel.asset !== null
                     text: panel.asset ? panel.kindLabel + (panel.asset.size ? " · " + panel.asset.size[0] + " × " + panel.asset.size[1] : "")
                         + (panel.asset.region ? " · searched in its area" : "") : ""
                     color: studio.colors.muted; font.pixelSize: 13
@@ -96,6 +116,16 @@ Rectangle {
                 }
             }
             GridLayout {
+                visible: panel.action !== null
+                Layout.fillWidth: true
+                columns: 2; columnSpacing: 8; rowSpacing: 8
+                PillButton { Layout.fillWidth: true; kind: "primary"; icon: "▶"; text: "Play"; onClicked: studio.playAction(panel.action.name) }
+                PillButton { Layout.fillWidth: true; icon: "■"; text: "Stop"; onClicked: studio.stopAction() }
+                PillButton { Layout.fillWidth: true; icon: "●"; text: "Record again"; onClicked: window.recordAction(panel.action.name) }
+                PillButton { Layout.fillWidth: true; icon: "✎"; text: "Rename"; onClicked: { panel.renaming = true; nameField.text = panel.action.name; nameField.forceActiveFocus() } }
+            }
+            GridLayout {
+                visible: panel.asset !== null
                 Layout.fillWidth: true
                 columns: 2; columnSpacing: 8; rowSpacing: 8
                 PillButton { Layout.fillWidth: true; icon: "▣"; text: "Retake"; onClicked: studio.retake(panel.asset.name, panel.asset.kind === "location" ? "point" : panel.asset.kind) }
@@ -108,7 +138,7 @@ Rectangle {
                     id: nameField
                     Layout.fillWidth: true; Layout.preferredHeight: 38
                     color: studio.colors.text; font.pixelSize: 14
-                    onAccepted: if (text.trim() !== "" && text.trim() !== panel.asset.name) panel.renamed(text.trim())
+                    onAccepted: if (text.trim() !== "" && text.trim() !== panel.shownName) panel.renamed(text.trim())
                     Keys.onEscapePressed: panel.renaming = false
                     background: Rectangle { radius: 10; color: studio.colors.raised; border.color: studio.colors.accent }
                 }
@@ -117,12 +147,12 @@ Rectangle {
             Text {
                 visible: panel.renaming
                 Layout.fillWidth: true; wrapMode: Text.Wrap
-                text: "Every line in the bot's code that names it changes too."
+                text: panel.action ? "Every call to it changes too." : "Every line in the bot's code that names it changes too."
                 color: studio.colors.faint; font.pixelSize: 12
             }
             Column {
                 Layout.fillWidth: true; spacing: 6
-                visible: studio.uses.length > 0
+                visible: panel.asset !== null && studio.uses.length > 0
                 Text { text: "Used in " + studio.uses.length + (studio.uses.length === 1 ? " place" : " places"); color: studio.colors.muted; font.pixelSize: 13 }
                 Repeater {
                     model: studio.uses.slice(0, 12)
@@ -136,7 +166,7 @@ Rectangle {
             }
             PillButton {
                 Layout.fillWidth: true
-                kind: "danger"; icon: "🗑"; text: panel.confirming ? "Delete it and its files" : "Delete…"
+                kind: "danger"; icon: "🗑"; text: panel.confirming ? (panel.action ? "Delete it and its tape" : "Delete it and its files") : "Delete…"
                 onClicked: panel.confirming ? panel.deleted() : panel.confirming = true
             }
         }

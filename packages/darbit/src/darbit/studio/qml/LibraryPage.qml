@@ -14,7 +14,13 @@ Item {
     property string group: "none"   // none, name, kind
     property string query: ""
     property string chosen: ""
-    readonly property var chosenAsset: find(chosen)
+    readonly property var chosenAsset: onActions ? null : find(chosen)
+    readonly property var chosenAction: onActions ? findAction(chosen) : null
+    function findAction(name) {
+        for (var index = 0; index < studio.actions.length; index++)
+            if (studio.actions[index].name === name) return studio.actions[index]
+        return null
+    }
     readonly property int cardWidth: 176
     readonly property int columns: Math.max(1, Math.floor((grid.width + 14) / (cardWidth + 14)))
 
@@ -29,8 +35,11 @@ Item {
     function count(test) { return studio.library.filter(test).length }
     function kindLabel(kind) { return kind === "region" ? "area" : kind === "location" ? "point" : kind }
 
+    readonly property bool onActions: kind === "action"
     readonly property var shown: {
         var words = query.toLowerCase()
+        if (onActions)
+            return studio.actions.filter(function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 })
         var found = studio.library.filter(function (asset) {
             if (kind !== "all" && asset.kind !== kind) return false
             if (missingOnly && !asset.missing) return false
@@ -49,7 +58,7 @@ Item {
         var groups = [], index = {}
         for (var at = 0; at < shown.length; at++) {
             var asset = shown[at]
-            var name = group === "name" ? (asset.name.indexOf(".") > 0 ? asset.name.split(".")[0] : "Other")
+            var name = page.onActions ? "" : group === "name" ? (asset.name.indexOf(".") > 0 ? asset.name.split(".")[0] : "Other")
                 : group === "kind" ? page.kindLabel(asset.kind) + "s" : ""
             if (!(name in index)) { index[name] = groups.length; groups.push({ name: name, assets: [] }) }
             groups[index[name]].assets.push(asset)
@@ -84,9 +93,10 @@ Item {
                 { key: "all", label: "All", count: studio.library.length },
                 { key: "image", label: "Images", count: page.count(function (a) { return a.kind === "image" }) },
                 { key: "region", label: "Areas", count: page.count(function (a) { return a.kind === "region" }) },
-                { key: "location", label: "Points", count: page.count(function (a) { return a.kind === "location" }) }
+                { key: "location", label: "Points", count: page.count(function (a) { return a.kind === "location" }) },
+                { key: "action", label: "Actions", count: studio.actions.length }
             ]
-            onPicked: function (key) { page.kind = key }
+            onPicked: function (key) { page.kind = key; page.chosen = "" }
         }
         Toggle { text: "Missing " + page.count(function (a) { return a.missing }); tone: "danger"; on: page.missingOnly; onClicked: page.missingOnly = !page.missingOnly }
         Toggle { text: "Weak " + page.count(page.weak); tone: "warn"; on: page.weakOnly; onClicked: page.weakOnly = !page.weakOnly }
@@ -114,6 +124,7 @@ Item {
                 }
             }
         }
+        PillButton { icon: "●"; text: "Record"; onClicked: window.recordAction("") }
         PillButton { kind: "primary"; icon: "▣"; text: "Capture"; onClicked: studio.openCapture("any") }
     }
 
@@ -139,7 +150,19 @@ Item {
             required property var modelData
             spacing: 14
             Repeater {
-                model: modelData.assets
+                model: page.onActions ? modelData.assets : []
+                delegate: ActionCard {
+                    required property var modelData
+                    width: page.cardWidth
+                    action: modelData
+                    chosen: page.chosen === modelData.name
+                    dimmed: page.chosen !== "" && !chosen
+                    onClicked: page.chosen = chosen ? "" : modelData.name
+                    onPlay: studio.playAction(modelData.name)
+                }
+            }
+            Repeater {
+                model: page.onActions ? [] : modelData.assets
                 delegate: AssetCard {
                     required property var modelData
                     width: page.cardWidth
@@ -159,33 +182,49 @@ Item {
             spacing: 14
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: studio.library.length === 0 ? "No pictures yet" : "Nothing matches"
+                text: page.onActions ? (studio.actions.length === 0 ? "No actions yet" : "Nothing matches")
+                    : studio.library.length === 0 ? "No pictures yet" : "Nothing matches"
                 color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: studio.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
+                text: page.onActions ? (studio.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
+                    : studio.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
                 color: studio.colors.muted; font.pixelSize: 14
             }
-            PillButton { visible: studio.library.length === 0; anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"; icon: "▣"; text: "Capture"; onClicked: studio.openCapture("any") }
+            PillButton {
+                visible: page.onActions ? studio.actions.length === 0 : studio.library.length === 0
+                anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"
+                icon: page.onActions ? "●" : "▣"; text: page.onActions ? "Record" : "Capture"
+                onClicked: page.onActions ? window.recordAction("") : studio.openCapture("any")
+            }
         }
     }
 
     // ---- the inspector
     Inspector {
         id: inspector
-        readonly property bool open: page.chosenAsset !== null
+        readonly property bool open: page.chosenAsset !== null || page.chosenAction !== null
         anchors { top: tools.bottom; topMargin: 18; bottom: parent.bottom; bottomMargin: 24 }
         width: 330
         x: open ? page.width - width - 24 : page.width + 10
         Behavior on x { NumberAnimation { duration: studio.effects ? 260 : 0; easing.type: Easing.OutCubic } }
         asset: page.chosenAsset
+        action: page.chosenAction
         score: page.chosenAsset ? page.score(page.chosenAsset) : null
         needs: page.chosenAsset ? page.needs(page.chosenAsset) : 0.9
         kindLabel: page.chosenAsset ? page.kindLabel(page.chosenAsset.kind) : ""
         onClosed: page.chosen = ""
-        onRenamed: function (to) { studio.renameAsset(page.chosen, to); page.chosen = to }
-        onDeleted: { studio.deleteAsset(page.chosen); page.chosen = "" }
+        onRenamed: function (to) {
+            if (page.onActions) studio.renameAction(page.chosen, to)
+            else studio.renameAsset(page.chosen, to)
+            page.chosen = to
+        }
+        onDeleted: {
+            if (page.onActions) studio.deleteAction(page.chosen)
+            else studio.deleteAsset(page.chosen)
+            page.chosen = ""
+        }
     }
     Shortcut { sequence: "Esc"; enabled: page.chosen !== "" && page.visible; onActivated: page.chosen = "" }
     Shortcut { sequence: "Ctrl+F"; enabled: page.visible; onActivated: search.forceActiveFocus() }

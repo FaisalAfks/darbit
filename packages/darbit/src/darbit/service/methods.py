@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from ..server import hub
+from ..server import actions_api, hub
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,26 @@ def _bots_install(params: dict) -> object:
     return hub.describe(folder)
 
 
+def _actions(params: dict) -> object:
+    return actions_api.listing(Path(params["path"]))
+
+
+def _action_play(params: dict) -> object:
+    return actions_api.play(Path(params["path"]), str(params.get("name", "")))
+
+
+def _action_stop(params: dict) -> object:
+    return actions_api.control("stop")
+
+
+def _action_rename(params: dict) -> object:
+    return actions_api.rename(Path(params["path"]), str(params.get("name", "")), str(params.get("to", "")))
+
+
+def _action_delete(params: dict) -> object:
+    return actions_api.delete(Path(params["path"]), str(params.get("name", "")))
+
+
 def _bot_status(params: dict) -> object:
     return hub.describe(Path(params["path"]))
 
@@ -75,6 +95,11 @@ METHODS: dict[str, Method] = {
     "bot.library.rename_plan": Method(hub.library_rename_plan, "what renaming a picture would change"),
     "bot.library.rename": Method(hub.library_rename, "rename a picture (`name`, `to`) and every use"),
     "bot.library.delete": Method(hub.library_delete, "delete a picture (`name`)"),
+    "bot.actions": Method(_actions, "the bot's actions: steps, sections and which actions use each"),
+    "bot.action.play": Method(_action_play, "play an action (`name`) in the service"),
+    "bot.action.stop": Method(_action_stop, "stop the action playing"),
+    "bot.action.rename": Method(_action_rename, "rename an action (`name`, `to`) and every call to it"),
+    "bot.action.delete": Method(_action_delete, "delete an action (`name`) and its tape"),
     "bot.days": Method(hub.results_days, "the days the bot has run, newest first"),
     "bot.day": Method(hub.results_day, "one day's results (`day`)"),
 }
