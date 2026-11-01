@@ -5,8 +5,9 @@
     uv run python bench/run.py --options fast,colour   # with matching options on (core/matching.py)
 
 A case is a folder with `case.toml`: the screen, the folder of its targets, the display scaling it was taken at
-(`scale`, 1.0 if left out) and what each target should give: `at = [x, y, w, h]`, or `absent = true`. A find
-with `option = "..."` only counts when that option is on. Each search goes through `d.exists`, with the screen
+(`scale`, 1.0 if left out), where the app's window is (`window`, for window space) and what each target should
+give: `at = [x, y, w, h]`, or `absent = true`. A find with `option = "..."` only counts when that option is on
+(`"window|sizes"`: either). The option `window` is window space (settings.space), not a matching option. Each search goes through `d.exists`, with the screen
 grab and the scaling taken from the case, so it measures what a bot gets. Exits 1 if any answer is wrong.
 """
 
@@ -25,6 +26,7 @@ import numpy as np
 from darbit.core.geometry import Region
 from darbit.core.targets import load
 from darbit.platform import screen
+from darbit.platform.backend import Window
 from darbit.runtime import find
 from darbit.settings import settings
 
@@ -74,6 +76,19 @@ def use_case_screen(pixels: np.ndarray, scale: float) -> None:
     screen.scale_at = scale_at
 
 
+def use_case_window(area: list[int] | None) -> None:
+    """Make the app's window be where the case says (or not open), for window space."""
+
+    def matching(name: str, loose: bool = False) -> list[Window]:
+        return [Window(1, "Game", "game.exe", 1)] if area else []
+
+    def region(handle: int) -> Region:
+        return Region(*area)
+
+    find.windows.matching = matching
+    find.windows.region = region
+
+
 def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
     spec = tomllib.loads((folder / "case.toml").read_text(encoding="utf-8"))
     pixels = cv2.imread(str(folder / spec.get("screen", "screen.png")), cv2.IMREAD_COLOR)
@@ -81,16 +96,18 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
         raise SystemExit(f"{folder}: can't read its screen")
     use_case_screen(pixels, float(spec.get("scale", 1.0)))
     settings.images = [folder / spec.get("images", "images")]
-    settings.match = {name: True for name in options}
+    settings.match = {name: True for name in options if name != "window"}
     settings.log = False
-    settings.window = None
+    settings.space = "window" if "window" in options else "screen"
+    settings.window = "Game" if spec.get("window") else None
+    use_case_window(spec.get("window"))
     found_results = []
     for item in spec.get("find", []):
         name = item["target"]
         option = item.get("option")
         in_region = load(name, settings.images).region is not None
         goal = GOAL_IN_REGION if in_region else GOAL_WHOLE_SCREEN
-        if option and option not in options:
+        if option and not options.intersection(option.split("|")):
             found_results.append(Result(folder.name, name, f"needs {option}", None, 0.0, 0.0, goal, in_region))
             continue
         times = []

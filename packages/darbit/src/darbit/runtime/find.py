@@ -44,7 +44,7 @@ def where_now(targets: list[Target]) -> Place:
         if one.scale is not None:
             needs_scale = True
     window = None
-    if needs_window and settings.window:
+    if needs_window and settings.window and settings.space == "window":
         found = windows.matching(settings.window, loose=True)
         if found:
             window = windows.region(found[0].handle)

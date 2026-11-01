@@ -44,6 +44,8 @@ class Settings:
     screenshot_after: float = 20.0  # save a screenshot when a wait this long (or longer) runs out
     match: dict = field(default_factory=dict)  # matching options for every target, e.g. {"fast": True}
     matcher: str = "template"  # which matcher finds images: darbit's own, or one from a plugin
+    space: str = "screen"  # "screen" pixels, or "window": targets taken in the app's window follow it when it moves
+    # or changes size (rebuild plan, section 4: an option measured on the bench, never assumed)
 
 
 settings = Settings()

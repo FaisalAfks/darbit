@@ -64,3 +64,20 @@ median of 30 each:
 
 Every answer is the same as before. On the owner's PC the panel searches took about 12 ms against the 10 ms goal;
 22% less brings them to about 9.3 ms, to be measured there.
+
+## Window space against screen pixels (2026-11-01)
+
+`window-moved`: the menus with the game's window moved to 240, 180 and made 1920 x 1200 on the 2560 x 1600 desktop,
+every target taken in it at 0, 0 and full size. Screen pixels need `sizes` to find them there; window space
+(`[settings] space = "window"`) moves and scales each target with the window, and searches one with no region of its
+own only inside the window. Median of 3 searches per target:
+
+| Options | Right | Each search |
+|---|---|---|
+| `window` | 5 of 5 | 230–580 ms |
+| `fast,grayscale,window` | 5 of 5 | 8–11 ms |
+| `fast,grayscale,sizes` (screen pixels) | 5 of 5 | 73–122 ms |
+
+Both find every target, and window space is about ten times quicker, because it knows the size instead of trying
+each one. It still has to be measured on the owner's game (the window's title bar and borders, display scaling)
+before it's recommended; screen pixels stay the default.

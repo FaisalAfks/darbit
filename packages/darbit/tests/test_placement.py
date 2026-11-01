@@ -137,6 +137,7 @@ def test_an_old_target_is_found_where_it_always_was(draw, tmp_path, monkeypatch)
 
 
 def test_a_target_follows_its_window(draw, tmp_path, monkeypatch):
+    monkeypatch.setattr(d.settings, "space", "window")
     save(tmp_path / "Play", BUTTON, region=[10, 10, 100, 60], window=[400, 300], origin=[0, 0])
     game_at(monkeypatch, Region(500, 400, 400, 300))  # moved, same size
     draw((530, 425))
@@ -145,6 +146,7 @@ def test_a_target_follows_its_window(draw, tmp_path, monkeypatch):
 
 
 def test_a_target_grows_with_its_window(draw, tmp_path, monkeypatch):
+    monkeypatch.setattr(d.settings, "space", "window")
     save(tmp_path / "Play", BUTTON, region=[10, 10, 100, 60], offset=[5, 0], window=[400, 300], origin=[0, 0])
     game_at(monkeypatch, Region(100, 100, 800, 600))  # moved and twice as big
     draw((160, 150), size=2.0)
@@ -152,6 +154,25 @@ def test_a_target_grows_with_its_window(draw, tmp_path, monkeypatch):
     assert (found.x, found.y, found.w, found.h) == (160, 150, 80, 56)
     assert found.score > 0.95
     assert found.point == Location(160 + 40 + 10, 150 + 28)
+
+
+def test_in_window_space_a_target_without_a_region_is_searched_only_in_the_window(draw, tmp_path, monkeypatch):
+    monkeypatch.setattr(d.settings, "space", "window")
+    save(tmp_path / "Play", BUTTON, window=[400, 300], origin=[0, 0])
+    game_at(monkeypatch, Region(500, 400, 400, 300))
+    draw((30, 20))  # a copy outside the window: not this window's button
+    assert not d.exists("Play")
+    draw((530, 425))
+    assert d.exists("Play").x == 530
+
+
+def test_in_screen_space_a_target_stays_where_it_was_taken(draw, tmp_path, monkeypatch):
+    save(tmp_path / "Play", BUTTON, region=[10, 10, 100, 60], window=[400, 300], origin=[0, 0])
+    game_at(monkeypatch, Region(500, 400, 400, 300))  # the window moved, but places are screen pixels
+    draw((530, 425))
+    assert not d.exists("Play")  # searched in its region as taken, top left
+    draw((30, 20))
+    assert d.exists("Play")
 
 
 def test_without_its_window_open_a_target_stays_put(draw, tmp_path):
