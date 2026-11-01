@@ -103,3 +103,19 @@ def test_a_target_is_only_searched_in_its_own_region(fake, tmp_path):
     )
     fake((300, 200))  # the same picture, outside Play.Here's region
     assert d.exists("Play.Here") is None
+
+
+def test_a_saved_area_and_point_are_used_by_name(tmp_path, monkeypatch):
+    import json
+
+    import darbit as d
+
+    (tmp_path / "Shop.List.json").write_text(json.dumps({"region": [10, 20, 300, 400]}), encoding="utf-8")
+    (tmp_path / "Shop.Corner.json").write_text(json.dumps({"location": [5, 6]}), encoding="utf-8")
+    monkeypatch.setattr(d.settings, "images", [tmp_path])
+    found = d.area("Shop.List")
+    assert (found.x, found.y, found.w, found.h) == (10, 20, 300, 400)
+    assert hasattr(found, "exists")  # a darbit Region: found.exists(...), found.click(...)
+    assert (d.point("Shop.Corner").x, d.point("Shop.Corner").y) == (5, 6)
+    with pytest.raises(d.TargetError, match="no point"):
+        d.point("Shop.List")
