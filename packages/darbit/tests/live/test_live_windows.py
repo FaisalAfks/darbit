@@ -292,3 +292,50 @@ def test_the_recorder_pill_shows_while_the_studio_is_hidden(tmp_path):
         spin(0.3)
         del engine
         app.processEvents()
+
+
+def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
+    """darbit's clicks and keys reach the Studio's ghost cursor, and the click still reaches the window under it."""
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.platform import ghost as told
+    from darbit.service.client import Client
+    from darbit.studio.app import load
+    from darbit.studio.backend import Studio
+    from darbit.studio.ghost import Ghost
+
+    def spin(seconds: float) -> None:
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            QCoreApplication.processEvents()
+            time.sleep(0.01)
+
+    app = QGuiApplication.instance() or QGuiApplication(["live"])
+    ghost = Ghost()
+    engine = load(Studio(lambda: Client("live"), "glass-dark", ""), ghost=ghost)
+    root = engine.rootObjects()[0]  # held, or Qt deletes it
+    overlay = root.findChild(QQuickWindow, "ghostWindow")
+    root.hide()
+    ghost.start()
+    told.forget()
+    try:
+        front(target)
+        before = len(target.events("click"))
+        assert d.click(PICTURE)
+        d.press("q")
+        spin(0.2)
+        kinds = [(mark["kind"], mark["name"]) for mark in ghost.marks]
+        assert ("click", "left") in kinds and ("key", "q") in kinds, kinds
+        click = next(mark for mark in ghost.marks if mark["kind"] == "click")
+        x, y, w, h = picture_box(target)
+        assert (click["x"], click["y"]) == (x + w // 2, y + h // 2)
+        assert overlay.isVisible()
+        target.settle()
+        assert len(target.events("click")) == before + 1, "the click stopped at the ghost cursor"
+    finally:
+        ghost.stop()
+        spin(0.2)
+        del engine
+        app.processEvents()

@@ -53,3 +53,8 @@ your mouse or keys. darbit's own clicks and keys don't count.
 [settings]
 polite = 5   # seconds without your mouse or keys before the bot goes on; 0 (the default) is off
 ```
+
+With darbit Studio open, its **ghost cursor** shows where a bot clicks (a ripple) and the keys it presses (keycaps by
+the cursor) over the game, for a moment each, so you can tell the bot's input from your own. Clicks go through it. It's
+on by default; turn it off in darbit settings. A bot sends each one as a small message to the Studio and never waits
+for it: without a Studio, nothing is sent.

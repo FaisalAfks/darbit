@@ -34,6 +34,8 @@
 
 - The Studio's Overview welcomes a first start: with no bots yet, darbit's logo and New bot, From a git link and Add a folder instead of "Not running"
 
+- The ghost cursor (#117): darbit Studio shows a ripple where a running bot clicks and keycaps for the keys it presses, over the game, so a person sharing the PC can tell the bot's input from their own. Bots tell the Studio over a local UDP port and never wait for it; on by default, off in darbit settings
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service

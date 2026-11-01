@@ -70,6 +70,13 @@ Flickable {
                     checked: studio.effects
                     onToggled: function (on) { studio.setEffects(on) }
                 }
+                Choice {
+                    width: parent.width
+                    label: "Ghost cursor"
+                    help: "A ripple where a bot clicks and the keys it presses, over the game, so you can see what it's doing."
+                    checked: studio.ghost
+                    onToggled: function (on) { studio.setGhost(on) }
+                }
             }
         }
 

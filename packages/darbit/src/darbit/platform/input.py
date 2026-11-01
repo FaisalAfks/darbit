@@ -5,7 +5,7 @@ whatever its language; a short pause follows every press and release. The tape's
 nudge, place, wheel_now) goes at once, with no pause.
 """
 
-from . import backend
+from . import backend, ghost
 
 
 def position() -> tuple[int, int]:
@@ -28,6 +28,7 @@ def move_by(dx: int, dy: int, seconds: float) -> None:
 
 
 def mouse_down(button: str = "left") -> None:
+    _tell_here("click", button=button)
     backend.input().mouse_down(button)
 
 
@@ -36,6 +37,7 @@ def mouse_up(button: str = "left") -> None:
 
 
 def click(x: int, y: int, glide: float, button: str = "left", times: int = 1) -> None:
+    ghost.tell("click", x=x, y=y, button=button)  # before the glide: the ghost shows where the cursor is going
     backend.input().click(x, y, glide, button, times)
 
 
@@ -49,6 +51,7 @@ def scroll(notches: int) -> None:
 
 
 def key_down(what: object) -> None:
+    _tell_here("key", name=_name(what))
     backend.input().key_down(what)
 
 
@@ -57,20 +60,26 @@ def key_up(what: object) -> None:
 
 
 def tap(what: object) -> None:
+    _tell_here("key", name=_name(what))
     backend.input().tap(what)
 
 
 def write(text: str) -> None:
     """Type characters, whatever keyboard language is active."""
+    _tell_here("key", name=text)
     backend.input().write(text)
 
 
 def key_now(what: object, up: bool) -> None:
     """A key down or up, sent at once with no pause after it."""
+    if not up:
+        _tell_here("key", name=_name(what))
     backend.input().key_now(what, up)
 
 
 def button_now(button: str, up: bool) -> None:
+    if not up:
+        _tell_here("click", button=button)
     backend.input().button_now(button, up)
 
 
@@ -86,6 +95,17 @@ def place(x: int, y: int) -> None:
 
 def wheel_now(notches: int, sideways: bool = False) -> None:
     backend.input().wheel_now(notches, sideways)
+
+
+def _tell_here(kind: str, **data: object) -> None:
+    """Tell the ghost cursor, at the cursor's place now."""
+    if ghost.listening():
+        x, y = position()
+        ghost.tell(kind, x=x, y=y, **data)
+
+
+def _name(what: object) -> str:
+    return str(getattr(what, "name", what))
 
 
 def release_all() -> None:
