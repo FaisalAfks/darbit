@@ -77,6 +77,9 @@ def load(
     ghost.setParent(engine)
     run_pill.setParent(engine)
     recorder_hiding.setParent(engine)
+    _connect_recorder_hiding(
+        recorder, capture, recorder_hiding
+    )  # here, so the recorder's pill works wherever it's loaded
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -118,7 +121,6 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     )
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
-    _connect_recorder_hiding(recorder, capture, recorder_hiding)
     _connect_run_pill(studio, run_pill, window)
 
     def open_studio() -> None:
