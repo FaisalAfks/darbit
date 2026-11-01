@@ -61,3 +61,8 @@ class Record:
         if icon:
             fields["icon"] = icon
         log.record("gain", **fields)
+
+    def recovered(self, how: str, why: str) -> None:
+        """The bot got itself going again: `how` ("rejoin", "back to the lobby") and `why` ("disconnected").
+        Each day's results count them, the health of a bot that runs all day."""
+        log.record("recovered", how=how, why=why)

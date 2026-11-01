@@ -326,7 +326,7 @@ In order. The first three make an unattended day far more reliable; 5 and 6 make
 1. **Pictures that stop matching:** after a game update a bot fails and rejoins in a loop. Watch each picture's scores over runs, notify when one keeps scoring low ("Bag.Equip at 0.62 for an hour"), and open Capture on it from the notification or the Library.
 2. **Recovering without a rejoin:** every failure closes and opens Roblox (a minute or two), often for a stray pop-up. Port ad-bot's navigation onto the screen map, so a failure goes back to a known screen first and rejoins only when lost.
 3. **A doctor check before a run** (`darbit doctor` done; from the Studio's Start still to do): missing pictures, display scaling unlike when the pictures were taken, the game window not found, a locked screen. In seconds, from the CLI and the Studio's Start.
-4. **Rejoins counted:** how often and why, on the Overview and in the daily summary: the health number of an all-day bot.
+4. **Rejoins counted** (`d.record.recovered` in the results and the daily summary done; the Overview still to do): how often and why, on the Overview and in the daily summary: the health number of an all-day bot.
 
 **Writing bots**
 5. **Recording that writes code:** a click on a captured picture becomes `d.click("Lobby.Play")`, a wait for one `d.wait(...)`; a tape only for movement and fights.

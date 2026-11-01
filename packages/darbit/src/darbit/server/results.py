@@ -196,8 +196,34 @@ def day(project: Project, day_name: str) -> dict:
         "finished": {"done": finished, "total": ended},
         "lost_seconds": round(lost),
         "problems": _problems(events),
+        "recoveries": recoveries_of(events),
         "lanes": lane_list,
     }
+
+
+def recoveries_of(events: list[dict]) -> list[dict]:
+    """How the bot recovered (d.record.recovered), most often first: each `how` with its count and its whys."""
+    found: dict[str, dict] = {}
+    for event in events:
+        if event.get("event") != "recovered":
+            continue
+        how = str(event.get("how", "recovered"))
+        why = str(event.get("why", "")) or "no reason given"
+        row = found.setdefault(how, {"how": how, "count": 0, "whys": {}})
+        row["count"] += 1
+        row["whys"][why] = row["whys"].get(why, 0) + 1
+    rows = sorted(found.values(), key=_count, reverse=True)
+    for row in rows:
+        row["whys"] = dict(sorted(row["whys"].items(), key=_second, reverse=True))
+    return rows
+
+
+def _count(row: dict) -> int:
+    return row["count"]
+
+
+def _second(pair: tuple) -> int:
+    return pair[1]
 
 
 def days(project: Project) -> list[dict]:
@@ -237,6 +263,11 @@ def day_lines(day: dict) -> list[str]:
         lines.append(f"gained {gain['today']} {gain['name']}{total}")
     for problem in day.get("problems", []):
         lines.append(f"problem x{problem['count']}: {problem['step']}: {problem['reason']}")
+    for recovery in day.get("recoveries", []):
+        whys = []
+        for why, count in recovery["whys"].items():
+            whys.append(f"{why} {count}")
+        lines.append(f"{recovery['how']} x{recovery['count']}: {', '.join(whys)}")
     if day.get("lost_seconds"):
         lines.append(f"time lost to failures: {clock(day['lost_seconds'])}")
     return lines
