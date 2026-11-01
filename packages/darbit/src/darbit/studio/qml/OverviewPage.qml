@@ -55,7 +55,7 @@ Flickable {
                     Text { text: "Make your first bot"; color: studio.colors.text; font.pixelSize: 32; font.weight: Font.Bold }
                     Text {
                         width: parent.width
-                        text: "A bot is a folder of plain Python and the pictures it looks for. Start one from the template, install one from its git link, or add a folder you already have."
+                        text: "A bot is a folder of plain Python and the images it looks for. Start one from the template, install one from its git link, or add a folder you already have."
                         color: studio.colors.muted; font.pixelSize: 14; wrapMode: Text.WordWrap
                     }
                     Item { width: 1; height: 6 }
@@ -158,7 +158,7 @@ Flickable {
             visible: missing > 0
             Layout.fillWidth: true
             tone: "warn"; icon: "▣"
-            title: missing + (missing === 1 ? " picture" : " pictures") + " to take before the bot can run"
+            title: missing + (missing === 1 ? " image" : " images") + " to take before the bot can run"
             detail: page.setup && page.setup.current ? "Next: " + page.setup.current.name + " on " + page.setup.current.screen : ""
             action: "Start setup"
             onActed: studio.openCapture("guide")

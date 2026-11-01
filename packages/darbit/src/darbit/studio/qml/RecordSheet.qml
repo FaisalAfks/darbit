@@ -30,7 +30,7 @@ Popup {
         Text { text: sheet.again ? "Record " + field.text + " again" : "Record an action"; color: studio.colors.text; font.pixelSize: 22; font.weight: Font.Bold }
         Text {
             width: parent.width; wrapMode: Text.Wrap; color: studio.colors.muted; font.pixelSize: 14
-            text: "The Studio steps aside and every key, click and mouse move goes in, on one clock, until Done. Pause to add a check: a picture to wait for, or a wait. Ctrl+Alt+K starts a new part."
+            text: "The Studio steps aside and every key, click and mouse move goes in, on one clock, until Done. Pause to add a check: an image to wait for, or a wait. Ctrl+Alt+K starts a new part."
         }
         TextField {
             id: field

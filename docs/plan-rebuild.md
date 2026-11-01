@@ -114,7 +114,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 |---|---|
 | Freeze the screen; click to box what's there (again for bigger, right-click for smaller) | Have |
 | Edit the box by mouse and keys, 8 handles, scaling, nudging; exact number fields | Have |
-| Image, region and point in one view; Shift+drag for the region, Ctrl+click for the point | Have |
+| Image, region and location in one view, made together; the kind picked in the pill is the one made and changed | Have |
 | A magnifier that follows the mouse | Have |
 | Test: find the boxed picture in its region and mark every match with its score | Have |
 | Snapping to edges and guide lines | Have (edges), planned (guides) |

@@ -4,6 +4,11 @@
 
 ### New
 
+- One set of names everywhere: **image**, **region** and **location** (the Studio said picture, area and point). Each target's settings file names its `kind`; the Library sorts by it (`core.targets.kind_of` works it out for files from before), and `darbit kinds BOT` writes it in. An image's inspector says its region and location, the defaults too: the whole screen and its centre
+- Capture works on the kind picked in its pill (Image, Region, Location; 1, 2, 3 or Tab): a click or drag makes it, and the handles, arrows, drag-to-move and Delete change it. The pill is solid instead of see-through, hides fully, and shows a message only for a few seconds instead of a standing hint
+- One pill for every tool over the game (`FloatingPill.qml` in `PillWindow.qml`): Capture's, the recorder's and the run pill. The recorder's pill now hides like the run pill (`studio/hiding.py`, which the run pill's code became)
+- The tray menu holds the shown bot (its state, Play or Pause and Stop), the Studio's pages, Capture, Highlight, Record, darbit settings and Quit, built fresh each time it opens
+
 - Capture makes a target's picture, its area and its click point together (round 11, A): drag or click for the picture, Shift+drag for its area, Ctrl+click for the point. The pill moved to the top, shows the three parts, and slides away until the mouse comes to the top edge, so what was under it can be boxed. Ctrl+Z and Ctrl+Y undo and redo every change; readouts take exact numbers; a retake keeps the target's area and point, and C shows the saved picture over the new one; the magnifier draws the parts and Z pins it; Test searches the picture's own area. Ctrl+Alt+C opens Capture with the game in front. The service tells what a target already has (`capture.service.existing`)
 
 - darbit Studio's window: closing it keeps darbit in the tray (it says so once), it opens where it was left at the same size (made to fit a screen still there), and a second `darbit app` brings the open Studio forward
@@ -69,6 +74,8 @@
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
 
 ### Fixed
+
+- The Library's Actions tab was always empty: its property was named `onActions`, which QML reads as a signal handler. A test now checks no QML property is named that way. Actions also come first under All
 
 - The Library counted points as images: it looked for the kind `location` where the service says `point`, so the Points tab missed them
 - Recorded actions showed only on the Library's Actions tab; All now lists them with the pictures, areas and points

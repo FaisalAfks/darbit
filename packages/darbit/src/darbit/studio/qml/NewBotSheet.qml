@@ -48,7 +48,7 @@ Popup {
         Text {
             width: parent.width; wrapMode: Text.Wrap
             color: studio.colors.muted; font.pixelSize: 14
-            text: sheet.way === "new" ? "A bot folder with darbit's layout (settings, pictures, actions and its code), in darbit's bots folder."
+            text: sheet.way === "new" ? "A bot folder with darbit's layout (settings, images, actions and its code), in darbit's bots folder."
                 : sheet.way === "link" ? "Its git link, e.g. https://github.com/me/my-bot. darbit clones its newest release and sets up its environment: that can take a minute."
                 : "A folder with a darbit.toml, kept where it is."
         }

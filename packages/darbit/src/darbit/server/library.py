@@ -17,6 +17,7 @@ import cv2
 import numpy as np
 
 from .. import paths
+from ..core.targets import kind_of
 from ..project.manifest import Project
 
 THUMB = 160  # px, the longer side of a card's thumbnail
@@ -138,13 +139,14 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                     thumbnail, size = _thumbnail(path)
                 found[name] = {
                     "name": name,
-                    "kind": "image",
+                    "kind": kind_of(settings, True),
                     "group": group_of(name),
                     "thumbnail": thumbnail,
                     "version": version,
                     "same": same,
                     "size": size,
-                    "region": settings.get("region"),
+                    "region": settings.get("region"),  # none: the whole screen
+                    "offset": settings.get("offset"),  # none: its centre
                     "similarity": settings.get("similarity"),
                     "scores": scores.get(name, []),
                     "missing": False,
@@ -154,9 +156,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
             if name in found or (names is not None and name not in names):
                 continue
             settings = _settings(path)
-            kind = "point"
-            if settings.get("region") and not settings.get("location"):
-                kind = "region"
+            kind = kind_of(settings, False)
             found[name] = {
                 "name": name,
                 "kind": kind,
@@ -201,10 +201,7 @@ def _guide_items(project: Project) -> list[tuple[str, str]]:
         return []
     found = []
     for step in steps(guide):
-        kind = step.kind
-        if kind == "location":
-            kind = "point"
-        found.append((step.name, kind))
+        found.append((step.name, step.kind))
     return found
 
 
@@ -395,3 +392,20 @@ def screens(project: Project) -> list[dict]:
             {"screen": path.stem, "picture": picture, "w": width, "h": height, "assets": places.get("assets", {})}
         )
     return found
+
+
+def write_kinds(project: Project) -> list[str]:
+    """Name each target's kind in its settings file where it isn't named yet (files from before `kind`), so the
+    Library and the bot don't have to work it out. An image without a settings file gets one. Returns the names."""
+    written = []
+    for folder in _folders(project):
+        names = sorted({path.stem for path in folder.glob("*.json")} | {path.stem for path in folder.glob("*.png")})
+        for name in names:
+            settings_file = folder / (name + ".json")
+            settings = _settings(settings_file)
+            if settings.get("kind"):
+                continue
+            settings = {"kind": kind_of(settings, (folder / (name + ".png")).is_file()), **settings}
+            settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+            written.append(name)
+    return written

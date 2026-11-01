@@ -60,11 +60,11 @@ def save_result(
         window_corner = [window.x, window.y]
     if item.kind == "location":
         p = result.point
-        save(path, None, location=[round(p.x), round(p.y)], window=window_size, origin=window_corner)
+        save(path, None, kind="location", location=[round(p.x), round(p.y)], window=window_size, origin=window_corner)
         return Saved(item, f"saved {path}.json: location {round(p.x)},{round(p.y)}", before)
     if item.kind == "region":
         r = result.region
-        save(path, None, region=[r.x, r.y, r.w, r.h], window=window_size, origin=window_corner)
+        save(path, None, kind="region", region=[r.x, r.y, r.w, r.h], window=window_size, origin=window_corner)
         return Saved(item, f"saved {path}.json: region {r.x},{r.y},{r.w},{r.h}", before)
     box = result.image
     image = shot[box.y - origin.y : box.bottom - origin.y, box.x - origin.x : box.right - origin.x].copy()
@@ -74,7 +74,7 @@ def save_result(
         offset = [round(result.point.x - center.x), round(result.point.y - center.y)]
     region = [result.region.x, result.region.y, result.region.w, result.region.h] if result.region else None
     scale = screen.scale_at(box.x, box.y)
-    save(path, image, region=region, offset=offset, scale=scale, window=window_size, origin=window_corner)
+    save(path, image, kind="image", region=region, offset=offset, scale=scale, window=window_size, origin=window_corner)
     elsewhere = distinct(image, shot, Region(box.x - origin.x, box.y - origin.y, box.w, box.h))
     verdict = "distinct" if elsewhere < RISKY else "RISKY, something else looks alike"
     message = (

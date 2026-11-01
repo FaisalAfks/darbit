@@ -34,6 +34,7 @@ COMMANDS = {
     "notify": "send a test notification to the channels in notify.toml",
     "app": "open darbit Studio",
     "doctor": "check a bot is ready to run: its pictures, display scaling, window and screen",
+    "kinds": "write each target's kind (image, region or location) into its settings file",
 }
 BOT_COMMANDS = {"status": "bot.status", "start": "bot.start", "pause": "bot.pause", "stop": "bot.stop"}
 
@@ -70,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         return _notify(args.rest)
     if command == "doctor":
         return _doctor(args.rest)
+    if command == "kinds":
+        return _kinds(args.rest)
     if command in BOT_COMMANDS:
         return _bot(command, args.rest)
     return _tool(command, args.rest)
@@ -265,6 +268,18 @@ def _notify(argv: list[str]) -> int:
             print(f"couldn't reach {channel.name}: check its settings in {notify.settings_file()}")
             failed += 1
     return 1 if failed else 0
+
+
+def _kinds(argv: list[str]) -> int:
+    from .project.manifest import load
+    from .server.library import write_kinds
+
+    parser = argparse.ArgumentParser(prog="darbit kinds", description=COMMANDS["kinds"])
+    parser.add_argument("bot", nargs="?", default=".", help="the bot's folder (default: this folder)")
+    args = parser.parse_args(argv)
+    written = write_kinds(load(Path(args.bot)))
+    print(f"named the kind of {len(written)} targets" if written else "every target names its kind already")
+    return 0
 
 
 def _doctor(argv: list[str]) -> int:

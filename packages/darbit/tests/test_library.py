@@ -60,7 +60,7 @@ def test_every_kind_of_asset_is_listed(project):
     assert play["size"] == [400, 40]
     assert play["thumbnail"].startswith("data:image/png;base64,")
     assert assets["Lobby.Menu"]["kind"] == "region"
-    assert assets["Fight.Slot"]["kind"] == "point"
+    assert assets["Fight.Slot"]["kind"] == "location"
     assert assets["Lobby.Close"]["missing"] is True  # in the guide, not taken yet
     assert play["uses"] == 3  # two lines of code and the guide, not the longer name nor .venv
 
@@ -131,3 +131,20 @@ def test_deleting_an_asset_takes_its_files(project):
     assert by_name(library.assets(project))["Lobby.Play"]["missing"] is True  # the guide still wants it
     with pytest.raises(library.LibraryError):
         library.delete(project, "Lobby.Play")
+
+
+def test_a_target_names_its_kind_and_old_files_get_it_written(project):
+    import json
+
+    from darbit.core.targets import kind_of
+
+    assert kind_of({"kind": "region", "location": [1, 2]}, False) == "region"  # named: taken as it is
+    assert kind_of({}, True) == "image"  # an image: the whole screen, clicked at its centre
+    assert kind_of({"region": [0, 0, 5, 5]}, False) == "region"
+    assert kind_of({"location": [3, 4]}, False) == "location"
+    written = library.write_kinds(project)
+    assert "Lobby.Play" in written and "Fight.Slot" in written
+    images = project.folder / "assets" / "images"
+    assert json.loads((images / "Fight.Slot.json").read_text(encoding="utf-8"))["kind"] == "location"
+    assert json.loads((images / "Lobby.Play.json").read_text(encoding="utf-8"))["kind"] == "image"
+    assert library.write_kinds(project) == []  # named now

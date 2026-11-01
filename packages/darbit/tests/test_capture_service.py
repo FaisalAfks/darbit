@@ -96,9 +96,9 @@ def test_points_and_regions_save_without_a_picture(frozen):
 def test_mistakes_say_what_is_wrong(frozen):
     with pytest.raises(service.CaptureError, match="name"):
         service.save("", "image", [1, 1, 5, 5], None, None)
-    with pytest.raises(service.CaptureError, match="box the picture"):
+    with pytest.raises(service.CaptureError, match="box the image"):
         service.save("X", "image", None, None, None)
-    with pytest.raises(service.CaptureError, match="click the point"):
+    with pytest.raises(service.CaptureError, match="click the location"):
         service.save("X", "point", None, None, None)
     with pytest.raises(service.CaptureError, match="box something"):
         service.test(None, None, None, 0.8)

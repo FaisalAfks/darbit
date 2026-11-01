@@ -11,7 +11,7 @@ Rectangle {
     property bool chosen: false
     property bool dimmed: false
     signal clicked()
-    readonly property color kindInk: asset.kind === "region" ? studio.colors.accent2 : asset.kind === "point" ? studio.colors.ok : studio.colors.accent
+    readonly property color kindInk: asset.kind === "region" ? studio.colors.accent2 : asset.kind === "location" ? studio.colors.ok : studio.colors.accent
     height: 206
     radius: 16
     color: chosen ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.1) : studio.colors.glass
@@ -39,16 +39,16 @@ Rectangle {
         Text {
             visible: !card.asset.thumbnail || card.asset.missing
             anchors.centerIn: parent
-            text: card.asset.missing ? "not taken" : card.asset.kind === "point" ? "＋" : card.asset.size ? card.asset.size[0] + " × " + card.asset.size[1] : card.asset.kind
+            text: card.asset.missing ? "not taken" : card.asset.kind === "location" ? "＋" : card.asset.size ? card.asset.size[0] + " × " + card.asset.size[1] : card.asset.kind
             color: card.asset.missing ? studio.colors.danger : card.kindInk
-            font.pixelSize: card.asset.kind === "point" ? 26 : 13; font.weight: Font.DemiBold
+            font.pixelSize: card.asset.kind === "location" ? 26 : 13; font.weight: Font.DemiBold
         }
         Rectangle {
             visible: card.asset.kind !== "image"
             anchors { right: parent.right; top: parent.top; margins: 6 }
             width: kindText.implicitWidth + 12; height: 18; radius: 9
             color: Qt.rgba(card.kindInk.r, card.kindInk.g, card.kindInk.b, 0.2)
-            Text { id: kindText; anchors.centerIn: parent; text: card.asset.kind === "region" ? "AREA" : "POINT"; color: card.kindInk; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.6 }
+            Text { id: kindText; anchors.centerIn: parent; text: card.asset.kind === "region" ? "REGION" : "LOCATION"; color: card.kindInk; font.pixelSize: 10; font.weight: Font.Bold; font.letterSpacing: 0.6 }
         }
     }
     Text {
