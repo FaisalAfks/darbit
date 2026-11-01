@@ -34,3 +34,7 @@ Recorded actions stay `@d.flow(timed=True)`. The steps the recorder bar shows wh
 - Python runs one thread at a time and by default switches every 5 ms; with the Studio's other threads busy, the raw input thread fell behind and mouse counts were lost. While recording or playing, threads switch every 0.5 ms (`platform/switching.py`). When the listener still gets to an input late, its time comes from the message's own time (GetMessageTime) instead of the moment it was read, so a run of inputs read at once keeps the waits between them (`platform/stamps.py`). Each tape's `notes` say how many inputs came in late, the latest, and how many Windows no longer had (lost counts), to tell a bad recording from a bad replay. Roblox was checked to take replayed counts 1:1 at any speed.
 - A game that reads raw counts while showing a free cursor would get the cursor placed instead of the counts. That's rare; it would need a switch on the action.
 - At a very slow Windows pointer speed (a free cursor moving less than a quarter of the counts), a free cursor would be taken for a held one.
+
+**Update (rebuild, milestone 3):** recording runs in the input worker (`python -m darbit.worker`), a process of its own
+that darbit Studio starts and talks to over its stdin and stdout, so the Studio's window and threads can't delay an
+input. Bots play their tapes in their own process, which runs nothing else.

@@ -351,6 +351,21 @@ def test_the_theme_chosen_is_used_next_time(qt):
     assert studio.themeName == theme.DEFAULT
 
 
+def worker_in_a_thread():
+    """The input worker's loop on a thread, joined to a link by two pipes (so this test's fakes apply)."""
+    import os
+    import threading
+
+    from darbit import worker
+    from darbit.studio.worker_link import WorkerLink
+
+    to_worker_read, to_worker_write = os.pipe()
+    from_worker_read, from_worker_write = os.pipe()
+    reader, writer = os.fdopen(to_worker_read, "rb"), os.fdopen(from_worker_write, "wb")
+    threading.Thread(target=worker.serve, args=(reader, writer), daemon=True).start()
+    return WorkerLink(lambda topic, data: None, (os.fdopen(from_worker_read, "rb"), os.fdopen(to_worker_write, "wb")))
+
+
 def test_the_recorder_records_checks_and_saves_an_action(qt, tmp_path, monkeypatch):
     from darbit.platform import hooks
     from darbit.platform import input as device
@@ -362,7 +377,7 @@ def test_the_recorder_records_checks_and_saves_an_action(qt, tmp_path, monkeypat
     monkeypatch.setattr(device, "position", lambda: (0, 0))
     monkeypatch.setattr(record_api.tape, "_window_now", lambda: None)
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "rec-bot"\n', encoding="utf-8")
-    recorder = Recorder()
+    recorder = Recorder(worker_in_a_thread())
     saved = []
     recorder.finished.connect(saved.append)
     assert recorder.start(tmp_path, "9 lives") != ""  # not a name an action can have
