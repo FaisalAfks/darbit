@@ -10,12 +10,12 @@ Rectangle {
     readonly property color dot: state === "running" ? studio.colors.ok : state === "paused" ? studio.colors.warn
         : state === "failed" ? studio.colors.danger : studio.colors.faint
     height: 48
-    width: row.implicitWidth + 12
+    implicitWidth: row.implicitWidth + 12
     radius: 24
     color: studio.colors.glass
     border.color: studio.colors.line
     clip: true
-    Behavior on width { NumberAnimation { duration: studio.effects ? 220 : 0; easing.type: Easing.OutCubic } }
+    Behavior on implicitWidth { NumberAnimation { duration: studio.effects ? 220 : 0; easing.type: Easing.OutCubic } }
 
     Row {
         id: row

@@ -120,7 +120,7 @@ Rectangle {
                 Layout.fillWidth: true
                 columns: 2; columnSpacing: 8; rowSpacing: 8
                 PillButton { Layout.fillWidth: true; kind: "primary"; icon: "▶"; text: "Play"; onClicked: studio.playAction(panel.action.name) }
-                PillButton { Layout.fillWidth: true; icon: "■"; text: "Stop"; onClicked: studio.stopAction() }
+                PillButton { Layout.fillWidth: true; icon: "≡"; text: "Open"; onClicked: window.openAction(panel.action.name) }
                 PillButton { Layout.fillWidth: true; icon: "●"; text: "Record again"; onClicked: window.recordAction(panel.action.name) }
                 PillButton { Layout.fillWidth: true; icon: "✎"; text: "Rename"; onClicked: { panel.renaming = true; nameField.text = panel.action.name; nameField.forceActiveFocus() } }
             }

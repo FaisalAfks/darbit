@@ -72,3 +72,32 @@ function timer(seconds) {
     if (hours > 0) return hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + tail
     return minutes + ":" + tail
 }
+
+function stepIcon(step) {
+    var kinds = { key: "⌨", write: "✎", wait: "◷", mouse: "●", tape: "▶", check: "▣", "if": "?", loop: "↻", call: "↗", code: "{}" }
+    return kinds[step.kind] || "·"
+}
+
+function stepText(step) {
+    // a step as one plain line: "Press E", "Wait 0.5 s", "Click Lobby.Play", "Play the tape from 0 to 42.5 s"
+    var args = step.args || {}
+    var target = args.target ? (Array.isArray(args.target) ? args.target.join(", ") : args.target) : ""
+    if (step.kind === "key") {
+        var verb = { press: "Press", hold: "Hold", release: "Let go of" }[args.verb] || args.verb
+        return verb + " " + (args.keys || []).map(function (one) { return one.toUpperCase() }).join(" + ")
+    }
+    if (step.kind === "write") return "Type “" + (args.text || "") + "”"
+    if (step.kind === "wait") return "Wait " + (args.seconds || 0) + " s"
+    if (step.kind === "tape") return "Play the recording from " + (args.start || 0) + " to " + (args.end === null || args.end === undefined ? "the end" : args.end + " s")
+    if (step.kind === "check") return (args.verb === "until gone" ? "Wait until " + target + " is gone" : "Wait for " + target) + (args.timeout ? " (up to " + args.timeout + " s)" : "")
+    if (step.kind === "mouse") {
+        var verbs = { click: "Click", right_click: "Right-click", double_click: "Double-click", hover: "Move to", scroll: "Scroll", move_by: "Move the mouse by", mouse_down: "Press the mouse on", mouse_up: "Let go of the mouse" }
+        if (args.verb === "scroll") return "Scroll " + (args.notches > 0 ? "up " : "down ") + Math.abs(args.notches || 0)
+        if (args.verb === "move_by") return "Move the mouse by " + (args.dx || 0) + ", " + (args.dy || 0)
+        return (verbs[args.verb] || args.verb) + (target ? " " + target : "")
+    }
+    if (step.kind === "if") return "If " + (args.spot || args.condition || "…")
+    if (step.kind === "loop") return args.times !== undefined ? "Repeat " + args.times + " times" : "Repeat until " + (args.until || "…")
+    if (step.kind === "call") return (args.action ? "Do the action " : "Call ") + (args.name || "")
+    return step.source || step.kind
+}

@@ -18,7 +18,7 @@ Rectangle {
     Behavior on scale { NumberAnimation { duration: studio.effects ? 140 : 0; easing.type: Easing.OutCubic } }
     Behavior on opacity { NumberAnimation { duration: studio.effects ? 160 : 0 } }
 
-    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: card.clicked() }
+    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: card.clicked(); onDoubleClicked: window.openAction(card.action.name) }
     Rectangle {  // the action as a strip of its steps
         x: 10; y: 10; width: card.width - 20; height: 112; radius: 11
         color: studio.colors.bg

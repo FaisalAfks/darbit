@@ -41,6 +41,8 @@ class Studio(QObject):
     lookChanged = Signal()
     madeBot = Signal(str)  # a bot made, installed or added: its name
     actionsChanged = Signal()
+    actionChanged = Signal()  # the action open in the editor
+    playingChanged = Signal()  # the action playing and its line, as the service plays it
     said = Signal(str)  # something done, for the toast
     highlightWanted = Signal(str)  # the bot's folder: turn Highlight on or off, for app.py
     recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
@@ -64,6 +66,8 @@ class Studio(QObject):
         self._settings: dict = {}
         self._uses: list[dict] = []
         self._actions: list[dict] = []
+        self._action: dict = {}
+        self._playing = {"action": "", "line": 0, "status": ""}
         self._message = ""
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
@@ -120,6 +124,12 @@ class Studio(QObject):
     def _get_actions(self) -> list:
         return self._actions
 
+    def _get_action(self) -> dict:
+        return self._action
+
+    def _get_playing(self) -> dict:
+        return self._playing
+
     def _get_sidebar(self) -> bool:
         return ui_settings.get(PICKER, "dropdown") == "sidebar"
 
@@ -146,6 +156,8 @@ class Studio(QObject):
     now = Property(float, _get_now, notify=clockChanged)
     uses = Property(list, _get_uses, notify=usesChanged)
     actions = Property(list, _get_actions, notify=actionsChanged)
+    action = Property(dict, _get_action, notify=actionChanged)
+    playing = Property(dict, _get_playing, notify=playingChanged)  # {action, line, status}
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
@@ -194,6 +206,16 @@ class Studio(QObject):
     @Slot()
     def loadActions(self) -> None:
         self._ask("actions", "bot.actions")
+
+    @Slot(str)
+    def openAction(self, name: str) -> None:
+        """Read an action into the editor."""
+        self._ask("action", "bot.action.read", name=name)
+
+    @Slot(str, "QVariantList")
+    def saveAction(self, name: str, sections: list) -> None:
+        """Write the editor's sections and steps back to the action's file."""
+        self._ask("action", "bot.action.save", name=name, sections=list(sections))
 
     @Slot(str)
     def playAction(self, name: str) -> None:
@@ -375,6 +397,9 @@ class Studio(QObject):
             self.usesChanged.emit()
         elif what == "changed":
             self.loadLibrary()
+        elif what == "action" and isinstance(result, dict):
+            self._action = result
+            self.actionChanged.emit()
         elif what == "actions" and isinstance(result, list):
             self._actions = result
             self.actionsChanged.emit()
@@ -418,6 +443,16 @@ class Studio(QObject):
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         if topic == "project.changed" and data.get("path") == self._bot.get("path"):
             self.loadOverview()
+        if topic in ("action.line", "action.paused"):
+            self._playing = {"action": data.get("action", ""), "line": data.get("line", 0), "status": topic[7:]}
+            self.playingChanged.emit()
+        elif topic == "action.ended":
+            self._playing = {"action": "", "line": 0, "status": str(data.get("status", "ended"))}
+            self.playingChanged.emit()
+            if data.get("status") not in (None, "ok", "stopped"):
+                self.said.emit(
+                    f"{data.get('action', 'The action')} stopped: {data.get('reason') or data.get('status')}"
+                )
 
 
 def _local_path(text: str) -> str:

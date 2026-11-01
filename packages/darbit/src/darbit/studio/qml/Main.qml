@@ -13,7 +13,7 @@ ApplicationWindow {
     font.pixelSize: 14
 
     property string page: "overview"  // overview, library, results, settings, or studio (darbit's own settings)
-    readonly property var pages: ["overview", "library", "results", "settings", "studio"]
+    readonly property var pages: ["overview", "library", "results", "settings", "studio", "action"]
     readonly property bool narrow: width < 1180
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
 
@@ -61,6 +61,7 @@ ApplicationWindow {
                 PageFrame { ResultsPage { anchors.fill: parent } }
                 PageFrame { SettingsPage { anchors.fill: parent } }
                 PageFrame { StudioPage { anchors.fill: parent } }
+                PageFrame { ActionPage { anchors.fill: parent } }
             }
         }
     }
@@ -87,5 +88,6 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+,"; onActivated: window.go("studio") }
     Shortcut { sequence: "Ctrl+N"; onActivated: sheet.open() }
     function recordAction(name) { recordSheet.openFor(name || "") }
+    function openAction(name) { studio.openAction(name); page = "action" }
     Shortcut { sequence: "F5"; onActivated: window.running ? null : studio.start() }
 }

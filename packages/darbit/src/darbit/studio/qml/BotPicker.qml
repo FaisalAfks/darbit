@@ -7,7 +7,7 @@ Rectangle {
     signal addBot()
     signal openStudio()
     height: 48
-    width: row.implicitWidth + 28
+    implicitWidth: row.implicitWidth + 28
     radius: 24
     color: area.containsMouse ? studio.colors.raisedHover : studio.colors.glass
     border.color: studio.colors.line

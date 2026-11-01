@@ -169,3 +169,23 @@ def test_actions_are_listed_renamed_and_deleted(service, bot):  # noqa: F811
         assert [found["name"] for found in connection.call("bot.actions", bot="tick-bot")] == ["bag_open"]
         connection.call("bot.action.delete", bot="tick-bot", name="bag_open")
         assert connection.call("bot.actions", bot="tick-bot") == []
+
+
+def test_an_action_is_read_edited_and_saved_back(service, bot):  # noqa: F811
+    from darbit.server import actions_api
+
+    steps = [{"kind": "key", "args": {"verb": "press", "keys": ["e"]}}, {"kind": "wait", "args": {"seconds": 0.5}}]
+    actions_api.save(bot, "open_bag", [{"name": "Open the bag", "steps": steps}])
+    with client.Client("test") as connection:
+        action = connection.call("bot.action.read", bot="tick-bot", name="open_bag")
+        assert [step["kind"] for step in action["sections"][0]["steps"]] == ["key", "wait"]
+        section = action["sections"][0]
+        section["steps"][1]["args"]["seconds"] = 2.0
+        section["steps"].reverse()
+        section["name"] = "The bag"
+        saved = connection.call("bot.action.save", bot="tick-bot", name="open_bag", sections=[section])
+        assert saved["sections"][0]["name"] == "The bag"
+        assert [step["kind"] for step in saved["sections"][0]["steps"]] == ["wait", "key"]
+        assert saved["sections"][0]["steps"][0]["args"]["seconds"] == 2.0
+        with pytest.raises(client.ServiceError, match="sections"):
+            connection.call("bot.action.save", bot="tick-bot", name="open_bag")
