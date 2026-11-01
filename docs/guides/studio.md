@@ -18,7 +18,7 @@ The shortcut opens the Studio with the Python it was made from, without a consol
 - **Overview** (Ctrl+1): what the bot is doing now and today's round as a bar, then a line for anything that needs you
   (images still to take, the last problem), the round, progress, what's next and gains.
 - **Library** (Ctrl+2): the bot's actions first, then every image, region and location, with an image's last score
-  against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions), Missing or
+  against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; an image with its own region or location is tagged and listed under those too), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
   numbers and last scores (an image also says its region and location, the defaults included: the whole screen and
   its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Highlight on screen**

@@ -883,3 +883,11 @@ def test_no_qml_property_is_named_like_a_signal_handler():
     for page in (Path(app.__file__).parent / "qml").glob("*.qml"):
         found = re.findall(r"property\s+\w+\s+(on[A-Z]\w*)", page.read_text(encoding="utf-8"))
         assert found == [], f"{page.name}: {found}"
+
+
+def test_a_studio_given_its_own_connection_never_starts_a_service(qt, monkeypatch):
+    # a test's or probe's Studio once started a real service in the background each time, and left it running
+    monkeypatch.setattr("darbit.service.client.ensure_running", lambda: pytest.fail("started darbit's service"))
+    studio = backend.Studio(FakeClient)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")

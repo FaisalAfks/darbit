@@ -4,6 +4,8 @@
 
 ### New
 
+- The Library tags each target: its kind, and for an image the region and location it names. The Regions and Locations tabs list the images with their own region or location too, and each card shows its tags in the kinds' colours (`library.tags_of`)
+
 - A bot's day can start at another time than midnight: `[settings] day_starts = "03:00"`, or `"00:00 UTC"` for a game that resets at midnight UTC. The run report and log files, history, the Studio's Overview and Results, and the daily summary go by it (`darbit.days`); the Results timeline runs on past midnight
 
 - One set of names everywhere: **image**, **region** and **location** (the Studio said picture, area and point). Each target's settings file names its `kind`; the Library sorts by it (`core.targets.kind_of` works it out for files from before), and `darbit kinds BOT` writes it in. An image's inspector says its region and location, the defaults too: the whole screen and its centre
@@ -77,6 +79,7 @@
 
 ### Fixed
 
+- A Studio loaded with a connection of its own (a test's, or a script drawing a page) started a real darbit service in the background, and left it running; only the Studio's real connection starts the service now
 - Target settings files written on Windows had Windows line endings; they're written with LF, like the repos keep them
 - The Library's Actions tab was always empty: its property was named `onActions`, which QML reads as a signal handler. A test now checks no QML property is named that way. Actions also come first under All
 
