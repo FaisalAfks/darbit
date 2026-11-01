@@ -72,6 +72,7 @@ ApplicationWindow {
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
     HighlightWindow { objectName: "highlightWindow" }
+    GhostWindow { objectName: "ghostWindow" }
 
     function go(name) {
         page = name

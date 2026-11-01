@@ -359,6 +359,28 @@ def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     assert warnings == []
 
 
+def test_the_ghost_cursor_draws_without_a_qml_warning(qt, tmp_path):
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.ghost import Ghost
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        ghost = Ghost()
+        engine = app.load(backend.Studio(FakeClient), ghost=ghost)
+        root = engine.rootObjects()[0]  # held, or Qt deletes it
+        ghost.take({"kind": "click", "x": 300, "y": 200, "button": "left"})
+        ghost.take({"kind": "click", "x": 500, "y": 200, "button": "right"})
+        ghost.take({"kind": "key", "x": 300, "y": 200, "name": "e"})
+        ghost.take({"kind": "key", "x": 300, "y": 200, "name": "shift"})
+        wait_until(lambda: root.findChild(QQuickWindow, "ghostWindow").isVisible())
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
+
+
 class NoBots(FakeClient):
     """A first start: the service has no bots yet."""
 

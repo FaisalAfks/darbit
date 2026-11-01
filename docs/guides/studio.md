@@ -26,6 +26,8 @@ darbit app
   Image, Area or Point; **T** tests it: every match with its score, and a slider for the similarity it needs (matches
   under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is
   shown.
+- **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
+  presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
 - **Highlight** (the Library's Highlight button, or Ctrl+Alt+H with the game in front): what's found on screen right
   now. The Studio steps aside and each of the bot's pictures found gets its box and score over the game, a couple of
   times a second; one just under what it needs gets a faint one. Pictures found on the same spot are marked ⚠ with

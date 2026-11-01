@@ -21,6 +21,7 @@ CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
 PICKER = "studio.picker"  # ui setting: "dropdown" (the default) or "sidebar"
 EFFECTS = "studio.effects"  # ui setting: smooth effects (motion and glass); off for slower PCs
+GHOST = "studio.ghost"  # ui setting: the ghost cursor, what bots click and press shown over the game
 
 
 class Studio(QObject):
@@ -136,6 +137,9 @@ class Studio(QObject):
     def _get_effects(self) -> bool:
         return bool(ui_settings.get(EFFECTS, True))
 
+    def _get_ghost(self) -> bool:
+        return bool(ui_settings.get(GHOST, True))
+
     def _get_symbols(self) -> str:
         return symbol_font()
 
@@ -163,6 +167,7 @@ class Studio(QObject):
     playing = Property(dict, _get_playing, notify=playingChanged)  # {action, line, status}
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
+    ghost = Property(bool, _get_ghost, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
     symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
 
@@ -288,6 +293,11 @@ class Studio(QObject):
     @Slot(bool)
     def setEffects(self, on: bool) -> None:
         ui_settings.set_value(EFFECTS, bool(on))
+        self.lookChanged.emit()
+
+    @Slot(bool)
+    def setGhost(self, on: bool) -> None:
+        ui_settings.set_value(GHOST, bool(on))
         self.lookChanged.emit()
 
     @Slot()

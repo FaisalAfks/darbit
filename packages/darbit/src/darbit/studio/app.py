@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
+from .ghost import Ghost
 from .highlight import Highlight
 from .recorder import Recorder
 
@@ -32,7 +33,11 @@ def _client() -> Client:
 
 
 def load(
-    studio: Studio, capture: Capture | None = None, recorder: Recorder | None = None, highlight: Highlight | None = None
+    studio: Studio,
+    capture: Capture | None = None,
+    recorder: Recorder | None = None,
+    highlight: Highlight | None = None,
+    ghost: Ghost | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
@@ -42,15 +47,19 @@ def load(
         recorder = Recorder()
     if highlight is None:
         highlight = Highlight()
+    if ghost is None:
+        ghost = Ghost()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
     engine.rootContext().setContextProperty("recorder", recorder)
     engine.rootContext().setContextProperty("highlight", highlight)
+    engine.rootContext().setContextProperty("ghost", ghost)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
     highlight.setParent(engine)
+    ghost.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -66,7 +75,9 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     capture = Capture(ShotProvider())
     recorder = Recorder()
     highlight = Highlight()
-    engine = load(studio, capture, recorder, highlight)
+    ghost = Ghost()
+    engine = load(studio, capture, recorder, highlight, ghost)
+    _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     keys = _connect_highlight(studio, highlight, window)
     _connect_capture(studio, capture, recorder, window)
@@ -74,6 +85,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     tray = _tray(app, window)
     code = app.exec()
     highlight.stop()
+    ghost.stop()
     recorder.close()
     if keys is not None:
         keys[0].stop()
@@ -133,6 +145,19 @@ def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, wind
     recorder.finished.connect(finished)
     recorder.pictureWanted.connect(picture)
     capture.saved.connect(saved)
+
+
+def _connect_ghost(studio: Studio, ghost: Ghost) -> None:
+    """The ghost cursor listens while its setting is on."""
+
+    def follow() -> None:
+        if studio.ghost:
+            ghost.start()
+        else:
+            ghost.stop()
+
+    studio.lookChanged.connect(follow)
+    follow()
 
 
 def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> tuple[object, QObject] | None:
