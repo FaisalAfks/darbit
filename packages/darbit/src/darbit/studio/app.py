@@ -63,21 +63,7 @@ def load(
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
-    _keep_out_of_captures(engine.rootObjects()[0].findChild(QQuickWindow, "ghostWindow"))
     return engine
-
-
-def _keep_out_of_captures(window: QQuickWindow | None) -> None:
-    """The ghost cursor draws on the spot the bot just clicked: the bot's next look must see the game, not the ring."""
-    from ..platform import windows
-    from ..platform.backend import NotSupported
-
-    if window is None or QGuiApplication.platformName() != "windows":
-        return
-    try:
-        windows.keep_out_of_captures(int(window.winId()))
-    except NotSupported:
-        pass
 
 
 def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client) -> int:

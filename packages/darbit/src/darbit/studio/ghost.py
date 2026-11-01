@@ -9,6 +9,7 @@ import json
 import time
 
 from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtNetwork import QHostAddress, QUdpSocket
 
 from ..platform import ghost as told
@@ -38,6 +39,20 @@ class Ghost(QObject):
 
     marks = Property(list, _get_marks, notify=changed)  # {id, kind, x, y, name, age}: newest last
     isOn = Property(bool, _get_on, notify=changed)
+
+    @Slot(QObject)
+    def keepOutOfCaptures(self, window: QObject) -> None:
+        """GhostWindow.qml's window stays out of screen captures: its ring sits on the spot the bot just clicked, and
+        the bot's next look must see the game, not the ring."""
+        from ..platform import windows
+        from ..platform.backend import NotSupported
+
+        if QGuiApplication.platformName() != "windows":
+            return
+        try:
+            windows.keep_out_of_captures(int(window.winId()))
+        except NotSupported:
+            pass
 
     @Slot()
     def start(self) -> None:
