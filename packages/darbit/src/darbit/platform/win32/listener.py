@@ -228,6 +228,7 @@ class _Listener:
         user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
         user32.DefWindowProcW.restype = ctypes.c_ssize_t
         user32.CreateWindowExW.restype = wintypes.HWND
+        kernel32.GetModuleHandleW.restype = wintypes.HMODULE  # a 64-bit handle: the default int would cut it short
         user32.GetRawInputData.argtypes = [
             wintypes.HANDLE,
             wintypes.UINT,
