@@ -21,6 +21,7 @@ from .capture import Capture, ShotProvider
 from .ghost import Ghost
 from .highlight import Highlight
 from .recorder import Recorder
+from .runpill import RunPill
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
@@ -40,6 +41,7 @@ def load(
     recorder: Recorder | None = None,
     highlight: Highlight | None = None,
     ghost: Ghost | None = None,
+    run_pill: RunPill | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
@@ -51,17 +53,21 @@ def load(
         highlight = Highlight()
     if ghost is None:
         ghost = Ghost()
+    if run_pill is None:
+        run_pill = RunPill()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
     engine.rootContext().setContextProperty("recorder", recorder)
     engine.rootContext().setContextProperty("highlight", highlight)
     engine.rootContext().setContextProperty("ghost", ghost)
+    engine.rootContext().setContextProperty("runPill", run_pill)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
     highlight.setParent(engine)
     ghost.setParent(engine)
+    run_pill.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -79,16 +85,19 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     recorder = Recorder()
     highlight = Highlight()
     ghost = Ghost()
-    engine = load(studio, capture, recorder, highlight, ghost)
+    run_pill = RunPill()
+    engine = load(studio, capture, recorder, highlight, ghost, run_pill)
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     keys = _connect_highlight(studio, highlight, window)
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
-    tray = _tray(app, window)
+    _connect_run_pill(studio, run_pill, window)
+    tray = _tray(app, window, run_pill)
     code = app.exec()
     highlight.stop()
     ghost.stop()
+    run_pill.close()
     recorder.close()
     if keys is not None:
         keys[0].stop()
@@ -150,6 +159,30 @@ def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, wind
     capture.saved.connect(saved)
 
 
+def _connect_run_pill(studio: Studio, run_pill: RunPill, window: object) -> None:
+    """Play hides the Studio behind the run pill; the bot stopping or failing, or the pill's ⤢, brings it back."""
+    seen_running: list[bool] = []  # the bot ran since Play: until then, "stopped" is the status from before
+
+    def started() -> None:
+        if studio.runPill:
+            seen_running.clear()
+            window.hide()
+            run_pill.open()
+
+    def status() -> None:
+        if not run_pill.isOpen:
+            return
+        state = studio.bot.get("status")
+        if state in ("running", "paused"):
+            seen_running[:] = [True]
+        elif state == "failed" or seen_running:
+            run_pill.close()
+
+    studio.started.connect(started)
+    studio.botChanged.connect(status)
+    run_pill.closed.connect(lambda: _bring_forward(window))
+
+
 def _connect_ghost(studio: Studio, ghost: Ghost) -> None:
     """The ghost cursor listens while its setting is on."""
 
@@ -202,15 +235,20 @@ def _global_key(action: str, slot: object) -> tuple[object, _Key] | None:
     return registered, key
 
 
-def _tray(app: QApplication, window: object) -> QSystemTrayIcon:
+def _tray(app: QApplication, window: object, run_pill: RunPill) -> QSystemTrayIcon:
     tray = QSystemTrayIcon(QIcon(str(ICON)), app)
     tray.setToolTip("darbit Studio")
+
+    def open_studio() -> None:
+        run_pill.close()  # the Studio comes back in its place
+        _bring_forward(window)
+
     menu = QMenu()
-    menu.addAction("Open darbit Studio", lambda: _bring_forward(window))
+    menu.addAction("Open darbit Studio", open_studio)
     menu.addSeparator()
     menu.addAction("Quit (bots go on)", app.quit)
     tray.setContextMenu(menu)
-    tray.activated.connect(lambda reason: _bring_forward(window) if reason == QSystemTrayIcon.Trigger else None)
+    tray.activated.connect(lambda reason: open_studio() if reason == QSystemTrayIcon.Trigger else None)
     if QSystemTrayIcon.isSystemTrayAvailable():
         tray.show()
     return tray

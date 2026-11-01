@@ -4,6 +4,8 @@
 
 ### New
 
+- The run pill in the Qt Studio: Play hides the Studio behind a pill at the top of the screen (the bot, where it is, Pause, Stop, ⤢) that slides away until the real mouse comes to that edge and stays out of the bot's screenshots. The bot stopping or failing brings the Studio back. A darbit setting turns it off
+
 - darbit's service (`darbit serve`): starts, pauses and stops bots whether the Studio is open or not, through one local socket with typed JSON messages and a token (`service/`). The CLI drives it: `darbit bots`, `start`, `pause`, `stop`, `status`, starting it in the background when needed. `python -m darbit` works too
 
 - Run history in SQLite (`.darbit/history.db`): every run report line, copied as the bot writes it and queried by day and kind. The Results page reads it instead of each day's report (the week's gains no longer read seven whole reports), and `darbit history BOT [DAY]` shows a day

@@ -53,8 +53,9 @@ Flickable {
         Glass {
             title: "Window"
             delay: 60
-            Layout.fillWidth: true; Layout.preferredHeight: 200
+            Layout.fillWidth: true; Layout.preferredHeight: windowChoices.implicitHeight + 66  // grows with the help's lines
             content: Column {
+                id: windowChoices
                 width: parent.width; spacing: 12
                 Choice {
                     width: parent.width
@@ -76,6 +77,13 @@ Flickable {
                     help: "A ripple where a bot clicks and the keys it presses, over the game, so you can see what it's doing."
                     checked: studio.ghost
                     onToggled: function (on) { studio.setGhost(on) }
+                }
+                Choice {
+                    width: parent.width
+                    label: "Run pill"
+                    help: "Play hides the Studio and shows a small pill at the top of the screen, out of the game's way. Off: the Studio stays open."
+                    checked: studio.runPill
+                    onToggled: function (on) { studio.setRunPill(on) }
                 }
             }
         }
