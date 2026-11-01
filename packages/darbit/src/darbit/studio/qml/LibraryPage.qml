@@ -14,33 +14,45 @@ Item {
     property string group: "none"   // none, name, kind
     property string query: ""
     property string chosen: ""
+    // one copy per change: each read of studio.library from here copies the whole list, thumbnails and all
+    readonly property var library: studio.library
+    readonly property var actions: studio.actions
     readonly property var chosenAsset: onActions ? null : find(chosen)
     readonly property var chosenAction: onActions ? findAction(chosen) : null
     function findAction(name) {
-        for (var index = 0; index < studio.actions.length; index++)
-            if (studio.actions[index].name === name) return studio.actions[index]
+        for (var index = 0; index < page.actions.length; index++)
+            if (page.actions[index].name === name) return page.actions[index]
         return null
     }
-    readonly property int cardWidth: 176
-    readonly property int columns: Math.max(1, Math.floor((grid.width + 14) / (cardWidth + 14)))
+    // the columns come from the page's width alone, so opening or closing the inspector never moves a card to
+    // another row: the cards only get narrower while it's open, and fill each row edge to edge
+    readonly property int gap: 14
+    readonly property int roomForInspector: inspector.width + 16
+    readonly property int columns: {
+        var wide = page.width - 48
+        var alone = Math.floor((wide + gap) / (176 + gap))
+        var beside = Math.floor((wide - roomForInspector + gap) / (130 + gap))
+        return Math.max(1, Math.min(alone, beside))
+    }
+    readonly property real cardWidth: Math.floor((grid.width - gap * (columns - 1)) / columns)
 
     function score(asset) { return asset.scores && asset.scores.length ? asset.scores[asset.scores.length - 1] : null }
     function needs(asset) { return asset.similarity || 0.9 }
     function weak(asset) { var last = score(asset); return last !== null && last < needs(asset) + 0.05 }
     function find(name) {
-        for (var index = 0; index < studio.library.length; index++)
-            if (studio.library[index].name === name) return studio.library[index]
+        for (var index = 0; index < page.library.length; index++)
+            if (page.library[index].name === name) return page.library[index]
         return null
     }
-    function count(test) { return studio.library.filter(test).length }
+    function count(test) { return page.library.filter(test).length }
     function kindLabel(kind) { return kind === "region" ? "area" : kind === "location" ? "point" : kind }
 
     readonly property bool onActions: kind === "action"
     readonly property var shown: {
         var words = query.toLowerCase()
         if (onActions)
-            return studio.actions.filter(function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 })
-        var found = studio.library.filter(function (asset) {
+            return page.actions.filter(function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 })
+        var found = page.library.filter(function (asset) {
             if (kind !== "all" && asset.kind !== kind) return false
             if (missingOnly && !asset.missing) return false
             if (weakOnly && !page.weak(asset)) return false
@@ -79,7 +91,7 @@ Item {
         TextField {
             id: search
             Layout.preferredWidth: window.narrow ? 170 : 240; Layout.preferredHeight: 42
-            placeholderText: "Search " + studio.library.length + " assets"
+            placeholderText: "Search " + page.library.length + " assets"
             placeholderTextColor: studio.colors.faint
             color: studio.colors.text; font.pixelSize: 14
             leftPadding: 38
@@ -93,11 +105,11 @@ Item {
             itemHeight: 34
             current: page.kind
             model: [
-                { key: "all", label: "All", count: studio.library.length },
+                { key: "all", label: "All", count: page.library.length },
                 { key: "image", label: "Images", count: page.count(function (a) { return a.kind === "image" }) },
                 { key: "region", label: "Areas", count: page.count(function (a) { return a.kind === "region" }) },
                 { key: "location", label: "Points", count: page.count(function (a) { return a.kind === "location" }) },
-                { key: "action", label: "Actions", count: studio.actions.length }
+                { key: "action", label: "Actions", count: page.actions.length }
             ]
             onPicked: function (key) { page.kind = key; page.chosen = "" }
         }
@@ -146,9 +158,11 @@ Item {
     ListView {
         id: grid
         anchors { left: parent.left; leftMargin: 24; top: tools.bottom; topMargin: 18; bottom: parent.bottom
-                  right: parent.right; rightMargin: inspector.open ? inspector.width + 40 : 24 }
+                  right: parent.right; rightMargin: inspector.open ? page.roomForInspector + 24 : 24 }
+        // the cards narrow as the inspector slides in, together
+        Behavior on anchors.rightMargin { NumberAnimation { duration: studio.effects ? 260 : 0; easing.type: Easing.OutCubic } }
         clip: true
-        spacing: 14
+        spacing: page.gap
         boundsBehavior: Flickable.StopAtBounds
         cacheBuffer: 400
         model: page.rows
@@ -162,7 +176,7 @@ Item {
         }
         delegate: Row {
             required property var modelData
-            spacing: 14
+            spacing: page.gap
             Repeater {
                 model: page.onActions ? modelData.assets : []
                 delegate: ActionCard {
@@ -196,20 +210,20 @@ Item {
             spacing: 14
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: page.onActions ? (studio.actions.length === 0 ? "No actions yet" : "Nothing matches")
+                text: page.onActions ? (page.actions.length === 0 ? "No actions yet" : "Nothing matches")
                     : !studio.libraryReady ? "Loading the pictures…"
-                    : studio.library.length === 0 ? "No pictures yet" : "Nothing matches"
+                    : page.library.length === 0 ? "No pictures yet" : "Nothing matches"
                 color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: page.onActions || studio.libraryReady
-                text: page.onActions ? (studio.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
-                    : studio.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
+                text: page.onActions ? (page.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
+                    : page.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
                 color: studio.colors.muted; font.pixelSize: 14
             }
             PillButton {
-                visible: page.onActions ? studio.actions.length === 0 : studio.libraryReady && studio.library.length === 0
+                visible: page.onActions ? page.actions.length === 0 : studio.libraryReady && page.library.length === 0
                 anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"
                 icon: page.onActions ? "●" : "▣"; text: page.onActions ? "Record" : "Capture"
                 onClicked: page.onActions ? window.recordAction("") : studio.openCapture("any")

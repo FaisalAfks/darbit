@@ -599,3 +599,27 @@ def test_pictures_found_on_the_same_spot_are_look_alikes():
     assert named["A"]["shown"] and not named["B"]["shown"]  # the better one stands for the spot
     assert named["C"]["with"] == [] and named["C"]["shown"]
     assert not named["D"]["shown"]
+
+
+def test_the_library_keeps_its_columns_when_the_inspector_opens(qt):
+    from PySide6.QtQuick import QQuickItem
+
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]  # held, or Qt deletes it
+    window.resize(1400, 880)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name"))
+    window.go("library")
+    studio.loadLibrary()
+    wait_until(lambda: studio.libraryReady)
+    page = next(item for item in window.findChildren(QQuickItem) if item.property("roomForInspector") is not None)
+    wait_until(lambda: page.property("cardWidth") > 0)
+    columns, wide = page.property("columns"), page.property("cardWidth")
+    assert (columns - 1) * page.property("gap") + columns * wide > page.width() - 48 - columns  # the row is filled
+    page.setProperty("chosen", "Bag.Equip")
+    wait_until(lambda: page.property("cardWidth") < wide)  # the cards narrow with the inspector open
+    assert page.property("columns") == columns  # but no card moves to another row
+    page.setProperty("chosen", "")
+    wait_until(lambda: page.property("cardWidth") == wide)
+    del engine

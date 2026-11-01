@@ -70,12 +70,14 @@ Rectangle {
         Rectangle { x: parent.width * card.needs - 1; y: -2; width: 2; height: 9; radius: 1; color: studio.colors.text }
     }
     Text {
-        x: 12; y: 172
+        x: 12; y: 172; width: card.width - 32 - uses.implicitWidth
+        elide: Text.ElideRight
         text: card.asset.missing ? "missing" : card.asset.kind !== "image" ? "" : card.score === null ? "not checked yet" : card.score.toFixed(2) + (card.weak ? " · weak" : "")
         color: card.asset.missing ? studio.colors.danger : card.weak ? studio.colors.warn : studio.colors.muted
         font.pixelSize: 12
     }
     Text {
+        id: uses
         anchors { right: parent.right; rightMargin: 12 }
         y: 172
         text: card.asset.uses ? "used " + card.asset.uses + "×" : "unused"
