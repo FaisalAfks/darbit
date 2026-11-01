@@ -299,6 +299,25 @@ Each is a small interface with one class per system, picked when darbit starts:
 | **6. More systems** | macOS and Linux backends, CI on all three | the test bench and a sample bot pass on all three |
 | **After** | OCR targets, masks of any shape, element targets, the VS Code extension, MCP, the installer, a registry | |
 
+### Where it stands (2026-11-01)
+
+| Milestone | State |
+|---|---|
+| 1. Core | done |
+| 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
+| 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
+| 4. Studio | done; idle on Windows 0.1% of a core, about 185 MB |
+| 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
+| 6. More systems | not started |
+
+CI runs every test on Windows and Linux, and `tests/live` on a real Windows desktop (capture, clicks, keys, tapes, Highlight, Capture, the recorder pill, the ghost cursor, the Studio at 100% and 150%).
+
+**To test on the owner's PC** (nothing here has run there yet):
+- `darbit app`: no console window; the welcome on a first start; Highlight's boxes on the pictures at this PC's display scaling; the ghost cursor while a bot runs.
+- A bot through the Studio: Start, Pause, Stop; locking Windows pauses it and unlocking goes on (Overview says so); `[run] restart = 3` on a bot that fails.
+- Record an action and play it: timing and the shift-lock camera (the original complaint).
+- ad-bot PR #41 in the dev clone (`uv sync` on its branch): a full day. Check a dimension run starts by clicking its banner, and `until_drop` with a drop picture. Set again any position, region or timeout this PC's config.toml had changed (the bot prints where each went).
+
 ## 14. Also designed for from the start
 
 ### Moving over
