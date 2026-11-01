@@ -168,3 +168,43 @@ def test_threads_switch_quickly_while_recording_or_playing():
     assert sys.getswitchinterval() == switching.FAST  # the other one still needs it
     second()
     assert sys.getswitchinterval() == before
+
+
+def test_a_late_event_moves_the_rest_later_so_waits_stay(tmp_path, sent, monkeypatch):
+    _, times = sent
+    key_now = device.key_now
+
+    def slow_key_now(name, up):
+        key_now(name, up)
+        if name == "a":
+            time.sleep(0.06)  # the game took a moment to take it
+
+    monkeypatch.setattr(device, "key_now", slow_key_now)
+    events = [Event(0.0, "key", "a"), Event(0.02, "key", "w"), Event(0.12, "key", "w", True)]
+    tape.save(tape.path_for(tmp_path / "run.py"), Tape(events))
+    tape.replay(tmp_path / "run.py")
+    assert times[2] - times[1] == pytest.approx(0.10, abs=0.005)  # w is still held as long as it was
+
+
+def test_after_a_pause_the_held_keys_go_down_again_and_time_carries_on(tmp_path, sent, monkeypatch):
+    found, times = sent
+    checks = []
+
+    def check():
+        checks.append(time.perf_counter())
+        if len(found) == 1 and len(checks) == 2:
+            time.sleep(0.1)  # paused from darbit Studio; pausing let go of w
+
+    monkeypatch.setattr(safety, "check", check)
+    events = [Event(0.0, "key", "w"), Event(0.05, "key", "w", True)]
+    tape.save(tape.path_for(tmp_path / "run.py"), Tape(events))
+    tape.replay(tmp_path / "run.py")
+    assert found == [("key", "w", False), ("key", "w", False), ("key", "w", True)]
+    assert times[2] - times[1] >= 0.04  # held again for the rest of its time, not let go at once
+
+
+def test_a_tape_keeps_notes_on_how_the_recording_went(tmp_path):
+    notes = {"late": 3, "most_late": 0.04, "missed": 0}
+    path = tape.path_for(tmp_path / "run.py")
+    tape.save(path, Tape([Event(0.1, "key", "w")], notes=notes))
+    assert tape.load(path).notes == notes

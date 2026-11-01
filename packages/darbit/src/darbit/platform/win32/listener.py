@@ -12,6 +12,8 @@ import time
 from collections.abc import Callable
 from ctypes import wintypes
 
+from ..stamps import Stamps
+
 WM_INPUT = 0x00FF
 WM_QUIT = 0x0012
 RID_INPUT = 0x10000003
@@ -169,12 +171,16 @@ class _Listener:
         self.thread_id = 0
         self.ready = threading.Event()
         self.procedure = WNDPROC(self._window_procedure)  # kept alive while the window lives
+        self.stamps = Stamps()  # when each input happened, even when we got to it late
+        self.missed = 0  # inputs Windows no longer had by the time we asked for them
 
     def add(self, on_event: OnEvent) -> None:
         with self.lock:
             self.subscribers.append(on_event)
             starting = len(self.subscribers) == 1
         if starting:
+            self.stamps = Stamps()
+            self.missed = 0
             self.ready.clear()
             threading.Thread(target=self._loop, name="darbit-raw-input", daemon=True).start()
             self.ready.wait(2)
@@ -201,11 +207,12 @@ class _Listener:
             wintypes.HANDLE(handle), RID_INPUT, ctypes.byref(raw), ctypes.byref(size), ctypes.sizeof(RAWINPUTHEADER)
         )
         if got in (0, 0xFFFFFFFF):
+            self.missed += 1
             return
         # where the mouse was when this input happened, not now: by the time it's handled the mouse may have moved on
         position = user32.GetMessagePos()
         point = wintypes.POINT(ctypes.c_short(position & 0xFFFF).value, ctypes.c_short((position >> 16) & 0xFFFF).value)
-        now = time.perf_counter_ns()
+        now = self.stamps(time.perf_counter_ns(), user32.GetMessageTime() & 0xFFFFFFFF)
         with self.lock:
             subscribers = list(self.subscribers)
         for kind, code, x, y in events_of(raw, (point.x, point.y), _cursor_showing()):
@@ -270,6 +277,18 @@ def start(on_event: OnEvent, moves: bool = False) -> Callable[[], None]:
         _listener.remove(without_moves)
 
     return stop
+
+
+def health(restart: bool = False) -> dict:
+    """How the listener has kept up (since the last `restart`): inputs it got to late (their times were put right from
+    Windows' own), the latest of those in seconds, and inputs Windows no longer had (lost)."""
+    stamps = _listener.stamps
+    found = {"late": stamps.late, "most_late": round(stamps.most_late_ns / 1e9, 3), "missed": _listener.missed}
+    if restart:
+        stamps.late = 0
+        stamps.most_late_ns = 0
+        _listener.missed = 0
+    return found
 
 
 def watch_mouse(on_move: Callable[[int, int], None]) -> Callable[[], None]:

@@ -22,8 +22,12 @@ def recording(tmp_path, monkeypatch):
 
         return stop
 
+    def fake_health(restart=False):
+        return {"late": 2, "most_late": 0.03, "missed": 0}
+
     monkeypatch.setattr(paths, "project_dir", project_dir)
     monkeypatch.setattr(hooks, "start", fake_start)
+    monkeypatch.setattr(hooks, "health", fake_health)
     monkeypatch.setattr(record_api, "ignore_area", None)
     monkeypatch.setattr(record_api, "on_end", None)
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "test-bot"\n', encoding="utf-8")
@@ -56,6 +60,7 @@ def test_keys_clicks_and_the_mouse_become_a_tape(recording):
     assert flow.sections[0].name == "Dodge"
     assert [(step.kind, step.args) for step in flow.sections[0].steps] == [("tape", {"start": 0, "end": 1.75})]
     saved_tape = tape.load(recording / "actions" / "dodge.tape.json")
+    assert saved_tape.notes == {"late": 2, "most_late": 0.03, "missed": 0}  # how the listener kept up
     kinds = []
     for one in saved_tape.events:
         kinds.append((one.kind, one.name, one.up))

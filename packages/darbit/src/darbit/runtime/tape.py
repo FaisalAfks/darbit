@@ -29,6 +29,8 @@ HOLD_PACKETS = 3  # packets a bucket needs for that; fewer, and it's like the on
 SNAP_BACK = 3  # px the cursor jumping against the mouse's way that means the game put it back
 FOLLOW_SHARE = 0.25  # a free cursor goes at least this share of the counts, even at a slow pointer speed
 SLEEP_AHEAD = 0.0015  # seconds before an event when sleeping stops and waiting goes on in a tight loop
+BEHIND = 0.008  # seconds late an event can go before the rest of the tape moves later with it
+PAUSED = 0.05  # seconds a safety check can take before it was a pause
 SUMMARY_POINTS = 240  # cursor places sent to the Studio for a tape's mini path
 SUMMARY_MARKS = 240
 
@@ -56,6 +58,7 @@ class Tape:
     events: list[Event] = field(default_factory=list)
     window: list[int] | None = None  # the game window's client area when recorded: x, y, width, height
     screen: list[int] | None = None  # the whole desktop when recorded: x, y, width, height
+    notes: dict | None = None  # how the recording went: {"late": n, "most_late": s, "missed": n} (hooks.health)
 
 
 # ---- reading and writing
@@ -85,6 +88,8 @@ def save(path: Path, tape: Tape) -> None:
             ]
         )
     data = {"version": VERSION, "window": tape.window, "screen": tape.screen, "events": rows}
+    if tape.notes:
+        data["notes"] = tape.notes
     path.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
 
 
@@ -94,7 +99,7 @@ def load(path: Path) -> Tape:
     for row in data.get("events", []):
         t, kind, name, up, dx, dy, x, y, shown, held = row
         events.append(Event(t, kind, name, bool(up), dx, dy, x, y, bool(shown), bool(held)))
-    return Tape(events, data.get("window"), data.get("screen"))
+    return Tape(events, data.get("window"), data.get("screen"), data.get("notes"))
 
 
 # ---- telling a held cursor from a free one
@@ -180,7 +185,12 @@ def _snapped_back(event: Event, before: Event) -> bool:
 
 
 def replay(action_file: str | Path, start: float = 0.0, end: float | None = None) -> None:
-    """Play the action's tape from `start` to `end` seconds, every event at its time."""
+    """Play the action's tape from `start` to `end` seconds, every event at its time.
+
+    Each event goes at its time from the start; if playing falls behind (the game or Windows took a moment to take
+    an event, or the bot was paused), the rest of the tape moves later with it rather than rushing to catch up, so
+    waits and how long keys are held stay as recorded. After a pause, the keys and buttons the tape is holding are
+    pressed again: pausing let go of them."""
     tape = load(path_for(action_file))
     chosen = []
     for event in tape.events:
@@ -193,12 +203,13 @@ def replay(action_file: str | Path, start: float = 0.0, end: float | None = None
     place = Placing(tape.window, _window_now())
     done = switching.fast()  # other threads mustn't hold up an event
     try:
-        began = time.perf_counter()
+        clock = Clock(time.perf_counter() - start)
         for event in chosen:
-            _wait_until(began + event.t - start)
+            clock.wait_until(event.t, place)
             _send(event, place)
+            place.note(event)
         if end is not None:
-            _wait_until(began + end - start)  # the next step starts when it did while recording
+            clock.wait_until(end, place)  # the next step starts when it did while recording
     finally:
         done()
     actions.resync()
@@ -212,6 +223,30 @@ class Placing:
         self.now = now
         self.last: tuple[int, int] | None = None  # the last place the cursor was put
         self.held = False  # the last move was one the game held
+        self.keys: dict[str, None] = {}  # keys the tape has down, in the order they went down
+        self.buttons: dict[str, None] = {}
+
+    def note(self, event: Event) -> None:
+        """Keep track of what the tape is holding down."""
+        if event.kind == "key":
+            held = self.keys
+        elif event.kind == "button":
+            held = self.buttons
+        else:
+            return
+        if event.up:
+            held.pop(event.name, None)
+        else:
+            held[event.name] = None
+
+    def press_again(self) -> None:
+        """After a pause (which let go of everything): the cursor where it was, and what was held down again."""
+        if self.last is not None:
+            device.place(*self.last)
+        for name in self.keys:
+            device.key_now(name, False)
+        for button in self.buttons:
+            device.button_now(button, False)
 
     def spot(self, x: int, y: int) -> tuple[int, int]:
         if not self.recorded or not self.now:
@@ -252,19 +287,32 @@ def _send(event: Event, place: Placing) -> None:
         device.wheel_now(event.dx, sideways=True)
 
 
-def _wait_until(due: float) -> None:
-    """Wait until `due` (perf_counter), sleeping most of it and waiting the last moment in a tight loop."""
-    while True:
-        safety.check()
-        if stopping.is_set():
-            raise Stopped("stopped from darbit Studio")
-        left = due - time.perf_counter()
-        if left <= 0:
-            return
-        if left > SLEEP_AHEAD:
-            time.sleep(min(left - SLEEP_AHEAD, 0.05))
-        else:
-            time.sleep(0)
+class Clock:
+    """When each event of a tape goes: `zero` (perf_counter) is the tape's 0 s, moved later when playing fell behind."""
+
+    def __init__(self, zero: float) -> None:
+        self.zero = zero
+
+    def wait_until(self, at: float, place: Placing) -> None:
+        """Wait until `at` seconds into the tape, sleeping most of it and waiting the last moment in a tight loop."""
+        while True:
+            before = time.perf_counter()
+            safety.check()  # waits while the bot is paused
+            if stopping.is_set():
+                raise Stopped("stopped from darbit Studio")
+            now = time.perf_counter()
+            if now - before > PAUSED:
+                self.zero += now - before  # the tape goes on from where it was paused
+                place.press_again()
+            left = self.zero + at - now
+            if left <= 0:
+                if -left > BEHIND:
+                    self.zero -= left  # late: what comes after keeps its time from this one
+                return
+            if left > SLEEP_AHEAD:
+                time.sleep(min(left - SLEEP_AHEAD, 0.05))
+            else:
+                time.sleep(0)
 
 
 def _window_now() -> list[int] | None:

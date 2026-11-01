@@ -19,3 +19,9 @@ def start(on_event: OnEvent, moves: bool = False) -> Callable[[], None]:
 def watch_mouse(on_move: Callable[[int, int], None]) -> Callable[[], None]:
     """Call on_move(x, y) for every real mouse move, in screen pixels. Returns a function that stops it."""
     return backend.listener().watch_mouse(on_move)
+
+
+def health(restart: bool = False) -> dict:
+    """How the listener kept up since the last `restart`: {"late": inputs it got to late, "most_late": seconds,
+    "missed": inputs lost}. Late inputs keep their real times (platform/stamps.py); lost ones are gone."""
+    return backend.listener().health(restart)
