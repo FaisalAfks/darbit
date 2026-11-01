@@ -49,3 +49,16 @@ def end_process_tree(pid: int) -> None:
 def site_packages(venv: Path) -> Path:
     """Where a virtual environment keeps its installed packages."""
     return backend.system().site_packages(venv)
+
+
+def name_app(app_id: str) -> None:
+    """Give this process its own app id, so the taskbar shows its window's icon; nothing where there's no such id."""
+    try:
+        backend.system().name_app(app_id)
+    except backend.NotSupported:
+        pass
+
+
+def add_shortcut(name: str, target: Path, arguments: str, icon: Path) -> list[Path]:
+    """A shortcut to `target arguments` with this icon in the Start menu and on the desktop; returns the ones made."""
+    return backend.system().add_shortcut(name, target, arguments, icon)

@@ -145,3 +145,23 @@ def test_the_studio_command_opens_the_studio_or_says_what_it_needs(capsys, monke
 def test_an_unknown_command_is_refused():
     with pytest.raises(SystemExit):
         cli.main(["fly"])
+
+
+def test_app_shortcut_opens_the_studio_without_a_console_and_with_darbits_icon(monkeypatch, capsys):
+    from darbit.platform import system
+
+    made = []
+
+    def add_shortcut(name, target, arguments, icon):
+        made.append((name, target, arguments, icon))
+        return [icon.parent / f"{name}.lnk"]
+
+    monkeypatch.setattr(system, "add_shortcut", add_shortcut)
+    assert cli.main(["app", "--shortcut"]) == 0
+    name, target, arguments, icon = made[0]
+    assert name == "darbit Studio"
+    assert arguments == "-m darbit app"
+    assert icon.name == "darbit.ico" and icon.is_file()
+    if target.with_name("pythonw.exe").is_file():
+        assert target.name == "pythonw.exe"
+    assert "made" in capsys.readouterr().out

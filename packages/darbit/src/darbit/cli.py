@@ -6,6 +6,7 @@ darbit serve                  darbit's service: runs bots whether the Studio is 
 darbit bots | status BOT | start BOT | pause BOT | stop BOT | history BOT [DAY] | notify
                               bots through the service (started in the background if it isn't running)
 darbit app                    darbit Studio (the studio extra: pip install "darbit[studio]")
+darbit app --shortcut         darbit Studio in the Start menu and on the desktop, with darbit's icon
 
 Each command hands its arguments to the module that does the work: project/bots.py for new, install and
 run, and each tool's own main().
@@ -128,12 +129,36 @@ def _run(argv: list[str]) -> int:
 
 
 def _app(argv: list[str]) -> int:
+    if "--shortcut" in argv:
+        return _shortcut()
     try:
         app = importlib.import_module("darbit.studio.app")
     except ImportError:
         print(STUDIO_MISSING)
         return 2
     return app.main([sys.argv[0], *argv])
+
+
+def _shortcut() -> int:
+    """darbit Studio in the Start menu and on the desktop, opened by this Python without a console window."""
+    from .platform import backend, system
+
+    python = Path(sys.executable)
+    windowless = python.with_name("pythonw.exe")
+    if windowless.is_file():
+        python = windowless
+    icon = Path(__file__).parent / "studio" / "darbit.ico"
+    try:
+        made = system.add_shortcut("darbit Studio", python, "-m darbit app", icon)
+    except backend.NotSupported as error:
+        print(error)
+        return 2
+    if not made:
+        print("no shortcut could be made")
+        return 1
+    for path in made:
+        print(f"made {path}")
+    return 0
 
 
 def _serve(argv: list[str]) -> int:
