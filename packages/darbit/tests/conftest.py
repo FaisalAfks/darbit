@@ -1,8 +1,14 @@
 """Tests run on any system: off Windows, the platform pieces come from fake_system.py, and the tests of Windows'
 own pieces (they load its system libraries) are left out. Windows CI runs everything."""
 
+import os
 import sys
+import tempfile
 import types
+
+# darbit's own folders (settings, the service's address, logs) in a folder of the test run's, for this process and
+# every service or bot a test starts: a test never reads or writes the real ones
+os.environ["DARBIT_HOME"] = tempfile.mkdtemp(prefix="darbit-tests-")
 
 import fake_system
 

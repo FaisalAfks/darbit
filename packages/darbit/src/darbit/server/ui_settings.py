@@ -23,7 +23,7 @@ def read_all() -> dict:
     if not path.is_file():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))  # -sig: also a file Windows PowerShell saved
     except (OSError, ValueError):
         return {}  # a broken file is the same as none: defaults
 

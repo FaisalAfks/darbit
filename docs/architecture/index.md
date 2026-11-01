@@ -46,6 +46,8 @@ A layer only imports from the layers above it in this list. `import darbit` load
 | user settings, keymap, themes | `%APPDATA%\darbit\` (`paths.config_dir()`) |
 | Studio data, installed bots, cache | `%LOCALAPPDATA%\darbit\` (`paths.data_dir()`, `bots_dir()`, `cache_dir()`) |
 
+`DARBIT_HOME` puts darbit's own folders (`config`, `data`, `cache`, `logs`) under one folder instead, for a portable install. The tests set it to a temporary folder for the whole run, so they never touch the real ones; services and bots a test starts inherit it.
+
 ## Background threads
 
 - **The stop-key watcher** (`platform/safety.py`) starts with the first darbit call that can be stopped. It also keeps the PC awake.
