@@ -157,3 +157,20 @@ def test_gain_and_plan_go_to_the_report(monkeypatch):
         d.record.gain("Gems", "lots")
     with pytest.raises(ValueError):
         d.plan(["Raid", ""])
+
+
+def test_recoveries_are_counted_with_their_reasons():
+    from darbit.server.results import day_lines, recoveries_of
+
+    events = [
+        {"event": "recovered", "how": "rejoin", "why": "disconnected"},
+        {"event": "recovered", "how": "rejoin", "why": "no Play button"},
+        {"event": "recovered", "how": "rejoin", "why": "disconnected"},
+        {"event": "recovered", "how": "back to the lobby", "why": "a pop-up"},
+        {"event": "gain", "name": "Gems", "amount": 1},
+    ]
+    found = recoveries_of(events)
+    assert found[0] == {"how": "rejoin", "count": 3, "whys": {"disconnected": 2, "no Play button": 1}}
+    assert found[1]["how"] == "back to the lobby"
+    lines = day_lines({"day": "2026-11-01", "recoveries": found})
+    assert "rejoin x3: disconnected 2, no Play button 1" in lines

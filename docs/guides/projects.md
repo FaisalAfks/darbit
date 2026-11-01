@@ -41,6 +41,7 @@ Most of a bot's Overview comes from what darbit already records: the open `d.ste
 ```python
 d.progress("Speed Raid this week", done, 133)  # a ring; call again with new numbers
 d.next("Weekly reset", reset_time)  # a datetime; shown as "in 2 d 4 h"
+d.record.recovered("rejoin", "disconnected")  # counted by reason in the day's results
 ```
 
 `[studio]` picks and orders the tiles (decision 0011):

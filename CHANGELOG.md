@@ -46,6 +46,8 @@
 
 - `darbit doctor [BOT]`: what would stop a bot before it starts: its darbit.toml, pictures its setup guide lists but aren't taken, display scaling unlike when the pictures were taken, its game window not open, a locked screen
 
+- `d.record.recovered(how, why)`: a bot that gets itself going again (a rejoin, back to the lobby) says so, and each day's results count them by reason: `darbit history` and the daily summary show "rejoin x5: disconnected 3, no Play button 2"
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service
