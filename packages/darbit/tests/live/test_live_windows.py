@@ -304,7 +304,8 @@ def test_the_recorder_pill_shows_while_the_studio_is_hidden(tmp_path):
 
 
 def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
-    """darbit's clicks and keys reach the Studio's ghost cursor, and the click still reaches the window under it."""
+    """darbit's clicks and keys reach the Studio's ghost cursor, the click still reaches the window under it, and the
+    ring drawn on the picture stays out of screen grabs (the bot's next look sees the game)."""
     from PySide6.QtCore import QCoreApplication
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQuick import QQuickWindow
@@ -341,6 +342,8 @@ def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
         x, y, w, h = picture_box(target)
         assert (click["x"], click["y"]) == (x + w // 2, y + h // 2)
         assert overlay.isVisible()
+        seen = d.exists(PICTURE)  # the ring is on the picture now: screen grabs must not see it
+        assert seen is not None and seen.score > 0.99, f"the ghost cursor got into the screen grab: {seen}"
         target.settle()
         assert len(target.events("click")) == before + 1, "the click stopped at the ghost cursor"
     finally:
