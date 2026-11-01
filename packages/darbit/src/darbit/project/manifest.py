@@ -218,13 +218,23 @@ def version_matches(version: str, wanted: str) -> bool | None:
 
 
 def _numbers(version: str) -> tuple[int, ...] | None:
-    """`0.5.1` -> (0, 5, 1), padded to three numbers; None for anything else."""
+    """`0.5.1` -> (0, 5, 1), padded to three numbers; a pre-release counts as its release (`1.0.0.dev0`, `1.0.0rc1`
+    -> (1, 0, 0)); None for anything else."""
     parts = version.split(".")
     numbers = []
     for part in parts:
-        if not part.isdigit():
+        digits = ""
+        for character in part:
+            if not character.isdigit():
+                break
+            digits += character
+        if not digits:
+            if numbers:
+                break  # .dev0, .post1: what comes after the release
             return None
-        numbers.append(int(part))
+        numbers.append(int(digits))
+        if digits != part:
+            break  # 0rc1, 0a2
     while len(numbers) < 3:
         numbers.append(0)
     return tuple(numbers)
