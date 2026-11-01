@@ -227,7 +227,25 @@ class _Listener:
         kernel32 = ctypes.windll.kernel32
         user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
         user32.DefWindowProcW.restype = ctypes.c_ssize_t
+        # handles are 64-bit: without these types ctypes would cut them to a 32-bit int
+        kernel32.GetModuleHandleW.restype = wintypes.HMODULE
         user32.CreateWindowExW.restype = wintypes.HWND
+        user32.CreateWindowExW.argtypes = [
+            wintypes.DWORD,
+            wintypes.LPCWSTR,
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+            wintypes.HWND,
+            wintypes.HMENU,
+            wintypes.HINSTANCE,
+            wintypes.LPVOID,
+        ]
+        user32.UnregisterClassW.argtypes = [wintypes.LPCWSTR, wintypes.HINSTANCE]
+        user32.DestroyWindow.argtypes = [wintypes.HWND]
         user32.GetRawInputData.argtypes = [
             wintypes.HANDLE,
             wintypes.UINT,

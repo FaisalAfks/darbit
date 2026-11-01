@@ -64,6 +64,7 @@
 
 ### Fixed
 
+- The Raw Input listener (the recorder, polite mode) no longer hits an access violation when it makes its window on 64-bit Windows: the module handle was cut to 32 bits
 - A pre-release darbit (`1.0.0.dev0`) counts as its release when a bot's `darbit` range is checked, instead of "can't read"
 - No console window on Windows when the Studio starts darbit's service, or the service starts a bot: a venv's python.exe opened one for the real Python, over the game (seen live on Windows; CREATE_NO_WINDOW doesn't work with DETACHED_PROCESS)
 - Highlight's boxes sit on the pictures at any Windows display scaling (125%, 150%) and with a monitor left of the main one; they were drawn at 100% from the desktop's corner. CI checks it at 150%
