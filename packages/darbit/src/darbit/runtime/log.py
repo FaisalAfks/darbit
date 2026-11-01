@@ -14,6 +14,7 @@ from pathlib import Path
 
 import cv2
 
+from .. import days
 from ..events import listen, publish
 from ..platform import screen
 from ..settings import settings
@@ -23,9 +24,14 @@ _day = ""
 _KEEP_SHOTS = 200
 
 
+def _today() -> str:
+    """The bot's day now: its log and report files are named by it, so a day that starts at 03:00 stays one file."""
+    return days.today(days.of({"day_starts": settings.day_starts}))
+
+
 def _handler() -> None:
     global _day
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = _today()
     if today == _day:
         return
     for old in list(logger.handlers):
@@ -64,7 +70,7 @@ def record(event: str, **fields: object) -> None:
         return
     try:
         settings.logs.mkdir(parents=True, exist_ok=True)
-        with _report_lock, (settings.logs / f"report-{datetime.now():%Y-%m-%d}.jsonl").open("a", encoding="utf-8") as f:
+        with _report_lock, (settings.logs / f"report-{_today()}.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps(line, default=str) + "\n")
     except OSError:
         pass

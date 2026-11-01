@@ -372,7 +372,8 @@ def _keep_history(folder: Path) -> None:
 def _report_time(folder: Path) -> float | None:
     """When today's report last changed; None while there is none (or the bot's folder is gone)."""
     try:
-        report = dashboard.report_file(load(folder), datetime.now().strftime("%Y-%m-%d"))
+        project = load(folder)
+        report = dashboard.report_file(project, dashboard.today(project))
         return report.stat().st_mtime
     except (ProjectError, OSError):
         return None
@@ -400,7 +401,7 @@ _tiles_made: dict[str, tuple[tuple, list[dict]]] = {}  # the Overview's tiles, m
 
 def _tiles_key(project: Project, day: str | None) -> tuple:
     """What the tiles depend on: the report, the minute (next up counts down), the guide and the pictures."""
-    report = dashboard.report_file(project, day or datetime.now().strftime("%Y-%m-%d"))
+    report = dashboard.report_file(project, day or dashboard.today(project))
     parts: list = [day, datetime.now().strftime("%H:%M")]
     for path in [report, project.folder / "guide.toml", *library._folders(project)]:
         try:
@@ -489,5 +490,6 @@ def results_days(data: dict) -> list[dict]:
 def results_day(data: dict) -> dict:
     """One day of the Results page (today when no day is given)."""
     folder = _folder(data)
-    day = str(data.get("day") or datetime.now().strftime("%Y-%m-%d"))
-    return results.day(load(folder), day)
+    project = load(folder)
+    day = str(data.get("day") or dashboard.today(project))
+    return results.day(project, day)

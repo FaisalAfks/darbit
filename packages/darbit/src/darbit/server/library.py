@@ -406,6 +406,6 @@ def write_kinds(project: Project) -> list[str]:
             if settings.get("kind"):
                 continue
             settings = {"kind": kind_of(settings, (folder / (name + ".png")).is_file()), **settings}
-            settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
+            settings_file.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8", newline="\n")
             written.append(name)
     return written

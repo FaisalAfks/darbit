@@ -31,7 +31,7 @@ from pathlib import Path
 
 from .. import events, paths
 from ..project.manifest import ProjectError, load
-from ..server import hub, results
+from ..server import dashboard, hub, results
 
 FILE = "notify.toml"
 SEND_WAIT = 10.0  # seconds for a channel to take a message
@@ -226,7 +226,8 @@ def _restarting(data: dict) -> str:
 def _last_problem(folder: str) -> str:
     """The last failed step in today's results, for a failure's message."""
     try:
-        found = results.day(load(Path(folder)), datetime.now().strftime("%Y-%m-%d"))
+        project = load(Path(folder))
+        found = results.day(project, dashboard.today(project))
     except (ProjectError, OSError, ValueError):
         return ""
     problems = found.get("problems") or []

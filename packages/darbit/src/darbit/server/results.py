@@ -16,10 +16,17 @@ WEEK = 7  # days in the gains' small bar charts
 DAYS_LISTED = 60  # days in the day list
 
 
-def seconds_of(time: object) -> float | None:
-    """A report time ("2026-10-26T10:04:31.120" or "10:04:31") as seconds since midnight."""
+def seconds_of(time: object, day: str = "") -> float | None:
+    """A report time ("2026-10-26T10:04:31.120" or "10:04:31") as seconds since midnight; with `day`, since the
+    midnight that day began, so a bot's day that starts at 03:00 runs on past 24 h (clockOf still reads "01:00")."""
     if not isinstance(time, str) or not time:
         return None
+    later = 0
+    if day and "T" in time:
+        try:
+            later = (date.fromisoformat(time.split("T")[0]) - date.fromisoformat(day)).days
+        except ValueError:
+            later = 0
     clock = time.split("T")[-1]
     parts = clock.split(":")
     if len(parts) < 2:
@@ -32,7 +39,7 @@ def seconds_of(time: object) -> float | None:
             seconds = float(parts[2])
     except ValueError:
         return None
-    return hours * 3600 + minutes * 60 + seconds
+    return later * 86400 + hours * 3600 + minutes * 60 + seconds
 
 
 def gains_of(events: list[dict]) -> dict[str, dict]:
@@ -59,7 +66,7 @@ def report_days(project: Project) -> list[str]:
     return history.days(project)
 
 
-def _top_steps(events: list[dict]) -> list[dict]:
+def _top_steps(events: list[dict], day: str = "") -> list[dict]:
     """Each top-level step run: {"name", "start", "end", "state", "seconds", "reason", "screenshot"}."""
     runs: list[dict] = []
     open_runs: dict[str, dict] = {}
@@ -69,7 +76,7 @@ def _top_steps(events: list[dict]) -> list[dict]:
         name = event["step"]
         if " > " in name:
             continue
-        at = seconds_of(event.get("time"))
+        at = seconds_of(event.get("time"), day)
         if event.get("state") == "started":
             run = {
                 "name": name,
@@ -142,7 +149,7 @@ def day(project: Project, day_name: str) -> dict:
     events = history.events(project, day_name)
     times = []
     for event in events:
-        at = seconds_of(event.get("time"))
+        at = seconds_of(event.get("time"), day_name)
         if at is not None:
             times.append(at)
     today = gains_of(events)
@@ -164,7 +171,7 @@ def day(project: Project, day_name: str) -> dict:
         gains.append(
             {"name": name, "today": row["amount"], "total": row["total"], "icon": row["icon"], "week": week[name]}
         )
-    steps = _top_steps(events)
+    steps = _top_steps(events, day_name)
     ended = 0
     finished = 0
     lost = 0.0
@@ -243,8 +250,8 @@ def days(project: Project) -> list[dict]:
         seconds = 0
         span = history.span(project, name)
         if span is not None:
-            first = seconds_of(span[0])
-            last = seconds_of(span[1])
+            first = seconds_of(span[0], name)
+            last = seconds_of(span[1], name)
             if first is not None and last is not None:
                 seconds = round(last - first)
         found.append({"day": name, "lead": lead, "seconds": seconds, "problems": failures})

@@ -15,6 +15,7 @@ captured_at = { size = [2560, 1600], scale = 1.5 }
 [settings]                       # darbit's settings for this bot
 timeout = 3
 similarity = 0.85
+day_starts = "00:00 UTC"         # the bot's day: a game that resets at midnight UTC
 
 [images]
 folders = ["assets/images"]      # searched first, relative to the project
@@ -33,6 +34,13 @@ The last one wins:
 4. one call's own argument: `d.click("Play", timeout=5)`
 
 `[settings]` takes every setting in `d.settings` except `images`, which come from `[images]`. `logs` and `state` are folders relative to the project, and default to its `.darbit/logs` and `.darbit/state`. The day's log starts with the values the manifest set.
+
+## The bot's day
+
+A bot's day starts at midnight on the PC's clock unless `day_starts` says otherwise: `"03:00"` (the PC's clock) or
+`"00:00 UTC"` (the same moment wherever the PC is, for a game that resets at midnight UTC). The run report and log
+files, history, the Studio's Overview and Results, and the daily summary all go by it, so a night that runs past
+midnight stays in one day, and the Results timeline runs on past 24:00 (still read as 01:00, 02:00).
 
 ## What a bot shows in darbit Studio
 

@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from .. import paths
+from .. import days, paths
 from ..platform import system
 from ..platform.backend import NotSupported
 from ..project.manifest import Project
@@ -44,6 +44,11 @@ class Tile:
     kind: str  # one of DEFAULT_TILES
     title: str
     data: dict = field(default_factory=dict)  # plain values, ready to send as JSON
+
+
+def today(project: Project, now: datetime | None = None) -> str:
+    """The bot's day now, by its `day_starts` (midnight unless it says otherwise)."""
+    return days.today(days.of(project.settings), now)
 
 
 def report_file(project: Project, day: str) -> Path:
@@ -126,7 +131,7 @@ def tiles(project: Project, day: str | None = None, now: datetime | None = None)
     if now is None:
         now = datetime.now()
     if day is None:
-        day = now.strftime("%Y-%m-%d")
+        day = today(project, now)
     events = read_events(report_file(project, day))
     wanted = project.tiles or DEFAULT_TILES
     shown = []

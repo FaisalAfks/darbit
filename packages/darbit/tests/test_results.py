@@ -174,3 +174,10 @@ def test_recoveries_are_counted_with_their_reasons():
     assert found[1]["how"] == "back to the lobby"
     lines = day_lines({"day": "2026-11-01", "recoveries": found})
     assert "rejoin x3: disconnected 2, no Play button 1" in lines
+
+
+def test_a_day_past_midnight_runs_on_past_24_hours():
+    # a bot's day from 03:00: 01:00 the next morning comes after 22:00, still read as 01:00
+    assert results.seconds_of("2026-11-01T22:00:00", "2026-11-01") == 22 * 3600
+    assert results.seconds_of("2026-11-02T01:00:00", "2026-11-01") == 25 * 3600
+    assert results.seconds_of("2026-11-02T01:00:00") == 3600  # without a day, since its own midnight

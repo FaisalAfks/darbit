@@ -47,6 +47,7 @@ class Settings:
     polite: float = (
         0.0  # seconds without the person's mouse or keys before the bot goes on after they use them; 0 is off
     )
+    day_starts: str = "00:00"  # when the bot's day starts: "03:00" on this PC's clock, or "00:00 UTC" (days.py)
     space: str = "screen"  # "screen" pixels, or "window": targets taken in the app's window follow it when it moves
     # or changes size (rebuild plan, section 4: an option measured on the bench, never assumed)
 
