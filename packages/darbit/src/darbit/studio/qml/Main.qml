@@ -87,6 +87,7 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+4"; onActivated: window.go("settings") }
     Shortcut { sequence: "Ctrl+,"; onActivated: window.go("studio") }
     Shortcut { sequence: "Ctrl+N"; onActivated: sheet.open() }
+    function newBot(way) { sheet.way = way || "new"; sheet.open() }
     function recordAction(name) { recordSheet.openFor(name || "") }
     function openAction(name) { studio.openAction(name); page = "action" }
     Shortcut { sequence: "F5"; onActivated: window.running ? null : studio.start() }

@@ -32,6 +32,8 @@
 - darbit's new logo (`assets/logo.svg`, with `logo.png` and the Windows icon `darbit.ico`): a "d" whose bowl is a target ring with the match at its centre, on a dark glass tile in the accent colours. The Studio uses it as its app icon
 - Live tests on a real Windows desktop (`tests/live`, CI's `live-windows` job): screen capture, clicks, keys and text, window lookup and window space, a tape's timing, the listener leaving darbit's own input out, the input worker, and the Studio drawn on Windows, all on a window of the tests' own
 
+- The Studio's Overview welcomes a first start: with no bots yet, darbit's logo and New bot, From a git link and Add a folder instead of "Not running"
+
 ### Removed
 
 - v0.4's web Studio leaves `main` for the rebuild (decision 0015): the Svelte UI, the local web server and its message contract, the pywebview windows, the tray and run pill, and the `app` extra. It stays in the `v0.4.0` tag and the `maint/0.x` branch; `darbit app` says where. The logic behind its pages (projects and runs, library, Overview, results, actions, recording) stays in `server/` until the service

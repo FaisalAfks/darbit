@@ -359,6 +359,30 @@ def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     assert warnings == []
 
 
+class NoBots(FakeClient):
+    """A first start: the service has no bots yet."""
+
+    def call(self, method: str, **params: object) -> object:
+        if method == "bots.list":
+            return []
+        return super().call(method, **params)
+
+
+def test_the_first_overview_welcomes_without_a_qml_warning(qt, tmp_path):
+    warnings = []
+
+    def keep(kind, context, text):
+        if kind != QtCore.QtMsgType.QtDebugMsg and ".qml" in text:
+            warnings.append(text)
+
+    QtCore.qInstallMessageHandler(keep)
+    try:
+        app.shot(tmp_path / "welcome.png", "overview", connect=NoBots)
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
+
+
 def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     import cv2
     import numpy as np
