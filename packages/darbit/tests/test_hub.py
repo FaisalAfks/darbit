@@ -230,3 +230,29 @@ def test_a_bot_an_earlier_studio_started_is_still_known(tmp_path, monkeypatch):
 def test_no_running_bots_to_stop():
     assert hub.running() == []
     hub.stop_all()
+
+
+def test_polite_mode_steps_back_while_the_person_uses_the_mouse(monkeypatch):
+    from darbit.platform import hooks
+
+    heard = []
+    monkeypatch.setattr(hooks, "start", lambda on_event, moves=False: heard.append(on_event) or (lambda: None))
+    let_go = []
+    monkeypatch.setattr(safety, "_on_stop", [lambda: let_go.append(True)])
+    monkeypatch.setattr(safety, "_armed", True)
+    safety.start_polite(0.3)
+    try:
+        person = heard[0]
+        started = time.monotonic()
+        safety.check()  # nobody's touched anything
+        assert time.monotonic() - started < 0.05
+        person("mouse_delta", 1, 0, 1, 0)  # a resting mouse's odd count: not a person
+        safety.check()
+        assert time.monotonic() - started < 0.05
+        person("mouse_delta", 1, 14, 3, 0)
+        assert safety._wake.is_set()  # a sleep in progress is cut short
+        safety.check()  # waits until 0.3 s without the person's input
+        assert time.monotonic() - started >= 0.29
+        assert let_go == [True]  # held keys were let go
+    finally:
+        safety.stop_polite()

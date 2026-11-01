@@ -40,6 +40,7 @@ SETTING_KINDS = {
     "matcher": "text",
     "match": "table",  # matching options: [settings.match] fast = true
     "space": "text",  # "screen" (the default) or "window"
+    "polite": "number",  # polite mode: seconds of quiet before the bot goes on after the person used the mouse
 }
 
 
