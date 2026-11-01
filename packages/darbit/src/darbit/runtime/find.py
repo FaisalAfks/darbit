@@ -106,6 +106,12 @@ def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Ma
     return None, closest
 
 
+def placed_now(what: What) -> Target:
+    """One target loaded and placed on today's screen (its region and location where they are now)."""
+    loaded = target(what)
+    return place(loaded, where_now([loaded]))
+
+
 def _usable(whats: tuple[What, ...]) -> list[Target]:
     """The targets loaded and placed on today's screen."""
     loaded = _loaded(whats)

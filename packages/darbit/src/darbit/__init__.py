@@ -45,7 +45,7 @@ from .runtime.apps import App
 from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
-from .runtime.region import Region, Screen
+from .runtime.region import Region, Screen, area, point
 from .runtime.screens import Map, go
 from .runtime.screens import default as screens
 from .runtime.show import Record, next_up, plan, progress
@@ -92,6 +92,7 @@ __all__ = [
     "Timer",
     "UnknownKey",
     "apps",
+    "area",
     "check",
     "click",
     "double_click",
@@ -112,6 +113,7 @@ __all__ = [
     "observe",
     "observers",
     "plan",
+    "point",
     "press",
     "progress",
     "record",

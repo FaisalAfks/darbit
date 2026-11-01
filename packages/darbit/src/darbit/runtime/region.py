@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from ..core import geometry
 from ..core.targets import Match
+from ..errors import TargetError
 from ..platform import screen
 from . import actions, find, observe
 from .actions import Spot
@@ -74,3 +75,20 @@ def Screen(number: int | None = None) -> Region:
     if number is None:
         return Region.of(screen.desktop())
     return Region.of(screen.monitors()[number])
+
+
+def area(name: str) -> Region:
+    """The area saved under this name (an area, or a picture's search area), where it is on screen now: it follows
+    the game window in window space. `d.area("Shop.List").exists("Shop.Sword")`."""
+    placed = find.placed_now(name)
+    if placed.region is None:
+        raise TargetError(f"{name} has no area")
+    return Region.of(placed.region)
+
+
+def point(name: str) -> geometry.Location:
+    """The point saved under this name, where it is on screen now: `d.drag("Bag.Slider", to=d.point("Bag.Bottom"))`."""
+    placed = find.placed_now(name)
+    if placed.location is None:
+        raise TargetError(f"{name} has no point")
+    return placed.location

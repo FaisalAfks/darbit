@@ -87,6 +87,14 @@ if game.exists(play, timeout=3):
 d.Region.of(match).grow(40).exists("Close")  # around something found
 ```
 
+Areas and points taken with the capture tool (Area or Point) are used by name, placed like pictures (in window space they follow the window): `d.area("Shop.List")` is a Region, `d.point("Bag.Slot.Main")` a Location. A picture's own search area counts too, so `d.area("Lobby.Play")` is where the Play button is looked for.
+
+```python
+cards = d.area("SpeedRaid.Cards")
+cards.exists("SR.Char.Goku")
+d.drag("Bag.Slider", to=d.point("Bag.Slider.Top"))
+```
+
 `Screen()` is every monitor together, `Screen(0)` the first. `App(name)` has `window`, `running`, `focus()`, `close()` and `open()`.
 
 Loaded pictures stay in memory; their files are checked at most once a second, so a picture taken again is used from the next search on.

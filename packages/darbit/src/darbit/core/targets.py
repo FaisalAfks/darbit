@@ -6,7 +6,7 @@ A target saved by the capture tool is two files with the same name:
     {"region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
      "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
 
-Every field is optional. A target with only a location and no image is a point.
+Every field is optional. A target with only a location and no image is a point; with only a region, an area.
 `window` and `origin` are the size and top-left corner of the app window it was taken in;
 with them, core/placement.py follows the window when it moves or changes size.
 
@@ -274,7 +274,7 @@ def _load(target: Target, folders: list[Path]) -> Target:
         target = _from_json(target, settings_file)
     path = find_file(target.image, folders)
     if path is None:
-        if target.location is not None:  # a point saved by the capture tool, no image
+        if target.location is not None or target.region is not None:  # a point or an area, no image
             return replace(target, name=name)
         raise TargetError(f"no image {target.image!r} in {', '.join(str(f) for f in folders)}")
     return replace(target, name=name, _pixels=read_image(path))
