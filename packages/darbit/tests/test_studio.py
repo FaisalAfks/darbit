@@ -477,6 +477,17 @@ def test_the_theme_chosen_is_used_next_time(qt):
     assert studio.themeName == theme.DEFAULT
 
 
+def test_the_look_switches_are_kept_and_read_from_memory(qt, monkeypatch):
+    studio = backend.Studio(FakeClient)
+    studio.setGhost(False)
+    studio.setEffects(False)
+    studio.setSidebar(True)
+    with monkeypatch.context() as patch:
+        patch.setattr(backend.ui_settings, "read_all", lambda: pytest.fail("read the settings file again"))
+        assert (studio.ghost, studio.effects, studio.sidebar) == (False, False, True)
+    assert (backend.Studio(FakeClient).ghost, backend.Studio(FakeClient).sidebar) == (False, True)
+
+
 def worker_in_a_thread():
     """The input worker's loop on a thread, joined to a link by two pipes (so this test's fakes apply)."""
     import os

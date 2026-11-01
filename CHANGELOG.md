@@ -64,6 +64,7 @@
 
 ### Fixed
 
+- The Studio keeps its look switches (effects, ghost cursor, sidebar) in memory: the ghost cursor read `ui.json` from disk for every click and key a bot made, about 23% of a core during a fight
 - The ghost cursor stays out of screen captures, darbit's own included: its ring sat on the button the bot had just clicked, and the bot's next look saw it (`windows.keep_out_of_captures`)
 - The live tests pass on a PC at 150%: Capture's saved picture may differ from the file by one colour step (some displays move colours by 1 between grabs once a Direct3D app runs), and the screenshots they save are git-ignored
 - The Studio's Library says it's loading until the bot's pictures arrive, instead of "No pictures yet"
