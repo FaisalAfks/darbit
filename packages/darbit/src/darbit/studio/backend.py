@@ -22,6 +22,7 @@ THEME = "theme"  # ui setting: the theme, shared with the old Studio
 PICKER = "studio.picker"  # ui setting: "dropdown" (the default) or "sidebar"
 EFFECTS = "studio.effects"  # ui setting: smooth effects (motion and glass); off for slower PCs
 GHOST = "studio.ghost"  # ui setting: the ghost cursor, what bots click and press shown over the game
+RUN_PILL = "studio.run_pill"  # ui setting: Play hides the Studio and shows the run pill
 
 
 class Studio(QObject):
@@ -40,6 +41,7 @@ class Studio(QObject):
     clockChanged = Signal()
     usesChanged = Signal()
     lookChanged = Signal()
+    started = Signal()  # the bot started from Play: app.py hides the Studio behind the run pill
     madeBot = Signal(str)  # a bot made, installed or added: its name
     actionsChanged = Signal()
     actionChanged = Signal()  # the action open in the editor
@@ -79,6 +81,7 @@ class Studio(QObject):
         self._sidebar = ui_settings.get(PICKER, "dropdown") == "sidebar"
         self._effects = bool(ui_settings.get(EFFECTS, True))
         self._ghost = bool(ui_settings.get(GHOST, True))
+        self._run_pill = bool(ui_settings.get(RUN_PILL, True))
         self._answered.connect(self._take)
         self._failed.connect(self._show_failure)
         self._happened.connect(self._on_event)
@@ -148,6 +151,9 @@ class Studio(QObject):
     def _get_ghost(self) -> bool:
         return self._ghost
 
+    def _get_run_pill(self) -> bool:
+        return self._run_pill
+
     def _get_symbols(self) -> str:
         return symbol_font()
 
@@ -177,6 +183,7 @@ class Studio(QObject):
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
     ghost = Property(bool, _get_ghost, notify=lookChanged)
+    runPill = Property(bool, _get_run_pill, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
     symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
 
@@ -200,7 +207,7 @@ class Studio(QObject):
 
     @Slot()
     def start(self) -> None:
-        self._ask("status", "bot.start")
+        self._ask("started", "bot.start")
 
     @Slot()
     def pause(self) -> None:
@@ -313,6 +320,12 @@ class Studio(QObject):
         ui_settings.set_value(GHOST, self._ghost)
         self.lookChanged.emit()
 
+    @Slot(bool)
+    def setRunPill(self, on: bool) -> None:
+        self._run_pill = bool(on)
+        ui_settings.set_value(RUN_PILL, self._run_pill)
+        self.lookChanged.emit()
+
     @Slot()
     def loadOverview(self) -> None:
         self._ask("overview", "bot.dashboard")
@@ -397,7 +410,9 @@ class Studio(QObject):
         self.busyChanged.emit()
         if what == "connected" and isinstance(result, list):
             self._set_bots(result)
-        elif what == "status":
+        elif what in ("status", "started"):
+            if what == "started":
+                self.started.emit()
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         elif what == "bots" and isinstance(result, list):
             self._set_bots(result)

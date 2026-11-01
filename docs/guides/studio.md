@@ -29,6 +29,10 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   Image, Area or Point; **T** tests it: every match with its score, and a slider for the similarity it needs (matches
   under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is
   shown.
+- **Run pill** (darbit settings, on by default): Play hides the Studio, and a pill at the top of the screen shows the
+  bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
+  it, it slides up and leaves a sliver; move the mouse to that edge to bring it back (the bot's own moves don't). The
+  bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
 - **Highlight** (the Library's Highlight button, or Ctrl+Alt+H with the game in front): what's found on screen right

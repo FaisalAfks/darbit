@@ -73,6 +73,7 @@ ApplicationWindow {
     RecorderPill { objectName: "recorderPill" }
     HighlightWindow { objectName: "highlightWindow" }
     GhostWindow { objectName: "ghostWindow" }
+    RunPill { objectName: "runPill" }
 
     function go(name) {
         page = name

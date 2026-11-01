@@ -623,3 +623,104 @@ def test_the_library_keeps_its_columns_when_the_inspector_opens(qt):
     page.setProperty("chosen", "")
     wait_until(lambda: page.property("cardWidth") == wide)
     del engine
+
+
+def test_the_run_pill_tucks_away_and_only_a_real_move_brings_it_back():
+    from darbit.studio.runpill import HIDE_AFTER, Peek
+
+    peek = Peek(left=1000, top=0, width=400, height=80, left_at=0.0)
+    assert not peek.time_to_tuck(HIDE_AFTER - 0.1)
+    peek.mouse(1200, 40, 1.0)  # on the pill: it stays
+    assert not peek.time_to_tuck(10.0)
+    peek.mouse(1200, 600, 10.0)  # off it: it waits, then goes
+    assert not peek.time_to_tuck(10.0 + HIDE_AFTER - 0.1)
+    assert peek.time_to_tuck(10.0 + HIDE_AFTER)
+    peek.tucked = True
+    assert not peek.mouse(300, 0, 20.0)  # the top edge, but not under the pill
+    assert not peek.mouse(1200, 50, 20.0)  # under the pill, but not the edge
+    assert peek.mouse(1200, 1, 20.0)
+    assert not peek.tucked
+
+
+class Runs(FakeClient):
+    """A bot whose status follows Play and Stop."""
+
+    status = "stopped"
+
+    def call(self, method: str, **params: object) -> object:
+        if method == "bot.start":
+            self.status = "running"
+        if method == "bot.stop":
+            self.status = "stopped"
+        if method == "bots.list":
+            self.asked.append((method, params))
+            return [{**BOT, "status": self.status}]
+        return super().call(method, **params)
+
+
+class Window:
+    shown = True
+
+    def hide(self):
+        self.shown = False
+
+    def show(self):
+        self.shown = True
+
+    def raise_(self):
+        pass
+
+    def requestActivate(self):
+        pass
+
+
+def test_play_hides_the_studio_behind_the_run_pill_until_the_bot_stops(qt):
+    from darbit.studio.runpill import RunPill
+
+    moves = []
+    client = Runs()
+    studio = backend.Studio(lambda: client)
+    pill = RunPill(watch=lambda on_move: moves.append(on_move) or (lambda: moves.remove(on_move)))
+    window = Window()
+    app._connect_run_pill(studio, pill, window)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("status") == "stopped")
+    studio.start()
+    wait_until(lambda: studio.bot.get("status") == "running")
+    assert pill.isOpen and not window.shown
+    assert len(moves) == 1  # real mouse moves are watched while it's open
+    studio.stop()
+    wait_until(lambda: window.shown)
+    assert not pill.isOpen and moves == []
+    studio.setRunPill(False)  # off: Play leaves the Studio open
+    studio.start()
+    wait_until(lambda: studio.bot.get("status") == "running")
+    assert window.shown and not pill.isOpen
+
+
+def test_the_run_pill_draws_without_a_qml_warning(qt):
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.runpill import RunPill
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        pill = RunPill(watch=lambda on_move: None)
+        studio = backend.Studio(FakeClient)
+        engine = app.load(studio, run_pill=pill)
+        root = engine.rootObjects()[0]  # held, or Qt deletes it
+        studio.connect()
+        wait_until(lambda: studio.bot.get("name") == "ad-bot")
+        studio.loadOverview()
+        wait_until(lambda: len(studio.overview) == 6)
+        pill.open()
+        window = root.findChild(QQuickWindow, "runPill")
+        wait_until(window.isVisible)
+        assert window.width() < window.screen().size().width() / 2
+        pill.close()
+        wait_until(lambda: not window.isVisible())
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
