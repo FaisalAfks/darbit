@@ -19,6 +19,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..errors import Interrupted, Stopped
+from ..events import publish
 from . import system
 from .backend import NotSupported
 from .keys import key
@@ -35,6 +36,9 @@ _lock = threading.Lock()
 _muted = 0  # inside no_interrupts() blocks
 _watching: str | None = None
 _armed = False
+_polite_quiet = 0.0  # polite mode: seconds without the person's input before the bot goes on (0: off)
+_polite_until = 0.0  # monotonic time the bot may go on at
+_polite_stop: Callable[[], None] | None = None
 
 
 def on_stop(callback: Callable[[], None]) -> None:
@@ -113,6 +117,8 @@ def arm() -> None:
 
     watch(settings.stop_key)
     system.keep_awake()
+    if settings.polite > 0:
+        start_polite(settings.polite)
 
 
 def check() -> None:
@@ -122,7 +128,58 @@ def check() -> None:
         raise Stopped("stopped by the stop hotkey")
     if _paused.is_set():
         _wait_while_paused()
+    if _polite_until > time.monotonic():
+        _wait_politely()
     _take_interrupt()
+
+
+# ---- polite mode: the bot steps back while the person uses the mouse or keyboard
+
+
+def start_polite(quiet: float) -> None:
+    """Pause at the next darbit call whenever the person moves the mouse or presses a key, and go on after `quiet`
+    seconds without either. darbit's own input doesn't count: the listener only hears real devices."""
+    global _polite_quiet, _polite_stop
+    _polite_quiet = quiet
+    if _polite_stop is not None:
+        return
+    from . import hooks
+
+    try:
+        _polite_stop = hooks.start(_on_person, moves=True)
+    except NotSupported:
+        _polite_stop = None
+
+
+def stop_polite() -> None:
+    global _polite_stop, _polite_until
+    if _polite_stop is not None:
+        _polite_stop()
+    _polite_stop = None
+    _polite_until = 0.0
+
+
+def _on_person(kind: str, code: int, x: int, y: int, time_ns: int) -> None:
+    global _polite_until
+    if kind == "mouse_delta" and abs(x) + abs(y) < 2:
+        return  # a mouse resting on a desk still sends the odd count
+    first = _polite_until <= time.monotonic()
+    _polite_until = time.monotonic() + _polite_quiet
+    if first:
+        _wake.set()  # cut a running sleep short, so the bot steps back now
+
+
+def _wait_politely() -> None:
+    for callback in _on_stop:  # let go of held keys and buttons while the person has the mouse
+        callback()
+    publish("polite", {"waiting": _polite_quiet})
+    while _polite_until > time.monotonic() and not _stopped.is_set():
+        time.sleep(min(0.1, max(0.0, _polite_until - time.monotonic())))
+    if _stopped.is_set():
+        raise Stopped("stopped while waiting for the mouse")
+    with _lock:
+        if not _pending:
+            _wake.clear()
 
 
 def _wait_while_paused() -> None:

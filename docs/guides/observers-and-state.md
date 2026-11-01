@@ -42,3 +42,14 @@ if raid.due():
 ```
 
 `s.daily(hour_utc=0)` works like `weekly` for days. Every change is written straight away, so a crash or the stop hotkey loses nothing.
+
+## Sharing the PC with a bot
+
+Windows has one mouse and one keyboard, so a bot and a person can't both use them. With polite mode on, a bot steps
+back when you do: it lets go of its keys and waits at its next darbit call, then goes on after a few seconds without
+your mouse or keys. darbit's own clicks and keys don't count.
+
+```toml
+[settings]
+polite = 5   # seconds without your mouse or keys before the bot goes on; 0 (the default) is off
+```
