@@ -17,6 +17,7 @@ from .. import events, paths
 from . import methods
 from .notify import Notifier
 from .protocol import HOST, VERSION, Event, Hello, ProtocolError, Reply, Request, decode, encode
+from .tidy import Tidier
 
 ADDRESS = "service.json"
 
@@ -36,6 +37,7 @@ class Service:
         self.lock = threading.Lock()
         self.stop_listening = events.listen(self.broadcast)
         self.notifier = Notifier()
+        self.tidier = Tidier()
 
     @property
     def port(self) -> int:
@@ -45,10 +47,12 @@ class Service:
         """Write the address file and answer clients until shutdown()."""
         _write_address(self.port, self.token)
         self.notifier.start()
+        self.tidier.start()
         try:
             self.server.serve_forever(poll_interval=0.2)
         finally:
             self.notifier.stop()
+            self.tidier.stop()
             self.stop_listening()
             self.server.server_close()
             _remove_address(self.port)
