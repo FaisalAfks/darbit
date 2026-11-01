@@ -64,6 +64,7 @@
 
 ### Fixed
 
+- Each darbit process (the Studio, the service, the input worker, a bot) commits about 60 MB instead of 800 MB on a 24-thread PC: darbit keeps numpy's OpenBLAS to one thread (`OPENBLAS_NUM_THREADS=1` unless set), whose per-thread buffers it never used
 - darbit Studio has its own taskbar button with darbit's icon (it was grouped with python.exe), and `darbit app --shortcut` adds it to the Start menu and the desktop with that icon (`system.name_app`, `system.add_shortcut`)
 - The Studio keeps its look switches (effects, ghost cursor, sidebar) in memory: the ghost cursor read `ui.json` from disk for every click and key a bot made, about 23% of a core during a fight
 - The ghost cursor stays out of screen captures, darbit's own included: its ring sat on the button the bot had just clicked, and the bot's next look saw it (`windows.keep_out_of_captures`)

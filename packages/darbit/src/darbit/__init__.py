@@ -12,6 +12,11 @@ play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)
 """
 
 import atexit as _atexit
+import os as _os
+
+# numpy's OpenBLAS commits a buffer per CPU thread when it loads, about 750 MB on a 24-thread PC, for matrix maths
+# darbit never does (OpenCV matches on its own). Set before numpy loads; the processes darbit starts inherit it.
+_os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 from .platform import screen as _screen
 

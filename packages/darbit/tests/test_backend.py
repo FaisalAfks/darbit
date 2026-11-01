@@ -1,5 +1,6 @@
 """The platform pieces: each forwards to the system's own version, and a system without one says so clearly."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -41,3 +42,16 @@ def test_windows_modules_import_what_they_use_of_ctypes():
         assert "ctypes.wintypes." not in text, f"{module.name}: use `from ctypes import wintypes`"
         if "wintypes." in text:
             assert "from ctypes import wintypes" in text, f"{module.name} uses wintypes without importing it"
+
+
+def test_darbit_keeps_openblas_to_one_thread_before_numpy_loads():
+    import subprocess
+    import sys
+
+    code = "import sys, darbit, os; print(os.environ.get('OPENBLAS_NUM_THREADS'))"
+    env = {key: value for key, value in os.environ.items() if key != "OPENBLAS_NUM_THREADS"}
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, check=True)
+    assert done.stdout.strip() == "1"
+    env["OPENBLAS_NUM_THREADS"] = "8"  # a bot that wants more keeps its own
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, check=True)
+    assert done.stdout.strip() == "8"
