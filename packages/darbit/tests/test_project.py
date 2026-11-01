@@ -135,7 +135,7 @@ def test_setup_warns_about_a_version_it_cannot_read(tmp_path):
         ("1.0.0", "!=1.0", False),
         ("0.5.0", ">0.4, <=0.5", True),
         ("0.5.0", "~=0.5", None),
-        ("0.5.0rc1", ">=0.5", None),
+        ("0.5.0rc1", ">=0.5", True),
     ],
 )
 def test_version_matches(version, wanted, result):
