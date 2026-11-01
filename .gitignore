@@ -17,3 +17,6 @@ site/
 # the bench's made-up cases (bench/make_cases.py) and the private ones (darbit-bench)
 bench/cases/
 bench/private/
+
+# screenshots the live tests save (tests/live)
+live-shots/
