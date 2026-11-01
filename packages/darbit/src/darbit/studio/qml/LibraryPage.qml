@@ -17,8 +17,16 @@ Item {
     // one copy per change: each read of studio.library from here copies the whole list, thumbnails and all
     readonly property var library: studio.library
     readonly property var actions: studio.actions
-    readonly property var chosenAsset: onActions ? null : find(chosen)
-    readonly property var chosenAction: onActions ? findAction(chosen) : null
+    property bool chosenIsAction: false  // an action and a picture can share a name
+    readonly property var chosenAsset: chosenIsAction ? null : find(chosen)
+    readonly property var chosenAction: chosenIsAction ? findAction(chosen) : null
+    function choose(item) {
+        var again = page.chosen === item.name && page.chosenIsAction === (item.kind === "action")
+        page.chosenIsAction = item.kind === "action"
+        page.chosen = again ? "" : item.name
+        if (page.chosen && !page.chosenIsAction) studio.loadUses(page.chosen)
+    }
+    function isChosen(item) { return page.chosen === item.name && page.chosenIsAction === (item.kind === "action") }
     function findAction(name) {
         for (var index = 0; index < page.actions.length; index++)
             if (page.actions[index].name === name) return page.actions[index]
@@ -45,21 +53,26 @@ Item {
         return null
     }
     function count(test) { return page.library.filter(test).length }
-    function kindLabel(kind) { return kind === "region" ? "area" : kind === "location" ? "point" : kind }
+    function kindLabel(kind) { return kind === "region" ? "area" : kind === "point" ? "point" : kind }
 
     readonly property bool onActions: kind === "action"
+    // actions as items of the library: All shows them with the pictures, areas and points
+    readonly property var actionItems: page.actions.map(function (action) { return Object.assign({ kind: "action" }, action) })
     readonly property var shown: {
         var words = query.toLowerCase()
+        var matching = function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 }
         if (onActions)
-            return page.actions.filter(function (action) { return words === "" || action.name.toLowerCase().indexOf(words) >= 0 })
+            return page.actionItems.filter(matching)
         var found = page.library.filter(function (asset) {
             if (kind !== "all" && asset.kind !== kind) return false
             if (missingOnly && !asset.missing) return false
             if (weakOnly && !page.weak(asset)) return false
             return words === "" || asset.name.toLowerCase().indexOf(words) >= 0
         })
+        if (kind === "all" && !missingOnly && !weakOnly)
+            found = found.concat(page.actionItems.filter(matching))
         found.sort(function (a, b) {
-            if (sort === "score") return (page.score(a) === null ? 2 : page.score(a)) - (page.score(b) === null ? 2 : page.score(b))
+            if (sort === "score") return (a.kind === "action" || page.score(a) === null ? 2 : page.score(a)) - (b.kind === "action" || page.score(b) === null ? 2 : page.score(b))
             if (sort === "uses") return (b.uses || 0) - (a.uses || 0)
             return a.name.localeCompare(b.name)
         })
@@ -105,10 +118,10 @@ Item {
             itemHeight: 34
             current: page.kind
             model: [
-                { key: "all", label: "All", count: page.library.length },
+                { key: "all", label: "All", count: page.library.length + page.actions.length },
                 { key: "image", label: "Images", count: page.count(function (a) { return a.kind === "image" }) },
                 { key: "region", label: "Areas", count: page.count(function (a) { return a.kind === "region" }) },
-                { key: "location", label: "Points", count: page.count(function (a) { return a.kind === "location" }) },
+                { key: "point", label: "Points", count: page.count(function (a) { return a.kind === "point" }) },
                 { key: "action", label: "Actions", count: page.actions.length }
             ]
             onPicked: function (key) { page.kind = key; page.chosen = "" }
@@ -149,7 +162,6 @@ Item {
             }
         }
         // on a narrow window the tools on the right show only their icons
-        PillButton { icon: "◎"; text: window.narrow ? "" : "Highlight"; onClicked: studio.toggleHighlight() }
         PillButton { icon: "●"; text: window.narrow ? "" : "Record"; onClicked: window.recordAction("") }
         PillButton { kind: "primary"; icon: "▣"; text: window.narrow ? "" : "Capture"; onClicked: studio.openCapture("any") }
     }
@@ -157,6 +169,7 @@ Item {
     // ---- the cards
     ListView {
         id: grid
+        SmoothWheel { view: grid }
         anchors { left: parent.left; leftMargin: 24; top: tools.bottom; topMargin: 18; bottom: parent.bottom
                   right: parent.right; rightMargin: inspector.open ? page.roomForInspector + 24 : 24 }
         // the cards narrow as the inspector slides in, together
@@ -178,29 +191,35 @@ Item {
             required property var modelData
             spacing: page.gap
             Repeater {
-                model: page.onActions ? modelData.assets : []
-                delegate: ActionCard {
+                model: modelData.assets
+                delegate: Loader {
                     required property var modelData
                     width: page.cardWidth
-                    action: modelData
-                    chosen: page.chosen === modelData.name
-                    dimmed: page.chosen !== "" && !chosen
-                    onClicked: page.chosen = chosen ? "" : modelData.name
-                    onPlay: studio.playAction(modelData.name)
-                }
-            }
-            Repeater {
-                model: page.onActions ? [] : modelData.assets
-                delegate: AssetCard {
-                    required property var modelData
-                    width: page.cardWidth
-                    asset: modelData
-                    score: page.score(modelData)
-                    needs: page.needs(modelData)
-                    weak: page.weak(modelData)
-                    chosen: page.chosen === modelData.name
-                    dimmed: page.chosen !== "" && !chosen
-                    onClicked: { page.chosen = chosen ? "" : modelData.name; if (page.chosen) studio.loadUses(page.chosen) }
+                    sourceComponent: modelData.kind === "action" ? actionCard : assetCard
+                    Component {
+                        id: actionCard
+                        ActionCard {
+                            width: page.cardWidth
+                            action: modelData
+                            chosen: page.isChosen(modelData)
+                            dimmed: page.chosen !== "" && !chosen
+                            onClicked: page.choose(modelData)
+                            onPlay: studio.playAction(modelData.name)
+                        }
+                    }
+                    Component {
+                        id: assetCard
+                        AssetCard {
+                            width: page.cardWidth
+                            asset: modelData
+                            score: page.score(modelData)
+                            needs: page.needs(modelData)
+                            weak: page.weak(modelData)
+                            chosen: page.isChosen(modelData)
+                            dimmed: page.chosen !== "" && !chosen
+                            onClicked: page.choose(modelData)
+                        }
+                    }
                 }
             }
         }
@@ -246,12 +265,12 @@ Item {
         kindLabel: page.chosenAsset ? page.kindLabel(page.chosenAsset.kind) : ""
         onClosed: page.chosen = ""
         onRenamed: function (to) {
-            if (page.onActions) studio.renameAction(page.chosen, to)
+            if (page.chosenIsAction) studio.renameAction(page.chosen, to)
             else studio.renameAsset(page.chosen, to)
             page.chosen = to
         }
         onDeleted: {
-            if (page.onActions) studio.deleteAction(page.chosen)
+            if (page.chosenIsAction) studio.deleteAction(page.chosen)
             else studio.deleteAsset(page.chosen)
             page.chosen = ""
         }

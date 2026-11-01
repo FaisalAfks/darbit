@@ -66,6 +66,8 @@ Item {
 
     // ---- the form
     Flickable {
+        id: scroller
+        SmoothWheel { view: scroller }
         visible: page.sections.length > 0
         anchors { left: list.visible ? list.right : parent.left; leftMargin: list.visible ? 16 : 24; right: parent.right; rightMargin: 24; top: parent.top; bottom: parent.bottom }
         contentHeight: form.height + 120

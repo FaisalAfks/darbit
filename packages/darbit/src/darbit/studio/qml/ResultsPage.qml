@@ -32,6 +32,7 @@ Item {
     // ---- the days
     ListView {
         id: days
+        SmoothWheel { view: days }
         visible: studio.days.length > 0
         x: 24; width: 236
         anchors { top: parent.top; bottom: parent.bottom; bottomMargin: 24 }
@@ -66,6 +67,8 @@ Item {
 
     // ---- the chosen day
     Flickable {
+        id: scroller
+        SmoothWheel { view: scroller }
         visible: studio.days.length > 0
         anchors { left: days.right; leftMargin: 16; right: parent.right; rightMargin: 24; top: parent.top; bottom: parent.bottom }
         contentHeight: column.height + 40

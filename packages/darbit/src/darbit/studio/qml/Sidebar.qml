@@ -34,6 +34,7 @@ Rectangle {
     }
     ListView {
         id: list
+        SmoothWheel { view: list }
         x: 10; y: brand.y + (side.folded ? 52 : 76)
         width: side.width - 20
         height: footer.y - y - 64

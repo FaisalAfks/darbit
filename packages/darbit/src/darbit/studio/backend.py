@@ -47,7 +47,7 @@ class Studio(QObject):
     actionChanged = Signal()  # the action open in the editor
     playingChanged = Signal()  # the action playing and its line, as the service plays it
     said = Signal(str)  # something done, for the toast
-    highlightWanted = Signal(str)  # the bot's folder: turn Highlight on or off, for app.py
+    highlightWanted = Signal(str, str)  # (the bot's folder, one picture or "" for all): Highlight on or off, for app.py
     recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
 
     captureWanted = Signal(str, str, str, str)  # (the bot's folder, "any", "guide" or "one", name, kind), for app.py
@@ -72,6 +72,7 @@ class Studio(QObject):
         self._actions: list[dict] = []
         self._action: dict = {}
         self._playing = {"action": "", "line": 0, "status": ""}
+        self._highlighted = ""  # the picture Highlight shows; "" for all
         self._message = ""
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
@@ -267,9 +268,15 @@ class Studio(QObject):
 
     @Slot()
     def toggleHighlight(self) -> None:
-        """Highlight the shown bot's pictures on screen, or stop."""
+        """Highlight the picture highlighted last (all of them before any was chosen), or stop."""
         if self._bot.get("path"):
-            self.highlightWanted.emit(self._bot["path"])
+            self.highlightWanted.emit(self._bot["path"], self._highlighted)
+
+    @Slot(str)
+    def highlightOne(self, name: str) -> None:
+        """Highlight one picture on screen, from the Library."""
+        self._highlighted = name
+        self.toggleHighlight()
 
     @Slot(str)
     def say(self, text: str) -> None:

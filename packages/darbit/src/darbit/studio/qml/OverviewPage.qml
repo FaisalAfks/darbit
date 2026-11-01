@@ -7,6 +7,7 @@ import "format.js" as Format
 
 Flickable {
     id: page
+    SmoothWheel { view: page }
     contentHeight: column.height + 60
     clip: true
     boundsBehavior: Flickable.StopAtBounds

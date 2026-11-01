@@ -68,6 +68,13 @@
 
 ### Fixed
 
+- The Library counted points as images: it looked for the kind `location` where the service says `point`, so the Points tab missed them
+- Recorded actions showed only on the Library's Actions tab; All now lists them with the pictures, areas and points
+- Capture's Test said "1 match · 1 look-alike" for a picture found once, counting the box twice. It now says found once, more than once or not at all, and how many look-alikes score under the line. The scan line sweeps the searched area again before the matches show
+- Capture's magnifier showed the screen as drawn on the window, smoothed and at the window's scale, a pixel off from the mouse. It shows the shot's own pixels, the one under the mouse framed, and Ctrl+wheel zooms it from 2× to 24×
+- The mouse wheel moved the Studio's pages a few points a notch, stiffly. Each notch glides 140 points; a touchpad moves them directly
+- Highlight shows one picture, chosen in the Library's side panel, instead of every picture of the bot; Ctrl+Alt+H shows the last one chosen
+
 - The Studio's Library answers at once: a tab, filter, search, sort or card used to wait 0.6 to 2.5 s for the next frame with 188 assets (every read of the library from the page copied the whole list, thumbnails and all), and now takes 20 to 40 ms. The cards fill each row, and opening or closing the inspector only narrows or widens them in place instead of moving every card to another row
 - The tests never touch the real darbit folders: `DARBIT_HOME` puts darbit's own folders under one, and the test run sets it to a temporary folder. The live service test stopped the running service and left its test bots in the Studio's bot list. `ui.json` saved with a byte-order mark (Windows PowerShell) is read instead of treated as empty
 - The ghost cursor costs about half as much while a bot fights (12.7% to 6.1% of a core on a 2560 x 1600 screen, about 2% with smooth effects off): its window covers only the area around its marks, not the whole screen, and a burst of keys is shown together at most ten times a second

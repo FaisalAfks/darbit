@@ -5,6 +5,7 @@ Needs the studio extra (PySide6); skipped without it. The service is a fake clie
 
 import os
 import time
+from pathlib import Path
 
 import pytest
 
@@ -473,7 +474,8 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tm
             window, "clicked", Q_ARG("QVariant", 350 * scale), Q_ARG("QVariant", 220 * scale), Q_ARG("QVariant", True)
         )
         QMetaObject.invokeMethod(window, "test")
-        wait_until(lambda: len(window.property("matches") or []) == 1)
+        wait_until(lambda: window.property("note").startswith("Found once"))  # after the scan sweeps
+        assert window.property("note").startswith("Found once at 0.90 · nothing else close")
         assert window.grabWindow().width() > 0
         capture.close()
         QtCore.QCoreApplication.processEvents()
@@ -581,6 +583,10 @@ def test_highlight_finds_the_bots_pictures_on_screen(qt, tmp_path):
     assert highlight.found == 1 and highlight.isOn
     highlight.stop()
     assert not highlight.isOn and highlight.boxes == []
+    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)), only="Lobby.Play")
+    wait_until(lambda: len(highlight.boxes) == 1)  # only the picture chosen in the Library
+    assert highlight.boxes[0]["name"] == "Lobby.Play"
+    highlight.stop()
 
 
 def test_pictures_found_on_the_same_spot_are_look_alikes():
@@ -793,3 +799,28 @@ def test_closing_keeps_the_studio_in_the_tray_and_its_place(qt):
     assert ui_settings.get(PLACE)["width"] == 1000
     assert tray.told  # said once where it went
     del engine
+
+
+def test_the_library_sorts_assets_by_the_kinds_the_service_names():
+    import re
+
+    from darbit.server import library
+
+    source = Path(library.__file__).read_text(encoding="utf-8")
+    page = (Path(app.__file__).parent / "qml" / "LibraryPage.qml").read_text(encoding="utf-8")
+    kinds = set(re.findall(r'kind = "(\w+)"', source)) | {"image"}
+    assert kinds == {"image", "point", "region"}
+    for kind in kinds:
+        assert f'key: "{kind}"' in page  # a tab for each kind the service sends
+
+
+def test_highlight_one_picture_from_the_library(qt):
+    client = FakeClient()
+    studio = backend.Studio(lambda: client)
+    wanted = []
+    studio.highlightWanted.connect(lambda folder, name: wanted.append((folder, name)))
+    studio.connect()
+    wait_until(lambda: studio.bot.get("path"))
+    studio.highlightOne("Bag.Equip")
+    studio.toggleHighlight()  # Ctrl+Alt+H: the same picture again
+    assert wanted == [("/bots/ad-bot", "Bag.Equip"), ("/bots/ad-bot", "Bag.Equip")]

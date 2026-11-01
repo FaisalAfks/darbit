@@ -20,6 +20,7 @@ Window {
     property int chosen: 0
     property var lastClick: null
     property var matches: []
+    property var waiting: null  // Test's answer while the scan sweeps the searched area
     property real similarity: 0.9  // after Test: matches under it fade
     property string note: ""
     property bool noteBad: false
@@ -29,7 +30,7 @@ Window {
     onVisibleChanged: if (visible) { reset(); nameField.text = current ? current.name : ""; nameField.forceActiveFocus() }
     onCurrentChanged: if (current) { nameField.text = current.name; kind = current.kind === "region" ? "region" : current.kind === "point" ? "point" : "image" }
 
-    function reset() { box = null; point = null; boxes = []; matches = []; note = ""; lastClick = null }
+    function reset() { box = null; point = null; boxes = []; matches = []; waiting = null; note = ""; lastClick = null }
     function toShot(x, y) { return [Math.round(x / scale), Math.round(y / scale)] }
     function clamp(next) {
         var x = Math.max(0, Math.min(next[0], capture.shotWidth - 1)), y = Math.max(0, Math.min(next[1], capture.shotHeight - 1))
@@ -52,9 +53,24 @@ Window {
     function test() {
         if (!box) { say("Box something first", true); return }
         var found = capture.test(box, null)
+        if (found.error) { say(found.error, true); return }
+        matches = []
+        note = ""
+        waiting = found
+        if (studio.effects && found.searched) scan.sweep(found.searched)
+        else showFound()
+    }
+    // what Test found: the box itself counts once; look-alikes are the other places, scoring under the line
+    function showFound() {
+        var found = waiting
+        waiting = null
+        if (!found) return
         matches = found.matches || []
         var strong = matches.filter(function (match) { return match.score >= shotWindow.similarity }).length
-        say(found.error ? found.error : strong + (strong === 1 ? " match" : " matches") + " at " + shotWindow.similarity.toFixed(2) + " · " + matches.length + (matches.length === 1 ? " look-alike · " : " look-alikes · ") + found.ms + " ms", !!found.error || strong !== 1)
+        var others = matches.length - strong
+        var where = strong === 0 ? "Not found" : strong === 1 ? "Found once" : "Found " + strong + " times"
+        var alike = others === 0 ? "nothing else close" : others === 1 ? "1 look-alike under the line" : others + " look-alikes under the line"
+        say(where + " at " + shotWindow.similarity.toFixed(2) + " · " + alike + " · " + found.ms + " ms", strong !== 1)
     }
     function save() {
         var name = nameField.text.trim()
@@ -180,7 +196,36 @@ Window {
             color: "transparent"; border.color: studio.colors.ok; border.width: 3
         }
 
-        // Test's matches, best first
+        // Test's scan: a line sweeps the searched area, then the matches show
+        Item {
+            id: scan
+            visible: sweeping.running
+            property var area: [0, 0, 0, 0]
+            x: area[0] * shotWindow.scale; y: area[1] * shotWindow.scale
+            width: area[2] * shotWindow.scale; height: area[3] * shotWindow.scale
+            property real done: 0
+            function sweep(searched) { area = searched; done = 0; sweeping.restart() }
+            Rectangle {  // the part already searched, faintly lit
+                width: scan.width * scan.done; height: scan.height
+                color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.08)
+            }
+            Rectangle {  // the line, with a soft trail
+                x: scan.width * scan.done - width; width: 90; height: scan.height
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: "transparent" }
+                    GradientStop { position: 0.92; color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.35) }
+                    GradientStop { position: 1; color: studio.colors.accent }
+                }
+            }
+            NumberAnimation {
+                id: sweeping
+                target: scan; property: "done"; from: 0; to: 1; duration: 520; easing.type: Easing.InOutQuad
+                onFinished: shotWindow.showFound()
+            }
+        }
+
+        // Test's matches, best first, each popping in after the one before
         Repeater {
             model: shotWindow.matches
             delegate: Rectangle {
@@ -192,6 +237,12 @@ Window {
                 opacity: modelData.score >= shotWindow.similarity ? 1 : 0.3
                 Behavior on opacity { NumberAnimation { duration: studio.effects ? 160 : 0 } }
                 border.color: modelData.score >= shotWindow.similarity ? studio.colors.ok : studio.colors.warn
+                transformOrigin: Item.Center
+                SequentialAnimation on scale {
+                    running: studio.effects
+                    PauseAnimation { duration: index * 60 }
+                    NumberAnimation { from: 1.4; to: 1; duration: 220; easing.type: Easing.OutBack }
+                }
                 Chip {
                     anchors { left: parent.left; bottom: parent.top; bottomMargin: 4 }
                     height: 20
@@ -301,12 +352,13 @@ Window {
             }
         }
 
-        // the magnifier: 4x, with a pixel grid, the place and the colour under the mouse; it flips near the edges
+        // the magnifier: the shot's own pixels, each `zoom` points wide (Ctrl+wheel: 2 to 24), the pixel under the
+        // mouse framed, and its place and colour below; it flips near the edges
         Item {
             id: magnifier
             objectName: "magnifier"
             readonly property int size: 150
-            readonly property real zoom: 4
+            property real zoom: 8
             property point at: Qt.point(-1, -1)  // in the shot's pixels
             visible: at.x >= 0 && !toolbar.contains(toolbar.mapFromItem(stage, hoverPoint.x, hoverPoint.y))
             property point hoverPoint: Qt.point(0, 0)
@@ -317,17 +369,16 @@ Window {
                 width: magnifier.size; height: magnifier.size; radius: 14
                 color: "black"; border.color: studio.colors.accent; border.width: 2
                 clip: true
-                ShaderEffectSource {
-                    anchors.fill: parent; anchors.margins: 2
-                    sourceItem: shot
-                    hideSource: false
-                    smooth: false
-                    readonly property real span: magnifier.size / magnifier.zoom
-                    sourceRect: Qt.rect(magnifier.at.x * shotWindow.scale - span / 2, magnifier.at.y * shotWindow.scale - span / 2, span, span)
+                Image {  // the shot itself, not smoothed: each of its pixels a square of its own colour
+                    source: capture.source
+                    smooth: false; mipmap: false
+                    width: capture.shotWidth * magnifier.zoom; height: capture.shotHeight * magnifier.zoom
+                    x: magnifier.size / 2 - (magnifier.at.x + 0.5) * magnifier.zoom
+                    y: magnifier.size / 2 - (magnifier.at.y + 0.5) * magnifier.zoom
                 }
                 Rectangle {  // the pixel under the mouse
                     anchors.centerIn: parent
-                    width: magnifier.zoom * shotWindow.scale + 2; height: width
+                    width: magnifier.zoom + 2; height: width
                     color: "transparent"; border.color: "white"; border.width: 1
                 }
             }
@@ -337,7 +388,7 @@ Window {
                 color: studio.colors.glassStrong
                 Row {
                     anchors.centerIn: parent; spacing: 8
-                    Text { text: magnifier.at.x + ", " + magnifier.at.y; color: studio.colors.text; font.family: "monospace"; font.pixelSize: 11 }
+                    Text { text: magnifier.at.x + ", " + magnifier.at.y + "  " + magnifier.zoom + "×"; color: studio.colors.text; font.family: "monospace"; font.pixelSize: 11 }
                     Rectangle { width: 10; height: 10; radius: 2; color: swatch.text || "transparent"; anchors.verticalCenter: parent.verticalCenter }
                     Text { id: swatch; text: magnifier.at.x >= 0 ? capture.colour(magnifier.at.x, magnifier.at.y) : ""; color: studio.colors.muted; font.family: "monospace"; font.pixelSize: 11 }
                 }
@@ -347,8 +398,18 @@ Window {
             target: stage
             onPointChanged: {
                 magnifier.hoverPoint = point.position
-                var at = shotWindow.toShot(point.position.x, point.position.y)
-                magnifier.at = Qt.point(at[0], at[1])
+                // the pixel the mouse is on, not the nearest corner
+                magnifier.at = Qt.point(Math.min(capture.shotWidth - 1, Math.floor(point.position.x / shotWindow.scale)),
+                                        Math.min(capture.shotHeight - 1, Math.floor(point.position.y / shotWindow.scale)))
+            }
+        }
+        WheelHandler {
+            target: null
+            acceptedModifiers: Qt.ControlModifier
+            onWheel: function (event) {
+                var steps = [2, 3, 4, 6, 8, 12, 16, 24]
+                var at = steps.indexOf(magnifier.zoom)
+                magnifier.zoom = steps[Math.max(0, Math.min(steps.length - 1, (at < 0 ? 4 : at) + (event.angleDelta.y > 0 ? 1 : -1)))]
             }
         }
         Chip {

@@ -25,8 +25,10 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   ![The Library](../ui/images/qt-studio-library.png)
 - **Capture** (the Library's Capture button): the Studio steps aside, the screen is frozen, and it opens full screen.
   Click something to box it (again for bigger, right-click for smaller) or drag a box; the handles and the arrow keys
-  change it (Shift: 10 px, Ctrl: its size). A magnifier follows the mouse (4×, with the place and colour under it).
-  Image, Area or Point; **T** tests it: every match with its score, and a slider for the similarity it needs (matches
+  change it (Shift: 10 px, Ctrl: its size). A magnifier follows the mouse with the shot's own pixels (8×; Ctrl+wheel from 2× to 24×) and
+  the place and colour of the pixel under it. Image, Area or Point; **T** tests it: a line sweeps the searched area,
+  then it says whether the picture was found once, more than once or not at all, and how many look-alikes score
+  under the line (the box itself is the one found), with each match and its score and a slider for the similarity it needs (matches
   under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is
   shown.
 - **Run pill** (darbit settings, on by default): Play hides the Studio, and a pill at the top of the screen shows the
@@ -35,8 +37,9 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
-- **Highlight** (the Library's Highlight button, or Ctrl+Alt+H with the game in front): what's found on screen right
-  now. The Studio steps aside and each of the bot's pictures found gets its box and score over the game, a couple of
+- **Highlight** (Highlight on screen in the Library's side panel for a picture, or Ctrl+Alt+H with the game in front
+  for the last one chosen): where that picture is found on screen right now. The Studio steps aside and the picture
+  gets its box and score over the game, a couple of
   times a second; one just under what it needs gets a faint one. Pictures found on the same spot are marked ⚠ with
   the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to the
   game. Ctrl+Alt+H again hides it.

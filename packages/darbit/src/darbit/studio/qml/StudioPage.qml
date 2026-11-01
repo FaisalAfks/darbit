@@ -5,6 +5,7 @@ import QtQuick.Layouts
 
 Flickable {
     id: page
+    SmoothWheel { view: page }
     contentHeight: column.height + 80
     clip: true
     ScrollBar.vertical: ScrollBar {}
