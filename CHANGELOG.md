@@ -4,6 +4,8 @@
 
 ### New
 
+- darbit Studio's window: closing it keeps darbit in the tray (it says so once), it opens where it was left at the same size (made to fit a screen still there), and a second `darbit app` brings the open Studio forward
+
 - The run pill in the Qt Studio: Play hides the Studio behind a pill at the top of the screen (the bot, where it is, Pause, Stop, ⤢) that slides away until the real mouse comes to that edge and stays out of the bot's screenshots. The bot stopping or failing brings the Studio back. A darbit setting turns it off
 
 - darbit's service (`darbit serve`): starts, pauses and stops bots whether the Studio is open or not, through one local socket with typed JSON messages and a token (`service/`). The CLI drives it: `darbit bots`, `start`, `pause`, `stop`, `status`, starting it in the background when needed. `python -m darbit` works too

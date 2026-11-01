@@ -7,7 +7,7 @@ ApplicationWindow {
     id: window
     width: 1400; height: 880
     minimumWidth: 900; minimumHeight: 600
-    visible: true
+    // shown by app.py once it's in its place
     title: "darbit Studio"
     color: studio.colors.bg
     font.pixelSize: 14

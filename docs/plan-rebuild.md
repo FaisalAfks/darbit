@@ -102,7 +102,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Timed actions (`@d.flow(timed=True)`) keeping to the recorded schedule | Have |
 | Start a recording on a picture (the dimension's start screen), so playback lines up with the game | Planned, with the scheduled Dim macro |
 | Recording onto the screen map: a recording becomes a move between screens, with checks | Planned |
-| The flow editor: sections, steps, calls, Play with breakpoints and stepping | Have |
+| The flow editor: sections, steps, calls, Play with breakpoints and stepping | Have, but breakpoints and stepping to do in the Qt Studio (#255) |
 | Custom steps with `@d.action`, shown in the editor's palette | Planned |
 | Flows with variables, if and loops; flows calling flows with inputs | Partly have |
 | Grid harvest: scroll a grid menu and save every cell as a picture | Planned |
@@ -113,12 +113,12 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Feature | Status |
 |---|---|
 | Freeze the screen; click to box what's there (again for bigger, right-click for smaller) | Have |
-| Edit the box by mouse and keys, 8 handles, scaling, nudging; exact number fields | Have |
-| Image, region and point in one view; Shift+drag for the region, Ctrl+click for the point | Have |
+| Edit the box by mouse and keys, 8 handles, scaling, nudging; exact number fields | Have, but number fields to do (#254) |
+| Image, region and point in one view; Shift+drag for the region, Ctrl+click for the point | Have, but Shift and Ctrl with the mouse to do (#254) |
 | A magnifier that follows the mouse | Have |
 | Test: find the boxed picture in its region and mark every match with its score | Have |
 | Snapping to edges and guide lines | Have (edges), planned (guides) |
-| The setup guide's next-picture bar and Ctrl+Alt+C to freeze again | Have |
+| The setup guide's next-picture bar and Ctrl+Alt+C to freeze again | Have, but Ctrl+Alt+C to do (#254) |
 | Highlight: what's found on screen right now, with scores | Planned |
 
 ### Studio
@@ -126,13 +126,13 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Feature | Status |
 |---|---|
 | Bot picker (dropdown or sidebar), pages: Overview, Results, Library, Settings | Have |
-| Play, Pause, Stop and Edit; the run pill while a bot runs | Have |
+| Play, Pause, Stop and Edit; the run pill while a bot runs | Have, but Edit to do (#248) |
 | Closing keeps darbit in the tray; the window remembers its size and place | Have |
-| Overview in blocks anyone can rearrange, filled from what the bot records | Have |
-| Results: a summary sentence, gains and progress, a whole-day timeline, problems with Retake | Have |
-| Library: every asset type, grid and Screen view, inspector, Test on screen, Retake, Rename, Delete | Have |
-| Settings: sections, search, defaults, a save bar | Have |
-| Themes (glass dark, glass light, midnight, high contrast, custom), a remappable keymap, a command palette | Have |
+| Overview in blocks anyone can rearrange, filled from what the bot records | Have, but rearranging to do (#249) |
+| Results: a summary sentence, gains and progress, a whole-day timeline, problems with Retake | Have, but Retake to do (#250) |
+| Library: every asset type, grid and Screen view, inspector, Test on screen, Retake, Rename, Delete | Have, but the Screen view and Test to do (#251) |
+| Settings: sections, search, defaults, a save bar | Have, but search to do (#252) |
+| Themes (glass dark, glass light, midnight, high contrast, custom), a remappable keymap, a command palette | Have, but the keymap editor and the palette to do (#253) |
 | A second launch brings the open Studio forward | Have |
 | See a run live and control it from a phone; notifications (Discord, ntfy, Telegram) and a daily summary | Planned |
 
@@ -306,7 +306,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 | 1. Core | done |
 | 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
 | 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
-| 4. Studio | done; idle on Windows 0.1% of a core, about 185 MB |
+| 4. Studio | mostly done (#248–#255 left); idle on Windows 0.1% of a core, about 185 MB |
 | 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
 | 6. More systems | not started |
 

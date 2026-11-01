@@ -8,13 +8,14 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QTimer, QUrl, Signal
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, QTimer, QUrl, Signal
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from ..platform import system
+from ..server import ui_settings
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
@@ -22,6 +23,7 @@ from .ghost import Ghost
 from .highlight import Highlight
 from .recorder import Recorder
 from .runpill import RunPill
+from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
@@ -42,8 +44,10 @@ def load(
     highlight: Highlight | None = None,
     ghost: Ghost | None = None,
     run_pill: RunPill | None = None,
+    place: tuple[QRect | None, bool] = (None, False),
 ) -> QQmlApplicationEngine:
-    """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
+    """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
+    RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
     if capture is None:
         capture = Capture(ShotProvider())
@@ -71,6 +75,14 @@ def load(
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
+    window = engine.rootObjects()[0]
+    where, maximized = place
+    if where is not None:
+        window.setGeometry(where)
+    if maximized:
+        window.showMaximized()
+    else:
+        window.show()
     return engine
 
 
@@ -80,21 +92,33 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     app.setApplicationName("darbit Studio")
     app.setDesktopFileName("darbit")
     app.setWindowIcon(QIcon(str(ICON)))
+    door = Door()
+    if door.knock():
+        return 0  # the open Studio comes forward instead
+    door.open()
     studio = Studio(connect)
     capture = Capture(ShotProvider())
     recorder = Recorder()
     highlight = Highlight()
     ghost = Ghost()
     run_pill = RunPill()
-    engine = load(studio, capture, recorder, highlight, ghost, run_pill)
+    engine = load(studio, capture, recorder, highlight, ghost, run_pill, fit(ui_settings.get(PLACE), screens()))
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     keys = _connect_highlight(studio, highlight, window)
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
     _connect_run_pill(studio, run_pill, window)
-    tray = _tray(app, window, run_pill)
+
+    def open_studio() -> None:
+        run_pill.close()  # the Studio comes back in its place
+        _bring_forward(window)
+
+    tray = _tray(app, open_studio)
+    door.knocked.connect(open_studio)
+    _keep_in_tray(app, window, tray)
     code = app.exec()
+    door.close()
     highlight.stop()
     ghost.stop()
     run_pill.close()
@@ -235,14 +259,9 @@ def _global_key(action: str, slot: object) -> tuple[object, _Key] | None:
     return registered, key
 
 
-def _tray(app: QApplication, window: object, run_pill: RunPill) -> QSystemTrayIcon:
+def _tray(app: QApplication, open_studio: Callable[[], None]) -> QSystemTrayIcon:
     tray = QSystemTrayIcon(QIcon(str(ICON)), app)
     tray.setToolTip("darbit Studio")
-
-    def open_studio() -> None:
-        run_pill.close()  # the Studio comes back in its place
-        _bring_forward(window)
-
     menu = QMenu()
     menu.addAction("Open darbit Studio", open_studio)
     menu.addSeparator()
@@ -252,6 +271,27 @@ def _tray(app: QApplication, window: object, run_pill: RunPill) -> QSystemTrayIc
     if QSystemTrayIcon.isSystemTrayAvailable():
         tray.show()
     return tray
+
+
+TOLD = "studio.told_tray"  # ui setting: the tray message was shown once
+
+
+def _keep_in_tray(app: QApplication, window: object, tray: QSystemTrayIcon) -> None:
+    """Closing the window keeps darbit in the tray (Quit is in its menu), and the window's place is kept for next time.
+    Without a tray, closing quits."""
+
+    def remember() -> None:
+        ui_settings.set_value(PLACE, kept(window, ui_settings.get(PLACE)))
+
+    def closing() -> None:
+        remember()
+        if tray.isVisible() and not ui_settings.get(TOLD, False):
+            tray.showMessage("darbit Studio is in the tray", "Bots go on. Open it or quit from here.", QIcon(str(ICON)))
+            ui_settings.set_value(TOLD, True)
+
+    app.setQuitOnLastWindowClosed(not tray.isVisible())
+    window.closing.connect(closing)
+    app.aboutToQuit.connect(lambda: remember() if window.isVisible() else None)
 
 
 def _bring_forward(window: object) -> None:
