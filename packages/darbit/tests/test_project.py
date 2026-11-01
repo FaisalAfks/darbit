@@ -140,3 +140,9 @@ def test_setup_warns_about_a_version_it_cannot_read(tmp_path):
 )
 def test_version_matches(version, wanted, result):
     assert version_matches(version, wanted) is result
+
+
+def test_a_pre_release_counts_as_its_release():
+    assert version_matches("1.0.0.dev0", ">=1.0,<2") is True
+    assert version_matches("1.0.0rc1", ">=0.4,<0.5") is False
+    assert version_matches("one", ">=1.0") is None
