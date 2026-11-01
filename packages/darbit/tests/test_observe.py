@@ -107,3 +107,27 @@ def test_a_sleep_wakes_up_for_an_interrupt():
     with pytest.raises(d.Interrupted):
         d.sleep(5)
     assert time.monotonic() - started < 1
+
+
+def test_image_observers_grab_only_the_area_they_watch(monkeypatch, tmp_path):
+    sign = np.random.default_rng(2).integers(0, 255, (20, 30, 3), dtype=np.uint8)
+    save(tmp_path / "Left", sign, region=[10, 20, 100, 50])
+    save(tmp_path / "Right", sign, region=[200, 40, 50, 100])
+    save(tmp_path / "Anywhere", sign)
+    grabs = []
+
+    def grab(region=None):
+        grabs.append(region)
+        return np.zeros((300, 400, 3), np.uint8), region or Region(0, 0, 400, 300)
+
+    monkeypatch.setattr(screen, "grab", grab)
+    left = d.observe("Left")
+    d.observe("Right")
+    obs.tick()
+    assert grabs[-1] == Region(10, 20, 240, 120)  # both areas, and nothing else
+    d.observe("Anywhere")
+    obs.tick()
+    assert grabs[-1] is None  # one without an area of its own needs the whole screen
+    left.stop()
+    obs.tick()
+    assert grabs[-1] is None
