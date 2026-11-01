@@ -38,7 +38,7 @@ Item {
 
         Segmented {
             visible: !!studio.bot.path
-            current: bar.page
+            current: bar.page === "action" ? "library" : bar.page
             model: [
                 { key: "overview", label: "Overview" },
                 { key: "library", label: "Library" },

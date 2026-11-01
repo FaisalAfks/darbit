@@ -201,6 +201,7 @@ def shot(
     size: tuple[int, int] = (1400, 880),
     bot: str = "",
     connect: Callable[[], Client] = _client,
+    action: str = "dim_run",
 ) -> None:
     """Draw one page of the Studio into a PNG, with no screen needed (QT_QPA_PLATFORM=offscreen)."""
     app = QGuiApplication.instance() or QGuiApplication([sys.argv[0]])
@@ -210,7 +211,12 @@ def shot(
     if not isinstance(window, QQuickWindow):
         raise TypeError("darbit Studio's window isn't a Qt Quick window")
     window.resize(*size)
-    QTimer.singleShot(SHOT_WAIT_MS // 3, lambda: QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", page)))
+    if page == "action":  # the editor shows one action: open it
+        QTimer.singleShot(
+            SHOT_WAIT_MS // 3, lambda: QMetaObject.invokeMethod(window, "openAction", Q_ARG("QVariant", action))
+        )
+    else:
+        QTimer.singleShot(SHOT_WAIT_MS // 3, lambda: QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", page)))
 
     def save() -> None:
         try:

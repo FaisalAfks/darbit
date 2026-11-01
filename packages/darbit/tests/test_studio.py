@@ -104,6 +104,84 @@ ANSWERS = {
             "missing": True,
         },
     ],
+    "bot.action.read": {
+        "name": "dim_run",
+        "docstring": "",
+        "calls": [],
+        "used_by": ["daily"],
+        "breakpoints": [],
+        "sections": [
+            {
+                "name": "Into the dimension",
+                "line": 6,
+                "steps": [
+                    {
+                        "kind": "key",
+                        "args": {"verb": "press", "keys": ["e"]},
+                        "note": "",
+                        "line": 7,
+                        "source": "",
+                        "children": [],
+                    },
+                    {
+                        "kind": "check",
+                        "args": {"verb": "wait for", "target": "Dim.Start", "timeout": 30},
+                        "note": "",
+                        "line": 8,
+                        "source": "",
+                        "children": [],
+                    },
+                    {
+                        "kind": "loop",
+                        "args": {"times": 3},
+                        "note": "",
+                        "line": 9,
+                        "source": "",
+                        "children": [
+                            {
+                                "kind": "mouse",
+                                "args": {"verb": "click", "target": "Dim.Go"},
+                                "note": "",
+                                "line": 10,
+                                "source": "",
+                                "children": [],
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "name": "The run",
+                "line": 11,
+                "steps": [
+                    {
+                        "kind": "tape",
+                        "args": {"start": 0, "end": 42.5},
+                        "note": "",
+                        "line": 12,
+                        "source": "",
+                        "children": [],
+                    },
+                    {
+                        "kind": "wait",
+                        "args": {"seconds": 0.5},
+                        "note": "the loot",
+                        "line": 13,
+                        "source": "",
+                        "children": [],
+                    },
+                    {
+                        "kind": "call",
+                        "args": {"name": "open_bag", "action": True},
+                        "note": "",
+                        "line": 14,
+                        "source": "",
+                        "children": [],
+                    },
+                ],
+            },
+        ],
+    },
     "bot.actions": [{"name": "dim_run", "steps": 31, "sections": 2, "used_by": ["daily"]}],
     "bot.days": [
         {"day": "2026-10-31", "lead": {"name": "Gems", "amount": 120, "icon": None}, "seconds": 10800, "problems": 1}
@@ -263,7 +341,7 @@ def test_a_refused_request_shows_its_reason(qt):
 
 
 @pytest.mark.parametrize("theme_name", ["glass-dark", "high-contrast"])
-@pytest.mark.parametrize("page", ["overview", "library", "results", "settings", "studio"])
+@pytest.mark.parametrize("page", ["overview", "library", "results", "settings", "studio", "action"])
 def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     warnings = []
 

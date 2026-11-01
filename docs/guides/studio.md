@@ -38,8 +38,15 @@ darbit app
   **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for a picture or until it's gone (Capture opens on that
   moment to take it), or a wait. ⚑ (Ctrl+Alt+K) is a checkpoint: what came before becomes its own action. ≡ shows the
   steps; ✕ throws the recording away. Clicks on the pill aren't recorded.
-- **Actions** (the Library's Actions): each with its steps and what calls it; **Play**, **Stop**, **Record again**,
+- **Actions** (the Library's Actions): each with its steps and what calls it; **Play**, **Open**, **Record again**,
   **Rename** (every call changes too) and **Delete**.
+- **An action, open** (Open, or double-click its card): its sections as cards and its steps read like what they do:
+  keys, waits, pictures to wait for, clicks, loops and ifs with their steps indented, the recording's span, calls to
+  other actions. **Play** walks through them, the step playing glowing. A section's name, a wait's seconds (hover it)
+  and the order of steps (↑ ↓) can be changed and steps removed (✕); the save bar writes the action's file
+  (Ctrl+S). It's still plain Python in `actions/`, so it opens in any editor too.
+
+  ![An action](../ui/images/qt-studio-action.png)
 - **Results** (Ctrl+3): the bot's days; the chosen one in a sentence, its problems, what it got (today, the week, the
   total) and a timeline of its modes, from the run history.
 - **Settings** (Ctrl+4): the bot's `settings.toml` as a form, by section; a changed value gets a dot and a save bar
