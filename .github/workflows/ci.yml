@@ -45,6 +45,10 @@ jobs:
           python-version: "3.13"
       - run: uv sync --locked --extra studio
       - run: uv run pytest packages/darbit/tests/live -v -s
+      - name: Highlight again at 150% display scaling (Qt's scale; the machine's own is 100%)
+        run: uv run pytest packages/darbit/tests/live -v -s -k highlight
+        env:
+          QT_SCALE_FACTOR: "1.5"
       - name: the Studio's pictures in the log too, as JPEG in base64 (for reading them where artifacts can't be fetched)
         if: always()
         run: uv run python -c "import base64, cv2, pathlib; [print(f'--- {p.name}', base64.b64encode(cv2.imencode('.jpg', cv2.imread(str(p)), [cv2.IMWRITE_JPEG_QUALITY, 80])[1]).decode()) for p in sorted(pathlib.Path('live-shots').glob('*.png'))]"

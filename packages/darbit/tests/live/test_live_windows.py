@@ -190,7 +190,11 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
         pixels, _ = screen.grab()
         import cv2
 
-        cv2.imwrite(str(SHOTS / "highlight-on-windows.png"), pixels)
+        scale = os.environ.get("QT_SCALE_FACTOR", "1")
+        cv2.imwrite(str(SHOTS / f"highlight-on-windows-{scale}.png"), pixels)
+        x, y, w, h = picture_box(target)
+        left_of_it = pixels[y + h // 2, x - 8 : x].astype(int)  # the box's border is drawn just outside the picture
+        assert any(g > 150 and g > r + 40 for b, g, r in left_of_it), "Highlight's box isn't around the picture"
         before = len(target.events("click"))
         x, y, w, h = picture_box(target)
         device.click(x + w // 2, y + h // 2, 0.0)

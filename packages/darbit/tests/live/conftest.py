@@ -24,6 +24,7 @@ class Target:
         self.events_file = folder / "events.jsonl"
         self.events_file.write_text("", encoding="utf-8")
         environment = dict(os.environ, QT_ENABLE_HIGHDPI_SCALING="0")
+        environment.pop("QT_SCALE_FACTOR", None)  # the window stays in screen pixels whatever the Studio's scale
         self.process = subprocess.Popen(
             [sys.executable, str(HERE / "target.py"), str(folder / f"{PICTURE}.png"), str(self.events_file)],
             env=environment,
