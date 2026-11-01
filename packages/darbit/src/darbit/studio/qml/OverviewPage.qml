@@ -25,6 +25,7 @@ Flickable {
     readonly property var upcoming: tile("next")
     readonly property var failures: tile("failures")
     readonly property var setup: tile("setup")
+    readonly property bool empty: studio.bots.length === 0
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
     readonly property var lastFailure: failures && failures.items.length ? failures.items[failures.items.length - 1] : null
@@ -34,9 +35,43 @@ Flickable {
         x: 24; width: page.width - 48
         spacing: 16
 
+        // ---- the first time: no bots yet
+        Glass {
+            visible: page.empty
+            Layout.fillWidth: true; Layout.preferredHeight: 300
+            padding: 34
+            content: Item {
+                anchors.fill: parent
+                Image {
+                    id: mark
+                    source: "../logo.png"; width: 120; height: 120; sourceSize: Qt.size(240, 240); smooth: true
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Column {
+                    anchors { left: mark.right; leftMargin: 34; right: parent.right; verticalCenter: parent.verticalCenter }
+                    spacing: 12
+                    Text { text: "WELCOME TO DARBIT"; color: studio.colors.accent; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.3 }
+                    Text { text: "Make your first bot"; color: studio.colors.text; font.pixelSize: 32; font.weight: Font.Bold }
+                    Text {
+                        width: parent.width
+                        text: "A bot is a folder of plain Python and the pictures it looks for. Start one from the template, install one from its git link, or add a folder you already have."
+                        color: studio.colors.muted; font.pixelSize: 14; wrapMode: Text.WordWrap
+                    }
+                    Item { width: 1; height: 6 }
+                    Row {
+                        spacing: 10
+                        PillButton { kind: "primary"; icon: "+"; text: "New bot"; onClicked: window.newBot("new") }
+                        PillButton { icon: "⇩"; text: "From a git link"; onClicked: window.newBot("link") }
+                        PillButton { kind: "quiet"; icon: "▤"; text: "Add a folder"; onClicked: window.newBot("folder") }
+                    }
+                }
+            }
+        }
+
         // ---- now
         Glass {
             id: hero
+            visible: !page.empty
             Layout.fillWidth: true; Layout.preferredHeight: 196
             padding: 26
             content: Item {
