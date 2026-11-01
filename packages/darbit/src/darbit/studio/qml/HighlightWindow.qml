@@ -10,13 +10,15 @@ Window {
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.Tool
     color: "transparent"
     title: "darbit Highlight"
+    readonly property real ratio: Screen.devicePixelRatio  // screen pixels to Qt's (1.5 at 150% scaling)
 
     Repeater {
         model: highlight.boxes.filter(function (box) { return box.shown || (!box.found && box.w && box.score >= box.needs - 0.15) })
         delegate: Item {
             required property var modelData
-            x: modelData.x - highlight.origin[0]; y: modelData.y - highlight.origin[1]
-            width: modelData.w; height: modelData.h
+            // boxes come in screen pixels; the window counts in Qt's, which Windows' display scaling makes bigger
+            x: modelData.x / overlay.ratio - overlay.x; y: modelData.y / overlay.ratio - overlay.y
+            width: modelData.w / overlay.ratio; height: modelData.h / overlay.ratio
             readonly property bool alike: modelData.with && modelData.with.length > 0
             readonly property color ink: modelData.found && !alike ? studio.colors.ok : studio.colors.warn
             opacity: modelData.found ? 1 : 0.55
