@@ -19,6 +19,7 @@ Window {
     property int chosen: 0
     property var lastClick: null
     property var matches: []
+    property real similarity: 0.9  // after Test: matches under it fade
     property string note: ""
     property bool noteBad: false
     readonly property real scale: Math.min(width / Math.max(1, capture.shotWidth), height / Math.max(1, capture.shotHeight))
@@ -51,7 +52,8 @@ Window {
         if (!box) { say("Box something first", true); return }
         var found = capture.test(box, null)
         matches = found.matches || []
-        say(found.error ? found.error : matches.length + (matches.length === 1 ? " match" : " matches") + " in " + found.ms + " ms", !!found.error || matches.length !== 1)
+        var strong = matches.filter(function (match) { return match.score >= shotWindow.similarity }).length
+        say(found.error ? found.error : strong + (strong === 1 ? " match" : " matches") + " at " + shotWindow.similarity.toFixed(2) + " · " + matches.length + (matches.length === 1 ? " look-alike · " : " look-alikes · ") + found.ms + " ms", !!found.error || strong !== 1)
     }
     function save() {
         var name = nameField.text.trim()
@@ -186,11 +188,13 @@ Window {
                 x: modelData.x * shotWindow.scale; y: modelData.y * shotWindow.scale
                 width: modelData.w * shotWindow.scale; height: modelData.h * shotWindow.scale
                 color: "transparent"; border.width: 2
-                border.color: modelData.score >= 0.9 ? studio.colors.ok : studio.colors.warn
+                opacity: modelData.score >= shotWindow.similarity ? 1 : 0.3
+                Behavior on opacity { NumberAnimation { duration: studio.effects ? 160 : 0 } }
+                border.color: modelData.score >= shotWindow.similarity ? studio.colors.ok : studio.colors.warn
                 Chip {
                     anchors { left: parent.left; bottom: parent.top; bottomMargin: 4 }
                     height: 20
-                    tone: modelData.score >= 0.9 ? "ok" : "warn"
+                    tone: modelData.score >= shotWindow.similarity ? "ok" : "warn"
                     text: (index + 1) + " · " + modelData.score.toFixed(2)
                 }
             }
@@ -237,41 +241,113 @@ Window {
             }
         }
 
-        // the toolbar, bottom centre
+        // the toolbar, bottom centre: the name, the kind, Test, Save (the shared pill of darbit's tools)
         Rectangle {
             id: toolbar
             anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 36 }
-            height: 56; radius: 28
-            width: bar.implicitWidth + 24
+            height: 58; radius: 29
+            width: bar.implicitWidth + 20
             color: studio.colors.glassStrong; border.color: studio.colors.line
             RowLayout {
                 id: bar
-                anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                spacing: 10
+                anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+                spacing: 8
                 TextField {
                     id: nameField
                     placeholderText: "Name, e.g. Lobby.Play"
-                    Layout.preferredWidth: 220
+                    placeholderTextColor: studio.colors.faint
+                    Layout.preferredWidth: 230; Layout.preferredHeight: 40
+                    leftPadding: 16
                     color: studio.colors.text
                     font.pixelSize: 14; font.weight: Font.DemiBold
                     onAccepted: shotWindow.save()
                     Keys.onEscapePressed: capture.close()
-                    background: Rectangle { radius: 10; color: studio.colors.raised; border.color: nameField.activeFocus ? studio.colors.accent : "transparent" }
+                    background: Rectangle { radius: 20; color: studio.colors.raised; border.color: nameField.activeFocus ? studio.colors.accent : "transparent" }
                 }
-                Pill {
-                    height: 40
-                    Tab { height: 30; label: "Image"; current: shotWindow.kind === "image"; onClicked: { shotWindow.kind = "image"; shotWindow.point = null } }
-                    Tab { height: 30; label: "Region"; current: shotWindow.kind === "region"; onClicked: { shotWindow.kind = "region"; shotWindow.point = null } }
-                    Tab { height: 30; label: "Point"; current: shotWindow.kind === "point"; onClicked: { shotWindow.kind = "point"; shotWindow.box = null } }
+                Segmented {
+                    itemHeight: 32
+                    current: shotWindow.kind
+                    model: [{ key: "image", label: "Image" }, { key: "region", label: "Area" }, { key: "point", label: "Point" }]
+                    onPicked: function (key) {
+                        shotWindow.kind = key
+                        if (key === "point") shotWindow.box = null
+                        else shotWindow.point = null
+                        stage.forceActiveFocus()
+                    }
                 }
-                IconButton { glyph: "⌕"; tip: "Test: find it in the shot (T)"; enabled: shotWindow.kind === "image" && !!shotWindow.box; onClicked: shotWindow.test() }
+                Rectangle { width: 1; height: 26; color: studio.colors.line }
+                PillButton { small: true; icon: "⌕"; text: "Test"; enabled: shotWindow.kind === "image" && !!shotWindow.box; onClicked: shotWindow.test() }
                 IconButton { glyph: "✕"; tip: "Close (Esc)"; onClicked: capture.close() }
-                Button {
-                    text: "Save"
-                    onClicked: shotWindow.save()
-                    contentItem: Text { text: parent.text; color: studio.colors.onAccent; font.weight: Font.Bold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                    background: Rectangle { implicitHeight: 40; implicitWidth: 76; radius: 20; color: studio.colors.accent }
+                PillButton { kind: "primary"; small: true; text: "Save"; onClicked: shotWindow.save() }
+            }
+        }
+        // after Test: the similarity a match needs; matches under it fade
+        Rectangle {
+            visible: shotWindow.matches.length > 0
+            anchors { horizontalCenter: toolbar.horizontalCenter; bottom: toolbar.top; bottomMargin: 44 }
+            width: 330; height: 44; radius: 22
+            color: studio.colors.glassStrong; border.color: studio.colors.line
+            Row {
+                anchors.centerIn: parent; spacing: 12
+                Text { text: "needs"; color: studio.colors.muted; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                Slider {
+                    id: needs
+                    width: 180; from: 0.6; to: 1.0; value: shotWindow.similarity
+                    onMoved: shotWindow.similarity = Math.round(value * 100) / 100
+                    anchors.verticalCenter: parent.verticalCenter
                 }
+                Text { text: shotWindow.similarity.toFixed(2); color: studio.colors.text; font.pixelSize: 14; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+            }
+        }
+
+        // the magnifier: 4x, with a pixel grid, the place and the colour under the mouse; it flips near the edges
+        Item {
+            id: magnifier
+            objectName: "magnifier"
+            readonly property int size: 150
+            readonly property real zoom: 4
+            property point at: Qt.point(-1, -1)  // in the shot's pixels
+            visible: at.x >= 0 && !toolbar.contains(toolbar.mapFromItem(stage, hoverPoint.x, hoverPoint.y))
+            property point hoverPoint: Qt.point(0, 0)
+            x: hoverPoint.x + 24 + size > stage.width ? hoverPoint.x - size - 24 : hoverPoint.x + 24
+            y: hoverPoint.y + 24 + size + 26 > stage.height ? hoverPoint.y - size - 50 : hoverPoint.y + 24
+            width: size; height: size + 26
+            Rectangle {
+                width: magnifier.size; height: magnifier.size; radius: 14
+                color: "black"; border.color: studio.colors.accent; border.width: 2
+                clip: true
+                ShaderEffectSource {
+                    anchors.fill: parent; anchors.margins: 2
+                    sourceItem: shot
+                    hideSource: false
+                    smooth: false
+                    readonly property real span: magnifier.size / magnifier.zoom
+                    sourceRect: Qt.rect(magnifier.at.x * shotWindow.scale - span / 2, magnifier.at.y * shotWindow.scale - span / 2, span, span)
+                }
+                Rectangle {  // the pixel under the mouse
+                    anchors.centerIn: parent
+                    width: magnifier.zoom * shotWindow.scale + 2; height: width
+                    color: "transparent"; border.color: "white"; border.width: 1
+                }
+            }
+            Rectangle {
+                y: magnifier.size + 4
+                width: magnifier.size; height: 22; radius: 11
+                color: studio.colors.glassStrong
+                Row {
+                    anchors.centerIn: parent; spacing: 8
+                    Text { text: magnifier.at.x + ", " + magnifier.at.y; color: studio.colors.text; font.family: "monospace"; font.pixelSize: 11 }
+                    Rectangle { width: 10; height: 10; radius: 2; color: swatch.text || "transparent"; anchors.verticalCenter: parent.verticalCenter }
+                    Text { id: swatch; text: magnifier.at.x >= 0 ? capture.colour(magnifier.at.x, magnifier.at.y) : ""; color: studio.colors.muted; font.family: "monospace"; font.pixelSize: 11 }
+                }
+            }
+        }
+        HoverHandler {
+            target: stage
+            onPointChanged: {
+                magnifier.hoverPoint = point.position
+                var at = shotWindow.toShot(point.position.x, point.position.y)
+                magnifier.at = Qt.point(at[0], at[1])
             }
         }
         Chip {

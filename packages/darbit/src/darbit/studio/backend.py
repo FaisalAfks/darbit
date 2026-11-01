@@ -40,6 +40,9 @@ class Studio(QObject):
     usesChanged = Signal()
     lookChanged = Signal()
     madeBot = Signal(str)  # a bot made, installed or added: its name
+    actionsChanged = Signal()
+    said = Signal(str)  # something done, for the toast
+    recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
 
     captureWanted = Signal(str, str, str, str)  # (the bot's folder, "any", "guide" or "one", name, kind), for app.py
 
@@ -59,6 +62,7 @@ class Studio(QObject):
         self._day: dict = {}
         self._settings: dict = {}
         self._uses: list[dict] = []
+        self._actions: list[dict] = []
         self._message = ""
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
@@ -112,6 +116,9 @@ class Studio(QObject):
     def _get_uses(self) -> list:
         return self._uses
 
+    def _get_actions(self) -> list:
+        return self._actions
+
     def _get_sidebar(self) -> bool:
         return ui_settings.get(PICKER, "dropdown") == "sidebar"
 
@@ -137,6 +144,7 @@ class Studio(QObject):
     glass = Property(bool, _get_glass, notify=themeChanged)
     now = Property(float, _get_now, notify=clockChanged)
     uses = Property(list, _get_uses, notify=usesChanged)
+    actions = Property(list, _get_actions, notify=actionsChanged)
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
@@ -181,6 +189,36 @@ class Studio(QObject):
         """Capture one picture again, by its name."""
         if self._bot.get("path"):
             self.captureWanted.emit(self._bot["path"], "one", name, kind or "image")
+
+    @Slot()
+    def loadActions(self) -> None:
+        self._ask("actions", "bot.actions")
+
+    @Slot(str)
+    def playAction(self, name: str) -> None:
+        self._ask("played", "bot.action.play", name=name)
+
+    @Slot()
+    def stopAction(self) -> None:
+        self._ask("", "bot.action.stop")
+
+    @Slot(str, str)
+    def renameAction(self, name: str, to: str) -> None:
+        self._ask("actionsChanged", "bot.action.rename", name=name, to=to)
+
+    @Slot(str)
+    def deleteAction(self, name: str) -> None:
+        self._ask("actionsChanged", "bot.action.delete", name=name)
+
+    @Slot(str, bool)
+    def record(self, name: str, again: bool) -> None:
+        """Record an action for the shown bot (app.py hides the Studio and shows the recorder)."""
+        if self._bot.get("path"):
+            self.recordWanted.emit(self._bot["path"], name, again)
+
+    @Slot(str)
+    def say(self, text: str) -> None:
+        self.said.emit(text)
 
     @Slot(str)
     def loadUses(self, name: str) -> None:
@@ -330,6 +368,13 @@ class Studio(QObject):
             self.usesChanged.emit()
         elif what == "changed":
             self.loadLibrary()
+        elif what == "actions" and isinstance(result, list):
+            self._actions = result
+            self.actionsChanged.emit()
+        elif what == "actionsChanged":
+            self.loadActions()
+        elif what == "played":
+            self.said.emit("Playing: the Studio stays in front, so switch to the game")
         elif what == "made" and isinstance(result, dict):
             self._wanted = str(result.get("path", ""))
             self._bot = {}

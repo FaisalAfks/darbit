@@ -22,8 +22,17 @@ darbit app
   ![The Library](../ui/images/qt-studio-library.png)
 - **Capture** (the Library's Capture button): the Studio steps aside, the screen is frozen, and it opens full screen.
   Click something to box it (again for bigger, right-click for smaller) or drag a box; the handles and the arrow keys
-  change it (Shift: 10 px, Ctrl: its size). Image, Region or Point; **T** tests it (every match, with its score);
-  name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is shown.
+  change it (Shift: 10 px, Ctrl: its size). A magnifier follows the mouse (4×, with the place and colour under it).
+  Image, Area or Point; **T** tests it: every match with its score, and a slider for the similarity it needs (matches
+  under it fade). Name it and press **Enter** to save; **Esc** closes. With a setup guide, the next picture to take is
+  shown.
+- **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill at the top of the
+  screen shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
+  **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for a picture or until it's gone (Capture opens on that
+  moment to take it), or a wait. ⚑ (Ctrl+Alt+K) is a checkpoint: what came before becomes its own action. ≡ shows the
+  steps; ✕ throws the recording away. Clicks on the pill aren't recorded.
+- **Actions** (the Library's Actions): each with its steps and what calls it; **Play**, **Stop**, **Record again**,
+  **Rename** (every call changes too) and **Delete**.
 - **Results** (Ctrl+3): the bot's days; the chosen one in a sentence, its problems, what it got (today, the week, the
   total) and a timeline of its modes, from the run history.
 - **Settings** (Ctrl+4): the bot's `settings.toml` as a form, by section; a changed value gets a dot and a save bar

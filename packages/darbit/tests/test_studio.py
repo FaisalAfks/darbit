@@ -104,6 +104,7 @@ ANSWERS = {
             "missing": True,
         },
     ],
+    "bot.actions": [{"name": "dim_run", "steps": 31, "sections": 2, "used_by": ["daily"]}],
     "bot.days": [
         {"day": "2026-10-31", "lead": {"name": "Gems", "amount": 120, "icon": None}, "seconds": 10800, "problems": 1}
     ],
@@ -348,3 +349,41 @@ def test_the_theme_chosen_is_used_next_time(qt):
     assert backend.Studio(FakeClient).themeName == "midnight"
     studio.setTheme("no such theme")
     assert studio.themeName == theme.DEFAULT
+
+
+def test_the_recorder_records_checks_and_saves_an_action(qt, tmp_path, monkeypatch):
+    from darbit.platform import hooks
+    from darbit.platform import input as device
+    from darbit.server import record_api
+    from darbit.studio.recorder import Recorder
+
+    monkeypatch.setattr(hooks, "start", lambda on_event, moves=False: lambda: None)
+    monkeypatch.setattr(device, "desktop", lambda: (0, 0, 1920, 1080))
+    monkeypatch.setattr(device, "position", lambda: (0, 0))
+    monkeypatch.setattr(record_api.tape, "_window_now", lambda: None)
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "rec-bot"\n', encoding="utf-8")
+    recorder = Recorder()
+    saved = []
+    recorder.finished.connect(saved.append)
+    assert recorder.start(tmp_path, "9 lives") != ""  # not a name an action can have
+    assert recorder.start(tmp_path, "open_bag") == ""
+    assert recorder.active and recorder.name == "open_bag"
+    started = record_api._recording.started
+    at = int(started * 1e9)
+    record_api._on_event("key_down", 0x45, 0, 0, at + 100_000_000)
+    record_api._on_event("key_up", 0x45, 0, 0, at + 150_000_000)
+    recorder.setArea(0, 0, 400, 80)
+    record_api._on_event("mouse_down", 0, 100, 40, at + 300_000_000)  # on the pill: left out
+    record_api._on_event("mouse_up", 0, 100, 40, at + 320_000_000)
+    recorder.pause()
+    assert recorder.paused
+    recorder.addWait(2)
+    assert recorder.checks == 0 and recorder.count >= 2
+    recorder.finish(True)
+    assert saved == ["open_bag"] and not recorder.active
+    text = (tmp_path / "actions" / "open_bag.py").read_text(encoding="utf-8")
+    assert "d.replay(" in text and (tmp_path / "actions" / "open_bag.tape.json").is_file()
+    assert recorder.start(tmp_path, "thrown") == ""
+    recorder.finish(False)
+    assert saved[-1] == "" and not (tmp_path / "actions" / "thrown.py").exists()
+    recorder.close()

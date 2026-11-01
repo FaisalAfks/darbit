@@ -133,6 +133,18 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
   slide, the progress ring sweeps. Only opacity and position are animated, and nothing moves while the Studio is idle
   (0% of a core, measured). Smooth effects off makes everything show at once.
 
+### Round 10: Capture and the recorder, one family
+
+- **Separate tools, one family.** Capture works on a frozen screen and takes over the mouse; the recorder must stay
+  out of the way while the game is played live, so they stay two tools. They share the pill (the state, a few
+  controls, the main action last in the accent), the chips and the motion.
+- **They meet at checks:** paused on the recorder, "Wait for a picture" opens Capture on that moment; the saved picture
+  becomes the check, and the recorder comes back.
+- **Capture:** the toolbar is the pill (name, Image / Area / Point, Test, Save), with a magnifier (4×, place and
+  colour) and, after Test, a similarity slider that fades the matches under it.
+- **Recorder:** a pill at the top of the screen with the time, steps and checks; Checkpoint, Pause (and the check
+  menu while paused), Done and ✕; ≡ unfolds the steps as they're caught.
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.

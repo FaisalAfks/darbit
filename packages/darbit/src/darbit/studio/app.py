@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider
+from .recorder import Recorder
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
@@ -29,16 +30,20 @@ def _client() -> Client:
     return Client("darbit Studio")
 
 
-def load(studio: Studio, capture: Capture | None = None) -> QQmlApplicationEngine:
+def load(studio: Studio, capture: Capture | None = None, recorder: Recorder | None = None) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded; RuntimeError if the QML doesn't load."""
     engine = QQmlApplicationEngine()
     if capture is None:
         capture = Capture(ShotProvider())
+    if recorder is None:
+        recorder = Recorder()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
+    engine.rootContext().setContextProperty("recorder", recorder)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
+    recorder.setParent(engine)
     engine.load(QUrl.fromLocalFile(str(MAIN)))
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
@@ -52,16 +57,18 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     app.setWindowIcon(QIcon(str(ICON)))
     studio = Studio(connect)
     capture = Capture(ShotProvider())
-    engine = load(studio, capture)
+    recorder = Recorder()
+    engine = load(studio, capture, recorder)
     window = engine.rootObjects()[0]
-    _connect_capture(studio, capture, window)
+    _connect_capture(studio, capture, recorder, window)
+    _connect_recorder(studio, capture, recorder, window)
     tray = _tray(app, window)
     code = app.exec()
     tray.hide()
     return code
 
 
-def _connect_capture(studio: Studio, capture: Capture, window: object) -> None:
+def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, window: object) -> None:
     """Capture hides the Studio, grabs the screen without it, and brings it back when it closes."""
 
     def wanted(folder: str, mode: str, name: str, kind: str) -> None:
@@ -69,13 +76,50 @@ def _connect_capture(studio: Studio, capture: Capture, window: object) -> None:
         QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode, name, kind))
 
     def closed() -> None:
-        if not capture.isOpen:
+        if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead
             _bring_forward(window)
             studio.loadLibrary()
 
     studio.captureWanted.connect(wanted)
     capture.openChanged.connect(closed)
     capture.saved.connect(lambda name: studio.loadLibrary())
+
+
+def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, window: object) -> None:
+    """Record hides the Studio and shows the recorder; Done brings it back. A picture check is taken with Capture."""
+    wanted_gone: list[bool] = []  # a picture check waiting for Capture's save: until it's gone?
+
+    def record(folder: str, name: str, again: bool) -> None:
+        window.hide()
+
+        def start() -> None:
+            problem = recorder.start(Path(folder), name, again)
+            if problem:
+                _bring_forward(window)
+                studio.say(problem)
+
+        QTimer.singleShot(HIDE_WAIT_MS, start)
+
+    def finished(name: str) -> None:
+        _bring_forward(window)
+        studio.loadActions()
+        studio.loadLibrary()
+        studio.say(f"Saved {name}" if name else "Recording thrown away")
+
+    def picture(folder: str, gone: bool) -> None:
+        wanted_gone[:] = [gone]
+        capture.start(Path(folder), "any")
+
+    def saved(name: str) -> None:
+        if recorder.active and wanted_gone:
+            recorder.addPicture(name, wanted_gone[0])
+            wanted_gone.clear()
+            capture.close()
+
+    studio.recordWanted.connect(record)
+    recorder.finished.connect(finished)
+    recorder.pictureWanted.connect(picture)
+    capture.saved.connect(saved)
 
 
 def _tray(app: QApplication, window: object) -> QSystemTrayIcon:
