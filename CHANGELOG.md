@@ -64,6 +64,7 @@
 
 ### Fixed
 
+- The tests never touch the real darbit folders: `DARBIT_HOME` puts darbit's own folders under one, and the test run sets it to a temporary folder. The live service test stopped the running service and left its test bots in the Studio's bot list. `ui.json` saved with a byte-order mark (Windows PowerShell) is read instead of treated as empty
 - The ghost cursor costs about half as much while a bot fights (12.7% to 6.1% of a core on a 2560 x 1600 screen, about 2% with smooth effects off): its window covers only the area around its marks, not the whole screen, and a burst of keys is shown together at most ten times a second
 - Observers grab only the area their pictures are searched in, not the whole screen: twice a second, that grab was most of what an idle bot did
 - Each darbit process (the Studio, the service, the input worker, a bot) commits about 60 MB instead of 800 MB on a 24-thread PC: darbit keeps numpy's OpenBLAS to one thread (`OPENBLAS_NUM_THREADS=1` unless set), whose per-thread buffers it never used
