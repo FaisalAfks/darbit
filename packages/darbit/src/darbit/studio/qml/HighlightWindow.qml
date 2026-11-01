@@ -6,6 +6,7 @@ import QtQuick.Window
 Window {
     id: overlay
     visibility: highlight.isOn ? Window.FullScreen : Window.Hidden
+    transientParent: null  // its own window: it shows while the Studio is hidden (Windows hides a hidden window's tool windows too)
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.Tool
     color: "transparent"
     title: "darbit Highlight"
@@ -60,7 +61,7 @@ Window {
             anchors.centerIn: parent; spacing: 10
             Rectangle { width: 9; height: 9; radius: 4.5; color: studio.colors.ok; anchors.verticalCenter: parent.verticalCenter }
             Text {
-                text: "Highlight · " + (studio.bot.name || "") + " · " + highlight.found + " of " + highlight.boxes.length + " found"
+                text: "Highlight · " + (studio.bot.name ? studio.bot.name + " · " : "") + highlight.found + " of " + highlight.boxes.length + " found"
                     + (highlight.alike ? " · " + highlight.alike + " look-alikes (try the colour option)" : "")
                     + " · " + Math.round(highlight.took) + " ms · Ctrl+Alt+H hides"
                 color: studio.colors.text; font.pixelSize: 13; font.weight: Font.DemiBold

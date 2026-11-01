@@ -21,7 +21,7 @@ Rectangle {
         Rectangle {
             width: 34; height: 34; radius: 17
             color: Qt.rgba(banner.ink.r, banner.ink.g, banner.ink.b, 0.2)
-            Text { anchors.centerIn: parent; text: banner.icon; color: banner.ink; font.pixelSize: 15; font.weight: Font.Bold }
+            Text { anchors.centerIn: parent; text: banner.icon; color: banner.ink; font.pixelSize: 15; font.family: studio.symbols; font.weight: Font.Bold }
         }
         Column {
             Layout.fillWidth: true

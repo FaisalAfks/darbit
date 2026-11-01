@@ -78,13 +78,16 @@ Item {
         spacing: 10
         TextField {
             id: search
-            Layout.preferredWidth: 240; Layout.preferredHeight: 42
-            placeholderText: "⌕  Search " + studio.library.length + " assets"
+            Layout.preferredWidth: window.narrow ? 170 : 240; Layout.preferredHeight: 42
+            placeholderText: "Search " + studio.library.length + " assets"
             placeholderTextColor: studio.colors.faint
             color: studio.colors.text; font.pixelSize: 14
-            leftPadding: 16
+            leftPadding: 38
             onTextChanged: page.query = text
-            background: Rectangle { radius: 21; color: studio.colors.glass; border.color: search.activeFocus ? studio.colors.accent : studio.colors.line }
+            background: Rectangle {
+                radius: 21; color: studio.colors.glass; border.color: search.activeFocus ? studio.colors.accent : studio.colors.line
+                Text { x: 15; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: studio.colors.faint; font.pixelSize: 16; font.family: studio.symbols }
+            }
         }
         Segmented {
             itemHeight: 34
@@ -98,12 +101,21 @@ Item {
             ]
             onPicked: function (key) { page.kind = key; page.chosen = "" }
         }
-        Toggle { text: "Missing " + page.count(function (a) { return a.missing }); tone: "danger"; on: page.missingOnly; onClicked: page.missingOnly = !page.missingOnly }
-        Toggle { text: "Weak " + page.count(page.weak); tone: "warn"; on: page.weakOnly; onClicked: page.weakOnly = !page.weakOnly }
+        // shown while there's something to filter for (or the filter is on)
+        Toggle {
+            readonly property int many: page.count(function (a) { return a.missing })
+            visible: many > 0 || on
+            text: "Missing " + many; tone: "danger"; on: page.missingOnly; onClicked: page.missingOnly = !page.missingOnly
+        }
+        Toggle {
+            readonly property int many: page.count(page.weak)
+            visible: many > 0 || on
+            text: "Weak " + many; tone: "warn"; on: page.weakOnly; onClicked: page.weakOnly = !page.weakOnly
+        }
         Item { Layout.fillWidth: true }
         PillButton {
             id: viewButton
-            icon: "⇅"; text: (page.sort === "name" ? "Name" : page.sort === "score" ? "Weakest" : "Most used") + (page.group !== "none" ? " · by " + page.group : "")
+            icon: "⇅"; text: window.narrow ? "" : (page.sort === "name" ? "Name" : page.sort === "score" ? "Weakest" : "Most used") + (page.group !== "none" ? " · by " + page.group : "")
             kind: "quiet"
             onClicked: viewMenu.open()
             Popup {
@@ -124,9 +136,10 @@ Item {
                 }
             }
         }
-        PillButton { icon: "◎"; text: "Highlight"; onClicked: studio.toggleHighlight() }
-        PillButton { icon: "●"; text: "Record"; onClicked: window.recordAction("") }
-        PillButton { kind: "primary"; icon: "▣"; text: "Capture"; onClicked: studio.openCapture("any") }
+        // on a narrow window the tools on the right show only their icons
+        PillButton { icon: "◎"; text: window.narrow ? "" : "Highlight"; onClicked: studio.toggleHighlight() }
+        PillButton { icon: "●"; text: window.narrow ? "" : "Record"; onClicked: window.recordAction("") }
+        PillButton { kind: "primary"; icon: "▣"; text: window.narrow ? "" : "Capture"; onClicked: studio.openCapture("any") }
     }
 
     // ---- the cards

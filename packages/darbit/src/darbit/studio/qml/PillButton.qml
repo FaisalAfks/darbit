@@ -33,7 +33,7 @@ Rectangle {
         Text {
             visible: button.icon !== ""
             text: button.icon
-            color: label.color; font.pixelSize: button.small ? 12 : 13
+            color: label.color; font.pixelSize: button.small ? 12 : 13; font.family: studio.symbols
             anchors.verticalCenter: parent.verticalCenter
         }
         Text {
