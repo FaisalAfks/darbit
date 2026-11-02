@@ -4,6 +4,8 @@
 
 ### New
 
+- Problems explained (round 13): the Results page groups the day's failures by likely cause (something covered the game, an image looks different now, an image wasn't on screen, the bot's own reason) with a plain sentence of what the bot saw, and opens each into the searches that ran out before it, the screen when it stopped, and Highlight, Retake, the screenshots or Not a problem (`server/problems.py`, from what the run report already holds). The Overview's setup line no longer says the bot can't run while it does
+
 - The bot's Settings redesigned (round 12, A with B's help panel): one row per setting with a control made for its type (switch, stepper, slider for a range, list, field), section cards in two columns on a wide window, search with counts and change dots, ↺ back to a default, and a panel that explains the setting under the mouse. The controls are shared components (`Switcher`, `Stepper`, `ValueSlider`, `Dropdown`); the Studio page's switches use `Switcher` too
 
 - Images can share a region: an image's `region` can name a region target (`"region": "Bag.List"`), and moving that region moves every image searched in it. Capture's **Saved ▾** (with Region picked) lists the bot's regions, shared ones first, then other images' own to copy; pointing at one shows it on the screen (`capture.service.regions`, `core.targets.shared_region`)

@@ -19,6 +19,8 @@ Item {
     readonly property var day: studio.day
     readonly property var gains: day.gains || []
     readonly property var problems: day.problems || []
+    property var hidden: []  // problems marked "not a problem", for this visit
+    readonly property var shownProblems: problems.filter(function (one) { return page.hidden.indexOf(one.step + "|" + one.reason + "|" + one.target) < 0 })
     readonly property var lanes: day.lanes || []
     readonly property real span: day.start !== undefined && day.start !== null ? Math.max(60, day.end - day.start) : 0
 
@@ -103,14 +105,26 @@ Item {
                     }
                 }
             }
+            // the day's problems: a line, then each kind grouped by its likely cause (server/problems.py)
+            Text {
+                visible: page.shownProblems.length > 0
+                Layout.fillWidth: true; Layout.topMargin: 4
+                readonly property int stops: page.shownProblems.reduce(function (sum, one) { return sum + one.count }, 0)
+                readonly property int acting: page.shownProblems.filter(function (one) { return one.act }).length
+                textFormat: Text.StyledText
+                text: "It stopped <b>" + stops + (stops === 1 ? " time" : " times") + "</b>"
+                    + (acting === 0 ? ", and nothing needs doing." : "; " + acting + (acting === 1 ? " needs" : " need") + " a look.")
+                color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold
+            }
             Repeater {
-                model: page.problems
-                delegate: Banner {
+                model: page.shownProblems
+                delegate: ProblemGroup {
                     required property var modelData
+                    required property int index
                     Layout.fillWidth: true
-                    tone: "danger"; icon: "×" + modelData.count
-                    title: modelData.step + ": " + (modelData.reason || "failed")
-                    detail: "last at " + Format.clock(modelData.times[modelData.times.length - 1])
+                    problem: modelData
+                    open: index === 0 && !!modelData.act
+                    onHide: page.hidden = page.hidden.concat([modelData.step + "|" + modelData.reason + "|" + modelData.target])
                 }
             }
             Glass {

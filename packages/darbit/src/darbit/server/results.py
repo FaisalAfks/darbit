@@ -10,7 +10,7 @@ cause, and the timeline lanes. All of it comes from the run report (`d.record.ga
 from datetime import date, timedelta
 
 from ..project.manifest import Project
-from . import history
+from . import dashboard, history, problems
 
 WEEK = 7  # days in the gains' small bar charts
 DAYS_LISTED = 60  # days in the day list
@@ -202,7 +202,7 @@ def day(project: Project, day_name: str) -> dict:
         "progress": _progress(events),
         "finished": {"done": finished, "total": ended},
         "lost_seconds": round(lost),
-        "problems": _problems(events),
+        "problems": problems.explain(project, events, dashboard.report_file(project, day_name).parent),
         "recoveries": recoveries_of(events),
         "lanes": lane_list,
     }
@@ -269,7 +269,9 @@ def day_lines(day: dict) -> list[str]:
         total = f" (total {gain['total']})" if gain.get("total") is not None else ""
         lines.append(f"gained {gain['today']} {gain['name']}{total}")
     for problem in day.get("problems", []):
-        lines.append(f"problem x{problem['count']}: {problem['step']}: {problem['reason']}")
+        lines.append(
+            f"problem x{problem['count']}: {problem['step']}: {problem['reason']} ({problem.get('label', 'failed')})"
+        )
     for recovery in day.get("recoveries", []):
         whys = []
         for why, count in recovery["whys"].items():

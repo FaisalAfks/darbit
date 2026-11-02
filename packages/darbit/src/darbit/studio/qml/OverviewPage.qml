@@ -157,10 +157,10 @@ Flickable {
             readonly property int missing: page.setup && page.setup.total ? page.setup.total - page.setup.done : 0
             visible: missing > 0
             Layout.fillWidth: true
-            tone: "warn"; icon: "▣"
-            title: missing + (missing === 1 ? " image" : " images") + " to take before the bot can run"
-            detail: page.setup && page.setup.current ? "Next: " + page.setup.current.name + " on " + page.setup.current.screen : ""
-            action: "Start setup"
+            tone: "info"; icon: "▣"
+            title: missing + (missing === 1 ? " image in the setup guide isn't" : " images in the setup guide aren't") + " taken yet"
+            detail: "The bot runs without them and skips what needs them." + (page.setup && page.setup.current ? " Next: " + page.setup.current.name + " on " + page.setup.current.screen : "")
+            action: "Take them"
             onActed: studio.openCapture("guide")
         }
         Banner {
@@ -169,7 +169,7 @@ Flickable {
             tone: "danger"; icon: "!"
             title: page.lastFailure ? page.lastFailure.step + ": " + (page.lastFailure.reason || "failed") : ""
             detail: page.lastFailure ? "at " + Format.clock(page.lastFailure.time) + (page.failures.items.length > 1 ? " · " + page.failures.items.length + " problems today" : "") : ""
-            action: "See in Results"
+            action: "Why it stopped"
             onActed: window.go("results")
         }
 
