@@ -92,7 +92,10 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   saves). On a wide window a panel explains the setting under the mouse: what it does, its value, default, range and
   key.
 - **The run control** (top right): Play (F5); while running, its time with Pause and Stop.
-- **darbit settings** (Ctrl+,): the theme, the bot sidebar, and smooth effects (off for a slower PC). A `theme.toml` in
+- **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
+  the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
+- **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), and the keys: click
+  one and press the new keys (Esc leaves it, Delete turns it off, ↺ goes back). A key something else has is refused. A `theme.toml` in
   darbit's settings folder lays tokens over the theme (`base = "glass-dark"`, `accent = "#ff7ab6"`).
 
 Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray; the tray icon opens it again, and its menu quits. It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.

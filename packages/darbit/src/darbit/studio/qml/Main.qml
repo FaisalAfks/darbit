@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import "format.js" as Format
 
 ApplicationWindow {
     id: window
@@ -67,6 +68,7 @@ ApplicationWindow {
     }
 
     Toast { id: toast }
+    CommandPalette { id: palette; objectName: "commandPalette" }
     NewBotSheet { id: sheet }
     RecordSheet { id: recordSheet }
     CaptureWindow { objectName: "captureWindow" }
@@ -83,14 +85,16 @@ ApplicationWindow {
         else if (name === "settings") studio.loadSettings()
     }
 
-    Shortcut { sequence: "Ctrl+1"; onActivated: window.go("overview") }
-    Shortcut { sequence: "Ctrl+2"; onActivated: window.go("library") }
-    Shortcut { sequence: "Ctrl+3"; onActivated: window.go("results") }
-    Shortcut { sequence: "Ctrl+4"; onActivated: window.go("settings") }
-    Shortcut { sequence: "Ctrl+,"; onActivated: window.go("studio") }
-    Shortcut { sequence: "Ctrl+N"; onActivated: sheet.open() }
+    function keyOf(action) { return Format.sequence(studio.keys[action]) }
+    Shortcut { sequence: window.keyOf("page.overview"); onActivated: window.go("overview") }
+    Shortcut { sequence: window.keyOf("page.library"); onActivated: window.go("library") }
+    Shortcut { sequence: window.keyOf("page.results"); onActivated: window.go("results") }
+    Shortcut { sequence: window.keyOf("page.settings"); onActivated: window.go("settings") }
+    Shortcut { sequence: window.keyOf("page.darbit"); onActivated: window.go("studio") }
+    Shortcut { sequence: window.keyOf("bot.new"); onActivated: sheet.open() }
+    Shortcut { sequence: window.keyOf("palette.open"); onActivated: palette.open() }
     function newBot(way) { sheet.way = way || "new"; sheet.open() }
     function recordAction(name) { recordSheet.openFor(name || "") }
     function openAction(name) { studio.openAction(name); page = "action" }
-    Shortcut { sequence: "F5"; onActivated: window.running ? null : studio.start() }
+    Shortcut { sequence: window.keyOf("run.toggle"); onActivated: window.running ? null : studio.start() }
 }

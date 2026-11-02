@@ -39,6 +39,46 @@ def load(project: Path | None = None) -> Keymap:
     return keys
 
 
+def _scope_of(action: str) -> str:
+    for scope, actions in defaults().items():
+        if action in actions:
+            return scope
+    raise ValueError(f"no key called {action}")
+
+
+def _write_user(data: Keymap) -> None:
+    lines = []
+    for scope, actions in data.items():
+        if actions:
+            lines.append(f"[{scope}]")
+            lines.extend(f'"{action}" = "{keys}"' for action, keys in actions.items())
+            lines.append("")
+    path = user_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def _read_user() -> Keymap:
+    path = user_file()
+    if not path.is_file():
+        return {}
+    return tomllib.loads(path.read_text(encoding="utf-8"))
+
+
+def set_key(action: str, keys: str) -> None:
+    """Save the user's keys for an action ("" turns it off)."""
+    data = _read_user()
+    data.setdefault(_scope_of(action), {})[action] = keys
+    _write_user(data)
+
+
+def reset_key(action: str) -> None:
+    """Back to the default keys for an action."""
+    data = _read_user()
+    data.get(_scope_of(action), {}).pop(action, None)
+    _write_user(data)
+
+
 def combo(action: str, project: Path | None = None) -> str:
     """The keys an action has (`"record.toggle"` -> `"ctrl+alt+r"`), in whichever scope it's listed; "" when none."""
     for scope in load(project).values():

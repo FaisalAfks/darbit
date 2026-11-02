@@ -4,6 +4,8 @@
 
 ### New
 
+- The command palette (Ctrl+K) finds anything the Studio can do, and darbit settings changes the keys: only the ones the Studio really goes by, refusing one already taken, working at once. The Studio's shortcuts now come from the keymap (`keymap.set_key`, `studio/shortcuts.py`)
+
 - The Library's Screen view: each screen's last shot from Capture with the targets taken on it in place, in their kinds' colours; a click opens the side panel, and the search dims the others
 
 - The action editor's breakpoints and stepping: click the dot beside a step to stop there, Step through stops at the first line, and while stopped, Next line and Go on. The service's `bot.action.breakpoints`, `bot.action.step` and `bot.action.resume`

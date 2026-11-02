@@ -1233,3 +1233,48 @@ def test_the_library_shows_targets_where_they_sit_on_their_screen(qt):
     wait_until(lambda: page.property("chosen") == "Bag.Equip")
     assert not page.property("chosenIsAction")
     del engine
+
+
+def test_keys_change_in_darbit_settings_and_refuse_one_taken(qt):
+    from darbit import keymap
+
+    studio = backend.Studio(FakeClient)
+    assert studio.keys["palette.open"] == "ctrl+k"
+    told = []
+    studio.keysChanged.connect(lambda: told.append(studio.keys["palette.open"]))
+    studio.setKey("palette.open", "ctrl+j")
+    assert told == ["ctrl+j"] and keymap.combo("palette.open") == "ctrl+j"
+    studio.setKey("search", "ctrl+j")  # taken: refused, and it says by what
+    assert keymap.combo("search") == "ctrl+f" and "Command palette" in studio.message
+    studio.setKey("search", "")  # off
+    assert keymap.combo("search") == ""
+    studio.resetKey("palette.open")
+    studio.resetKey("search")
+    assert studio.keys["palette.open"] == "ctrl+k" and studio.keys["search"] == "ctrl+f"
+    row = next(row for row in studio.keyRows if row["action"] == "capture.freeze")
+    assert row["keys"] == row["default"] == "ctrl+alt+c"
+
+
+def test_the_command_palette_finds_and_runs_commands(qt):
+    from PySide6.QtCore import QObject
+
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1400, 880)
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    palette = window.findChild(QObject, "commandPalette")
+    QMetaObject.invokeMethod(palette, "open")
+    wait_until(lambda: palette.property("visible"))
+    search = window.findChild(QObject, "paletteSearch")
+    search.setProperty("text", "results")
+
+    def labels():
+        found = palette.property("shown")
+        found = found.toVariant() if hasattr(found, "toVariant") else found
+        return [one["label"] for one in found]
+
+    wait_until(lambda: labels() == ["Results"])
+    QMetaObject.invokeMethod(palette, "runAt", Q_ARG("QVariant", 0))
+    wait_until(lambda: window.property("page") == "results")
+    del engine

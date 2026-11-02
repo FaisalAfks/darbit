@@ -102,6 +102,13 @@ function stepText(step) {
     return step.source || step.kind
 }
 
+function sequence(keys) {
+    // "ctrl+alt+c" -> "Ctrl+Alt+C": how Qt and people write keys
+    return String(keys || "").split("+").map(function (part) {
+        return part.length === 1 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1)
+    }).join("+")
+}
+
 function setting(value) {
     // a setting's value in words: on/off, a list joined, nothing for none
     if (value === undefined || value === null) return ""

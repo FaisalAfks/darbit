@@ -132,7 +132,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Results: a summary sentence, gains and progress, a whole-day timeline, problems with Retake | Have, but Retake to do (#250) |
 | Library: every asset type, grid and Screen view, inspector, Test on screen, Retake, Rename, Delete | Have (Test on screen is Highlight on screen) |
 | Settings: sections, search, defaults, a save bar | Have |
-| Themes (glass dark, glass light, midnight, high contrast, custom), a remappable keymap, a command palette | Have, but the keymap editor and the palette to do (#253) |
+| Themes (glass dark, glass light, midnight, high contrast, custom), a remappable keymap, a command palette | Have |
 | A second launch brings the open Studio forward | Have |
 | See a run live and control it from a phone; notifications (Discord, ntfy, Telegram) and a daily summary | Planned |
 
@@ -306,7 +306,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 | 1. Core | done |
 | 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
 | 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
-| 4. Studio | mostly done (#248 and #253 left); idle on Windows 0.1% of a core, about 185 MB |
+| 4. Studio | mostly done (#248 left); idle on Windows 0.1% of a core, about 185 MB |
 | 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
 | 6. More systems | not started |
 

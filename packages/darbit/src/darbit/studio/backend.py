@@ -12,10 +12,10 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from .. import paths
+from .. import keymap, paths
 from ..server import ui_settings
 from ..service.client import Client, ServiceError
-from . import theme
+from . import shortcuts, theme
 
 CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
@@ -42,6 +42,7 @@ class Studio(QObject):
     themeChanged = Signal()
     clockChanged = Signal()
     usesChanged = Signal()
+    keysChanged = Signal()  # a key changed: app.py registers the global ones again
     lookChanged = Signal()
     started = Signal()  # the bot started from Play: app.py hides the Studio behind the run pill
     madeBot = Signal(str)  # a bot made, installed or added: its name
@@ -88,6 +89,9 @@ class Studio(QObject):
         self._effects = bool(ui_settings.get(EFFECTS, True))
         self._ghost = bool(ui_settings.get(GHOST, True))
         self._run_pill = bool(ui_settings.get(RUN_PILL, True))
+        # read once and when one changes: every shortcut in the window reads these
+        self._keys = shortcuts.now()
+        self._key_rows = shortcuts.rows()
         self._answered.connect(self._take)
         self._failed.connect(self._show_failure)
         self._happened.connect(self._on_event)
@@ -139,6 +143,17 @@ class Studio(QObject):
     def _get_now(self) -> float:
         return time.time()
 
+    def _get_keys(self) -> dict:
+        return self._keys
+
+    def _get_key_rows(self) -> list:
+        return self._key_rows
+
+    def _keys_changed(self) -> None:
+        self._keys = shortcuts.now()
+        self._key_rows = shortcuts.rows()
+        self.keysChanged.emit()
+
     def _get_uses(self) -> list:
         return self._uses
 
@@ -189,6 +204,8 @@ class Studio(QObject):
     glass = Property(bool, _get_glass, notify=themeChanged)
     now = Property(float, _get_now, notify=clockChanged)
     uses = Property(list, _get_uses, notify=usesChanged)
+    keys = Property(dict, _get_keys, notify=keysChanged)  # action -> keys ("ctrl+k"), for the Studio's shortcuts
+    keyRows = Property(list, _get_key_rows, notify=keysChanged)  # for darbit settings
     actions = Property(list, _get_actions, notify=actionsChanged)
     action = Property(dict, _get_action, notify=actionChanged)
     playing = Property(dict, _get_playing, notify=playingChanged)  # {action, line, status}
@@ -342,6 +359,26 @@ class Studio(QObject):
     @Slot(str)
     def addBot(self, path: str) -> None:
         self._everyone("made", "bots.add", path=_local_path(path))
+
+    @Slot(str, str)
+    def setKey(self, action: str, keys: str) -> None:
+        """Change an action's keys, unless something else already has them."""
+        taken = shortcuts.clash(action, keys)
+        if taken:
+            self._show_failure(f"{keys} is already {taken}: change that one first")
+            return
+        keymap.set_key(action, keys)
+        self._keys_changed()
+
+    @Slot(str)
+    def resetKey(self, action: str) -> None:
+        default = next(row["default"] for row in shortcuts.rows() if row["action"] == action)
+        taken = shortcuts.clash(action, default)
+        if taken:
+            self._show_failure(f"{default} is now {taken}: change that one first")
+            return
+        keymap.reset_key(action)
+        self._keys_changed()
 
     @Slot(bool)
     def setSidebar(self, on: bool) -> None:
