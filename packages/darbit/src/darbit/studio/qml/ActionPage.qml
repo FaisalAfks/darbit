@@ -11,6 +11,14 @@ Item {
     readonly property string name: action.name || ""
     readonly property bool changed: JSON.stringify(draft) !== JSON.stringify(action.sections || [])
     readonly property bool playingThis: studio.playing.action === name && name !== ""
+    readonly property bool pausedHere: playingThis && studio.playing.status === "paused"
+    readonly property var stops: studio.action.breakpoints || []
+    function toggleStop(line) {
+        var next = stops.slice(), at = next.indexOf(line)
+        if (at >= 0) next.splice(at, 1)
+        else next.push(line)
+        studio.setBreakpoints(name, next)
+    }
 
     Connections {
         target: studio
@@ -37,9 +45,13 @@ Item {
                 color: studio.colors.muted; font.pixelSize: 13
             }
         }
-        PillButton { icon: "●"; text: "Record again"; onClicked: window.recordAction(page.name) }
+        Chip { visible: page.pausedHere; tone: "warn"; text: "Stopped at line " + studio.playing.line }
+        PillButton { visible: page.pausedHere; icon: "⤵"; text: "Next line"; onClicked: studio.stepAction() }
+        PillButton { visible: page.pausedHere; kind: "primary"; icon: "▶"; text: "Go on"; onClicked: studio.resumeAction() }
+        PillButton { visible: !page.playingThis; icon: "●"; text: "Record again"; onClicked: window.recordAction(page.name) }
+        PillButton { visible: !page.playingThis; icon: "⤵"; text: "Step through"; onClicked: studio.stepThroughAction(page.name) }
         PillButton {
-            kind: page.playingThis ? "plain" : "primary"
+            kind: page.playingThis ? "quiet" : "primary"
             icon: page.playingThis ? "■" : "▶"; text: page.playingThis ? "Stop" : "Play"
             onClicked: page.playingThis ? studio.stopAction() : studio.playAction(page.name)
         }
@@ -90,6 +102,8 @@ Item {
                                 width: steps.width
                                 step: modelData
                                 followed: page.playingThis
+                                stops: page.stops
+                                onStopToggled: function (line) { page.toggleStop(line) }
                                 onChanged: function (copy) { page.edit(card.sectionIndex, function (section) { section.steps[index] = copy }) }
                                 onRemoved: page.edit(card.sectionIndex, function (section) { section.steps.splice(index, 1) })
                                 onMoved: function (by) {

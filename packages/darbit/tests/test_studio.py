@@ -14,6 +14,7 @@ from darbit.studio import theme
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtCore = pytest.importorskip("PySide6.QtCore", exc_type=ImportError)
 
+from PySide6.QtCore import Q_ARG, QMetaObject
 from PySide6.QtGui import QGuiApplication
 
 from darbit.studio import app, backend
@@ -296,6 +297,8 @@ class FakeClient:
             return {"status": "running"}
         if method == "bot.settings.save":
             return {"saved": True}
+        if method.startswith("bot.action.") and method not in ANSWERS:
+            return {"playing": True}
         return ANSWERS[method]
 
     def on_event(self, listener: object) -> None:
@@ -1155,3 +1158,39 @@ def test_a_theme_has_a_solid_panel_and_the_kinds_colours():
     colors = theme.colors("glass-dark")
     assert colors["solid"].startswith("#ff") and colors["solid"][3:] == colors["glassStrong"][3:]
     assert colors["kindRegion"] == colors["accent2"]
+
+
+def test_the_action_editor_sets_breakpoints_and_steps(qt):
+
+    client = FakeClient()
+    studio = backend.Studio(lambda: client)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "openAction", Q_ARG("QVariant", "dim_run"))
+    wait_until(lambda: studio.action.get("name") == "dim_run")
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    page = next(item for item in walk(window.contentItem()) if item.property("pausedHere") is not None)
+    QMetaObject.invokeMethod(page, "toggleStop", Q_ARG("QVariant", 9))
+    wait_until(
+        lambda: ("bot.action.breakpoints", {"bot": "/bots/ad-bot", "name": "dim_run", "lines": [9]}) in client.asked
+    )
+    assert studio.action["breakpoints"] == [9]
+    QMetaObject.invokeMethod(page, "toggleStop", Q_ARG("QVariant", 9))
+    assert studio.action["breakpoints"] == []
+    studio.stepThroughAction("dim_run")
+    wait_until(
+        lambda: ("bot.action.play", {"bot": "/bots/ad-bot", "name": "dim_run", "stepping": True}) in client.asked
+    )
+    studio._on_event("action.paused", {"action": "dim_run", "line": 6})
+    assert page.property("pausedHere")
+    studio.stepAction()
+    studio.resumeAction()
+    wait_until(lambda: ("bot.action.resume", {"bot": "/bots/ad-bot"}) in client.asked)
+    assert ("bot.action.step", {"bot": "/bots/ad-bot"}) in client.asked
+    del engine

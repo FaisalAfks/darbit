@@ -67,7 +67,8 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   moment to take it), or a wait. ⚑ (Ctrl+Alt+K) is a checkpoint: what came before becomes its own action. ≡ shows the
   steps; ✕ throws the recording away. Clicks on the pill aren't recorded.
 - **Actions** (the Library's Actions): each with its steps and what calls it; **Play**, **Open**, **Record again**,
-  **Rename** (every call changes too) and **Delete**.
+  **Rename** (every call changes too) and **Delete**. In an action's editor, click the dot beside a step to stop Play there; **Step through**
+  stops at the first line, and while it's stopped, **Next line** runs one line and **Go on** plays on.
 - **An action, open** (Open, or double-click its card): its sections as cards and its steps read like what they do:
   keys, waits, images to wait for, clicks, loops and ifs with their steps indented, the recording's span, calls to
   other actions. **Play** walks through them, the step playing glowing. A section's name, a wait's seconds (hover it)

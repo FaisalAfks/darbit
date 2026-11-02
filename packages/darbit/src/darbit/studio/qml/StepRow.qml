@@ -9,6 +9,9 @@ Column {
     id: row
     property var step: ({})
     property bool followed: false  // this action is the one playing: a step glows when Play is on its line
+    property var stops: []         // the action's breakpoints: lines Play stops at
+    readonly property bool stopsHere: step.line > 0 && stops.indexOf(step.line) >= 0
+    signal stopToggled(int line)
     readonly property bool playingHere: followed && step.line > 0 && studio.playing.line === step.line
     property int depth: 0
     signal changed(var step)
@@ -27,6 +30,18 @@ Column {
         RowLayout {
             anchors { fill: parent; leftMargin: 12 + row.depth * 22; rightMargin: 10 }
             spacing: 12
+            // a breakpoint: a click on the dot stops Play on this line
+            Rectangle {
+                Layout.preferredWidth: 12; Layout.preferredHeight: 12; radius: 6
+                visible: row.step.line > 0
+                color: row.stopsHere ? studio.colors.danger : "transparent"
+                border.color: row.stopsHere ? studio.colors.danger : hover.hovered ? studio.colors.faint : "transparent"
+                MouseArea {
+                    anchors.fill: parent; anchors.margins: -6
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: row.stopToggled(row.step.line)
+                }
+            }
             Text { text: Format.stepIcon(row.step); color: row.ink; font.pixelSize: 14; Layout.preferredWidth: 20; horizontalAlignment: Text.AlignHCenter }
             Text {
                 text: Format.stepText(row.step)
@@ -70,6 +85,8 @@ Column {
                 item.step = Qt.binding(function () { return inner.modelData })
                 item.depth = row.depth + 1
                 item.followed = Qt.binding(function () { return row.followed })
+                item.stops = Qt.binding(function () { return row.stops })
+                item.stopToggled.connect(function (line) { row.stopToggled(line) })
                 item.changed.connect(function (changed) {
                     var copy = JSON.parse(JSON.stringify(row.step)); copy.children[inner.index] = changed; row.changed(copy)
                 })

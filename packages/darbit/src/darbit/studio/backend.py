@@ -255,6 +255,27 @@ class Studio(QObject):
     def stopAction(self) -> None:
         self._ask("", "bot.action.stop")
 
+    @Slot(str)
+    def stepThroughAction(self, name: str) -> None:
+        """Play an action stopping at its first line, for Next line and Go on."""
+        self._ask("", "bot.action.play", name=name, stepping=True)
+
+    @Slot()
+    def resumeAction(self) -> None:
+        self._ask("", "bot.action.resume")
+
+    @Slot()
+    def stepAction(self) -> None:
+        self._ask("", "bot.action.step")
+
+    @Slot(str, "QVariantList")
+    def setBreakpoints(self, name: str, lines: list) -> None:
+        """Stop at these lines of the action (kept beside the bot, never in its file)."""
+        kept = sorted({int(line) for line in lines})
+        self._action = {**self._action, "breakpoints": kept}
+        self.actionChanged.emit()
+        self._ask("", "bot.action.breakpoints", name=name, lines=kept)
+
     @Slot(str, str)
     def renameAction(self, name: str, to: str) -> None:
         self._ask("actionsChanged", "bot.action.rename", name=name, to=to)
