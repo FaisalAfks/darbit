@@ -249,6 +249,7 @@ Window {
         Image {
             id: shot
             source: capture.source
+            cache: false  // gone when Capture closes: a whole screen stays in Qt's cache otherwise
             width: capture.shotWidth * shotWindow.scale; height: capture.shotHeight * shotWindow.scale
             smooth: true
         }
@@ -616,6 +617,7 @@ Window {
                 clip: true
                 Image {  // the shot itself, not smoothed: each of its pixels a square of its own colour
                     source: capture.source
+                    cache: false
                     smooth: false; mipmap: false
                     width: capture.shotWidth * magnifier.zoom; height: capture.shotHeight * magnifier.zoom
                     x: magnifier.px(0, 0); y: magnifier.px(0, 1)

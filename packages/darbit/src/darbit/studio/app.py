@@ -89,6 +89,7 @@ def load(
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
     window = engine.rootObjects()[0]
+    _release_when_hidden(window)
     where, maximized = place
     if where is not None:
         window.setGeometry(where)
@@ -97,6 +98,14 @@ def load(
     else:
         window.show()
     return engine
+
+
+def _release_when_hidden(root: QQuickWindow) -> None:
+    """Every window gives back its graphics memory while it's hidden: the Studio is hidden for as long as a bot runs,
+    and Capture and Highlight most of the time."""
+    for window in [root, *root.findChildren(QQuickWindow)]:
+        window.setPersistentGraphics(False)
+        window.setPersistentSceneGraph(False)
 
 
 def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client) -> int:
