@@ -1093,3 +1093,43 @@ def test_typing_a_known_name_after_boxing_brings_its_region_and_location_back(qt
     assert [round(part) for part in value("location")] == [75, 60]  # its centre, moved by its saved offset
     capture.close()
     del engine
+
+
+def test_an_image_is_searched_on_the_screen_in_a_shared_region_or_its_own_and_saving_closes(qt, tmp_path):
+    import json
+
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8))
+
+    def call(name, *values):
+        QMetaObject.invokeMethod(window, name, *[Q_ARG("QVariant", value) for value in values])
+
+    call("setPart", "image", [50, 50, 40, 20])
+    assert window.property("searchIn") == "screen"
+    call("setPart", "region", [10, 10, 300, 200])
+    assert window.property("searchIn") == "own"
+    call("shareRegion", "Bag.Menu")  # the drawn region becomes a shared one, and the image names it
+    assert window.property("searchIn") == "shared"
+    assert json.loads((tmp_path / "images" / "Bag.Menu.json").read_text(encoding="utf-8"))["kind"] == "region"
+    call("searchOn", "own")
+    assert window.property("searchIn") == "own"  # its own copy now
+    call("searchOn", "screen")
+    assert window.property("searchIn") == "screen"
+    call("searchOn", "shared")
+    window.findChild(QObject, "nameField").setProperty("text", "Bag.Equip")
+    call("useRegion", {"name": "Bag.Menu", "region": [10, 10, 300, 200], "used_by": []})
+    call("save")
+    saved = json.loads((tmp_path / "images" / "Bag.Equip.json").read_text(encoding="utf-8"))
+    assert saved["region"] == "Bag.Menu"
+    wait_until(lambda: not capture.isOpen)  # nothing left to take: it closes by itself
+    del engine
