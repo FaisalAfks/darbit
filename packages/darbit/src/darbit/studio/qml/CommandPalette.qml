@@ -35,7 +35,8 @@ MenuPanel {
             { group: "Tools", label: "Capture", icon: "▣", hint: key("capture.freeze"), run: function () { studio.openCapture("any") } },
             { group: "Tools", label: "Record an action", icon: "●", hint: "", run: function () { window.go("library"); window.recordAction("") } },
             { group: "Tools", label: "Highlight the last image", icon: "◎", hint: key("highlight.toggle"), run: function () { studio.toggleHighlight() } },
-            { group: "Bots", label: "New bot", icon: "+", hint: key("bot.new"), run: function () { window.newBot("new") } }
+            { group: "Bots", label: "New bot", icon: "+", hint: key("bot.new"), run: function () { window.newBot("new") } },
+            { group: "Bot", label: "Edit: open the bot's folder", icon: "✎", hint: "", run: function () { studio.editBot() } }
         ]
         if (studio.bot.path) {
             if (window.running) {

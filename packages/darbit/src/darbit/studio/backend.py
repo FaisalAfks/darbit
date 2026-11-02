@@ -5,14 +5,18 @@ signal, so the window never waits. The service's events (a bot started, its repo
 The Studio holds no state of its own about bots: closing it loses nothing.
 """
 
+import shutil
+import subprocess
 import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
+from PySide6.QtGui import QDesktopServices
 
 from .. import keymap, paths
+from ..platform import system
 from ..server import ui_settings
 from ..service.client import Client, ServiceError
 from . import shortcuts, theme
@@ -247,6 +251,18 @@ class Studio(QObject):
     @Slot()
     def stop(self) -> None:
         self._ask("status", "bot.stop")
+
+    @Slot()
+    def editBot(self) -> None:
+        """Open the shown bot's folder in VS Code when it's installed, else in the file explorer."""
+        folder = self._bot.get("path")
+        if not folder:
+            return
+        code = shutil.which("code")
+        if code:
+            subprocess.Popen([code, folder], creationflags=system.no_window())
+        else:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(folder))
 
     @Slot(str)
     def openCapture(self, mode: str) -> None:

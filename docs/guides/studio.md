@@ -91,7 +91,8 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   sections with changes. A changed value gets a dot, ↺ puts it back to its default, and a save bar slides up (Ctrl+S
   saves). On a wide window a panel explains the setting under the mouse: what it does, its value, default, range and
   key.
-- **The run control** (top right): Play (F5); while running, its time with Pause and Stop.
+- **The run control** (top right): ✎ opens the bot's folder (in VS Code if it's installed), Play (F5); while running,
+  its time with Pause and Stop.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
   the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), and the keys: click
