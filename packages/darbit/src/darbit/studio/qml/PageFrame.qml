@@ -1,19 +1,23 @@
-// One page in the stack: it fades and slides a little into place each time it's shown. Only opacity and a move are
-// animated, so changing pages costs no layout work.
+// One page in the stack, made the first time it's shown and kept from then on: a page never visited costs no memory.
+// It fades and slides a little into place each time it's shown. Only opacity and a move are animated, so changing
+// pages costs no layout work.
 import QtQuick
 import QtQuick.Layouts
 
 Item {
     id: frame
-    default property alias page: holder.data
+    property url source
     readonly property bool shown: StackLayout.isCurrentItem
-    onShownChanged: if (shown) enter.restart()
+    property bool visited: false
+    onShownChanged: if (shown) { visited = true; enter.restart() }
+    Component.onCompleted: if (shown) visited = true
 
     Item {
         id: holder
         width: frame.width; height: frame.height
         opacity: 1
         transform: Translate { id: shift; x: 0 }
+        Loader { anchors.fill: parent; active: frame.visited; source: frame.source }
     }
     ParallelAnimation {
         id: enter

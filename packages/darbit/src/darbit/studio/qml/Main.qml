@@ -57,12 +57,12 @@ ApplicationWindow {
                 id: stack
                 anchors { left: parent.left; right: parent.right; top: top.bottom; bottom: parent.bottom; topMargin: 16 }
                 currentIndex: window.pages.indexOf(window.page)
-                PageFrame { OverviewPage { anchors.fill: parent } }
-                PageFrame { LibraryPage { objectName: "libraryPage"; anchors.fill: parent } }
-                PageFrame { ResultsPage { anchors.fill: parent } }
-                PageFrame { SettingsPage { anchors.fill: parent } }
-                PageFrame { StudioPage { anchors.fill: parent } }
-                PageFrame { ActionPage { anchors.fill: parent } }
+                PageFrame { source: "OverviewPage.qml" }
+                PageFrame { source: "LibraryPage.qml" }
+                PageFrame { source: "ResultsPage.qml" }
+                PageFrame { source: "SettingsPage.qml" }
+                PageFrame { source: "StudioPage.qml" }
+                PageFrame { source: "ActionPage.qml" }
             }
         }
     }
