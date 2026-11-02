@@ -479,7 +479,7 @@ def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     assert capture.save("Lobby.Play", "image", box, None, None).get("error") is None
     assert (tmp_path / "images" / "Lobby.Play.png").is_file()
     assert capture.save("Lobby.Spot", "point", None, None, [10, 20]).get("error") is None
-    assert capture.save("", "image", box, None, None)["error"] == "give it a name"
+    assert capture.save("", "image", box, None, None)["error"] == "Give it a name first, in the pill"
     capture.close()
     assert not capture.isOpen
 

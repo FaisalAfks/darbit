@@ -201,14 +201,14 @@ Window {
         if (!kind) { say("Make an image, a region or a location first", true); return }
         var result = capture.save(name, kind, image, region, location, image && region ? regionName : "")
         if (result.error) { say(result.error, true); return }
-        var told = result.message || ("Saved " + name), bad = !!result.risky
+        var told = result.said || ("Saved " + name), bad = !!result.risky
         savedPulse.show(image || region || (location ? [location[0] - 10, location[1] - 10, 20, 20] : null))
         reset()
         nameField.text = current ? current.name : ""
         takeSaved(nameField.text)
         say(told, bad)
-        // nothing left to take (a retake, or one target): Capture closes once the save has shown
-        if (capture.items.length === 0) closing.restart()
+        // nothing left to take (a retake, or one target): Capture closes once the save has shown, and the Studio says it
+        if (capture.items.length === 0) { studio.say(told); closing.restart() }
     }
     Timer { id: closing; interval: studio.effects ? 520 : 0; onTriggered: capture.close() }
 

@@ -4,6 +4,8 @@
 
 ### New
 
+- Errors say what happened and what to do: Capture's saves and mistakes in plain words (a look-alike names the fix), the toast shows a whole reason and stays long enough to read, the Library explains Missing and Weak in its side panel, and the Overview's problem banner uses the Results page's explanation
+
 - Capture asks where an image is searched: the whole screen, a shared region (pick one, or share the region just drawn under a name), or a region of its own. Capture closes after a save when nothing is left to take
 
 - Capture's motion: a shutter's flash when the screen freezes, boxes that glide to the next bigger or smaller one, a region's outline in dashes that march while it's picked, faint guide lines through the mouse across the screen, and a green pulse on what was just saved. A retake opens named and on its kind (a test keeps it so)

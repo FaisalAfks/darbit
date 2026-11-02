@@ -11,7 +11,7 @@ Rectangle {
     property string action: ""
     signal acted()
     readonly property color ink: tone === "danger" ? studio.colors.danger : tone === "info" ? studio.colors.info : studio.colors.warn
-    implicitHeight: 72
+    implicitHeight: Math.max(72, words.implicitHeight + 24)
     radius: 16
     color: Qt.rgba(ink.r, ink.g, ink.b, 0.09)
     border.color: Qt.rgba(ink.r, ink.g, ink.b, 0.38)
@@ -24,9 +24,10 @@ Rectangle {
             Text { anchors.centerIn: parent; text: banner.icon; color: banner.ink; font.pixelSize: 15; font.family: studio.symbols; font.weight: Font.Bold }
         }
         Column {
+            id: words
             Layout.fillWidth: true
             Text { width: parent.width; text: banner.title; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold; elide: Text.ElideRight }
-            Text { width: parent.width; text: banner.detail; visible: text !== ""; color: studio.colors.muted; font.pixelSize: 13; elide: Text.ElideRight }
+            Text { width: parent.width; text: banner.detail; visible: text !== ""; color: studio.colors.muted; font.pixelSize: 13; wrapMode: Text.Wrap }
         }
         PillButton { visible: banner.action !== ""; text: banner.action; kind: "primary"; small: true; onClicked: banner.acted() }
     }
