@@ -14,6 +14,8 @@ Item {
     property string group: "none"   // none, name, kind
     property string query: ""
     property string chosen: ""
+    property bool showScreens: false   // the Screen view: targets where they sit on their screen, in place of the cards
+    onShowScreensChanged: if (showScreens) studio.loadScreens()
     // one copy per change: each read of studio.library from here copies the whole list, thumbnails and all
     readonly property var library: studio.library
     readonly property var actions: studio.actions
@@ -157,14 +159,29 @@ Item {
                 }
             }
         }
+        Segmented {
+            strong: false; itemHeight: 30
+            current: page.showScreens ? "screen" : "grid"
+            model: [{ key: "grid", label: "Grid" }, { key: "screen", label: "Screen" }]
+            onPicked: function (key) { page.showScreens = key === "screen" }
+        }
         // on a narrow window the tools on the right show only their icons
         PillButton { icon: "●"; text: window.narrow ? "" : "Record"; onClicked: window.recordAction("") }
         PillButton { kind: "primary"; icon: "▣"; text: window.narrow ? "" : "Capture"; onClicked: studio.openCapture("any") }
     }
 
     // ---- the cards
+    ScreenView {
+        visible: page.showScreens
+        anchors { left: parent.left; leftMargin: 24; top: tools.bottom; topMargin: 18; bottom: parent.bottom; bottomMargin: 24
+                  right: parent.right; rightMargin: inspector.open ? page.roomForInspector + 24 : 24 }
+        query: page.query
+        chosenName: page.chosenIsAction ? "" : page.chosen
+        onPicked: function (name, kind) { page.choose({ name: name, kind: kind }) }
+    }
     ListView {
         id: grid
+        visible: !page.showScreens
         SmoothWheel { view: grid }
         anchors { left: parent.left; leftMargin: 24; top: tools.bottom; topMargin: 18; bottom: parent.bottom
                   right: parent.right; rightMargin: inspector.open ? page.roomForInspector + 24 : 24 }

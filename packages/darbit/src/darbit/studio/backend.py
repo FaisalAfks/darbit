@@ -33,6 +33,7 @@ class Studio(QObject):
     botChanged = Signal()
     overviewChanged = Signal()
     libraryChanged = Signal()
+    screensChanged = Signal()
     daysChanged = Signal()
     dayChanged = Signal()
     settingsChanged = Signal()
@@ -65,6 +66,9 @@ class Studio(QObject):
         self._bot: dict = {}
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
         self._library: list[dict] = []
+        self._screens: list[
+            dict
+        ] = []  # each screen's last shot with its targets in place, for the Library's Screen view
         self._library_bot = ""  # the bot the library was loaded for: until it's this one, the page says it's loading
         self._days: list[dict] = []
         self._day: dict = {}
@@ -101,6 +105,9 @@ class Studio(QObject):
 
     def _get_library(self) -> list:
         return self._library
+
+    def _get_screens(self) -> list:
+        return self._screens
 
     def _get_library_ready(self) -> bool:
         return bool(self._bot.get("path")) and self._library_bot == self._bot.get("path")
@@ -170,6 +177,7 @@ class Studio(QObject):
         dict, _get_overview, notify=overviewChanged
     )  # {catalog, layout, botLayout, custom, data, problem}
     library = Property(list, _get_library, notify=libraryChanged)
+    screens = Property(list, _get_screens, notify=screensChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
     days = Property(list, _get_days, notify=daysChanged)
     day = Property(dict, _get_day, notify=dayChanged)
@@ -206,6 +214,8 @@ class Studio(QObject):
                 ui_settings.set_value(CHOSEN, path)
                 self.botChanged.emit()
                 self.libraryChanged.emit()  # another bot's library isn't this one's
+                if self._screens:  # nor its screens
+                    self.loadScreens()
                 self.loadOverview()
                 return
 
@@ -385,6 +395,10 @@ class Studio(QObject):
         self._ask("library", "bot.library")
 
     @Slot()
+    def loadScreens(self) -> None:
+        self._ask("screens", "bot.library.screens")
+
+    @Slot()
     def loadDays(self) -> None:
         self._ask("days", "bot.days")
 
@@ -477,6 +491,9 @@ class Studio(QObject):
             self._library = result
             self._library_bot = str(self._bot.get("path", ""))
             self.libraryChanged.emit()
+        elif what == "screens" and isinstance(result, list):
+            self._screens = result
+            self.screensChanged.emit()
         elif what == "days" and isinstance(result, list):
             self._days = result
             self.daysChanged.emit()

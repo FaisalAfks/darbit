@@ -159,6 +159,8 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
         if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead
             _bring_forward(window)
             studio.loadLibrary()
+            if studio.screens:  # the Screen view has been opened: a new shot may be there
+                studio.loadScreens()
 
     studio.captureWanted.connect(wanted)
     capture.openChanged.connect(closed)
