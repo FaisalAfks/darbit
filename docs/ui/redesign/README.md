@@ -161,6 +161,15 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
 - **Test** searches the picture's own area and says whether it's found once, more or not at all.
 - Not chosen: B (three steps in order) and C (a tool rail and a card of numbers).
 
+### Round 12: Settings (round-12-settings.html)
+
+- **A with B's help panel.** One row per setting (name and help on the left, the control on the right) in section
+  cards that flow into two columns on a wide window; the section list with search, counts and change dots. On a wide
+  window, B's panel explains the setting under the mouse: what it does, now, default, range and key.
+- Controls made for each type, shared by the whole Studio: `Switcher`, `Stepper`, `ValueSlider`, `Dropdown`.
+- A changed value gets a dot; ↺ puts a setting back to its default; the save bar is the shared `FloatingPill`.
+- Not chosen: B alone (tabs and slim rows) and C (tiles).
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.

@@ -906,3 +906,30 @@ def test_a_studio_given_its_own_connection_never_starts_a_service(qt, monkeypatc
     studio = backend.Studio(FakeClient)
     studio.connect()
     wait_until(lambda: studio.bot.get("name") == "ad-bot")
+
+
+def test_settings_search_and_flow_into_columns(qt):
+    from PySide6.QtCore import Q_ARG, QMetaObject
+    from PySide6.QtQuick import QQuickItem
+
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1720, 1000)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "settings"))
+    wait_until(lambda: studio.settings)
+    page = next(item for item in window.findChildren(QQuickItem) if item.property("withHelp") is not None)
+    wait_until(lambda: page.property("twoColumns"))
+    assert page.property("withHelp")  # wide enough for the help panel too
+
+    def shown():
+        found = page.property("shown")
+        return found.toVariant() if hasattr(found, "toVariant") else found
+
+    page.setProperty("query", "server")
+    wait_until(lambda: [setting["key"] for one in shown() for setting in one["settings"]] == ["modes.server"])
+    page.setProperty("query", "nothing like this")
+    wait_until(lambda: shown() == [])
+    del engine
