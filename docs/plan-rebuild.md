@@ -102,7 +102,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Timed actions (`@d.flow(timed=True)`) keeping to the recorded schedule | Have |
 | Start a recording on a picture (the dimension's start screen), so playback lines up with the game | Planned, with the scheduled Dim macro |
 | Recording onto the screen map: a recording becomes a move between screens, with checks | Planned |
-| The flow editor: sections, steps, calls, Play with breakpoints and stepping | Have, but breakpoints and stepping to do in the Qt Studio (#255) |
+| The flow editor: sections, steps, calls, Play with breakpoints and stepping | Have |
 | Custom steps with `@d.action`, shown in the editor's palette | Planned |
 | Flows with variables, if and loops; flows calling flows with inputs | Partly have |
 | Grid harvest: scroll a grid menu and save every cell as a picture | Planned |
@@ -306,7 +306,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 | 1. Core | done |
 | 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
 | 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
-| 4. Studio | mostly done (#248, #251, #253 and #255 left); idle on Windows 0.1% of a core, about 185 MB |
+| 4. Studio | mostly done (#248, #251 and #253 left); idle on Windows 0.1% of a core, about 185 MB |
 | 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
 | 6. More systems | not started |
 

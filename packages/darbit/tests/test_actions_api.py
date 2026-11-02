@@ -96,6 +96,20 @@ def wait_for(seen, topic, timeout=5.0):
     raise AssertionError(f"no {topic} in {seen}")
 
 
+def test_step_through_stops_at_the_first_line(project):
+    seen = []
+    stop_listening = events.listen(
+        lambda topic, data: seen.append((topic, data)) if topic.startswith("action.") else None
+    )
+    try:
+        actions_api.play(project, "count", stepping=True)
+        assert wait_for(seen, "action.paused")[1]["action"] == "count"
+        actions_api.control("resume")
+        assert wait_for(seen, "action.ended")[1]["status"] == "done"
+    finally:
+        stop_listening()
+
+
 def test_play_follows_lines_and_stops_at_breakpoints(project):
     seen = []
     lock = threading.Lock()

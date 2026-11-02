@@ -58,7 +58,7 @@ def _actions(params: dict) -> object:
 
 
 def _action_play(params: dict) -> object:
-    return actions_api.play(Path(params["path"]), str(params.get("name", "")))
+    return actions_api.play(Path(params["path"]), str(params.get("name", "")), bool(params.get("stepping", False)))
 
 
 def _action_read(params: dict) -> object:
@@ -76,6 +76,19 @@ def _action_save(params: dict) -> object:
 
 def _action_stop(params: dict) -> object:
     return actions_api.control("stop")
+
+
+def _action_resume(params: dict) -> object:
+    return actions_api.control("resume")
+
+
+def _action_step(params: dict) -> object:
+    return actions_api.control("step")
+
+
+def _action_breakpoints(params: dict) -> object:
+    lines = [int(line) for line in params.get("lines", [])]
+    return actions_api.set_breakpoints(Path(params["path"]), str(params.get("name", "")), lines)
 
 
 def _action_rename(params: dict) -> object:
@@ -112,8 +125,11 @@ METHODS: dict[str, Method] = {
     "bot.actions": Method(_actions, "the bot's actions: steps, sections and which actions use each"),
     "bot.action.read": Method(_action_read, "an action's sections and steps, each with its line (`name`)"),
     "bot.action.save": Method(_action_save, "write an action from its `sections` (`name`); its lines come back new"),
-    "bot.action.play": Method(_action_play, "play an action (`name`) in the service"),
+    "bot.action.play": Method(_action_play, "play an action (`name`) in the service; `stepping` stops at each line"),
     "bot.action.stop": Method(_action_stop, "stop the action playing"),
+    "bot.action.resume": Method(_action_resume, "go on from a breakpoint or a step"),
+    "bot.action.step": Method(_action_step, "run one line of the action playing, then stop again"),
+    "bot.action.breakpoints": Method(_action_breakpoints, "set an action's breakpoints (`name`, `lines`)"),
     "bot.action.rename": Method(_action_rename, "rename an action (`name`, `to`) and every call to it"),
     "bot.action.delete": Method(_action_delete, "delete an action (`name`) and its tape"),
     "bot.days": Method(hub.results_days, "the days the bot has run, newest first"),
