@@ -289,5 +289,5 @@ Item {
         }
     }
     Shortcut { sequence: "Esc"; enabled: page.chosen !== "" && page.visible; onActivated: page.chosen = "" }
-    Shortcut { sequence: "Ctrl+F"; enabled: page.visible; onActivated: search.forceActiveFocus() }
+    Shortcut { sequence: window.keyOf("search"); enabled: page.visible; onActivated: search.forceActiveFocus() }
 }

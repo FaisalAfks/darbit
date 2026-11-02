@@ -247,6 +247,6 @@ Item {
         text: "Restore defaults"; kind: "quiet"; small: true
         onClicked: page.restoreDefaults()
     }
-    Shortcut { sequence: "Ctrl+S"; enabled: page.visible && page.changed; onActivated: page.save() }
-    Shortcut { sequence: "Ctrl+F"; enabled: page.visible && page.sections.length > 0; onActivated: search.forceActiveFocus() }
+    Shortcut { sequence: window.keyOf("file.save"); enabled: page.visible && page.changed; onActivated: page.save() }
+    Shortcut { sequence: window.keyOf("search"); enabled: page.visible && page.sections.length > 0; onActivated: search.forceActiveFocus() }
 }

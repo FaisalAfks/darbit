@@ -89,6 +89,27 @@ Flickable {
             }
         }
 
+        Glass {
+            title: "Keys"
+            note: "click one, then press the new keys"
+            delay: 120
+            Layout.fillWidth: true; Layout.preferredHeight: keyRows.implicitHeight + 66
+            content: Column {
+                id: keyRows
+                width: parent.width; spacing: 2
+                Repeater {
+                    model: studio.keyRows
+                    delegate: KeyRow {
+                        required property var modelData
+                        width: keyRows.width
+                        key: modelData
+                        onChosen: function (keys) { studio.setKey(modelData.action, keys) }
+                        onReset: studio.resetKey(modelData.action)
+                    }
+                }
+            }
+        }
+
         Text {
             Layout.leftMargin: 4
             text: "darbit " + studio.version + " · the service runs your bots: closing the Studio stops nothing"

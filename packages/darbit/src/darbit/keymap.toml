@@ -55,6 +55,12 @@
 "run.toggle"       = "f5"                 # run the open bot, or stop it
 "search"           = "ctrl+f"
 "section.next"     = "ctrl+tab"           # cycle Overview, Library, Runs, Settings
+"page.overview"    = "ctrl+1"
+"page.library"     = "ctrl+2"
+"page.results"     = "ctrl+3"
+"page.settings"    = "ctrl+4"
+"page.darbit"      = "ctrl+,"             # darbit settings
+"bot.new"          = "ctrl+n"
 
 [mouse]                                   # gestures on the frozen screen (documented here, remappable)
 "select"           = "click"              # box what's under the mouse (click again: the next bigger thing)

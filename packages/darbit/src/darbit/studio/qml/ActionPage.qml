@@ -138,7 +138,7 @@ Item {
             PillButton { text: "Save"; kind: "primary"; small: true; onClicked: studio.saveAction(page.name, page.draft) }
         }
     }
-    Shortcut { sequence: "Ctrl+S"; enabled: page.visible && page.changed; onActivated: studio.saveAction(page.name, page.draft) }
+    Shortcut { sequence: window.keyOf("file.save"); enabled: page.visible && page.changed; onActivated: studio.saveAction(page.name, page.draft) }
 
     function countSteps() {
         var total = 0

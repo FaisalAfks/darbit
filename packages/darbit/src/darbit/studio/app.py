@@ -121,9 +121,11 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     _connect_highlight(studio, highlight, window)
-    keys = _global_keys(
+    keys = _GlobalKeys(
         {"highlight.toggle": studio.toggleHighlight, "capture.freeze": lambda: _capture_now(studio, capture)}
     )
+    keys.register()
+    studio.keysChanged.connect(keys.register)  # a key changed in darbit settings works at once
     _connect_capture(studio, capture, recorder, window)
     _connect_recorder(studio, capture, recorder, window)
     _connect_run_pill(studio, run_pill, window)
@@ -142,8 +144,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     run_pill.close()
     recorder_hiding.close()
     recorder.close()
-    if keys is not None:
-        keys[0].stop()
+    keys.stop()
     tray.hide()
     return code
 
@@ -290,33 +291,45 @@ class _Key(QObject):
     pressed = Signal()
 
 
-def _global_keys(slots: dict[str, Callable[[], None]]) -> tuple[object, list[_Key]] | None:
-    """Call each action's function when its global key (from the user's keymap) is pressed; None without any."""
-    from .. import keymap
-    from ..platform import hotkeys
-    from ..platform.backend import NotSupported
+class _GlobalKeys:
+    """Calls each action's function when its global key (from the user's keymap) is pressed."""
 
-    combos = {}
-    handlers = {}
-    kept = []
-    for action, slot in slots.items():
-        combo = keymap.combo(action)
-        if not combo:
-            continue
-        key = _Key()
-        key.pressed.connect(
-            slot, Qt.ConnectionType.QueuedConnection
-        )  # pressed on the hotkeys' thread, run on the window's
-        combos[action] = combo
-        handlers[action] = key.pressed.emit
-        kept.append(key)
-    if not combos:
-        return None
-    try:
-        registered = hotkeys.register(combos, handlers)
-    except NotSupported:
-        return None
-    return registered, kept
+    def __init__(self, slots: dict[str, Callable[[], None]]) -> None:
+        self.slots = slots
+        self.registered: object | None = None
+        self.kept: list[_Key] = []
+
+    def register(self) -> None:
+        """Register the keys as they are now, in place of any from before."""
+        from .. import keymap
+        from ..platform import hotkeys
+        from ..platform.backend import NotSupported
+
+        self.stop()
+        combos = {}
+        handlers = {}
+        for action, slot in self.slots.items():
+            combo = keymap.combo(action)
+            if not combo:
+                continue
+            key = _Key()
+            # pressed on the hotkeys' thread, run on the window's
+            key.pressed.connect(slot, Qt.ConnectionType.QueuedConnection)
+            combos[action] = combo
+            handlers[action] = key.pressed.emit
+            self.kept.append(key)
+        if not combos:
+            return
+        try:
+            self.registered = hotkeys.register(combos, handlers)
+        except NotSupported:
+            self.registered = None
+
+    def stop(self) -> None:
+        if self.registered is not None:
+            self.registered.stop()
+        self.registered = None
+        self.kept = []
 
 
 PAGES = [("overview", "Overview"), ("library", "Library"), ("results", "Results"), ("settings", "Settings")]
