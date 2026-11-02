@@ -111,6 +111,8 @@ Window {
     // a retake: the target's saved region and location come back, and its image is there to compare with
     function takeSaved(name) {
         saved = name ? capture.existing(name) : ({})
+        // an image boxed before its name was typed: its saved location goes on from the new image's centre
+        if (image && !location && saved.offset) location = [image[0] + image[2] / 2 + saved.offset[0], image[1] + image[3] / 2 + saved.offset[1]]
         if (saved.region && !region) { linking = true; region = saved.region; regionName = saved.region_name || ""; linking = false }
         if (saved.location && !location) location = saved.location
     }
@@ -679,7 +681,8 @@ Window {
                     font.pixelSize: 14; font.weight: Font.DemiBold
                     onAccepted: shotWindow.save()
                     onTextEdited: shotWindow.showPill()
-                    onEditingFinished: if (!shotWindow.image && !shotWindow.region && !shotWindow.location) shotWindow.takeSaved(text.trim())
+                    // the name of a target there already: its region and location come back (only where none is made yet)
+                    onEditingFinished: shotWindow.takeSaved(text.trim())
                     Keys.onEscapePressed: capture.close()
                     background: Rectangle { radius: 20; color: studio.colors.raised; border.color: nameField.activeFocus ? studio.colors.accent : "transparent" }
                 }

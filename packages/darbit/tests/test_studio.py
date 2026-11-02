@@ -1060,3 +1060,36 @@ def test_the_bot_started_anywhere_hides_the_studio_but_one_already_running_doesn
     other.connect()
     wait_until(lambda: other.bot.get("status") == "running")
     assert other_window.shown and not other_pill.isOpen  # opening the Studio on a running bot shows it
+
+
+def test_typing_a_known_name_after_boxing_brings_its_region_and_location_back(qt, tmp_path):
+    import json
+
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    (tmp_path / "images").mkdir()
+    (tmp_path / "images" / "Bag.Menu.json").write_text(json.dumps({"kind": "region", "region": [10, 10, 300, 200]}))
+    (tmp_path / "images" / "Bag.Equip.json").write_text(
+        json.dumps({"kind": "image", "region": "Bag.Menu", "offset": [5, 0]})
+    )
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8))
+    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "image"), Q_ARG("QVariant", [50, 50, 40, 20]))
+    QMetaObject.invokeMethod(window, "takeSaved", Q_ARG("QVariant", "Bag.Equip"))  # the name, typed afterwards
+
+    def value(name):
+        found = window.property(name)
+        return found.toVariant() if hasattr(found, "toVariant") else found
+
+    assert value("region") == [10, 10, 300, 200] and window.property("regionName") == "Bag.Menu"
+    assert [round(part) for part in value("location")] == [75, 60]  # its centre, moved by its saved offset
+    capture.close()
+    del engine

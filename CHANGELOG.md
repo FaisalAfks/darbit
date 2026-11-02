@@ -14,8 +14,6 @@
 
 - Images can share a region: an image's `region` can name a region target (`"region": "Bag.List"`), and moving that region moves every image searched in it. Capture's **Saved ▾** (with Region picked) lists the bot's regions, shared ones first, then other images' own to copy; pointing at one shows it on the screen (`capture.service.regions`, `core.targets.shared_region`)
 
-- The Library tags each target: its kind, and for an image the region and location it names. The Regions and Locations tabs list the images with their own region or location too, and each card shows its tags in the kinds' colours (`library.tags_of`)
-
 - A bot's day can start at another time than midnight: `[settings] day_starts = "03:00"`, or `"00:00 UTC"` for a game that resets at midnight UTC. The run report and log files, history, the Studio's Overview and Results, and the daily summary go by it (`darbit.days`); the Results timeline runs on past midnight
 
 - One set of names everywhere: **image**, **region** and **location** (the Studio said picture, area and point). Each target's settings file names its `kind`; the Library sorts by it (`core.targets.kind_of` works it out for files from before), and `darbit kinds BOT` writes it in. An image's inspector says its region and location, the defaults too: the whole screen and its centre
@@ -89,6 +87,8 @@
 
 ### Fixed
 
+- The Library tagged images with their region and location, so the Regions tab was full of images; a region is a place of its own that images name, and only regions show there now
+- A retake that boxed the image before its name was typed lost the target's region and location; typing a known name brings them back where none is made yet
 - The Studio stepped aside behind the run pill only on its own Play; the shown bot starting anywhere (the tray, the command line, the service, a schedule) does it too, and opening the Studio on a bot already running doesn't
 - A Studio loaded with a connection of its own (a test's, or a script drawing a page) started a real darbit service in the background, and left it running; only the Studio's real connection starts the service now
 - Target settings files written on Windows had Windows line endings; they're written with LF, like the repos keep them

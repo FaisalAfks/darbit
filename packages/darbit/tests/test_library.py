@@ -150,8 +150,8 @@ def test_a_target_names_its_kind_and_old_files_get_it_written(project):
     assert library.write_kinds(project) == []  # named now
 
 
-def test_an_image_with_its_own_region_or_location_is_tagged_for_those_tabs():
-    assert library.tags_of("image", {}) == ["image"]  # the whole screen, its centre
-    assert library.tags_of("image", {"region": [0, 0, 9, 9], "offset": [4, 0]}) == ["image", "region", "location"]
-    assert library.tags_of("image", {"offset": [0, 0]}) == ["image"]
+def test_an_image_is_tagged_only_as_an_image():
+    # a region is a place of its own that images name; an image's location is its click point
+    assert library.tags_of("image", {"region": "Bag.Menu", "offset": [4, 0]}) == ["image"]
+    assert library.tags_of("region", {"region": [0, 0, 9, 9]}) == ["region"]
     assert library.tags_of("location", {"location": [1, 2]}) == ["location"]
