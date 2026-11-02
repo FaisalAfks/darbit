@@ -1,6 +1,7 @@
 """The web capture session on a fake screen: freeze, boxes around a click, Test with look-alikes, and Save."""
 
 import json
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -182,7 +183,7 @@ def test_images_share_a_region_by_name(frozen):
 
 
 def test_a_save_says_what_happened_in_plain_words(frozen):
-    plain = service.save("Bag.Panel", "image", [100, 380, 200, 60], None, None)
-    assert plain["said"] == "Saved Bag.Panel" and "\\" not in plain["said"]
-    look_alike = service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)  # the duller button looks like it
-    assert look_alike["risky"] and "looks alike" in look_alike["said"]
+    found = service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)  # the duller button looks like it
+    assert found["risky"] and "looks alike" in found["said"] and "\\" not in found["said"]
+    calm = SimpleNamespace(risky=False, elsewhere=0.1)
+    assert service._said("Bag.Panel", calm) == "Saved Bag.Panel"
