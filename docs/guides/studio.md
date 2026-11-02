@@ -22,7 +22,7 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   wider or narrower, take one off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to
   the bot's.
 - **Library** (Ctrl+2): the bot's actions first, then every image, region and location, with an image's last score
-  against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; an image with its own region or location is tagged and listed under those too), Missing or
+  against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; a region is a place of its own, which images name), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
   numbers and last scores (an image also says its region and location, the defaults included: the whole screen and
   its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Highlight on screen**

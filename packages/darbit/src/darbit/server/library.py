@@ -398,15 +398,9 @@ def screens(project: Project) -> list[dict]:
 
 
 def tags_of(kind: str, settings: dict) -> list[str]:
-    """The Library tabs a target shows under: its kind, and for an image the region and location it names (an image
-    without them is searched on the whole screen and clicked at its centre, so it's only an image)."""
-    tags = [kind]
-    if kind == "image" and settings.get("region"):
-        tags.append("region")
-    offset = settings.get("offset")
-    if kind == "image" and offset and (offset[0] or offset[1]):
-        tags.append("location")
-    return tags
+    """The Library tabs a target shows under: its kind. A region is a place of its own that images name, and an
+    image's location is its click point, so neither makes an image a region or a location."""
+    return [kind]
 
 
 def write_kinds(project: Project) -> list[str]:
