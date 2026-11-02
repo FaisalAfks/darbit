@@ -283,6 +283,20 @@ def _overview_answer() -> dict:
 
 
 ANSWERS["bot.overview"] = _overview_answer()
+ANSWERS["bot.library.uses"] = []
+ANSWERS["bot.library.screens"] = [
+    {
+        "screen": "Bag",
+        "picture": "",
+        "w": 1600,
+        "h": 900,
+        "assets": {
+            "Bag.Equip": {"kind": "image", "box": [100, 100, 200, 60]},
+            "Bag.Menu": {"kind": "region", "box": [50, 50, 900, 700]},
+            "Bag.Spot": {"kind": "location", "box": [500, 500, 12, 12]},
+        },
+    }
+]
 
 
 class FakeClient:
@@ -1193,4 +1207,29 @@ def test_the_action_editor_sets_breakpoints_and_steps(qt):
     studio.resumeAction()
     wait_until(lambda: ("bot.action.resume", {"bot": "/bots/ad-bot"}) in client.asked)
     assert ("bot.action.step", {"bot": "/bots/ad-bot"}) in client.asked
+    del engine
+
+
+def test_the_library_shows_targets_where_they_sit_on_their_screen(qt):
+
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1400, 880)
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "library"))
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    page = next(item for item in walk(window.contentItem()) if item.property("roomForInspector") is not None)
+    page.setProperty("showScreens", True)
+    wait_until(lambda: len(studio.screens) == 1)
+    view = next(item for item in walk(window.contentItem()) if item.metaObject().className().startswith("ScreenView"))
+    wait_until(lambda: view.property("names") is not None)
+    QMetaObject.invokeMethod(view, "picked", Q_ARG("QString", "Bag.Equip"), Q_ARG("QString", "image"))
+    wait_until(lambda: page.property("chosen") == "Bag.Equip")
+    assert not page.property("chosenIsAction")
     del engine

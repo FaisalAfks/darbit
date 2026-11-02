@@ -28,6 +28,9 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Highlight on screen**
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
+  **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on it in place;
+  click one for the side panel.
+
   ![The Library](../ui/images/qt-studio-library.png)
 - **Kinds of target.** Each target's settings file names its kind: an **image** (searched in its region, the whole
   screen without one, and clicked at its location, its centre unless moved), a **region**, or a **location**.
