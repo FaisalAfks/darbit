@@ -170,6 +170,15 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
 - A changed value gets a dot; ↺ puts a setting back to its default; the save bar is the shared `FloatingPill`.
 - Not chosen: B alone (tabs and slim rows) and C (tiles).
 
+### Round 13: problems explained (round-13-problems.html)
+
+- **C with A's detail.** A line for the day ("It stopped 3 times; 1 needs a look"), then problems grouped by their
+  likely cause with a plain sentence; each opens into the searches that ran out before it (image, closest score
+  against its line, how long), the screen when it stopped, and the fixes. Causes the bot gets past are calm (info).
+- The cause is a guess from what the report already holds (server/problems.py) and is said as one.
+- The Overview's setup line says the true thing: images in the guide not taken yet; the bot runs without them.
+- Not chosen: B (a page per problem with a scrubbable strip), as more than most problems need.
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.
