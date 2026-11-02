@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 12: Settings</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+.win { height: 600px; }
+.nav { width: 190px; flex: none; padding: 14px 10px; border-right: 1px solid var(--line); display: grid; gap: 2px; align-content: start; }
+.nav .search { height: 34px; border-radius: 17px; background: var(--raised); border: 1px solid var(--line); color: var(--faint); font-size: 12px; display: flex; align-items: center; padding: 0 12px; margin-bottom: 8px; gap: 6px; }
+.nav a { display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 12px; border-radius: 10px; color: var(--muted); font: 600 12.5px var(--font-strong); text-decoration: none; }
+.nav a.on { background: var(--raised-hover); color: var(--text); box-shadow: inset 3px 0 0 var(--accent); }
+.nav a i { font-style: normal; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.nav a small { color: var(--faint); font-size: 11px; }
+.main { flex: 1; min-width: 0; padding: 16px 18px; overflow: hidden; display: grid; gap: 12px; align-content: start; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.sec { border-radius: 14px; background: var(--glass); border: 1px solid var(--line); padding: 4px 0; }
+.sec h4 { margin: 0; padding: 10px 14px 6px; font: 650 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 9px 14px; border-top: 1px solid rgb(255 255 255 / .05); }
+.row:first-of-type { border-top: 0; }
+.row b { display: flex; align-items: center; gap: 6px; font: 600 13px var(--font-strong); }
+.row b i { font-style: normal; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.row p { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.row .def { color: var(--faint); font-size: 11px; }
+.sw { width: 38px; height: 22px; border-radius: 11px; background: var(--raised-hover); position: relative; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #dfe3ea; }
+.sw.on { background: var(--accent); } .sw.on::after { left: 19px; background: #06121c; }
+.step { display: flex; align-items: center; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); height: 30px; }
+.step span { width: 28px; text-align: center; color: var(--muted); }
+.step em { font-style: normal; min-width: 46px; text-align: center; font: 600 12.5px var(--mono); }
+.step u { text-decoration: none; color: var(--faint); font-size: 11px; padding-right: 6px; }
+.field { height: 30px; min-width: 200px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); font: 12px var(--mono); display: flex; align-items: center; padding: 0 10px; color: var(--text); }
+.drop { height: 30px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); font: 600 12px var(--font-strong); display: flex; align-items: center; gap: 18px; padding: 0 10px; }
+.slider { display: flex; align-items: center; gap: 8px; }
+.slider .track { width: 120px; height: 4px; border-radius: 2px; background: var(--raised-hover); position: relative; }
+.slider .track::before { content: ""; position: absolute; left: 0; top: 0; height: 4px; width: 40%; border-radius: 2px; background: var(--accent); }
+.slider .track::after { content: ""; position: absolute; left: calc(40% - 7px); top: -5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+.slider em { font-style: normal; font: 600 12px var(--mono); min-width: 32px; }
+.reset { color: var(--faint); font-size: 12px; margin-left: 6px; }
+.bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 16px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line); box-shadow: var(--shadow); font: 600 12px var(--font-strong); color: var(--warn); }
+.tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); width: max-content; }
+.tabs span { padding: 5px 12px; border-radius: 999px; font: 600 12px var(--font-strong); color: var(--muted); }
+.tabs span.on { background: var(--accent); color: var(--on-accent); }
+.help { width: 250px; flex: none; border-left: 1px solid var(--line); padding: 16px; display: grid; gap: 10px; align-content: start; font-size: 12px; color: var(--muted); }
+.help h5 { margin: 0; font: 700 15px var(--font-strong); color: var(--text); }
+.help .kv { display: grid; grid-template-columns: 70px 1fr; gap: 4px 8px; }
+.help .kv b { color: var(--faint); font-weight: 600; }
+.help .kv span { color: var(--text); font-family: var(--mono); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.tile { border-radius: 14px; background: var(--glass); border: 1px solid var(--line); padding: 12px; display: grid; gap: 8px; min-height: 104px; align-content: space-between; }
+.tile b { font: 600 13px var(--font-strong); }
+.tile p { margin: 0; font-size: 11px; color: var(--muted); }
+.tile.wide { grid-column: span 2; }
+.tile.changed { border-color: color-mix(in oklab, var(--warn) 60%, transparent); }
+.jump { display: flex; gap: 6px; flex-wrap: wrap; }
+.jump span { font: 600 11px var(--font-strong); color: var(--muted); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); }
+.jump span.on { color: var(--text); border-color: var(--accent); }
+.subhead { font: 650 11px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Round 12: <span>Settings</span>, made to fit</h1>
+  <p class="lead">Today the form stops at 860 points and leaves the window's right third empty; every number is a full-width box
+  with its label above it, so one setting takes three lines; switches sit in their own tinted rows and the rest don't.
+  All three options below: one row or tile per setting, a control made for its type (switch, stepper, slider with its
+  range, a list, a field), its default and a reset ↺ when changed, search, and the save bar. Made-up settings.</p>
+
+  <div class="options">
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Settings<span class="grow"></span><i></i><i></i></div>
+      <div class="body">
+        <div class="nav">
+          <div class="search">⌕ Search 27 settings</div>
+          <a class="on">Everything <small>27</small></a>
+          <a>The game <small>2</small></a>
+          <a>Joining <small>3</small></a>
+          <a>Modes <i></i></a>
+          <a>Daily attempts <small>3</small></a>
+          <a>Rewards <small>2</small></a>
+          <a>Controls <small>5</small></a>
+        </div>
+        <div class="main">
+          <div class="cols">
+            <div style="display:grid;gap:12px">
+              <div class="sec"><h4>The game</h4>
+                <div class="row"><div><b>Lag</b><p>Every wait is this many times as long. Raise it on a slow PC.</p></div><div class="slider"><div class="track"></div><em>1.0×</em></div></div>
+                <div class="row"><div><b>Window</b><p>The game's window, brought to the front before input.</p></div><div class="field" style="min-width:140px">Fishing World</div></div>
+              </div>
+              <div class="sec"><h4>Joining</h4>
+                <div class="row"><div><b>Private server</b><p>Join the private server first.</p></div><div class="sw on"></div></div>
+                <div class="row"><div><b>Tries</b><p>Failed private tries before a public one. <span class="def">default 3</span></p></div><div class="step"><span>−</span><em>3</em><span>+</span></div></div>
+              </div>
+            </div>
+            <div class="sec"><h4>Modes <span style="color:var(--warn)">1 changed</span></h4>
+              <div class="row"><div><b>Deep sea</b><p>Fish the deep sea while it's open.</p></div><div class="sw on"></div></div>
+              <div class="row"><div><b><i></i>Tournament</b><p>Enter the hourly tournament. <span class="def">default on</span></p></div><div style="display:flex;align-items:center"><div class="sw"></div><span class="reset">↺</span></div></div>
+              <div class="row"><div><b>Bait</b><p>Which bait to buy when it runs out.</p></div><div class="drop">Worms ▾</div></div>
+              <div class="row"><div><b>Rest every</b><p>Minutes between breaks. <span class="def">0 is never</span></p></div><div class="step"><span>−</span><em>45</em><u>min</u><span>+</span></div></div>
+              <div class="row"><div><b>Night fishing</b><p>Keep going after 22:00.</p></div><div class="sw"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bar">1 change not saved <span class="btn">Undo</span><span class="btn primary">Save</span></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">A</span>Rows in cards that fill the width</h2>
+      <p>Like Windows 11's Settings: each setting one row, its words on the left and its control on the right. The section
+      cards flow into two columns on a wide window and one on a narrow one. The section list has search and marks
+      sections with changes.</p>
+      <ul>
+        <li class="plus">Dense and calm: a whole section reads at a glance.</li>
+        <li class="plus">Uses the window's width without stretching any control.</li>
+        <li class="minus">Long help text is clamped to two lines (the rest on hover).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Settings<span class="grow"></span><i></i><i></i></div>
+      <div class="body">
+        <div class="main">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="tabs"><span>All</span><span>Game</span><span>Joining</span><span class="on">Modes</span><span>Daily</span><span>More ▾</span></div>
+            <div class="field" style="min-width:0;width:90px;color:var(--faint);font-family:var(--font)">⌕ Search</div>
+          </div>
+          <div class="sec"><h4>Modes</h4>
+            <div class="row"><div><b>Deep sea</b></div><div class="sw on"></div></div>
+            <div class="row" style="background:rgb(90 200 250 / .06)"><div><b><i></i>Tournament</b></div><div style="display:flex;align-items:center"><div class="sw"></div><span class="reset">↺</span></div></div>
+            <div class="row"><div><b>Bait</b></div><div class="drop">Worms ▾</div></div>
+            <div class="row"><div><b>Rest every</b></div><div class="step"><span>−</span><em>45</em><u>min</u><span>+</span></div></div>
+            <div class="row"><div><b>Night fishing</b></div><div class="sw"></div></div>
+          </div>
+        </div>
+        <div class="help">
+          <h5>Tournament</h5>
+          <div>Enter the hourly tournament when it opens. It takes about eight minutes and pays out at the end of the hour.</div>
+          <div class="kv"><b>Now</b><span>off</span><b>Default</b><span>on</span><b>Key</b><span>modes.tournament</span></div>
+          <div style="color:var(--warn)">Changed, not saved yet.</div>
+        </div>
+      </div>
+      <div class="bar">1 change not saved <span class="btn">Undo</span><span class="btn primary">Save</span></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">B</span>Tabs, rows and a help panel</h2>
+      <p>Sections are tabs over the page; the rows carry only the name and the control. The setting under the mouse (or
+      in focus) explains itself in the panel on the right: what it does, its value, default and range, and its key in
+      settings.toml.</p>
+      <ul>
+        <li class="plus">The cleanest rows; room for long explanations.</li>
+        <li class="plus">The key shown helps bot authors.</li>
+        <li class="minus">Reading a setting's help takes a hover; one column only.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Settings<span class="grow"></span><i></i><i></i></div>
+      <div class="body">
+        <div class="main">
+          <div style="display:flex;gap:10px;align-items:center;justify-content:space-between">
+            <div class="jump"><span class="on">The game</span><span>Joining</span><span>Modes</span><span>Daily</span><span>Rewards</span><span>Controls</span></div>
+            <div class="field" style="min-width:150px;color:var(--faint);font-family:var(--font)">⌕ Search</div>
+          </div>
+          <div class="subhead">The game</div>
+          <div class="tiles">
+            <div class="tile wide"><div><b>Lag</b><p>Every wait is this many times as long.</p></div><div class="slider"><div class="track" style="width:100%"></div><em>1.0×</em></div></div>
+            <div class="tile"><div><b>Window</b><p>Brought to the front before input.</p></div><div class="field" style="min-width:0">Fishing World</div></div>
+          </div>
+          <div class="subhead">Modes</div>
+          <div class="tiles">
+            <div class="tile"><div><b>Deep sea</b><p>While it's open.</p></div><div class="sw on"></div></div>
+            <div class="tile changed"><div><b>Tournament</b><p>The hourly one. Default on.</p></div><div style="display:flex;align-items:center"><div class="sw"></div><span class="reset">↺</span></div></div>
+            <div class="tile"><div><b>Bait</b><p>Bought when it runs out.</p></div><div class="drop">Worms ▾</div></div>
+            <div class="tile"><div><b>Rest every</b><p>0 is never.</p></div><div class="step" style="width:max-content"><span>−</span><em>45</em><u>min</u><span>+</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="bar">1 change not saved <span class="btn">Undo</span><span class="btn primary">Save</span></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">C</span>Tiles in a grid</h2>
+      <p>Each setting a tile, as many across as fit; the section names are chips to jump to. Sliders and long text take
+      two tiles.</p>
+      <ul>
+        <li class="plus">Most settings on screen at once; feels like a dashboard.</li>
+        <li class="plus">Matches the Library's card grid.</li>
+        <li class="minus">Short help only; uneven tile heights with long names.</li>
+      </ul>
+    </div>
+  </section>
+  </div>
+</main>
+</body>
+</html>

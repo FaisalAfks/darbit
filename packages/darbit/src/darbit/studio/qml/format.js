@@ -101,3 +101,12 @@ function stepText(step) {
     if (step.kind === "call") return (args.action ? "Do the action " : "Call ") + (args.name || "")
     return step.source || step.kind
 }
+
+function setting(value) {
+    // a setting's value in words: on/off, a list joined, nothing for none
+    if (value === undefined || value === null) return ""
+    if (Array.isArray(value)) return value.join(", ")
+    if (value === true) return "on"
+    if (value === false) return "off"
+    return String(value)
+}

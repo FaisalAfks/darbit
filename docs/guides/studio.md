@@ -73,8 +73,12 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   ![An action](../ui/images/qt-studio-action.png)
 - **Results** (Ctrl+3): the bot's days; the chosen one in a sentence, its problems, what it got (today, the week, the
   total) and a timeline of its modes, from the run history.
-- **Settings** (Ctrl+4): the bot's `settings.toml` as a form, by section; a changed value gets a dot and a save bar
-  slides up (Ctrl+S saves).
+- **Settings** (Ctrl+4): the bot's `settings.toml`, one row per setting with a control made for its type: a switch, a
+  stepper (a number with − and +, kept in its range), a slider for a number with a min and a max, a list, or a field.
+  The section cards flow into two columns on a wide window; the section list has search (Ctrl+F), counts, and a dot on
+  sections with changes. A changed value gets a dot, ↺ puts it back to its default, and a save bar slides up (Ctrl+S
+  saves). On a wide window a panel explains the setting under the mouse: what it does, its value, default, range and
+  key.
 - **The run control** (top right): Play (F5); while running, its time with Pause and Stop.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, and smooth effects (off for a slower PC). A `theme.toml` in
   darbit's settings folder lays tokens over the theme (`base = "glass-dark"`, `accent = "#ff7ab6"`).
