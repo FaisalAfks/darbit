@@ -6,6 +6,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import QtQuick.Shapes
 import QtQuick.Window
 
 Window {
@@ -40,6 +41,7 @@ Window {
     property bool noteBad: false
     property bool tucked: false          // the pill slid up out of sight
     property bool comparing: false       // C held: the saved image over the new one
+    property bool gliding: false         // a click stepped to a bigger or smaller box: it glides there
     readonly property real scale: Math.min(width / Math.max(1, capture.shotWidth), height / Math.max(1, capture.shotHeight))
     readonly property var current: capture.items.length > 0 ? capture.items[0] : null
     readonly property string kind: image ? "image" : region ? "region" : location ? "location" : ""
@@ -50,7 +52,7 @@ Window {
     readonly property color locationInk: studio.colors.ok
     readonly property color solid: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
 
-    onVisibleChanged: if (visible) { reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
+    onVisibleChanged: if (visible) { shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
     onCurrentChanged: if (current && visible) { nameField.text = current.name; tool = kindOf(current.kind) }
     onRegionChanged: if (!linking) regionName = ""
 
@@ -133,8 +135,9 @@ Window {
         } else if (boxes.length) {
             chosen = Math.max(0, Math.min(boxes.length - 1, chosen + (bigger ? 1 : -1)))
         }
-        if (boxes.length) setPart(tool, boxes[chosen])
+        if (boxes.length) { gliding = true; glideTimer.restart(); setPart(tool, boxes[chosen]) }
     }
+    Timer { id: glideTimer; interval: 220; onTriggered: shotWindow.gliding = false }
     function nudge(dx, dy, grow) {
         var part = partOf(tool)
         if (!part) return
@@ -176,6 +179,7 @@ Window {
         var result = capture.save(name, kind, image, region, location, image && region ? regionName : "")
         if (result.error) { say(result.error, true); return }
         var told = result.message || ("Saved " + name), bad = !!result.risky
+        savedPulse.show(image || region || (location ? [location[0] - 10, location[1] - 10, 20, 20] : null))
         reset()
         nameField.text = current ? current.name : ""
         takeSaved(nameField.text)
@@ -286,9 +290,28 @@ Window {
             visible: !!value
             x: b[0] * shotWindow.scale; y: b[1] * shotWindow.scale
             width: b[2] * shotWindow.scale; height: b[3] * shotWindow.scale
-            color: "transparent"
-            border.color: ink; border.width: chosen ? 2 : 1
+            Behavior on x { enabled: shotWindow.gliding && studio.effects; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Behavior on y { enabled: shotWindow.gliding && studio.effects; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Behavior on width { enabled: shotWindow.gliding && studio.effects; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            Behavior on height { enabled: shotWindow.gliding && studio.effects; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            color: chosen ? Qt.rgba(ink.r, ink.g, ink.b, 0.06) : "transparent"
+            border.color: part === "region" ? "transparent" : ink; border.width: chosen ? 2 : 1
             opacity: chosen ? 1 : 0.6
+            // a region's outline: dashes that march while it's the kind picked
+            Shape {
+                visible: partBox.part === "region"
+                anchors.fill: parent
+                ShapePath {
+                    strokeColor: partBox.ink; strokeWidth: partBox.chosen ? 2 : 1; fillColor: "transparent"
+                    strokeStyle: ShapePath.DashLine; dashPattern: [5, 4]
+                    NumberAnimation on dashOffset { running: partBox.chosen && studio.effects && partBox.visible; from: 0; to: -9; duration: 600; loops: Animation.Infinite }
+                    startX: 0; startY: 0
+                    PathLine { x: partBox.width; y: 0 }
+                    PathLine { x: partBox.width; y: partBox.height }
+                    PathLine { x: 0; y: partBox.height }
+                    PathLine { x: 0; y: 0 }
+                }
+            }
             Repeater {
                 model: partBox.chosen ? 8 : 0
                 delegate: Rectangle {
@@ -328,6 +351,43 @@ Window {
             border.color: shotWindow.regionInk; border.width: 2; radius: 4
         }
         PartBox { id: imageBox; part: "image"; value: shotWindow.image }
+
+        // faint guide lines through the mouse, across the whole screen
+        Rectangle {
+            visible: magnifier.at.x >= 0 && !magnifier.pinned
+            x: 0; y: magnifier.hoverPoint.y; width: shot.width; height: 1
+            color: Qt.rgba(1, 1, 1, 0.16)
+        }
+        Rectangle {
+            visible: magnifier.at.x >= 0 && !magnifier.pinned
+            x: magnifier.hoverPoint.x; y: 0; width: 1; height: shot.height
+            color: Qt.rgba(1, 1, 1, 0.16)
+        }
+        // the moment the screen froze: a shutter's flash
+        Rectangle {
+            id: shutter
+            anchors.fill: shot
+            color: "white"; opacity: 0
+            function flash() { if (studio.effects) flashing.restart() }
+            NumberAnimation { id: flashing; target: shutter; property: "opacity"; from: 0.35; to: 0; duration: 320; easing.type: Easing.OutQuad }
+        }
+        // a saved target: its box pulses green and fades
+        Rectangle {
+            id: savedPulse
+            property var box: [0, 0, 0, 0]
+            function show(saved) { if (!saved || !studio.effects) return; box = saved; pulsing.restart() }
+            visible: pulsing.running
+            x: box[0] * shotWindow.scale; y: box[1] * shotWindow.scale
+            width: box[2] * shotWindow.scale; height: box[3] * shotWindow.scale
+            color: Qt.rgba(studio.colors.ok.r, studio.colors.ok.g, studio.colors.ok.b, 0.18)
+            border.color: studio.colors.ok; border.width: 3; radius: 4
+            transformOrigin: Item.Center
+            ParallelAnimation {
+                id: pulsing
+                NumberAnimation { target: savedPulse; property: "scale"; from: 1; to: 1.18; duration: 480; easing.type: Easing.OutCubic }
+                NumberAnimation { target: savedPulse; property: "opacity"; from: 1; to: 0; duration: 480; easing.type: Easing.InQuad }
+            }
+        }
 
         // C held: the saved image over the new one
         Image {

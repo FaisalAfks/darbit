@@ -1013,3 +1013,24 @@ def test_customizing_moves_resizes_and_takes_blocks_off(qt):
     )
     assert studio.overview["layout"][-1]["shows"] == "action:dim_run"
     del engine
+
+
+def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    for kind in ("image", "region", "location"):
+        capture.start(tmp_path, "one", "Lobby.Play", kind, shot=np.zeros((300, 400, 3), np.uint8))
+        wait_until(lambda: window.findChild(QObject, "nameField").property("text") == "Lobby.Play")
+        assert window.property("tool") == kind
+        capture.close()
+        QtCore.QCoreApplication.processEvents()
+    del engine
