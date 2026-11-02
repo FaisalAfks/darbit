@@ -89,6 +89,7 @@
 
 ### Fixed
 
+- `test_a_tape_plays_every_event_on_time` failed main now and then: CI's shared machines stall for tens of ms. It keeps 10 ms on a real PC and allows 40 ms on CI, with three tries
 - The Library tagged images with their region and location, so the Regions tab was full of images; a region is a place of its own that images name, and only regions show there now
 - A retake that boxed the image before its name was typed lost the target's region and location; typing a known name brings them back where none is made yet
 - The Studio stepped aside behind the run pill only on its own Play; the shown bot starting anywhere (the tray, the command line, the service, a schedule) does it too, and opening the Studio on a bot already running doesn't
