@@ -12,7 +12,7 @@ Popup {
     function openFor(name) { again = name !== ""; field.text = name; open() }
     onOpened: field.forceActiveFocus()
     Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.45) }
-    background: Rectangle { radius: 22; color: studio.colors.glassStrong; border.color: studio.colors.line }
+    background: Rectangle { radius: 22; color: studio.colors.solid; border.color: studio.colors.line }
     enter: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 180 : 0 }
@@ -32,7 +32,7 @@ Popup {
             width: parent.width; wrapMode: Text.Wrap; color: studio.colors.muted; font.pixelSize: 14
             text: "The Studio steps aside and every key, click and mouse move goes in, on one clock, until Done. Pause to add a check: an image to wait for, or a wait. Ctrl+Alt+K starts a new part."
         }
-        TextField {
+        Field {
             id: field
             width: parent.width; height: 44
             enabled: !sheet.again
@@ -40,7 +40,6 @@ Popup {
             color: studio.colors.text; placeholderTextColor: studio.colors.faint; font.pixelSize: 15
             validator: RegularExpressionValidator { regularExpression: /[A-Za-z_][A-Za-z0-9_]*/ }
             onAccepted: sheet.submit()
-            background: Rectangle { radius: 12; color: studio.colors.raised; border.color: field.activeFocus ? studio.colors.accent : studio.colors.line }
         }
         Row {
             anchors.right: parent.right; spacing: 10

@@ -83,18 +83,12 @@ Item {
         id: list
         visible: page.sections.length > 0
         x: 24; width: 210; spacing: 3
-        TextField {
+        Field {
             id: search
+            round: true; icon: "⌕"
             width: parent.width; height: 38
             placeholderText: "Search " + page.sections.reduce(function (sum, one) { return sum + one.settings.length }, 0) + " settings"
-            placeholderTextColor: studio.colors.faint
-            color: studio.colors.text; font.pixelSize: 13
-            leftPadding: 34
             onTextChanged: page.query = text
-            background: Rectangle {
-                radius: 19; color: studio.colors.glass; border.color: search.activeFocus ? studio.colors.accent : studio.colors.line
-                Text { x: 13; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: studio.colors.faint; font.pixelSize: 15; font.family: studio.symbols }
-            }
         }
         Item { width: 1; height: 6 }
         Repeater {

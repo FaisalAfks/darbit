@@ -33,12 +33,10 @@ Rectangle {
     }
     MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: menu.open() }
 
-    Popup {
+    MenuPanel {
         id: menu
         y: picker.height + 10
         width: 320
-        padding: 8
-        background: Rectangle { radius: 16; color: studio.colors.glassStrong; border.color: studio.colors.line }
         enter: Transition {
             ParallelAnimation {
                 NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 150 : 0 }

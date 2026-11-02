@@ -9,7 +9,7 @@ Rectangle {
     default property alias content: row.data
     property color edge: studio.colors.line  // the border: a state's colour (recording, paused) or the plain line
     // the panel colour, made solid
-    readonly property color solid: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
+    readonly property color solid: studio.colors.solid
     width: row.implicitWidth + 16
     height: 56
     radius: 28

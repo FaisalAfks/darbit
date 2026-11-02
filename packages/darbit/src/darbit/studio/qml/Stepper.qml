@@ -31,14 +31,14 @@ Rectangle {
             enabled: stepper.low === null || stepper.value > stepper.low
             onClicked: stepper.nudge(-1)
         }
-        TextField {
+        Field {
             id: field
+            quiet: true; leftPadding: 4; rightPadding: 4
             width: Math.max(44, contentWidth + 18); height: 30
             horizontalAlignment: TextInput.AlignHCenter
             text: stepper.value.toFixed(stepper.decimals)
             color: studio.colors.text; font.pixelSize: 13; font.family: "monospace"; font.weight: Font.DemiBold
             inputMethodHints: Qt.ImhFormattedNumbersOnly
-            background: null
             onEditingFinished: { var typed = parseFloat(text); if (!isNaN(typed)) stepper.edited(stepper.fit(typed)); text = Qt.binding(function () { return stepper.value.toFixed(stepper.decimals) }) }
             Keys.onUpPressed: function (event) { stepper.nudge(event.modifiers & Qt.ShiftModifier ? 10 : 1) }
             Keys.onDownPressed: function (event) { stepper.nudge(event.modifiers & Qt.ShiftModifier ? -10 : -1) }

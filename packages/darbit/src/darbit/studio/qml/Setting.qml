@@ -89,14 +89,13 @@ Rectangle {
     Component { id: asList; Dropdown { choices: row.rules.options || []; chosen: row.current; onPicked: function (value) { row.edited(value) } } }
     Component {
         id: asField
-        TextField {
+        Field {
             implicitWidth: 230; implicitHeight: 34
             text: row.shown(row.current)
             color: studio.colors.text; font.pixelSize: 13
             leftPadding: 10
             onTextEdited: row.edited(row.parsed(text))
             onActiveFocusChanged: if (activeFocus) row.pointed()
-            background: Rectangle { radius: 10; color: studio.colors.raised; border.color: parent.activeFocus ? studio.colors.accent : studio.colors.line }
         }
     }
 }

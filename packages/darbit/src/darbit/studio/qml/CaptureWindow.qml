@@ -50,10 +50,10 @@ Window {
     readonly property string searchIn: !region ? "screen" : regionName ? "shared" : "own"
     readonly property var box: image     // the image, by its old name
     readonly property var kinds: ["image", "region", "location"]
-    readonly property color imageInk: studio.colors.accent
-    readonly property color regionInk: studio.colors.accent2
-    readonly property color locationInk: studio.colors.ok
-    readonly property color solid: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
+    readonly property color imageInk: studio.colors.kindImage
+    readonly property color regionInk: studio.colors.kindRegion
+    readonly property color locationInk: studio.colors.kindLocation
+    readonly property color solid: studio.colors.solid
 
     onVisibleChanged: if (visible) { shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
     onCurrentChanged: if (current && visible) { nameField.text = current.name; tool = kindOf(current.kind) }
@@ -460,12 +460,11 @@ Window {
             color: shotWindow.solid; border.color: studio.colors.line
             Text { id: label; visible: !readout.editing; anchors.centerIn: parent; text: readout.text; color: readout.ink; font.family: "monospace"; font.pixelSize: 11 }
             MouseArea { anchors.fill: parent; enabled: !readout.editing; cursorShape: Qt.IBeamCursor; onClicked: { readout.editing = true; field.text = readout.value; field.selectAll(); field.forceActiveFocus() } }
-            TextField {
+            Field {
                 id: field
                 visible: readout.editing
                 anchors.fill: parent; leftPadding: 10
-                color: readout.ink; font.family: "monospace"; font.pixelSize: 11
-                background: Rectangle { radius: 12; color: studio.colors.raised; border.color: readout.ink }
+                ink: readout.ink; color: readout.ink; font.family: "monospace"; font.pixelSize: 11
                 onAccepted: {
                     var numbers = text.split(/[\s,×x]+/).filter(function (part) { return part !== "" }).map(Number)
                     if (numbers.every(function (n) { return !isNaN(n) })) readout.edited(numbers)
@@ -694,21 +693,19 @@ Window {
 
             FloatingPill {
                 id: pill
-                TextField {
+                Field {
                     id: nameField
                     objectName: "nameField"
+                    round: true
                     placeholderText: "Name, e.g. Lobby.Play"
-                    placeholderTextColor: studio.colors.faint
                     Layout.preferredWidth: 210; Layout.preferredHeight: 40
                     leftPadding: 16
-                    color: studio.colors.text
                     font.pixelSize: 14; font.weight: Font.DemiBold
                     onAccepted: shotWindow.save()
                     onTextEdited: shotWindow.showPill()
                     // the name of a target there already: its region and location come back (only where none is made yet)
                     onEditingFinished: shotWindow.takeSaved(text.trim())
                     Keys.onEscapePressed: capture.close()
-                    background: Rectangle { radius: 20; color: studio.colors.raised; border.color: nameField.activeFocus ? studio.colors.accent : "transparent" }
                 }
                 // the kind being made: a ✓ on each the target has
                 Segmented {
@@ -771,15 +768,13 @@ Window {
                             Row {
                                 visible: !!shotWindow.region && !shotWindow.regionName
                                 spacing: 6
-                                TextField {
+                                Field {
                                     id: shareName
+                                    ink: shotWindow.regionInk
                                     width: 220; height: 34
                                     placeholderText: "Share the drawn region as…"
-                                    placeholderTextColor: studio.colors.faint
                                     text: nameField.text.indexOf(".") > 0 ? nameField.text.split(".")[0] + ".Menu" : ""
-                                    color: studio.colors.text; font.pixelSize: 13; leftPadding: 10
                                     onAccepted: shotWindow.shareRegion(text)
-                                    background: Rectangle { radius: 10; color: studio.colors.raised; border.color: shareName.activeFocus ? shotWindow.regionInk : studio.colors.line }
                                 }
                                 PillButton { small: true; text: "Share"; onClicked: shotWindow.shareRegion(shareName.text) }
                             }
@@ -823,12 +818,11 @@ Window {
                     Row {
                         anchors.centerIn: parent; spacing: 12
                         Text { text: "needs"; color: studio.colors.muted; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-                        Slider {
-                            width: 180; from: 0.6; to: 1.0; value: shotWindow.similarity
-                            onMoved: shotWindow.similarity = Math.round(value * 100) / 100
+                        ValueSlider {
+                            low: 0.6; high: 1.0; decimals: 2; value: shotWindow.similarity
+                            onEdited: function (value) { shotWindow.similarity = value }
                             anchors.verticalCenter: parent.verticalCenter
                         }
-                        Text { text: shotWindow.similarity.toFixed(2); color: studio.colors.text; font.pixelSize: 14; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
                     }
                 }
             }

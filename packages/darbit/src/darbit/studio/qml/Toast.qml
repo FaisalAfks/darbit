@@ -13,7 +13,7 @@ Rectangle {
     opacity: shown ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: studio.effects ? 200 : 0 } }
     width: Math.min(label.implicitWidth + 62, parent.width - 80); height: Math.max(46, label.height + 24); radius: 23
-    color: studio.colors.glassStrong
+    color: studio.colors.solid
     border.color: bad ? studio.colors.danger : studio.colors.line
     Row {
         anchors.centerIn: parent; spacing: 10

@@ -37,7 +37,7 @@ One look for every darbit surface: the hub app, the capture tool, highlight, the
 | Text | `--text`, `--muted`, `--faint` |
 | Accent | `--accent`, `--accent-2`, `--glow` (the accent's shadow), `--on-accent` (text on the accent) |
 | Status | `--ok`, `--warn`, `--danger`, `--info`, `--on-status` (text on a status colour) |
-| Target kinds | `--kind-image`, `--kind-region`, `--kind-point`, `--handle-fill` (resize handles) |
+| Target kinds | `--kind-image`, `--kind-region`, `--kind-location`, `--handle-fill` (resize handles) |
 | Capture | `--screen-dim`: the frozen screen outside the selection, 42% brightness, the **same in every theme** (a light theme must not wash the game out) |
 | Text slots | `--slot-tool`, `--slot-bot`, `--slot-guide`, `--on-bot` (text on a bot's accent) |
 | Type | `--font`, `--font-strong`, `--mono`; Fluent 2's ramp, size with line height: `--size-caption` 12 / `--line-caption` 16, `--size-body` 14 / `--line-body` 20, `--size-content` 16 / `--line-content` 22, `--size-subtitle` 20 / `--line-subtitle` 26, `--size-title3` 24 / `--line-title3` 32, `--size-title` 28 / `--line-title` 36 |
@@ -73,7 +73,21 @@ The `TextSlot` component takes `{slot, text, from?, image?}`. Text is cut at one
 
 ## Components
 
-`Button`, `IconButton`, `Toolbar`, `Chip`, `Keycap`, `Card`, `Toast`, `TextSlot`, `Readout`, `Magnifier`, `ProgressStrip`, `ScoreBadge`, `ThemeSwitch`, `CommandPalette`, `Field` (for generated forms), `List`, `Tree`. Each is one `.svelte` file with no outside dependency; Konva is only used inside the capture canvas.
+The Studio is built from these (`packages/darbit/src/darbit/studio/qml`). A page or tool uses them rather than drawing its own; one that needs something more extends them, so everything gets it. `test_the_studio_keeps_one_look` fails on a hand-drawn text field, switch, list, slider or menu, or on see-through colours where solid ones belong.
+
+| Component | For |
+|---|---|
+| `PillButton`, `IconButton` | every button |
+| `Field` | every text field (`round` with an `icon` for search, `quiet` for a name in a heading) |
+| `Switcher`, `Stepper`, `ValueSlider`, `Dropdown` | on/off, a number, a number in a range, one of a few |
+| `Segmented`, `Toggle`, `Chip` | a choice of a few, a filter that's on or off, a small label |
+| `Glass` | a card on a page |
+| `FloatingPill`, `PillWindow` | every tool over the game (Capture, the recorder, the run pill) |
+| `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
+| `Banner`, `Toast` | a line that needs you; what just happened |
+| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard` | a page's own rows and cards, built from the above |
+
+`colors.solid` is the panel colour with no see-through, for menus and for anything over a game. `kindImage`, `kindRegion` and `kindLocation` are the kinds' colours.
 
 ## Motion
 

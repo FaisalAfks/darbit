@@ -64,7 +64,7 @@ PillWindow {
             visible: recorderWindow.checksOpen && recorder.paused
             anchors.right: parent.right
             width: 280; height: choices.implicitHeight + 16; radius: 16
-            color: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
+            color: studio.colors.solid
             border.color: studio.colors.line
             Column {
                 id: choices
@@ -80,7 +80,7 @@ PillWindow {
         Rectangle {
             visible: recorderWindow.stepsOpen
             width: parent.width; height: Math.min(320, list.implicitHeight + 20); radius: 16
-            color: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
+            color: studio.colors.solid
             border.color: studio.colors.line
             clip: true
             Column {

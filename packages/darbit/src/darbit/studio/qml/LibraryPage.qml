@@ -104,18 +104,12 @@ Item {
         id: tools
         x: 24; width: page.width - 48
         spacing: 10
-        TextField {
+        Field {
             id: search
+            round: true; icon: "⌕"
             Layout.preferredWidth: window.narrow ? 170 : 240; Layout.preferredHeight: 42
             placeholderText: "Search " + page.library.length + " assets"
-            placeholderTextColor: studio.colors.faint
-            color: studio.colors.text; font.pixelSize: 14
-            leftPadding: 38
             onTextChanged: page.query = text
-            background: Rectangle {
-                radius: 21; color: studio.colors.glass; border.color: search.activeFocus ? studio.colors.accent : studio.colors.line
-                Text { x: 15; anchors.verticalCenter: parent.verticalCenter; text: "⌕"; color: studio.colors.faint; font.pixelSize: 16; font.family: studio.symbols }
-            }
         }
         Segmented {
             itemHeight: 34
@@ -146,11 +140,10 @@ Item {
             icon: "⇅"; text: window.narrow ? "" : (page.sort === "name" ? "Name" : page.sort === "score" ? "Weakest" : "Most used") + (page.group !== "none" ? " · by " + page.group : "")
             kind: "quiet"
             onClicked: viewMenu.open()
-            Popup {
+            MenuPanel {
                 id: viewMenu
                 y: viewButton.height + 8; x: viewButton.width - width
-                width: 230; padding: 8
-                background: Rectangle { radius: 14; color: studio.colors.glassStrong; border.color: studio.colors.line }
+                width: 230
                 contentItem: Column {
                     spacing: 2
                     Text { text: "SORT"; color: studio.colors.faint; font.pixelSize: 11; font.letterSpacing: 1.3; leftPadding: 12; topPadding: 4; bottomPadding: 4 }
