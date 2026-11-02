@@ -89,6 +89,7 @@
 
 ### Fixed
 
+- The Studio stepped aside behind the run pill only on its own Play; the shown bot starting anywhere (the tray, the command line, the service, a schedule) does it too, and opening the Studio on a bot already running doesn't
 - A Studio loaded with a connection of its own (a test's, or a script drawing a page) started a real darbit service in the background, and left it running; only the Studio's real connection starts the service now
 - Target settings files written on Windows had Windows line endings; they're written with LF, like the repos keep them
 - The Library's Actions tab was always empty: its property was named `onActions`, which QML reads as a signal handler. A test now checks no QML property is named that way. Actions also come first under All

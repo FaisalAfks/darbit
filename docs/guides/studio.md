@@ -47,7 +47,7 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
   how many look-alikes score under the line, with each match's score and a slider for the similarity it needs.
   **Enter** saves; **Esc** removes what's picked, then closes. With a setup guide, the next one to take is shown.
-- **Run pill** (darbit settings, on by default): Play hides the Studio, and a pill at the top of the screen shows the
+- **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
   it, it slides up and leaves a sliver; move the mouse to that edge to bring it back (the bot's own moves don't). The
   bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.

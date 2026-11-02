@@ -216,7 +216,8 @@ def _connect_recorder_hiding(recorder: Recorder, capture: Capture, hiding: Hidin
 
 
 def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> None:
-    """Play hides the Studio behind the run pill; the bot stopping or failing, or the pill's ⤢, brings it back."""
+    """The bot starting (from Play or anywhere else) hides the Studio behind the run pill; the bot stopping or
+    failing, or the pill's ⤢, brings it back."""
     seen_running: list[bool] = []  # the bot ran since Play: until then, "stopped" is the status from before
 
     def started() -> None:
@@ -225,10 +226,19 @@ def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> N
             window.hide()
             run_pill.open()
 
+    last = {"path": None, "state": None}  # the shown bot's status as last seen
+
     def status() -> None:
-        if not run_pill.isOpen:
-            return
         state = studio.bot.get("status")
+        path = studio.bot.get("path")
+        was = last["state"] if last["path"] == path else None
+        last["path"], last["state"] = path, state
+        if not run_pill.isOpen:
+            # the bot started anywhere (Play, the tray, the command line, the service): the Studio steps aside too;
+            # showing a bot that's already running doesn't count
+            if was is not None and was not in ("running", "paused") and state == "running":
+                started()
+            return
         if state in ("running", "paused"):
             seen_running[:] = [True]
         elif state == "failed" or seen_running:

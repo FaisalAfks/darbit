@@ -1034,3 +1034,29 @@ def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
         capture.close()
         QtCore.QCoreApplication.processEvents()
     del engine
+
+
+def test_the_bot_started_anywhere_hides_the_studio_but_one_already_running_doesnt(qt):
+    from darbit.studio.hiding import HidingPill
+
+    client = Runs()
+    studio = backend.Studio(lambda: client)
+    pill = HidingPill(watch=lambda on_move: lambda: None)
+    window = Window()
+    app._connect_run_pill(studio, pill, window)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("status") == "stopped")
+    client.status = "running"  # started from the command line, the tray or a schedule: not the Studio's Play
+    studio._on_event("project.status", {"path": BOT["path"], "status": "running"})
+    wait_until(lambda: pill.isOpen)
+    assert not window.shown
+
+    already = Runs()
+    already.status = "running"
+    other = backend.Studio(lambda: already)
+    other_pill = HidingPill(watch=lambda on_move: lambda: None)
+    other_window = Window()
+    app._connect_run_pill(other, other_pill, other_window)
+    other.connect()
+    wait_until(lambda: other.bot.get("status") == "running")
+    assert other_window.shown and not other_pill.isOpen  # opening the Studio on a running bot shows it
