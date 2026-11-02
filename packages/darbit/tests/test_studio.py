@@ -1278,3 +1278,19 @@ def test_the_command_palette_finds_and_runs_commands(qt):
     QMetaObject.invokeMethod(palette, "runAt", Q_ARG("QVariant", 0))
     wait_until(lambda: window.property("page") == "results")
     del engine
+
+
+def test_edit_opens_the_bots_folder_in_vs_code_or_the_explorer(qt, monkeypatch):
+    studio = backend.Studio(FakeClient)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    started = []
+    opened = []
+    monkeypatch.setattr(backend.subprocess, "Popen", lambda command, **options: started.append(command))
+    monkeypatch.setattr(backend.QDesktopServices, "openUrl", lambda url: opened.append(url.toLocalFile()))
+    monkeypatch.setattr(backend.shutil, "which", lambda name: "C:/code.cmd")
+    studio.editBot()
+    assert started == [["C:/code.cmd", "/bots/ad-bot"]]
+    monkeypatch.setattr(backend.shutil, "which", lambda name: None)
+    studio.editBot()
+    assert opened == ["/bots/ad-bot"]

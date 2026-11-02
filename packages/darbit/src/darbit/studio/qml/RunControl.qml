@@ -51,6 +51,11 @@ Rectangle {
                 }
             }
         }
+        IconButton {
+            width: 32; height: 32; glyph: "✎"; tip: "Edit: open the bot's folder"
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: studio.editBot()
+        }
         PillButton {
             visible: !control.active
             kind: "primary"; icon: "▶"; text: "Play"; small: true

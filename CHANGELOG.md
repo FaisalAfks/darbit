@@ -4,6 +4,8 @@
 
 ### New
 
+- Edit in the run control: opens the bot's folder in VS Code when it's installed, else in the file explorer
+
 - The command palette (Ctrl+K) finds anything the Studio can do, and darbit settings changes the keys: only the ones the Studio really goes by, refusing one already taken, working at once. The Studio's shortcuts now come from the keymap (`keymap.set_key`, `studio/shortcuts.py`)
 
 - The Library's Screen view: each screen's last shot from Capture with the targets taken on it in place, in their kinds' colours; a click opens the side panel, and the search dims the others
