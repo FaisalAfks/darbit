@@ -9,8 +9,11 @@ screen without one) and clicked at its location (its centre unless moved), and a
   smaller, or drag a box. Location: click where to click
 - The kind picked is the one you change: drag inside it to move it, drag its handles, nudge it with the arrows (Shift:
   10 px, Ctrl: its size), Delete removes it. Click a readout to type exact numbers. Ctrl+Z and Ctrl+Y undo and redo
-- With Region picked, **Saved ▾** lists the bot's regions: pick a region target to share it by name (images searched
-  in the same place move together when it's moved), or another image's region to copy it
+- An image is searched in one of three places, picked with Region: **Whole screen** (no region), **Shared** (a region
+  target several images name, so they move together when it's moved: pick one, or share the region just drawn under
+  a name of its own), or **Its own** (a box only this image uses)
+- Capture closes after a save when nothing is left to take (a retake, or one target); a setup guide goes on to its
+  next item
 - **T** tests the image in its region and marks every match with its score
 - **Enter** saves the target's `.png` (an image) and `.json` (its kind, region and location) into the bot's images
   folder

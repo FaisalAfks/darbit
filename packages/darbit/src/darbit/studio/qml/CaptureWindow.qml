@@ -45,6 +45,9 @@ Window {
     readonly property real scale: Math.min(width / Math.max(1, capture.shotWidth), height / Math.max(1, capture.shotHeight))
     readonly property var current: capture.items.length > 0 ? capture.items[0] : null
     readonly property string kind: image ? "image" : region ? "region" : location ? "location" : ""
+    // where an image is searched: the whole screen, a shared region (a place of its own that several images name), or
+    // a region of its own
+    readonly property string searchIn: !region ? "screen" : regionName ? "shared" : "own"
     readonly property var box: image     // the image, by its old name
     readonly property var kinds: ["image", "region", "location"]
     readonly property color imageInk: studio.colors.accent
@@ -74,8 +77,26 @@ Window {
     }
     function openRegions() {
         regionChoices = capture.regions()
-        if (!regionChoices.length) { say("The bot has no regions yet: draw one", false); return }
         regionsOpen = !regionsOpen
+    }
+    function searchOn(where) {
+        if (where === "screen") { if (region) setPart("region", null); regionsOpen = false; say("Searched on the whole screen", false) }
+        else if (where === "shared") openRegions()
+        else {
+            regionsOpen = false
+            if (regionName) { remember(); regionName = ""; say("Its own copy of the region now: changing it changes only this image", false) }
+            else if (!region) { tool = "region"; say("Drag the region only this image is searched in", false) }
+        }
+    }
+    // the region drawn becomes a shared one, saved under its own name, and the image names it
+    function shareRegion(name) {
+        name = name.trim()
+        if (!region || !name) { say("Draw the region and name it first", true); return }
+        var result = capture.save(name, "region", null, region, null, "")
+        if (result.error) { say(result.error, true); return }
+        linking = true; regionName = name; linking = false
+        regionsOpen = false
+        say(name + " saved as a shared region: other images can be searched in it too", false)
     }
     function remember() { past = past.concat([snapshot()]).slice(-200); future = [] }
     function undo() {
@@ -186,7 +207,10 @@ Window {
         nameField.text = current ? current.name : ""
         takeSaved(nameField.text)
         say(told, bad)
+        // nothing left to take (a retake, or one target): Capture closes once the save has shown
+        if (capture.items.length === 0) closing.restart()
     }
+    Timer { id: closing; interval: studio.effects ? 520 : 0; onTriggered: capture.close() }
 
     // ---- the pill's hiding, and its messages fading
     function showPill() { tucked = false; tuckTimer.restart() }
@@ -697,10 +721,17 @@ Window {
                     ]
                     onPicked: function (key) { shotWindow.choose(key) }
                 }
-                PillButton {
-                    visible: shotWindow.tool === "region"
-                    small: true; icon: "⬚"; text: "Saved ▾"
-                    onClicked: { shotWindow.openRegions(); stage.forceActiveFocus() }
+                // where the image is searched: the whole screen, a shared region, or its own
+                Segmented {
+                    visible: shotWindow.tool === "region" && !!shotWindow.image
+                    itemHeight: 32; strong: false
+                    current: shotWindow.searchIn
+                    model: [
+                        { key: "screen", label: "Whole screen" },
+                        { key: "shared", label: "Shared ▾" },
+                        { key: "own", label: "Its own" }
+                    ]
+                    onPicked: function (key) { shotWindow.searchOn(key); stage.forceActiveFocus() }
                 }
                 IconButton {
                     glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"
@@ -736,6 +767,28 @@ Window {
                         Column {
                             id: choices
                             spacing: 2
+                            // the region drawn, shared under a name of its own
+                            Row {
+                                visible: !!shotWindow.region && !shotWindow.regionName
+                                spacing: 6
+                                TextField {
+                                    id: shareName
+                                    width: 220; height: 34
+                                    placeholderText: "Share the drawn region as…"
+                                    placeholderTextColor: studio.colors.faint
+                                    text: nameField.text.indexOf(".") > 0 ? nameField.text.split(".")[0] + ".Menu" : ""
+                                    color: studio.colors.text; font.pixelSize: 13; leftPadding: 10
+                                    onAccepted: shotWindow.shareRegion(text)
+                                    background: Rectangle { radius: 10; color: studio.colors.raised; border.color: shareName.activeFocus ? shotWindow.regionInk : studio.colors.line }
+                                }
+                                PillButton { small: true; text: "Share"; onClicked: shotWindow.shareRegion(shareName.text) }
+                            }
+                            Text {
+                                visible: shotWindow.regionChoices.length === 0 && !shotWindow.region
+                                width: 324; wrapMode: Text.Wrap
+                                text: "No regions yet. Draw one with Region picked, then share it here so other images can be searched in it."
+                                color: studio.colors.muted; font.pixelSize: 12
+                            }
                             Repeater {
                                 model: shotWindow.regionChoices
                                 delegate: MenuLine {

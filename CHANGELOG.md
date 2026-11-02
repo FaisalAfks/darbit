@@ -4,6 +4,8 @@
 
 ### New
 
+- Capture asks where an image is searched: the whole screen, a shared region (pick one, or share the region just drawn under a name), or a region of its own. Capture closes after a save when nothing is left to take
+
 - Capture's motion: a shutter's flash when the screen freezes, boxes that glide to the next bigger or smaller one, a region's outline in dashes that march while it's picked, faint guide lines through the mouse across the screen, and a green pulse on what was just saved. A retake opens named and on its kind (a test keeps it so)
 
 - The Overview is blocks (round 14, decision 0017): the bot's author lays out the default in `overview.toml` and adds blocks of their own with `d.show` and `@d.block`, and its actions become buttons; Customize lets the person drag blocks around, resize them, take them off and add any from a gallery, kept per bot with a way back to the bot's layout. The service's `bot.overview` serves the catalog, the layout and each block's data
