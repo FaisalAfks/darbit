@@ -4,6 +4,8 @@
 
 ### New
 
+- Capture's motion: a shutter's flash when the screen freezes, boxes that glide to the next bigger or smaller one, a region's outline in dashes that march while it's picked, faint guide lines through the mouse across the screen, and a green pulse on what was just saved. A retake opens named and on its kind (a test keeps it so)
+
 - The Overview is blocks (round 14, decision 0017): the bot's author lays out the default in `overview.toml` and adds blocks of their own with `d.show` and `@d.block`, and its actions become buttons; Customize lets the person drag blocks around, resize them, take them off and add any from a gallery, kept per bot with a way back to the bot's layout. The service's `bot.overview` serves the catalog, the layout and each block's data
 
 - Problems explained (round 13): the Results page groups the day's failures by likely cause (something covered the game, an image looks different now, an image wasn't on screen, the bot's own reason) with a plain sentence of what the bot saw, and opens each into the searches that ran out before it, the screen when it stopped, and Highlight, Retake, the screenshots or Not a problem (`server/problems.py`, from what the run report already holds). The Overview's setup line no longer says the bot can't run while it does
