@@ -26,7 +26,15 @@ Flickable {
     readonly property var failures: data.failures || null
     readonly property bool empty: studio.bots.length === 0
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
-    readonly property var lastFailure: failures && failures.items && failures.items.length ? failures.items[failures.items.length - 1] : null
+    // the latest problem today, explained as on the Results page (server/problems.py)
+    readonly property var lastProblem: {
+        var found = data.problems || [], latest = null
+        for (var index = 0; index < found.length; index++) {
+            var times = found[index].times || []
+            if (latest === null || times[times.length - 1] > latest.times[latest.times.length - 1]) latest = found[index]
+        }
+        return latest
+    }
     readonly property real gap: 16
     readonly property real unit: (column.width - 11 * gap) / 12
     // the layout as rows: blocks in order, a new row when the next one doesn't fit in what's left of 12
@@ -148,11 +156,11 @@ Flickable {
             onActed: studio.openCapture("guide")
         }
         Banner {
-            visible: page.lastFailure !== null
+            visible: page.lastProblem !== null
             Layout.fillWidth: true
-            tone: "danger"; icon: "!"
-            title: page.lastFailure ? page.lastFailure.step + ": " + (page.lastFailure.reason || "failed") : ""
-            detail: page.lastFailure ? "at " + Format.clock(page.lastFailure.time) + (page.failures.items.length > 1 ? " · " + page.failures.items.length + " problems today" : "") : ""
+            tone: page.lastProblem ? page.lastProblem.tone : "danger"; icon: "!"
+            title: page.lastProblem ? page.lastProblem.step + ": " + page.lastProblem.reason + " · " + Format.clock(page.lastProblem.times[page.lastProblem.times.length - 1]) : ""
+            detail: page.lastProblem ? page.lastProblem.sentence : ""
             action: "Why it stopped"
             onActed: window.go("results")
         }

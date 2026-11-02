@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from ..project.manifest import Project
-from . import dashboard, history
+from . import dashboard, history, problems
 
 OVERVIEW = "overview.toml"
 KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "button")
@@ -146,6 +146,7 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
     found["activity"] = _tile_data(dashboard.activity_tile(events))
     found["screen"] = {"picture": _last_screen(logs)}
     found["setup"] = _tile_data(dashboard.setup_tile(project))
+    found["problems"] = problems.explain(project, events, logs)
     progress = _tile_data(dashboard.progress_tile(events)) or {"items": []}
     for item in progress.get("items", []):
         found[f"progress:{item['label']}"] = item

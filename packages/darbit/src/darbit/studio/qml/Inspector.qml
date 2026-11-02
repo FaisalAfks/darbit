@@ -86,6 +86,18 @@ Rectangle {
                     color: studio.colors.muted; font.pixelSize: 13
                 }
             }
+            // what's wrong with it and what to do, in words
+            Text {
+                readonly property bool missing: panel.asset !== null && !!panel.asset.missing
+                readonly property bool weak: panel.asset !== null && panel.asset.kind === "image" && !missing && panel.score !== null && panel.score < panel.needs + 0.05
+                visible: missing || weak
+                Layout.fillWidth: true; wrapMode: Text.Wrap
+                text: missing ? "Not taken yet: the setup guide lists it, and the bot skips what needs it. Retake takes it."
+                    : weak ? "Close to failing: its last score was " + (panel.score === null ? "" : panel.score.toFixed(2)) + " and it needs " + panel.needs.toFixed(2) + ". If the game changed, retake it; Highlight on screen shows where it's found now."
+                    : ""
+                color: missing ? studio.colors.danger : studio.colors.warn
+                font.pixelSize: 13
+            }
             RowLayout {
                 visible: panel.asset !== null && panel.asset.kind === "image"
                 Layout.fillWidth: true; spacing: 8

@@ -1,6 +1,7 @@
 """Why a step failed: the searches that ran out before it, a likely cause, and failures grouped by it."""
 
 import json
+from datetime import datetime
 
 import pytest
 
@@ -95,3 +96,11 @@ def test_a_short_check_or_a_watched_image_is_the_bots_own_reason(project, tmp_pa
     assert found[0]["cause"] == problems.OWN
     assert [row["target"] for row in found[0]["searches"]] == ["Fish.Claim"]
     assert "Fish.Claim wasn't there after 15 s" in found[0]["sentence"]
+
+
+def test_the_overview_gets_the_explained_problems(project, tmp_path):
+    from darbit.server import overview
+
+    events = run("10:00:00", "10:01:00", search("10:00:50", "Rod.Cast", 45, 0.52))
+    found = overview.data(project, events, "2026-11-01", datetime(2026, 11, 1, 11), tmp_path)
+    assert found["problems"][0]["cause"] == problems.CHANGED and found["problems"][0]["tone"] == "danger"

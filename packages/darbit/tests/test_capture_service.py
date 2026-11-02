@@ -1,6 +1,7 @@
 """The web capture session on a fake screen: freeze, boxes around a click, Test with look-alikes, and Save."""
 
 import json
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -94,13 +95,13 @@ def test_points_and_regions_save_without_a_picture(frozen):
 
 
 def test_mistakes_say_what_is_wrong(frozen):
-    with pytest.raises(service.CaptureError, match="name"):
+    with pytest.raises(service.CaptureError, match="a name"):
         service.save("", "image", [1, 1, 5, 5], None, None)
-    with pytest.raises(service.CaptureError, match="box the image"):
+    with pytest.raises(service.CaptureError, match="Box the image"):
         service.save("X", "image", None, None, None)
-    with pytest.raises(service.CaptureError, match="click the location"):
+    with pytest.raises(service.CaptureError, match="Click the location"):
         service.save("X", "point", None, None, None)
-    with pytest.raises(service.CaptureError, match="box something"):
+    with pytest.raises(service.CaptureError, match="Box an image"):
         service.test(None, None, None, 0.8)
 
 
@@ -179,3 +180,10 @@ def test_images_share_a_region_by_name(frozen):
     assert service.existing("Bag.Equip")["region_name"] == "Bag.List"
     target = load("Bag.Equip", [frozen])
     assert (target.region.x, target.region.w) == (1920 + 450, 300)  # the shared region's box, on the desktop
+
+
+def test_a_save_says_what_happened_in_plain_words(frozen):
+    found = service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)  # the duller button looks like it
+    assert found["risky"] and "looks alike" in found["said"] and "\\" not in found["said"]
+    calm = SimpleNamespace(risky=False, elsewhere=0.1)
+    assert service._said("Bag.Panel", calm) == "Saved Bag.Panel"

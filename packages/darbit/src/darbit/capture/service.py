@@ -142,7 +142,7 @@ def test(box: list[int] | None, name: str | None, region: list[int] | None, simi
         if region is None:
             region = _saved_region(session, name)
     else:
-        raise CaptureError("box something first")
+        raise CaptureError("Box an image first: click or drag it on the screen")
     area = Region(0, 0, shot.shape[1], shot.shape[0])
     if region is not None:
         area = _inside(region, shot)
@@ -253,7 +253,7 @@ def save(
     """Write a target's files from the frozen shot, then move on to the next item."""
     session, shot, origin, _ = _frozen()
     if not name:
-        raise CaptureError("give it a name")
+        raise CaptureError("Give it a name first, in the pill")
     capture_kind = KINDS.get(kind)
     if capture_kind is None:
         raise CaptureError(f"no kind called {kind}")
@@ -265,14 +265,14 @@ def save(
         result.point = Location(point[0] + origin.x, point[1] + origin.y)
     if capture_kind == "image":
         if image is None:
-            raise CaptureError("box the image first")
+            raise CaptureError("Box the image first: click or drag it on the screen")
         part = _inside(image, shot)
         result.image = Region(part.x + origin.x, part.y + origin.y, part.w, part.h)
     elif capture_kind == "region" and result.region is None and image is not None:
         part = _inside(image, shot)
         result.region = Region(part.x + origin.x, part.y + origin.y, part.w, part.h)
     elif capture_kind == "location" and result.point is None:
-        raise CaptureError("click the location first")
+        raise CaptureError("Click the location first, on the screen")
     if region_name and capture_kind == "image":
         result.region_name = region_name
     item = Item(name, capture_kind)
@@ -283,7 +283,17 @@ def save(
         if waiting.name != name:
             remaining.append(waiting)
     session.items = remaining
-    return {"message": saved.message, "risky": saved.risky, "items": describe(remaining)}
+    return {"message": saved.message, "said": _said(name, saved), "risky": saved.risky, "items": describe(remaining)}
+
+
+def _said(name: str, saved: object) -> str:
+    """A save in plain words, for the person: the file's path and box are in `message`, for the log."""
+    if saved.risky:
+        return (
+            f"Saved {name}, but something else on this screen looks alike ({saved.elsewhere:.2f}): "
+            "retake it smaller, or give it a region, to keep the bot off it"
+        )
+    return f"Saved {name}"
 
 
 def screens_folder(project: Path) -> Path:
