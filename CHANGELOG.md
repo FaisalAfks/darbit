@@ -4,6 +4,8 @@
 
 ### New
 
+- One look, kept by a test: every text field is `Field` and every menu `MenuPanel`, panels use one solid colour (`colors.solid`, also the ghost cursor's labels and Highlight's bar over the game), the kinds have their own colour tokens, and `docs/style/ui/design-system.md` lists the components. `test_the_studio_keeps_one_look` fails on one drawn by hand
+
 - Errors say what happened and what to do: Capture's saves and mistakes in plain words (a look-alike names the fix), the toast shows a whole reason and stays long enough to read, the Library explains Missing and Weak in its side panel, and the Overview's problem banner uses the Results page's explanation
 
 - Capture asks where an image is searched: the whole screen, a shared region (pick one, or share the region just drawn under a name), or a region of its own. Capture closes after a save when nothing is left to take

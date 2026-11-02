@@ -11,7 +11,7 @@ Rectangle {
     property bool chosen: false
     property bool dimmed: false
     signal clicked()
-    readonly property color kindInk: asset.kind === "region" ? studio.colors.accent2 : asset.kind === "location" ? studio.colors.ok : studio.colors.accent
+    readonly property color kindInk: asset.kind === "region" ? studio.colors.kindRegion : asset.kind === "location" ? studio.colors.kindLocation : studio.colors.kindImage
     height: 206
     radius: 16
     color: chosen ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.1) : studio.colors.glass

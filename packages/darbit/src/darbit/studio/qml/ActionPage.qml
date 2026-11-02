@@ -71,11 +71,11 @@ Item {
                     Row {
                         x: 20; y: 16; spacing: 10
                         Rectangle { width: 4; height: 22; radius: 2; color: studio.colors.accent2; anchors.verticalCenter: parent.verticalCenter }
-                        TextField {
+                        Field {
                             text: card.modelData.name || "Steps"
                             width: Math.max(160, implicitWidth); height: 32
                             color: studio.colors.text; font.pixelSize: 16; font.weight: Font.Bold
-                            background: Rectangle { radius: 8; color: parent.activeFocus ? studio.colors.raised : "transparent" }
+                            quiet: true
                             onEditingFinished: if (text !== (card.modelData.name || "Steps")) page.edit(card.sectionIndex, function (section) { section.name = text })
                         }
                     }
@@ -114,7 +114,7 @@ Item {
         y: page.changed ? page.height - height - 24 : page.height + 20
         Behavior on y { NumberAnimation { duration: studio.effects ? 260 : 0; easing.type: Easing.OutCubic } }
         width: saveRow.implicitWidth + 24; height: 60; radius: 30
-        color: studio.colors.glassStrong; border.color: studio.colors.line
+        color: studio.colors.solid; border.color: studio.colors.line
         RowLayout {
             id: saveRow
             anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }

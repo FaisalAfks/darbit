@@ -24,7 +24,7 @@ ComboBox {
         radius: 10; color: dropdown.hovered ? studio.colors.raisedHover : studio.colors.raised
         border.color: dropdown.activeFocus ? studio.colors.accent : studio.colors.line
     }
-    popup: Popup {
+    popup: MenuPanel {
         y: dropdown.height + 4
         width: Math.max(dropdown.width, 180)
         padding: 6
@@ -32,10 +32,6 @@ ComboBox {
             implicitHeight: contentHeight
             model: dropdown.popup.visible ? dropdown.delegateModel : null
             clip: true
-        }
-        background: Rectangle {
-            radius: 12; border.color: studio.colors.line
-            color: Qt.rgba(studio.colors.glassStrong.r, studio.colors.glassStrong.g, studio.colors.glassStrong.b, 1)
         }
     }
     delegate: ItemDelegate {

@@ -14,7 +14,7 @@ Popup {
     padding: 26
     onOpened: { field.text = ""; field.forceActiveFocus() }
     Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.45) }
-    background: Rectangle { radius: 22; color: studio.colors.glassStrong; border.color: studio.colors.line }
+    background: Rectangle { radius: 22; color: studio.colors.solid; border.color: studio.colors.line }
     enter: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 180 : 0 }
@@ -54,7 +54,7 @@ Popup {
         }
         Row {
             spacing: 10
-            TextField {
+            Field {
                 id: field
                 width: sheet.way === "folder" ? 360 : 468
                 height: 44
@@ -62,7 +62,6 @@ Popup {
                 color: studio.colors.text; placeholderTextColor: studio.colors.faint
                 font.pixelSize: 15
                 onAccepted: sheet.submit()
-                background: Rectangle { radius: 12; color: studio.colors.raised; border.color: field.activeFocus ? studio.colors.accent : studio.colors.line }
             }
             PillButton { visible: sheet.way === "folder"; text: "Browse…"; onClicked: folders.open() }
         }

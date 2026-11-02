@@ -19,7 +19,7 @@ Rectangle {
     onActionChanged: { renaming = false; confirming = false }
     readonly property string shownName: asset ? asset.name : action ? action.name : ""
     radius: 18
-    color: studio.colors.glassStrong
+    color: studio.colors.solid
     border.color: studio.colors.line
     clip: true
 
@@ -160,13 +160,12 @@ Rectangle {
             RowLayout {
                 visible: panel.renaming
                 Layout.fillWidth: true; spacing: 8
-                TextField {
+                Field {
                     id: nameField
                     Layout.fillWidth: true; Layout.preferredHeight: 38
                     color: studio.colors.text; font.pixelSize: 14
                     onAccepted: if (text.trim() !== "" && text.trim() !== panel.shownName) panel.renamed(text.trim())
                     Keys.onEscapePressed: panel.renaming = false
-                    background: Rectangle { radius: 10; color: studio.colors.raised; border.color: studio.colors.accent }
                 }
                 PillButton { text: "Rename"; kind: "primary"; small: true; onClicked: nameField.accepted() }
             }

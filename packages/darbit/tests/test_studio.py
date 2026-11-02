@@ -1133,3 +1133,25 @@ def test_an_image_is_searched_on_the_screen_in_a_shared_region_or_its_own_and_sa
     assert saved["region"] == "Bag.Menu"
     wait_until(lambda: not capture.isOpen)  # nothing left to take: it closes by itself
     del engine
+
+
+def test_the_studio_keeps_one_look():
+    import re
+
+    # a control drawn by hand is how the pages drift apart: the shared ones are in docs/style/ui/design-system.md
+    shared_in = {"TextField": "Field", "Switch": "Switcher", "ComboBox": "Dropdown", "Slider": "ValueSlider"}
+    sheets = {"NewBotSheet", "RecordSheet"}  # whole sheets, not menus
+    for page in (Path(app.__file__).parent / "qml").glob("*.qml"):
+        source = page.read_text(encoding="utf-8")
+        for control, home in shared_in.items():
+            if page.stem != home:
+                assert not re.search(rf"\b{control} \{{", source), f"{page.name} draws its own {control}: use {home}"
+        if page.stem != "MenuPanel" and page.stem not in sheets:
+            assert not re.search(r"\bPopup \{", source), f"{page.name} draws its own menu: use MenuPanel"
+        assert "glassStrong" not in source, f"{page.name}: panels use colors.solid"
+
+
+def test_a_theme_has_a_solid_panel_and_the_kinds_colours():
+    colors = theme.colors("glass-dark")
+    assert colors["solid"].startswith("#ff") and colors["solid"][3:] == colors["glassStrong"][3:]
+    assert colors["kindRegion"] == colors["accent2"]

@@ -150,6 +150,12 @@ def colors(name: str = DEFAULT, custom: Path | None = None) -> dict[str, str]:
             found[key] = qml_color(value)
         except ValueError:
             continue  # a broken custom value keeps the base theme's
+    # made from the others, so a custom theme gets them too: the panel colour with no see-through (anything over a
+    # game), and each kind of target's colour
+    found["solid"] = "#ff" + found["glassStrong"][3:]
+    found["kindImage"] = found["accent"]
+    found["kindRegion"] = found["accent2"]
+    found["kindLocation"] = found["ok"]
     return found
 
 

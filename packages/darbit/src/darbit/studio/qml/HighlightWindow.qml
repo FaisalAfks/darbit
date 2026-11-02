@@ -57,7 +57,7 @@ Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: 14
         width: info.implicitWidth + 32; height: 40; radius: 20
-        color: studio.colors.glassStrong; border.color: studio.colors.line
+        color: studio.colors.solid; border.color: studio.colors.line
         Row {
             id: info
             anchors.centerIn: parent; spacing: 10

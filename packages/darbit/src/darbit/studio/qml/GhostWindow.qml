@@ -55,7 +55,7 @@ Window {
                 visible: modelData.name !== "left"
                 x: 14; y: 10; radius: 8
                 width: buttonName.implicitWidth + 12; height: buttonName.implicitHeight + 4
-                color: studio.colors.glassStrong
+                color: studio.colors.solid
                 Text { id: buttonName; anchors.centerIn: parent; text: modelData.name; color: studio.colors.text; font.pixelSize: 11 }
             }
         }
@@ -73,7 +73,7 @@ Window {
             delegate: Rectangle {
                 required property var modelData
                 width: Math.max(30, cap.implicitWidth + 16); height: 30; radius: 8
-                color: studio.colors.glassStrong
+                color: studio.colors.solid
                 border.width: 1; border.color: studio.colors.accent
                 Text {
                     id: cap

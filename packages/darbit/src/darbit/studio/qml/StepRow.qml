@@ -35,7 +35,7 @@ Column {
                 font.pixelSize: 14; font.weight: row.step.kind === "call" ? Font.DemiBold : Font.Normal
                 elide: Text.ElideRight; Layout.fillWidth: true
             }
-            TextField {  // a wait's seconds, edited in place
+            Field {  // a wait's seconds, edited in place
                 visible: row.step.kind === "wait" && hover.hovered
                 Layout.preferredWidth: 70; Layout.preferredHeight: 30
                 text: row.step.args ? String(row.step.args.seconds) : ""
@@ -46,7 +46,6 @@ Column {
                     copy.args.seconds = Number(text)
                     if (copy.args.seconds !== row.step.args.seconds) row.changed(copy)
                 }
-                background: Rectangle { radius: 8; color: studio.colors.raised; border.color: studio.colors.line }
             }
             Text { visible: !!row.step.note; text: "# " + (row.step.note || ""); color: studio.colors.faint; font.pixelSize: 12; Layout.maximumWidth: 220; elide: Text.ElideRight }
             Row {
