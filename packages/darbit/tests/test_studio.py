@@ -251,6 +251,39 @@ ANSWERS = {
 }
 
 
+def _overview_answer() -> dict:
+    """The fake service's Overview as blocks, from the same tiles."""
+    tiles = {tile["kind"]: tile["data"] for tile in ANSWERS["bot.dashboard"]["tiles"]}
+    data = {"now": tiles["now"], "round": tiles["round"], "next": tiles["next"], "failures": tiles["failures"]}
+    data["progress:Speed Raid this week"] = tiles["progress"]["items"][0]
+    data["gain:Gems"] = {**tiles["gains"]["items"][0], "week": [10, 40, 0, 70, 30, 90, 120]}
+    data["block:Boat"] = {"name": "Boat", "value": 7, "sub": "next upgrade at 2 000"}
+    data["action:dim_run"] = {"name": "dim_run"}
+    layout = [
+        {"kind": "now", "shows": "now", "title": "Now", "width": 8, "origin": "darbit"},
+        {
+            "kind": "ring",
+            "shows": "progress:Speed Raid this week",
+            "title": "Speed Raid this week",
+            "width": 4,
+            "origin": "darbit",
+        },
+        {"kind": "round", "shows": "round", "title": "Today's round", "width": 6, "origin": "darbit"},
+        {"kind": "list", "shows": "next", "title": "Next up", "width": 6, "origin": "darbit"},
+        {"kind": "number", "shows": "gain:Gems", "title": "Gems today", "width": 4, "origin": "darbit"},
+        {"kind": "chart", "shows": "gain:Gems", "title": "Gems this week", "width": 4, "origin": "darbit"},
+        {"kind": "number", "shows": "block:Boat", "title": "Boat", "width": 4, "origin": "ad-bot"},
+    ]
+    extra = [
+        {"kind": "list", "shows": "failures", "title": "Problems", "width": 6, "origin": "darbit"},
+        {"kind": "button", "shows": "action:dim_run", "title": "dim_run", "width": 4, "origin": "ad-bot"},
+    ]
+    return {"project": BOT, "catalog": layout + extra, "layout": layout, "problem": "", "data": data}
+
+
+ANSWERS["bot.overview"] = _overview_answer()
+
+
 class FakeClient:
     """The service, with the answers above; remembers what it was asked."""
 
@@ -311,7 +344,7 @@ def test_the_pages_get_the_services_answers(qt):
     studio.connect()
     wait_until(lambda: studio.bot.get("name") == "other")  # the bot asked for, not the first
     studio.selectBot("/bots/ad-bot")
-    wait_until(lambda: len(studio.overview) == 6)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 7)
     assert not studio.libraryReady  # the Library says it's loading, not that there are no pictures
     studio.loadLibrary()
     studio.loadDays()
@@ -719,7 +752,7 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
         studio.connect()
         wait_until(lambda: studio.bot.get("name") == "ad-bot")
         studio.loadOverview()
-        wait_until(lambda: len(studio.overview) == 6)
+        wait_until(lambda: len(studio.overview.get("layout", [])) == 7)
         pill.open()
         window = root.findChild(QQuickWindow, "runPill")
         wait_until(window.isVisible)
@@ -932,4 +965,51 @@ def test_settings_search_and_flow_into_columns(qt):
     wait_until(lambda: [setting["key"] for one in shown() for setting in one["settings"]] == ["modes.server"])
     page.setProperty("query", "nothing like this")
     wait_until(lambda: shown() == [])
+    del engine
+
+
+def test_your_overview_layout_is_kept_per_bot_and_can_go_back(qt):
+    studio = backend.Studio(FakeClient)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    studio.loadOverview()
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 7)
+    mine = studio.overview["layout"][:2]
+    studio.saveLayout(mine)
+    assert studio.overview["custom"] and len(studio.overview["layout"]) == 2
+    again = backend.Studio(FakeClient)
+    again.connect()
+    wait_until(lambda: again.bot.get("name") == "ad-bot")
+    again.loadOverview()
+    wait_until(lambda: len(again.overview.get("layout", [])) == 2)  # kept for next time
+    again.resetLayout()
+    assert not again.overview["custom"] and len(again.overview["layout"]) == 7
+
+
+def test_customizing_moves_resizes_and_takes_blocks_off(qt):
+    from PySide6.QtCore import Q_ARG, QMetaObject
+
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1720, 1000)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 7)
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    page = next(item for item in walk(window.contentItem()) if item.property("galleryOpen") is not None)
+    QMetaObject.invokeMethod(page, "resize", Q_ARG("QVariant", 0), Q_ARG("QVariant", 12))
+    assert studio.overview["layout"][0]["width"] == 12
+    QMetaObject.invokeMethod(page, "remove", Q_ARG("QVariant", 1))
+    assert len(studio.overview["layout"]) == 6
+    shows = [block["shows"] for block in studio.overview["catalog"] if block["kind"] == "button"]
+    QMetaObject.invokeMethod(
+        page,
+        "add",
+        Q_ARG("QVariant", {"kind": "button", "shows": shows[0], "title": "dim_run", "width": 4, "origin": "ad-bot"}),
+    )
+    assert studio.overview["layout"][-1]["shows"] == "action:dim_run"
     del engine

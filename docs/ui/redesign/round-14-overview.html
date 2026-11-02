@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 14: Overview, configurable</title>
+<link rel="stylesheet" href="rounds.css">
+<style>
+.win { height: 640px; }
+.main { flex: 1; min-width: 0; padding: 14px 16px; display: grid; gap: 10px; align-content: start; overflow: hidden; position: relative; }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; }
+.blk { border-radius: 14px; background: var(--glass); border: 1px solid var(--line); padding: 12px; display: grid; gap: 6px; align-content: start; position: relative; min-height: 96px; }
+.blk h5 { margin: 0; font: 650 10.5px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
+.blk .big { font: 700 26px var(--font-strong); }
+.blk .big small { font-size: 12px; color: var(--muted); font-weight: 600; }
+.blk .sub { font-size: 11.5px; color: var(--muted); }
+.edit .blk { outline: 1px dashed color-mix(in oklab, var(--accent) 60%, transparent); outline-offset: -1px; }
+.edit .blk::after { content: "⋮⋮"; position: absolute; left: 6px; top: 6px; color: var(--faint); font-size: 11px; letter-spacing: -2px; }
+.handles { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+.handles span { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: var(--raised-hover); font-size: 10px; color: var(--text); }
+.resize { position: absolute; right: 4px; bottom: 4px; width: 12px; height: 12px; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); border-radius: 0 0 4px 0; }
+.ring { width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--accent) 0 72%, var(--raised-hover) 72% 100%); display: grid; place-items: center; }
+.ring div { width: 50px; height: 50px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font: 700 13px var(--font-strong); }
+.spark { height: 34px; display: flex; align-items: flex-end; gap: 3px; }
+.spark i { flex: 1; border-radius: 3px 3px 0 0; background: color-mix(in oklab, var(--accent-2) 70%, transparent); }
+.list div { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-top: 1px solid rgb(255 255 255 / .05); }
+.list div:first-child { border-top: 0; }
+.list b { font-weight: 600; } .list span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.btnrow { display: flex; gap: 6px; }
+.toolbar { display: flex; align-items: center; gap: 8px; }
+.toolbar .grow { flex: 1; }
+.gallery { position: absolute; right: 0; top: 0; bottom: 0; width: 230px; background: var(--glass-strong); border-left: 1px solid var(--line); padding: 12px; display: grid; gap: 8px; align-content: start; }
+.gallery h4 { margin: 0; font: 650 13px var(--font-strong); }
+.gal { border-radius: 10px; background: var(--raised); border: 1px solid var(--line); padding: 8px 10px; font-size: 12px; display: grid; gap: 2px; }
+.gal b { font: 600 12px var(--font-strong); }
+.gal small { color: var(--muted); font-size: 11px; }
+.gal.bot { border-color: color-mix(in oklab, var(--slot-bot) 50%, transparent); }
+.gal.bot b { color: var(--slot-bot); }
+.code { font: 11.5px/1.55 var(--mono); background: #0a0c10; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; white-space: pre; color: #c9d1d9; overflow: hidden; }
+.code .k { color: #79c0ff; } .code .s { color: #a5d6ff; } .code .c { color: #6b7280; } .code .h { color: #f0abfc; }
+.sect { font: 650 10.5px var(--font-strong); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.sect .pin { color: var(--accent); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Round 14: <span>Overview</span>, made by the bot and by you</h1>
+  <p class="lead">Today a bot author can only pick which of nine fixed tiles show and in what order, and you can't change
+  anything. Three ways to make it flexible. In all three, blocks are filled from what the bot records
+  (<code>d.record</code>, <code>d.progress</code>, <code>d.next</code>, steps, failures, screenshots) and from its state, and
+  your changes are kept per bot with a way back to the bot's own layout. Made-up bot.</p>
+
+  <div class="options">
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Overview · Customizing<span class="grow"></span><i></i><i></i></div>
+      <div class="body"><div class="main edit" style="padding-right:250px">
+        <div class="toolbar"><span class="btn primary">Done</span><span class="btn">＋ Add a block</span><span class="btn">↺ The bot's layout</span><span class="grow"></span><span style="color:var(--muted);font-size:12px">drag to move · corner to resize</span></div>
+        <div class="grid">
+          <div class="blk" style="grid-column: span 8"><h5>Now</h5><div class="big">Deep sea <small>· 12 m</small></div><div class="sub">Fishing › Deep sea › Reeling</div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 4;place-items:center"><h5 style="width:100%">Weekly catch</h5><div class="ring"><div>72%</div></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 4"><h5>Gold today</h5><div class="big">+1 240</div><div class="spark"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:65%"></i><i style="height:90%"></i><i style="height:70%"></i></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 4"><h5>Next up</h5><div class="list"><div><b>Tournament</b><span>in 14 m</span></div><div><b>Daily reset</b><span>in 6 h</span></div></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 4"><h5>Last screen</h5><div style="height:56px;border-radius:8px;background:linear-gradient(160deg,#1b2a3a,#2f4a66)"></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+        </div>
+        <div class="gallery">
+          <h4>Add a block</h4>
+          <div class="gal"><b>Number</b><small>a value it records, with the week</small></div>
+          <div class="gal"><b>Ring</b><small>progress toward a goal</small></div>
+          <div class="gal"><b>Chart</b><small>a value over the days</small></div>
+          <div class="gal"><b>List</b><small>next up, failures, gains…</small></div>
+          <div class="gal"><b>Last screen</b><small>its newest screenshot</small></div>
+          <div class="gal"><b>Button</b><small>play an action or a mode</small></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">A</span>You arrange it</h2>
+      <p>Customize turns the Overview into a grid of blocks: drag to move, the corner to resize, ◐ for its options (what
+      it shows, its colour), ✕ to hide; ＋ adds a block from a gallery of kinds bound to what the bot records. The bot
+      author only sets which blocks come first.</p>
+      <ul>
+        <li class="plus">Each person makes it theirs, live.</li>
+        <li class="plus">Built-in kinds cover most bots.</li>
+        <li class="minus">The author can't add blocks of their own.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Overview<span class="grow"></span><i></i><i></i></div>
+      <div class="body"><div class="main">
+        <div class="two">
+          <div style="display:grid;gap:10px">
+            <div class="sect"><span class="pin">📌</span>Catch <span class="grow"></span><span style="font-weight:500;text-transform:none;letter-spacing:0">▾</span></div>
+            <div class="grid" style="grid-template-columns:1fr 1fr">
+              <div class="blk"><h5>Gold today</h5><div class="big">+1 240</div></div>
+              <div class="blk" style="place-items:center"><h5 style="width:100%">Weekly catch</h5><div class="ring"><div>72%</div></div></div>
+            </div>
+            <div class="sect">Boat <span class="grow"></span><span style="font-weight:500;text-transform:none;letter-spacing:0">▸ folded</span></div>
+          </div>
+          <div class="code"><span class="c"># overview.toml, written by the bot's author</span>
+<span class="k">[[section]]</span>
+name = <span class="s">"Catch"</span>
+
+  <span class="k">[[section.block]]</span>
+  kind = <span class="s">"number"</span>
+  title = <span class="s">"Gold today"</span>
+  shows = <span class="s">"gain:Gold"</span>      <span class="c"># d.record.gain</span>
+
+  <span class="k">[[section.block]]</span>
+  kind = <span class="s">"ring"</span>
+  title = <span class="s">"Weekly catch"</span>
+  shows = <span class="s">"progress:Weekly catch"</span>
+
+<span class="k">[[section]]</span>
+name = <span class="s">"Boat"</span>
+  <span class="k">[[section.block]]</span>
+  kind = <span class="s">"list"</span>
+  shows = <span class="s">"state:boat.upgrades"</span> <span class="c"># d.State</span></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">B</span>The bot designs it</h2>
+      <p>The author lays the Overview out in <code>overview.toml</code>: sections of blocks, each a kind (number, ring,
+      chart, list, text, button) bound to something the bot records or keeps. You pin, fold and reorder sections, nothing
+      finer.</p>
+      <ul>
+        <li class="plus">Every bot gets an Overview that fits it, versioned with its code.</li>
+        <li class="plus">Simple for people using the bot.</li>
+        <li class="minus">Little room for your own taste.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="option">
+    <div class="win">
+      <div class="title"><span class="logo">d</span> fish-bot · Overview · Customizing<span class="grow"></span><i></i><i></i></div>
+      <div class="body"><div class="main edit" style="padding-right:250px">
+        <div class="toolbar"><span class="btn primary">Done</span><span class="btn">＋ Add a block</span><span class="btn">↺ The bot's layout</span></div>
+        <div class="grid">
+          <div class="blk" style="grid-column: span 8"><h5>Now</h5><div class="big">Deep sea <small>· 12 m</small></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 4;border-color:color-mix(in oklab,var(--slot-bot) 50%,transparent)"><h5 style="color:var(--slot-bot)">Boat ⚓ <span style="color:var(--faint)">fish-bot</span></h5><div class="big">Lv 7</div><div class="sub">next upgrade at 2 000 gold</div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 6"><h5>Gold over the week</h5><div class="spark" style="height:50px"><i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:65%"></i><i style="height:90%"></i><i style="height:70%"></i></div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+          <div class="blk" style="grid-column: span 6"><h5>Run</h5><div class="btnrow"><span class="btn">▶ Tournament now</span><span class="btn">▶ Sell the catch</span></div><div class="sub">the bot's actions, as buttons</div><div class="handles"><span>◐</span><span>✕</span></div><div class="resize"></div></div>
+        </div>
+        <div class="gallery">
+          <h4>Add a block</h4>
+          <div class="gal bot"><b>Boat ⚓</b><small>from fish-bot: its level and next upgrade</small></div>
+          <div class="gal bot"><b>Bait left</b><small>from fish-bot</small></div>
+          <div class="gal"><b>Number · Ring · Chart</b><small>any value it records</small></div>
+          <div class="gal"><b>List · Text · Last screen</b><small></small></div>
+          <div class="gal"><b>Button</b><small>play an action or a mode</small></div>
+          <div class="code" style="white-space:pre-wrap;font-size:10.5px"><span class="h">@d.block</span>(<span class="s">"Boat ⚓"</span>)
+<span class="k">def</span> boat():
+    <span class="k">return</span> d.Number(level, sub=...)</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="about">
+      <h2><span class="tag">C</span>Both: the bot adds blocks, you arrange them</h2>
+      <p>The author sets the default layout (<code>overview.toml</code>) and can add blocks of their own, from data or
+      from code (<code>@d.block</code>, a kind and its values), which show in the gallery under the bot's name. You arrange,
+      resize, hide and add any of them; ↺ goes back to the bot's layout.</p>
+      <ul>
+        <li class="plus">The most flexible for both, the way plugins extend darbit elsewhere.</li>
+        <li class="plus">One block system for the Overview, later for other pages.</li>
+        <li class="minus">The most to build (blocks from code run in the bot and reach the Studio through the service).</li>
+      </ul>
+    </div>
+  </section>
+  </div>
+</main>
+</body>
+</html>

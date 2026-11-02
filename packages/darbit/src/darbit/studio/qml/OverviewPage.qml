@@ -1,5 +1,6 @@
-// The Overview: what the bot is doing now, what needs you, then today's round beside progress, what's next and gains.
-// Everything comes from the bot's run report (d.step, d.plan, d.progress, d.next, d.record.gain).
+// The Overview (round 14, C): what needs you, then the bot's blocks in rows of 12. The bot's author lays out the
+// default (overview.toml) and adds blocks of their own (d.show, @d.block); Customize lets you drag blocks around, make
+// them wider or narrower, take them off and add any from the gallery, kept for this bot; ↺ goes back to the bot's.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -11,29 +12,70 @@ Flickable {
     contentHeight: column.height + 60
     clip: true
     boundsBehavior: Flickable.StopAtBounds
+    interactive: !editing
     ScrollBar.vertical: ScrollBar {}
 
-    function tile(kind) {
-        var tiles = studio.overview
-        for (var index = 0; index < tiles.length; index++)
-            if (tiles[index].kind === kind) return tiles[index].data
-        return null
-    }
-    readonly property var now: tile("now")
-    readonly property var round: tile("round")
-    readonly property var progress: tile("progress")
-    readonly property var gains: tile("gains")
-    readonly property var upcoming: tile("next")
-    readonly property var failures: tile("failures")
-    readonly property var setup: tile("setup")
+    property bool editing: false
+    property bool galleryOpen: false
+    readonly property var board: studio.overview || ({})
+    readonly property var layout: board.layout || []
+    readonly property var data: board.data || ({})
+    readonly property var catalog: board.catalog || []
+    readonly property var now: data.now || null
+    readonly property var setup: data.setup || null
+    readonly property var failures: data.failures || null
     readonly property bool empty: studio.bots.length === 0
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
-    readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
-    readonly property var lastFailure: failures && failures.items.length ? failures.items[failures.items.length - 1] : null
+    readonly property var lastFailure: failures && failures.items && failures.items.length ? failures.items[failures.items.length - 1] : null
+    readonly property real gap: 16
+    readonly property real unit: (column.width - 11 * gap) / 12
+    // the layout as rows: blocks in order, a new row when the next one doesn't fit in what's left of 12
+    readonly property var rows: {
+        var found = [], row = [], used = 0
+        for (var index = 0; index < layout.length; index++) {
+            var width = layout[index].width || 4
+            if (used + width > 12 && row.length) { found.push(row); row = []; used = 0 }
+            row.push({ spec: layout[index], index: index })
+            used += width
+        }
+        if (row.length) found.push(row)
+        return found
+    }
+    readonly property var addable: catalog.filter(function (one) {
+        return !layout.some(function (mine) { return mine.kind === one.kind && mine.shows === one.shows })
+    })
+
+    function widthOf(units) { return unit * units + gap * (units - 1) }
+    function save(next) { studio.saveLayout(next) }
+    function moveTo(from, sceneX, sceneY) {
+        // the block dropped on: the one whose place holds the drop point; dropped elsewhere, it goes back
+        var target = -1
+        for (var at = 0; at < blocks.count; at++) {
+            var other = blocks.itemAt(at)
+            if (!other) continue
+            var corner = other.mapToItem(null, 0, 0)
+            if (sceneX >= corner.x && sceneX <= corner.x + other.width && sceneY >= corner.y && sceneY <= corner.y + other.height && other.index !== from)
+                target = other.index
+        }
+        var next = layout.slice()
+        if (target >= 0) {
+            var moved = next.splice(from, 1)[0]
+            next.splice(target, 0, moved)
+        }
+        save(next)
+    }
+    function resize(index, width) {
+        var next = layout.slice()
+        next[index] = Object.assign({}, next[index], { width: width })
+        save(next)
+    }
+    function remove(index) { var next = layout.slice(); next.splice(index, 1); save(next) }
+    function add(spec) { save(layout.concat([{ kind: spec.kind, shows: spec.shows, title: spec.title, width: spec.width, origin: spec.origin }])) }
 
     ColumnLayout {
         id: column
-        x: 24; width: page.width - 48
+        x: 24; width: page.width - 48 - (page.galleryOpen ? gallery.width + 16 : 0)
+        Behavior on width { NumberAnimation { duration: studio.effects ? 220 : 0; easing.type: Easing.OutCubic } }
         spacing: 16
 
         // ---- the first time: no bots yet
@@ -69,80 +111,22 @@ Flickable {
             }
         }
 
-        // ---- now
-        Glass {
-            id: hero
+        // ---- the toolbar: Customize, and while customizing, Done, Add and back to the bot's layout
+        RowLayout {
             visible: !page.empty
-            Layout.fillWidth: true; Layout.preferredHeight: 196
-            padding: 26
-            content: Item {
-                anchors.fill: parent
-                Text {
-                    text: page.running ? "NOW · " + (studio.bot.status === "paused" ? "PAUSED" : "RUNNING " + Format.duration(studio.now - (studio.bot.since || studio.now)).toUpperCase())
-                                       : "NOW"
-                    color: studio.bot.status === "paused" ? studio.colors.warn : page.running ? studio.colors.ok : studio.colors.muted
-                    font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.3
-                }
-                Flow {
-                    id: crumbs
-                    y: 26; width: parent.width - 220
-                    spacing: 10
-                    visible: page.steps.length > 0
-                    Repeater {
-                        model: page.steps
-                        delegate: Row {
-                            required property var modelData
-                            required property int index
-                            spacing: 10
-                            Text { visible: index > 0; text: "›"; color: studio.colors.faint; font.pixelSize: 30; anchors.verticalCenter: parent.verticalCenter }
-                            Text {
-                                text: modelData
-                                color: index === page.steps.length - 1 ? studio.colors.accent : studio.colors.text
-                                font.pixelSize: 32; font.weight: Font.Bold
-                            }
-                        }
-                    }
-                }
-                Text {
-                    visible: page.steps.length === 0
-                    y: 26
-                    text: page.running ? "Starting…" : "Not running"
-                    color: page.running ? studio.colors.text : studio.colors.muted
-                    font.pixelSize: 32; font.weight: Font.Bold
-                }
-                Text {
-                    y: 76; width: parent.width - 220
-                    text: page.steps.length === 0 && !page.running ? "Press Play to start " + (studio.bot.name || "the bot") + ", or start it from a terminal: this page follows it either way."
-                        : page.now && page.now.since ? "since " + Format.clock(page.now.since) + " · " + Format.duration(Format.since(page.now.since, studio.now)) + " in this step" : ""
-                    color: studio.colors.muted; font.pixelSize: 14; elide: Text.ElideRight
-                }
-                // the round as segments: done, running, to come
-                Row {
-                    visible: page.round !== null
-                    anchors.bottom: parent.bottom
-                    width: parent.width - 220
-                    spacing: 6
-                    Repeater {
-                        model: page.round ? page.round.steps : []
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: (parent.width - 6 * ((page.round ? page.round.steps.length : 1) - 1)) / Math.max(1, page.round ? page.round.steps.length : 1)
-                            height: 6; radius: 3
-                            color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
-                                : modelData.state === "failed" ? studio.colors.danger : studio.colors.raisedHover
-                        }
-                    }
-                }
-                // the main progress, as a ring
-                Ring {
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                    width: 132; height: 132; thickness: 11
-                    visible: page.ringItem() !== null
-                    done: page.ringItem() ? page.ringItem().done : 0
-                    total: page.ringItem() ? page.ringItem().total : 1
-                    caption: page.ringItem() ? page.ringItem().label : ""
-                }
+            Layout.fillWidth: true
+            spacing: 8
+            Text {
+                visible: !!page.board.problem
+                Layout.fillWidth: true; elide: Text.ElideRight
+                text: "overview.toml: " + (page.board.problem || "") + " (darbit's layout is shown)"
+                color: studio.colors.warn; font.pixelSize: 12
             }
+            Item { Layout.fillWidth: true; visible: !page.board.problem }
+            PillButton { visible: !page.editing; kind: "quiet"; small: true; icon: "✎"; text: "Customize"; onClicked: page.editing = true }
+            PillButton { visible: page.editing; small: true; icon: "+"; text: "Add a block"; onClicked: page.galleryOpen = !page.galleryOpen }
+            PillButton { visible: page.editing && !!page.board.custom; small: true; kind: "quiet"; icon: "↺"; text: "The bot's layout"; onClicked: studio.resetLayout() }
+            PillButton { visible: page.editing; small: true; kind: "primary"; text: "Done"; onClicked: { page.editing = false; page.galleryOpen = false } }
         }
 
         // ---- what needs you
@@ -173,145 +157,87 @@ Flickable {
             onActed: window.go("results")
         }
 
-        // ---- the round, and the rest
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 16
-
-            Glass {
-                title: "Today's round"
-                delay: 60
-                note: page.round ? page.doneCount() + " of " + page.round.steps.length : ""
-                visible: page.round !== null
-                Layout.fillWidth: true; Layout.preferredWidth: 6; Layout.alignment: Qt.AlignTop
-                Layout.preferredHeight: 72 + (page.round ? page.round.steps.length : 0) * 48
-                content: Column {
-                    width: parent.width
-                    Repeater {
-                        model: page.round ? page.round.steps : []
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: parent.width; height: 48; radius: 12
-                            color: modelData.state === "running" ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.09) : "transparent"
-                            RowLayout {
-                                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
-                                spacing: 14
-                                Rectangle {
-                                    width: 10; height: 10; radius: 5
-                                    color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
-                                        : modelData.state === "failed" ? studio.colors.danger : studio.colors.faint
-                                }
-                                Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                                Text {
-                                    text: modelData.state === "planned" ? "later"
-                                        : modelData.state === "running" ? "running"
-                                        : modelData.state === "failed" ? (modelData.reason || "failed")
-                                        : modelData.state === "stopped" ? Format.clock(modelData.started) + " · stopped"
-                                        : Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : "")
-                                    color: modelData.state === "running" ? studio.colors.accent : modelData.state === "failed" ? studio.colors.danger : studio.colors.muted
-                                    font.pixelSize: 13; font.weight: modelData.state === "running" ? Font.DemiBold : Font.Normal
-                                }
-                            }
-                        }
-                    }
+        // ---- the blocks, row by row
+        Text {
+            visible: !page.empty && page.layout.length === 0
+            text: page.editing ? "Add blocks from the gallery." : "No blocks: Customize to add some."
+            color: studio.colors.muted; font.pixelSize: 14
+        }
+        Repeater {
+            model: page.rows
+            delegate: Row {
+                id: row
+                required property var modelData
+                spacing: page.gap
+                // the row as tall as its tallest block, so the cards line up
+                readonly property real tallest: {
+                    var most = 0
+                    for (var at = 0; at < children.length; at++) most = Math.max(most, children[at].implicitHeight || 0)
+                    return most
                 }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true; Layout.preferredWidth: 5; Layout.alignment: Qt.AlignTop
-                spacing: 16
-                Glass {
-                    title: "Progress"
-                    delay: 100
-                    visible: page.barItems().length > 0
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 70 + page.barItems().length * 44
-                    content: Column {
-                        width: parent.width
-                        Repeater {
-                            model: page.barItems()
-                            delegate: RowLayout {
-                                required property var modelData
-                                width: parent.width; height: 44; spacing: 14
-                                Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 14; Layout.fillWidth: true; elide: Text.ElideRight }
-                                Bar { Layout.preferredWidth: 130; share: modelData.total > 0 ? modelData.done / modelData.total : 0; gradientFill: true }
-                                Text { text: modelData.done + " / " + modelData.total; color: studio.colors.muted; font.pixelSize: 13; Layout.preferredWidth: 54; horizontalAlignment: Text.AlignRight }
-                            }
-                        }
-                    }
-                }
-                Glass {
-                    title: "Next up"
-                    delay: 140
-                    visible: page.upcoming !== null
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 70 + (page.upcoming ? page.upcoming.items.length : 0) * 44
-                    content: Column {
-                        width: parent.width
-                        Repeater {
-                            model: page.upcoming ? page.upcoming.items : []
-                            delegate: RowLayout {
-                                required property var modelData
-                                width: parent.width; height: 44; spacing: 12
-                                Text { text: "◷"; color: studio.colors.faint; font.pixelSize: 14 }
-                                Column {
-                                    Layout.fillWidth: true
-                                    Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold }
-                                    Text { text: Format.clock(modelData.at); color: studio.colors.faint; font.pixelSize: 12 }
-                                }
-                                Text { text: "in " + Format.duration(modelData.in_seconds); color: studio.colors.accent; font.pixelSize: 15; font.weight: Font.Bold }
-                            }
-                        }
-                    }
-                }
-                Glass {
-                    title: "Gains today"
-                    delay: 180
-                    visible: page.gains !== null
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 70 + (page.gains ? page.gains.items.length : 0) * 42
-                    content: Column {
-                        width: parent.width
-                        Repeater {
-                            model: page.gains ? page.gains.items : []
-                            delegate: RowLayout {
-                                required property var modelData
-                                width: parent.width; height: 42; spacing: 12
-                                Rectangle { width: 10; height: 10; rotation: 45; radius: 2; color: studio.colors.accent2 }
-                                Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true }
-                                Text { text: "+" + modelData.today; color: studio.colors.ok; font.pixelSize: 15; font.weight: Font.Bold }
-                                Text {
-                                    visible: modelData.total !== null
-                                    text: modelData.total !== null ? Number(modelData.total).toLocaleString(Qt.locale(), "f", 0) : ""
-                                    color: studio.colors.faint; font.pixelSize: 13
-                                    Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight
-                                }
-                            }
-                        }
+                Repeater {
+                    model: row.modelData
+                    delegate: Block {
+                        required property var modelData
+                        readonly property int index: modelData.index
+                        width: page.widthOf(modelData.spec.width || 4); height: row.tallest
+                        spec: modelData.spec
+                        info: page.data[modelData.spec.shows] === undefined ? null : page.data[modelData.spec.shows]
+                        editing: page.editing
+                        unit: page.unit; gap: page.gap
+                        delay: index * 30
+                        onMoved: function (x, y) { page.moveTo(index, x, y) }
+                        onResized: function (width) { page.resize(index, width) }
+                        onRemoved: page.remove(index)
+                        Component.onCompleted: blocks.add(this)
+                        Component.onDestruction: blocks.drop(this)
                     }
                 }
             }
         }
     }
+    // every block on the page, to find the one a block is dropped on
+    QtObject {
+        id: blocks
+        property var items: []
+        readonly property int count: items.length
+        function add(item) { items = items.concat([item]) }
+        function drop(item) { items = items.filter(function (one) { return one !== item }) }
+        function itemAt(at) { return items[at] }
+    }
 
-    function doneCount() {
-        var done = 0
-        for (var index = 0; index < round.steps.length; index++)
-            if (round.steps[index].state === "ok") done++
-        return done
-    }
-    function ringItem() {
-        if (!progress) return null
-        var best = null
-        for (var index = 0; index < progress.items.length; index++) {
-            var item = progress.items[index]
-            if (item.total > 1 && (best === null || item.total > best.total)) best = item
+    // ---- the gallery: every block this bot can show and isn't showing
+    Glass {
+        id: gallery
+        visible: page.galleryOpen
+        parent: page
+        anchors { right: parent.right; rightMargin: 24; top: parent.top; topMargin: 12; bottom: parent.bottom; bottomMargin: 24 }
+        width: 270
+        title: "Add a block"
+        lift: false
+        content: Flickable {
+            id: galleryList
+            anchors.fill: parent
+            contentHeight: choices.height; clip: true
+            SmoothWheel { view: galleryList }
+            Column {
+                id: choices
+                width: parent.width; spacing: 6
+                Text { visible: page.addable.length === 0; width: parent.width; wrapMode: Text.Wrap; text: "Every block is on the Overview."; color: studio.colors.muted; font.pixelSize: 13 }
+                Repeater {
+                    model: page.addable
+                    delegate: MenuLine {
+                        required property var modelData
+                        width: choices.width
+                        icon: modelData.kind === "ring" ? "◔" : modelData.kind === "chart" ? "▁▃▅" : modelData.kind === "list" ? "≡" : modelData.kind === "button" ? "▶"
+                            : modelData.kind === "screen" ? "▢" : modelData.kind === "number" ? "#" : "◆"
+                        iconColor: modelData.origin && modelData.origin !== "darbit" ? studio.colors.slotBot : studio.colors.accent
+                        text: modelData.title
+                        detail: modelData.kind + (modelData.origin && modelData.origin !== "darbit" ? " · from " + modelData.origin : "")
+                        onClicked: page.add(modelData)
+                    }
+                }
+            }
         }
-        return best
-    }
-    function barItems() {
-        if (!progress) return []
-        var ring = ringItem()
-        return progress.items.filter(function (item) { return item !== ring })
     }
 }

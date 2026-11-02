@@ -11,12 +11,7 @@ PillWindow {
     title: "darbit run pill"
     readonly property string state: studio.bot.status || "stopped"
     readonly property color dot: state === "running" ? studio.colors.ok : state === "paused" ? studio.colors.warn : studio.colors.faint
-    readonly property var now: {
-        var tiles = studio.overview
-        for (var index = 0; index < tiles.length; index++)
-            if (tiles[index].kind === "now") return tiles[index].data
-        return null
-    }
+    readonly property var now: studio.overview && studio.overview.data ? studio.overview.data.now || null : null
     readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
 
     Timer { interval: 1000; running: runPill.isOpen && !runPill.tucked; repeat: true; onTriggered: studio.tick() }

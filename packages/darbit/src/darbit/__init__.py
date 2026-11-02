@@ -53,7 +53,7 @@ from .runtime.observe import Observer, observe, observers, stop_observing
 from .runtime.region import Region, Screen, area, point
 from .runtime.screens import Map, go
 from .runtime.screens import default as screens
-from .runtime.show import Record, next_up, plan, progress
+from .runtime.show import Record, block, next_up, plan, progress, show
 from .runtime.state import State, Timer
 from .runtime.steps import flow, step
 from .runtime.tape import replay
@@ -98,6 +98,7 @@ __all__ = [
     "UnknownKey",
     "apps",
     "area",
+    "block",
     "check",
     "click",
     "double_click",
@@ -129,6 +130,7 @@ __all__ = [
     "screenshot",
     "scroll",
     "settings",
+    "show",
     "sleep",
     "step",
     "stop_key",
