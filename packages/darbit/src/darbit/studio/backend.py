@@ -21,6 +21,7 @@ CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
 PICKER = "studio.picker"  # ui setting: "dropdown" (the default) or "sidebar"
 EFFECTS = "studio.effects"  # ui setting: smooth effects (motion and glass); off for slower PCs
+LAYOUT = "studio.layout"  # ui setting prefix: the person's own Overview layout for a bot, by the bot's folder
 GHOST = "studio.ghost"  # ui setting: the ghost cursor, what bots click and press shown over the game
 RUN_PILL = "studio.run_pill"  # ui setting: Play hides the Studio and shows the run pill
 
@@ -62,7 +63,7 @@ class Studio(QObject):
         self._client: Client | None = None
         self._bots: list[dict] = []
         self._bot: dict = {}
-        self._overview: list[dict] = []
+        self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
         self._library: list[dict] = []
         self._library_bot = ""  # the bot the library was loaded for: until it's this one, the page says it's loading
         self._days: list[dict] = []
@@ -95,7 +96,7 @@ class Studio(QObject):
     def _get_bot(self) -> dict:
         return self._bot
 
-    def _get_overview(self) -> list:
+    def _get_overview(self) -> dict:
         return self._overview
 
     def _get_library(self) -> list:
@@ -165,7 +166,9 @@ class Studio(QObject):
 
     bots = Property(list, _get_bots, notify=botsChanged)
     bot = Property(dict, _get_bot, notify=botChanged)
-    overview = Property(list, _get_overview, notify=overviewChanged)
+    overview = Property(
+        dict, _get_overview, notify=overviewChanged
+    )  # {catalog, layout, botLayout, custom, data, problem}
     library = Property(list, _get_library, notify=libraryChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
     days = Property(list, _get_days, notify=daysChanged)
@@ -335,7 +338,26 @@ class Studio(QObject):
 
     @Slot()
     def loadOverview(self) -> None:
-        self._ask("overview", "bot.dashboard")
+        self._ask("overview", "bot.overview")
+
+    @Slot("QVariantList")
+    def saveLayout(self, blocks: list) -> None:
+        """Keep the person's own Overview layout for the shown bot."""
+        if not self._bot.get("path"):
+            return
+        kept = [dict(block) for block in blocks]
+        ui_settings.set_value(f"{LAYOUT}:{self._bot['path']}", kept)
+        self._overview = {**self._overview, "layout": kept, "custom": True}
+        self.overviewChanged.emit()
+
+    @Slot()
+    def resetLayout(self) -> None:
+        """Back to the bot's own Overview layout."""
+        if not self._bot.get("path"):
+            return
+        ui_settings.set_value(f"{LAYOUT}:{self._bot['path']}", None)
+        self._overview = {**self._overview, "layout": self._overview.get("botLayout", []), "custom": False}
+        self.overviewChanged.emit()
 
     @Slot()
     def loadLibrary(self) -> None:
@@ -421,7 +443,14 @@ class Studio(QObject):
         elif what == "bots" and isinstance(result, list):
             self._set_bots(result)
         elif what == "overview" and isinstance(result, dict):
-            self._overview = list(result.get("tiles", []))
+            mine = ui_settings.get(f"{LAYOUT}:{self._bot.get('path', '')}")
+            bot_layout = list(result.get("layout", []))
+            self._overview = {
+                **result,
+                "botLayout": bot_layout,
+                "layout": mine if isinstance(mine, list) else bot_layout,
+                "custom": isinstance(mine, list),
+            }
             self.overviewChanged.emit()
         elif what == "library" and isinstance(result, list):
             self._library = result

@@ -179,6 +179,15 @@ Each round is an HTML page (with a PNG of it) in this folder. `rounds.css` is th
 - The Overview's setup line says the true thing: images in the guide not taken yet; the bot runs without them.
 - Not chosen: B (a page per problem with a scrubbable strip), as more than most problems need.
 
+### Round 14: the Overview, by the bot and by you (round-14-overview.html)
+
+- **C, both.** The bot's author lays out the default in `overview.toml` (blocks with a kind, what each shows and a
+  width of 12) and adds blocks of their own with `d.show` and `@d.block`; its actions become buttons. The person using
+  it customizes: drag a block elsewhere, drag its corner wider or narrower, ✕ to take it off, ＋ to add any block from
+  the gallery (the bot's own marked with its name). Their layout is kept per bot; ↺ goes back to the bot's.
+- The alerts (locked screen, setup, the last problem) stay above the blocks, not blocks themselves.
+- Not chosen: A (built-in blocks only) and B (the author's layout only).
+
 ## Also to fix (from the first Studio)
 
 - Resizing the window lags.

@@ -100,6 +100,7 @@ METHODS: dict[str, Method] = {
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),
     "bot.stop": Method(hub.project_stop, "stop a bot (it lets go of every key); end it if it doesn't stop in time"),
     "bot.dashboard": Method(hub.dashboard_tiles, "the bot's Overview tiles (`day`, today by default)"),
+    "bot.overview": Method(hub.overview_blocks, "the bot's Overview as blocks: catalog, layout and data (`day`)"),
     "bot.settings": Method(hub.settings_get, "the bot's settings: schema and values"),
     "bot.settings.save": Method(hub.settings_save, "save the bot's settings (`values`)"),
     "bot.library": Method(hub.library_list, "the bot's pictures, points and areas"),

@@ -50,9 +50,38 @@ Most of a bot's Overview comes from what darbit already records: the open `d.ste
 d.progress("Speed Raid this week", done, 133)  # a ring; call again with new numbers
 d.next("Weekly reset", reset_time)  # a datetime; shown as "in 2 d 4 h"
 d.record.recovered("rejoin", "disconnected")  # counted by reason in the day's results
+d.show(
+    "Boat", 7, sub="next upgrade at 2 000 gold"
+)  # a block of the bot's own: a number, a ring (total=), a list or text
+
+
+@d.block("Bait left", every=60)  # the same, asked for every minute while the bot runs
+def bait():
+    return state.bait  # a value, or a dict of d.show's arguments
 ```
 
-`[studio]` picks and orders the tiles (decision 0011):
+Blocks of the bot's own, and its actions as buttons, show in the Overview's gallery under the bot's name. The bot's
+default layout is `overview.toml` beside `darbit.toml`, read from top to bottom into rows of 12:
+
+```toml
+[[block]]
+kind = "now"           # now, round, list, number, ring, chart, text, screen or button
+width = 8              # 3, 4, 6, 8 or 12
+
+[[block]]
+kind = "ring"
+shows = "progress:Speed Raid this week"   # now, round, next, failures, watching, activity, screen,
+width = 4                                 # progress:<label>, gain:<name>, block:<name>, action:<name>
+
+[[block]]
+kind = "chart"
+shows = "gain:Gems"
+title = "Gems this week"
+width = 6
+```
+
+Without `overview.toml`, the older `[studio] tiles` order the default:
+
 
 ```toml
 [studio]

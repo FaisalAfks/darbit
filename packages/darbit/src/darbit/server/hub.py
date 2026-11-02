@@ -399,6 +399,33 @@ def dashboard_tiles(data: dict) -> dict:
 _tiles_made: dict[str, tuple[tuple, list[dict]]] = {}  # the Overview's tiles, made again only when something changed
 
 
+def overview_blocks(data: dict) -> dict:
+    """The Overview as blocks (round 14): every block the bot can show, the author's layout, and each block's data."""
+    from . import actions_api, overview
+
+    folder = _folder(data)
+    project = load(folder)
+    day = str(data.get("day") or dashboard.today(project))
+    report = dashboard.report_file(project, day)
+    events = dashboard.read_events(report)
+    history.catch_up(project)
+    actions = [entry["name"] for entry in actions_api.listing(folder)]
+    blocks = overview.catalog(project, events, actions)
+    try:
+        layout = overview.default_layout(project, blocks)
+        problem = ""
+    except overview.OverviewError as error:
+        layout = overview.default_layout_without_file(project, blocks)
+        problem = str(error)
+    return {
+        "project": describe(folder),
+        "catalog": blocks,
+        "layout": layout,
+        "problem": problem,
+        "data": overview.data(project, events, day, datetime.now(), report.parent, actions),
+    }
+
+
 def _tiles_key(project: Project, day: str | None) -> tuple:
     """What the tiles depend on: the report, the minute (next up counts down), the guide and the pictures."""
     report = dashboard.report_file(project, day or dashboard.today(project))

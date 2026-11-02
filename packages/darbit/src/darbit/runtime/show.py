@@ -4,13 +4,24 @@
     d.next("Weekly reset", reset_time)                        # a datetime; the Studio shows "in 2 d 4 h"
     d.record.gain("Gems", 120, total=48210, icon="◆")         # a row on the Results page: today, the week, total
     d.plan(["Raid", "Speed Raid", "AFK"])                     # the round's order, so steps still to come show too
+    d.show("Boat", 7, sub="next upgrade at 2 000 gold")      # a value of the bot's own: a block on the Overview
+
+    @d.block("Bait left", every=60)                           # the same, asked for every minute while the bot runs
+    def bait():
+        return state.bait
 
 All are run-report events, so the Studio shows the last value even when the bot isn't running.
 """
 
+import threading
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 
 from . import log
+
+SHOWN_KINDS = ("number", "ring", "list", "text")  # how a value of the bot's own is drawn (the Studio picks by default)
 
 
 def progress(label: str, done: float, total: float) -> None:
@@ -66,3 +77,83 @@ class Record:
         """The bot got itself going again: `how` ("rejoin", "back to the lobby") and `why` ("disconnected").
         Each day's results count them, the health of a bot that runs all day."""
         log.record("recovered", how=how, why=why)
+
+
+def show(
+    name: str,
+    value: object,
+    sub: str = "",
+    total: float | None = None,
+    unit: str = "",
+    kind: str = "",
+) -> None:
+    """Show a value of the bot's own on darbit Studio's Overview, as a block called `name`: a number (with `total`, a
+    ring), a list (`value` a list of names or of [name, value] pairs) or text. `sub` is a line under it."""
+    if not name:
+        raise ValueError("show needs a name")
+    if kind and kind not in SHOWN_KINDS:
+        raise ValueError(f"show {name!r}: kind is one of {', '.join(SHOWN_KINDS)}, not {kind!r}")
+    fields: dict[str, object] = {"name": name, "value": value}
+    if sub:
+        fields["sub"] = sub
+    if total is not None:
+        fields["total"] = total
+    if unit:
+        fields["unit"] = unit
+    if kind:
+        fields["kind"] = kind
+    log.record("block", **fields)
+
+
+@dataclass
+class _Block:
+    name: str
+    read: Callable[[], object]
+    every: float
+    last: float = 0.0
+
+
+_blocks: list[_Block] = []
+_lock = threading.Lock()
+_started = False
+
+
+def block(name: str, every: float = 30.0) -> Callable:
+    """Make a function a block on the Overview: darbit asks it every `every` seconds while the bot runs and shows
+    what it returns (a value, or a dict of `show`'s arguments)."""
+
+    def register(read: Callable[[], object]) -> Callable[[], object]:
+        global _started
+        with _lock:
+            _blocks.append(_Block(name, read, max(1.0, float(every))))
+            start = not _started
+            _started = True
+        if start:
+            threading.Thread(target=_ask_blocks, name="darbit-blocks", daemon=True).start()
+        return read
+
+    return register
+
+
+def ask_blocks_once(now: float | None = None) -> None:
+    """Ask each block that's due for its value and show it. A block that fails is skipped this time, not stopped."""
+    moment = time.monotonic() if now is None else now
+    with _lock:
+        due = [one for one in _blocks if moment - one.last >= one.every or one.last == 0.0]
+    for one in due:
+        one.last = moment
+        try:
+            answer = one.read()
+        except Exception as error:  # noqa: BLE001 - a broken block must not stop the bot or the other blocks
+            log.log(f"block {one.name}: {error}")
+            continue
+        if isinstance(answer, dict):
+            show(one.name, **answer)
+        else:
+            show(one.name, answer)
+
+
+def _ask_blocks() -> None:
+    while True:
+        ask_blocks_once()
+        time.sleep(1.0)

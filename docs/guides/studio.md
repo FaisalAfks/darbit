@@ -15,8 +15,12 @@ The shortcut opens the Studio with the Python it was made from, without a consol
 - **Bots:** the bot menu at the top left lists every bot, with **New bot** (from darbit's template, from a git link, or a
   folder you have) and **darbit settings**. darbit settings can put the bots in a sidebar instead, which folds to their
   squares on a narrow window. The Studio opens on the bot shown last.
-- **Overview** (Ctrl+1): what the bot is doing now and today's round as a bar, then a line for anything that needs you
-  (images still to take, the last problem), the round, progress, what's next and gains.
+- **Overview** (Ctrl+1): a line for anything that needs you (a locked screen, setup images not taken yet, the last
+  problem), then the bot's blocks in rows: what it's doing now, its round, rings for its progress, numbers and week
+  charts for its gains, what's next, its last screen, blocks of the bot's own and buttons for its actions. The bot's
+  author lays out the default (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one
+  wider or narrower, take one off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to
+  the bot's.
 - **Library** (Ctrl+2): the bot's actions first, then every image, region and location, with an image's last score
   against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; an image with its own region or location is tagged and listed under those too), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
@@ -72,11 +76,11 @@ The shortcut opens the Studio with the Python it was made from, without a consol
 
   ![An action](../ui/images/qt-studio-action.png)
 - **Results** (Ctrl+3): the bot's days; the chosen one in a sentence, its problems, what it got (today, the week, the
-  **Problems** are explained: each kind is grouped by its likely cause (something covered the game, an image looks
-  different now, an image wasn't on screen, or the bot's own reason) with a sentence of what the bot saw; opened, it
-  shows the images that ran out before it stopped (how close each came against what it needs, for how long), the
-  screen when it stopped, and Highlight, Retake, the screenshots, or Not a problem.
-  total) and a timeline of its modes, from the run history.
+  total) and a timeline of its modes, from the run history. **Problems** are explained: each kind is grouped by its
+  likely cause (something covered the game, an image looks different now, an image wasn't on screen, or the bot's own
+  reason) with a sentence of what the bot saw; opened, it shows the images that ran out before it stopped (how close
+  each came against what it needs, for how long), the screen when it stopped, and Highlight, Retake, the screenshots,
+  or Not a problem.
 - **Settings** (Ctrl+4): the bot's `settings.toml`, one row per setting with a control made for its type: a switch, a
   stepper (a number with − and +, kept in its range), a slider for a number with a min and a max, a list, or a field.
   The section cards flow into two columns on a wide window; the section list has search (Ctrl+F), counts, and a dot on
