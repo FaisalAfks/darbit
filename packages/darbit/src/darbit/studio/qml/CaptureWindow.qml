@@ -136,6 +136,7 @@ Window {
         if (image && !location && saved.offset) location = [image[0] + image[2] / 2 + saved.offset[0], image[1] + image[3] / 2 + saved.offset[1]]
         if (saved.region && !region) { linking = true; region = saved.region; regionName = saved.region_name || ""; linking = false }
         if (saved.location && !location) location = saved.location
+        if (saved.needs) similarity = saved.needs  // Test's line: what the bot needs for it
     }
 
     function toShot(x, y) { return [Math.round(x / scale), Math.round(y / scale)] }

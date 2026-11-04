@@ -187,3 +187,20 @@ def test_a_save_says_what_happened_in_plain_words(frozen):
     assert found["risky"] and "looks alike" in found["said"] and "\\" not in found["said"]
     calm = SimpleNamespace(risky=False, elsewhere=0.1)
     assert service._said("Bag.Panel", calm) == "Saved Bag.Panel"
+
+
+def test_a_retake_keeps_a_picture_already_taken(tmp_path):
+    images = tmp_path / "images"
+    images.mkdir()
+    cv2.imwrite(str(images / "Gui.Bag.png"), np.full((10, 10, 3), 90, np.uint8))
+    item = Item("Gui.Bag", "image")
+    assert service.start(tmp_path, images, [item])["items"] == []  # the guide's: taken already, left out
+    assert [one["name"] for one in service.start(tmp_path, images, [item], retake=True)["items"]] == ["Gui.Bag"]
+    service.stop()
+
+
+def test_a_retake_tests_at_what_the_bot_needs(frozen, tmp_path):
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "b"\n[settings]\nsimilarity = 0.85\n', encoding="utf-8")
+    (frozen / "Own.json").write_text('{"similarity": 0.6}', encoding="utf-8")
+    assert service.existing("Gui.Bag")["needs"] == 0.85  # the bot's
+    assert service.existing("Own")["needs"] == 0.6  # its own

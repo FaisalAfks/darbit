@@ -1033,6 +1033,7 @@ def test_customizing_moves_resizes_and_takes_blocks_off(qt):
 
 
 def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
+    import cv2
     import numpy as np
     from PySide6.QtCore import QObject
     from PySide6.QtQuick import QQuickWindow
@@ -1040,6 +1041,9 @@ def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
     from darbit.studio.capture import Capture, ShotProvider
 
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    (tmp_path / "images").mkdir()
+    cv2.imwrite(str(tmp_path / "images" / "Lobby.Play.png"), np.zeros((8, 8, 3), np.uint8))  # taken already
+    (tmp_path / "images" / "Lobby.Play.json").write_text("{}", encoding="utf-8")  # a retake still names it
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
