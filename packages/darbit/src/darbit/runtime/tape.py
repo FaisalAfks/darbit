@@ -19,7 +19,7 @@ from ..errors import Stopped
 from ..platform import input as device
 from ..platform import safety, switching, windows
 from ..settings import settings
-from . import actions
+from . import actions, front
 
 VERSION = 1
 SUFFIX = ".tape.json"
@@ -199,7 +199,7 @@ def replay(action_file: str | Path, start: float = 0.0, end: float | None = None
         if end is not None and event.t >= end:
             break
         chosen.append(event)
-    actions._front()
+    front.before_input()
     place = Placing(tape.window, _window_now())
     done = switching.fast()  # other threads mustn't hold up an event
     try:

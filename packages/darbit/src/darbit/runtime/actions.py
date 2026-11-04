@@ -6,22 +6,14 @@ import time
 from ..core.geometry import Location, Region
 from ..core.targets import Match, Pattern, Target
 from ..platform import input as device
-from ..platform import safety, windows
+from ..platform import safety
 from ..platform.keys import Key
 from ..settings import settings
+from . import front
 from .find import What, _usable, wait
 from .log import log, record
 
 Spot = What | Match | Location
-
-
-def _front() -> None:
-    """Bring settings.window to the front if it's set, open and behind something."""
-    if not settings.window:
-        return
-    found = windows.matching(settings.window)
-    if found and not windows.in_front(found[0].handle):
-        windows.bring_to_front(found[0].handle)
 
 
 def _point(what: Spot, timeout: float | None, region: Region | None) -> tuple[int, int] | None:
@@ -54,7 +46,7 @@ def _mouse(kind: str, what: Spot, timeout: float | None, region: Region | None, 
         log(f"{kind} {_label(what)}: not found")
         record(kind, target=_label(what), done=False)
         return False
-    _front()
+    front.before_input()
     device.click(*point, _glide(), button, times)
     log(f"{kind} {_label(what)} at {point[0]},{point[1]}")
     record(kind, target=_label(what), done=True, at=list(point))
@@ -79,7 +71,7 @@ def hover(what: Spot, timeout: float | None = None, region: Region | None = None
     point = _point(what, timeout, region)
     if point is None:
         return False
-    _front()
+    front.before_input()
     device.move(*point, _glide())
     return True
 
@@ -92,7 +84,7 @@ def drag(what: Spot, to: Spot, timeout: float | None = None, region: Region | No
         log(f"drag {_label(what)} -> {_label(to)}: not found")
         record("drag", target=_label(what), done=False)
         return False
-    _front()
+    front.before_input()
     device.drag(*start, *end, settings.glide)
     log(f"drag {_label(what)} {start} -> {end}")
     record("drag", target=_label(what), done=True, at=list(start), to=list(end))
@@ -103,7 +95,7 @@ def scroll(notches: int, at: Spot | None = None) -> bool:
     """Turn the mouse wheel: positive scrolls up, negative down. Moves to `at` first if given."""
     if at is not None and not hover(at):
         return False
-    _front()
+    front.before_input()
     device.scroll(notches)
     return True
 
@@ -113,7 +105,7 @@ def scroll(notches: int, at: Spot | None = None) -> bool:
 
 def press(*keys: Key | str) -> None:
     """Press and let go of each key in order: press("tab"), press(*"54132"), press("ctrl+a")."""
-    _front()
+    front.before_input()
     for one in keys:
         if isinstance(one, str) and "+" in one and len(one) > 1:
             parts = one.split("+")
@@ -130,7 +122,7 @@ def press(*keys: Key | str) -> None:
 
 def hold(*keys: Key | str) -> None:
     """Keep keys down until release()."""
-    _front()
+    front.before_input()
     for one in keys:
         device.key_down(one)
 
@@ -146,7 +138,7 @@ def release(*keys: Key | str) -> None:
 
 def write(text: str) -> None:
     """Type text as characters, in any keyboard language. Games that read key positions want press()."""
-    _front()
+    front.before_input()
     device.write(text)
 
 
@@ -154,7 +146,7 @@ def mouse_down(at: Spot | None = None, button: str = "left") -> bool:
     """Press a mouse button and keep it down until mouse_up(), at `at` if given, else where the mouse is."""
     if at is not None and not hover(at):
         return False
-    _front()
+    front.before_input()
     device.mouse_down(button)
     return True
 
@@ -170,7 +162,7 @@ def mouse_up(at: Spot | None = None, button: str = "left") -> bool:
 def move_by(dx: int, dy: int, seconds: float = 0) -> None:
     """Move the mouse by dx, dy counts over `seconds`, like a hand on the mouse: turns a game's camera even when the
     game holds the cursor in place (Roblox's shift lock)."""
-    _front()
+    front.before_input()
     device.move_by(dx, dy, seconds)
 
 
