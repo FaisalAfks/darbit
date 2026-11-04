@@ -19,6 +19,7 @@ import numpy as np
 from .. import paths
 from ..core.targets import kind_of
 from ..project.manifest import Project
+from .problems import DEFAULT_SIMILARITY
 
 THUMB = 160  # px, the longer side of a card's thumbnail
 HISTORY = 14  # last scores kept per asset for its small chart
@@ -122,6 +123,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
     the Studio already shows; an image still at that version comes without its thumbnail (`same`).
     """
     scores = _scores(project)
+    bot_similarity = float(project.settings.get("similarity", DEFAULT_SIMILARITY))
     found: dict[str, dict] = {}
     for folder in _folders(project):
         for path in sorted(folder.iterdir()):
@@ -149,6 +151,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                     "offset": settings.get("offset"),  # none: its centre
                     "tags": tags_of(kind_of(settings, True), settings),
                     "similarity": settings.get("similarity"),
+                    "needs": float(settings.get("similarity") or bot_similarity),  # its own, else the bot's
                     "scores": scores.get(name, []),
                     "missing": False,
                 }

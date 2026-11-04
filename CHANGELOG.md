@@ -103,6 +103,8 @@
 
 ### Fixed
 
+- The Library and Highlight on screen show the score an image needs as the bot goes by it: its own similarity, else the bot's from `darbit.toml`. The Library said 0.90 and Highlight 0.7 for an image without its own
+
 - The service and its bots no longer end with the program that opened the Studio. A terminal or an editor that keeps its processes in a Windows job ended them all when it closed, with nothing in the logs; the service now leaves that job when it starts (`system.start_on_its_own`)
 
 - Less memory in the Studio: a page is made the first time it's shown, hidden windows give back their graphics memory (the Studio is hidden for as long as a bot runs), and Capture's shot no longer stays in Qt's image cache
