@@ -103,6 +103,8 @@
 
 ### Fixed
 
+- A retake opens Capture with the image's name filled in again: Capture left out what was taken already, which is right for the setup guide but emptied a retake. Capture's Test also starts at the score the image needs (its own similarity, else the bot's), not 0.90
+
 - The Library and Highlight on screen show the score an image needs as the bot goes by it: its own similarity, else the bot's from `darbit.toml`. The Library said 0.90 and Highlight 0.7 for an image without its own
 
 - The service and its bots no longer end with the program that opened the Studio. A terminal or an editor that keeps its processes in a Windows job ended them all when it closed, with nothing in the logs; the service now leaves that job when it starts (`system.start_on_its_own`)

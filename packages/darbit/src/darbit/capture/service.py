@@ -24,6 +24,9 @@ from ..core.geometry import Location, Region
 from ..core.matching import every
 from ..core.targets import Target, read_image, shared_region
 from ..platform import screen
+from ..project.manifest import ProjectError
+from ..project.manifest import load as load_project
+from ..settings import Settings
 from .common import Item, Result, captured
 from .engine import Prepared, pick, prepare
 from .engine import candidates as engine_candidates
@@ -53,13 +56,13 @@ class Session:
 _session: Session | None = None
 
 
-def start(project: Path, images: Path, items: list[Item], test: str | None = None) -> dict:
-    """Begin a capture session for a bot. Items already taken are left out. With `test`, the session opens
-    straight into Test for that saved picture."""
+def start(project: Path, images: Path, items: list[Item], test: str | None = None, retake: bool = False) -> dict:
+    """Begin a capture session for a bot. Items already taken are left out, except for a `retake`. With `test`, the
+    session opens straight into Test for that saved picture."""
     global _session
     waiting = []
     for item in items:
-        if not captured(item, images):
+        if retake or not captured(item, images):
             waiting.append(item)
     _session = Session(project, images, waiting, test=test)
     return {"items": describe(waiting), "test": test}
@@ -161,11 +164,22 @@ def test(box: list[int] | None, name: str | None, region: list[int] | None, simi
     }
 
 
+def _bot_similarity(session: Session) -> float:
+    """The score the bot's images need when they don't name their own (its darbit.toml, else darbit's)."""
+    try:
+        chosen = load_project(session.project).settings.get("similarity")
+    except (OSError, ProjectError):  # no darbit.toml, or a broken one
+        chosen = None
+    if isinstance(chosen, (int, float)):
+        return float(chosen)
+    return Settings().similarity
+
+
 def existing(name: str) -> dict:
     """What a target already has, in the shot's pixels, so a retake keeps it: its area, its click point (an offset
     from the picture's centre, or a point of its own) and its saved picture's file. Empty for a new name."""
     session, _, origin, _ = _frozen()
-    found: dict = {"region": None, "offset": None, "location": None, "picture": None}
+    found: dict = {"region": None, "offset": None, "location": None, "picture": None, "needs": _bot_similarity(session)}
     picture = session.images / (name + ".png")
     if picture.is_file():
         found["picture"] = str(picture)
@@ -178,6 +192,8 @@ def existing(name: str) -> dict:
         return found
     if not isinstance(saved, dict):
         return found
+    if isinstance(saved.get("similarity"), (int, float)):
+        found["needs"] = float(saved["similarity"])
     area = saved.get("region")
     if isinstance(area, str):
         found["region_name"] = area

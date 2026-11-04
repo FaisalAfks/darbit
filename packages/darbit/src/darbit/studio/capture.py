@@ -75,7 +75,7 @@ class Capture(QObject):
         project = load(folder)
         images = folder / (project.images[0] if project.images else "images")
         images.mkdir(parents=True, exist_ok=True)
-        started = service.start(folder, images, service.items_for(folder, mode, name, kind))
+        started = service.start(folder, images, service.items_for(folder, mode, name, kind), retake=mode == "one")
         if shot is None:
             pixels, _ = service.freeze()
         else:
