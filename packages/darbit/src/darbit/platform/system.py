@@ -16,6 +16,18 @@ def no_window() -> int:
     return 0
 
 
+def start_on_its_own(command: list[str], **popen) -> subprocess.Popen:
+    """Start a process that outlives whatever started this one, such as the service. On Windows a terminal or an
+    editor can keep its processes in a job and end them all when it closes: this one leaves that job where the job
+    allows it (otherwise Windows refuses with error 5, and it starts in the job like any other)."""
+    if sys.platform != "win32":
+        return subprocess.Popen(command, start_new_session=True, **popen)
+    try:
+        return subprocess.Popen(command, creationflags=no_window() | subprocess.CREATE_BREAKAWAY_FROM_JOB, **popen)
+    except PermissionError:
+        return subprocess.Popen(command, creationflags=no_window(), **popen)
+
+
 def keep_awake() -> None:
     """Stop the PC from sleeping or turning the screen off until the script ends."""
     try:

@@ -101,6 +101,8 @@
 
 ### Fixed
 
+- The service and its bots no longer end with the program that opened the Studio. A terminal or an editor that keeps its processes in a Windows job ended them all when it closed, with nothing in the logs; the service now leaves that job when it starts (`system.start_on_its_own`)
+
 - Less memory in the Studio: a page is made the first time it's shown, hidden windows give back their graphics memory (the Studio is hidden for as long as a bot runs), and Capture's shot no longer stays in Qt's image cache
 - `test_a_tape_plays_every_event_on_time` failed main now and then: CI's shared machines stall for tens of ms. It keeps 10 ms on a real PC and allows 40 ms on CI, with three tries
 - The Library tagged images with their region and location, so the Regions tab was full of images; a region is a place of its own that images name, and only regions show there now
