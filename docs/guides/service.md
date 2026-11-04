@@ -2,6 +2,8 @@
 
 `darbit serve` runs darbit's service: it starts, pauses and stops bots, whether darbit Studio is open or not. The CLI and the Studio are clients of it.
 
+Started from the Studio or the CLI, the service runs on its own: closing the terminal, editor or Studio that started it leaves it and its bots running. On Windows it leaves the job of the program that started it (a job ends every process in it when it closes) wherever that job allows; one that doesn't keeps it in, and it ends with that program.
+
 ```bash
 darbit bots                    # every bot it knows (starts the service in the background if it isn't running)
 darbit bots --add ../my-bot    # add a project folder
