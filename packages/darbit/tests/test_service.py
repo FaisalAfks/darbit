@@ -189,3 +189,57 @@ def test_an_action_is_read_edited_and_saved_back(service, bot):  # noqa: F811
         assert saved["sections"][0]["steps"][0]["args"]["seconds"] == 2.0
         with pytest.raises(client.ServiceError, match="sections"):
             connection.call("bot.action.save", bot="tick-bot", name="open_bag")
+
+
+class _Started:
+    """Stands in for subprocess.Popen: records each start, refusing the ones whose flags it's told to."""
+
+    def __init__(self, refuse: int = 0) -> None:
+        self.refuse = refuse
+        self.starts: list[dict] = []
+
+    def __call__(self, command, **popen):
+        self.starts.append(popen)
+        if popen.get("creationflags", 0) & self.refuse:
+            raise PermissionError(5, "Access is denied")
+        return object()
+
+
+def test_on_windows_the_service_leaves_the_job_of_what_started_it(monkeypatch):
+    import subprocess
+
+    from darbit.platform import system
+
+    started = _Started()
+    monkeypatch.setattr(system.sys, "platform", "win32")
+    monkeypatch.setattr(subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
+    monkeypatch.setattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000, raising=False)
+    monkeypatch.setattr(subprocess, "Popen", started)
+    system.start_on_its_own(["darbit", "serve"])
+    assert started.starts == [{"creationflags": 0x09000000}]
+
+
+def test_a_job_that_wont_let_go_still_gets_the_service(monkeypatch):
+    import subprocess
+
+    from darbit.platform import system
+
+    started = _Started(refuse=0x01000000)
+    monkeypatch.setattr(system.sys, "platform", "win32")
+    monkeypatch.setattr(subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
+    monkeypatch.setattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000, raising=False)
+    monkeypatch.setattr(subprocess, "Popen", started)
+    system.start_on_its_own(["darbit", "serve"])
+    assert [start["creationflags"] for start in started.starts] == [0x09000000, 0x08000000]
+
+
+def test_elsewhere_the_service_starts_its_own_session(monkeypatch):
+    import subprocess
+
+    from darbit.platform import system
+
+    started = _Started()
+    monkeypatch.setattr(system.sys, "platform", "linux")
+    monkeypatch.setattr(subprocess, "Popen", started)
+    system.start_on_its_own(["darbit", "serve"], stdin=subprocess.DEVNULL)
+    assert started.starts == [{"start_new_session": True, "stdin": subprocess.DEVNULL}]

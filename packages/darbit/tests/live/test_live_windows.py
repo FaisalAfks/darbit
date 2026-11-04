@@ -451,3 +451,52 @@ def test_the_service_and_its_bots_open_no_window(target, tmp_path):
         connection.call("bot.stop", bot=str(folder))
         connection.call("service.stop")
     assert titles == [], f"windows opened: {titles}"
+
+
+def test_the_service_outlives_a_job_that_closes(tmp_path):
+    """A terminal or an editor that keeps its processes in a job ends them all when it closes: a service started
+    from there lives on. Here a parent in such a job starts one the way the Studio does, and the job closes."""
+    import ctypes
+    import subprocess
+    import sys
+    from ctypes import wintypes
+
+    from darbit.platform import system
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel.OpenProcess.restype = wintypes.HANDLE
+
+    class Limits(ctypes.Structure):  # JOBOBJECT_EXTENDED_LIMIT_INFORMATION, only LimitFlags set
+        _fields_ = [
+            ("times", ctypes.c_int64 * 2),
+            ("flags", wintypes.DWORD),
+            ("sizes", ctypes.c_size_t * 2),
+            ("processes", wintypes.DWORD),
+            ("affinity", ctypes.c_size_t),
+            ("priority", wintypes.DWORD * 2),
+            ("io", ctypes.c_uint64 * 6),
+            ("memory", ctypes.c_size_t * 4),
+        ]
+
+    job = kernel.CreateJobObjectW(None, None)
+    limits = Limits(flags=0x2000 | 0x800)  # ended when the job closes; leaving it is allowed
+    assert kernel.SetInformationJobObject(job, 9, ctypes.byref(limits), ctypes.sizeof(limits))
+    sleeper = [sys.executable, "-c", "import time; time.sleep(60)"]
+    parent = subprocess.Popen(
+        [sys.executable, "-c", f"from darbit.platform import system; print(system.start_on_its_own({sleeper!r}).pid)"],
+        stdout=subprocess.PIPE,
+        text=True,
+        creationflags=0x4,  # suspended until it's in the job
+    )
+    handle = kernel.OpenProcess(0x1F0FFF, False, parent.pid)
+    assert kernel.AssignProcessToJobObject(job, handle), ctypes.get_last_error()
+    ctypes.windll.ntdll.NtResumeProcess(handle)
+    kernel.CloseHandle(handle)
+    started = int(parent.stdout.readline())
+    kernel.CloseHandle(job)
+    time.sleep(1)
+    try:
+        assert system.process_alive(started), "the service ended with the job"
+    finally:
+        system.end_process_tree(started)

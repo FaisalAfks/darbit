@@ -154,13 +154,11 @@ def ensure_running() -> None:
         return
     from ..platform import system
 
-    subprocess.Popen(
+    system.start_on_its_own(
         [sys.executable, "-m", "darbit", "serve"],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        creationflags=system.no_window(),
-        start_new_session=sys.platform != "win32",
     )
     deadline = time.monotonic() + START_WAIT
     while time.monotonic() < deadline:
