@@ -4,6 +4,8 @@
 
 ### New
 
+- `front = "opened"`: the bot's window is brought forward only once, when it has just opened (a game reopened behind another window), and never after that, so other windows can be used while the bot runs
+
 - `front` setting: `"always"` brings the bot's window (`window`) to the front before every search as well as before input, so a game that opened behind another window, or got covered by one, is seen again. `"input"` (the default) is as before (`runtime/front.py`)
 
 - Edit in the run control: opens the bot's folder in VS Code when it's installed, else in the file explorer

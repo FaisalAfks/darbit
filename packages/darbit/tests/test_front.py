@@ -75,11 +75,35 @@ def test_every_search_asks_first(game, monkeypatch, tmp_path):
     assert game.brought == 1
 
 
-@pytest.mark.parametrize("value", ["input", "always"])
+@pytest.mark.parametrize("value", ["input", "always", "opened"])
 def test_darbit_toml_takes_front(value):
     manifest._check_setting("front", value)
 
 
 def test_darbit_toml_refuses_another_front():
-    with pytest.raises(manifest.ProjectError, match='front is "input" or "always"'):
+    with pytest.raises(manifest.ProjectError, match='front is "input", "always" or "opened"'):
         manifest._check_setting("front", "sometimes")
+
+
+@pytest.fixture
+def opened(game, monkeypatch):
+    monkeypatch.setattr(d.settings, "front", "opened")
+    monkeypatch.setattr(front, "_seen", set())
+    return game
+
+
+def test_opened_brings_a_new_window_forward_once(opened):
+    front.before_search()
+    assert opened.brought == 1
+    opened.ahead = False  # the owner switched to another window
+    front.before_search()
+    front.before_input()
+    assert opened.brought == 1
+
+
+def test_opened_brings_a_reopened_window_forward_again(opened, monkeypatch):
+    front.before_search()
+    opened.ahead = False
+    monkeypatch.setattr(opened, "matching", lambda name, loose=False: [SimpleNamespace(handle=8)])
+    front.before_input()
+    assert opened.brought == 2

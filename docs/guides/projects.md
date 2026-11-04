@@ -16,8 +16,8 @@ captured_at = { size = [2560, 1600], scale = 1.5 }
 timeout = 3
 similarity = 0.85
 day_starts = "00:00 UTC"         # the bot's day: a game that resets at midnight UTC
-front = "always"                 # bring the window forward before searches too: a game opened behind
-                                 # another window, or covered by one, is found again
+front = "opened"                 # bring the window forward once, when it has just opened (a game reopened
+                                 # behind another window); "always": before every search too
 
 [images]
 folders = ["assets/images"]      # searched first, relative to the project
