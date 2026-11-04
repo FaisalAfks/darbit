@@ -4,6 +4,8 @@
 
 ### New
 
+- `front` setting: `"always"` brings the bot's window (`window`) to the front before every search as well as before input, so a game that opened behind another window, or got covered by one, is seen again. `"input"` (the default) is as before (`runtime/front.py`)
+
 - Edit in the run control: opens the bot's folder in VS Code when it's installed, else in the file explorer
 
 - The command palette (Ctrl+K) finds anything the Studio can do, and darbit settings changes the keys: only the ones the Studio really goes by, refusing one already taken, working at once. The Studio's shortcuts now come from the keymap (`keymap.set_key`, `studio/shortcuts.py`)

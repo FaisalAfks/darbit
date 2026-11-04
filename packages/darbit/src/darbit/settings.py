@@ -36,6 +36,7 @@ class Settings:
     scan_rate: float = 5.0  # searches per second while waiting
     images: list[Path] = field(default_factory=_default_images)
     window: str | None = None  # a window that must be in front before any input, e.g. "Roblox"
+    front: str = "input"  # when `window` is brought forward: before "input", or "always" (before searches too)
     stop_key: str = "ctrl+alt+q"
     logs: Path = field(default_factory=_default_logs)
     state: Path = field(default_factory=_default_state)  # where d.State files are kept

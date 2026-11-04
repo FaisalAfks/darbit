@@ -83,7 +83,7 @@ def sent(monkeypatch):
     monkeypatch.setattr(device, "place", place)
     monkeypatch.setattr(device, "wheel_now", wheel_now)
     monkeypatch.setattr(safety, "check", nothing)
-    monkeypatch.setattr(tape.actions, "_front", nothing)
+    monkeypatch.setattr(tape.front, "before_input", nothing)
     monkeypatch.setattr(tape, "_window_now", nothing)
     tape.stopping.clear()
     return found, times
