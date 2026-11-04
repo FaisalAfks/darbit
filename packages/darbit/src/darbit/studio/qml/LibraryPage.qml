@@ -47,7 +47,7 @@ Item {
     readonly property real cardWidth: Math.floor((grid.width - gap * (columns - 1)) / columns)
 
     function score(asset) { return asset.scores && asset.scores.length ? asset.scores[asset.scores.length - 1] : null }
-    function needs(asset) { return asset.similarity || 0.9 }
+    function needs(asset) { return asset.needs || asset.similarity || 0.7 }
     function weak(asset) { var last = score(asset); return last !== null && last < needs(asset) + 0.05 }
     function find(name) {
         for (var index = 0; index < page.library.length; index++)
@@ -274,7 +274,7 @@ Item {
         asset: page.chosenAsset
         action: page.chosenAction
         score: page.chosenAsset ? page.score(page.chosenAsset) : null
-        needs: page.chosenAsset ? page.needs(page.chosenAsset) : 0.9
+        needs: page.chosenAsset ? page.needs(page.chosenAsset) : 0.7
         kindLabel: page.chosenAsset ? page.kindLabel(page.chosenAsset.kind) : ""
         onClosed: page.chosen = ""
         onRenamed: function (to) {

@@ -7,6 +7,7 @@ one in other colours, as the bot sees it), then hands QML the boxes and scores. 
 
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -21,22 +22,26 @@ from ..project.manifest import ProjectError
 from ..project.manifest import load as load_project
 
 EVERY = 0.5  # seconds between passes
-SIMILARITY = 0.7  # what counts as found when a picture has no similarity of its own (darbit's default)
+SIMILARITY = 0.7  # what counts as found when neither the picture nor the bot names a similarity (darbit's default)
 
 
 def targets_of(folder: Path) -> list[Target]:
     """Every picture of the bot at `folder`, loaded with its settings (its region, its similarity)."""
     project = load_project(folder)
     folders = [folder / name for name in (project.images or ["images"])]
+    bot_similarity = float(project.settings.get("similarity", SIMILARITY))
     found = []
     for images in folders:
         if not images.is_dir():
             continue
         for path in sorted(images.glob("*.png")):
             try:
-                found.append(load(path.stem, folders))
+                target = load(path.stem, folders)
             except (OSError, ValueError):
                 continue
+            if target.similarity is None:
+                target = replace(target, similarity=bot_similarity)  # what the bot itself needs
+            found.append(target)
     return found
 
 

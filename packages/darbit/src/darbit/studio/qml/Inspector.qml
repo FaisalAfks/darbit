@@ -8,7 +8,7 @@ Rectangle {
     property var asset: null
     property var action: null  // an action instead of an asset
     property var score: null
-    property real needs: 0.9
+    property real needs: 0.7
     property string kindLabel: ""
     property bool renaming: false
     property bool confirming: false
