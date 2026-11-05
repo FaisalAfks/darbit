@@ -168,10 +168,11 @@ def move_by(dx: int, dy: int, seconds: float = 0) -> None:
 
 def sleep(seconds: float) -> None:
     """Wait, stopping at once if the stop hotkey is pressed. In a timed action, wait until `seconds` after the
-    previous wait was due, so the time the steps between took doesn't add up."""
+    previous wait was due, so the time the steps between took doesn't add up. Outside a timed action the wait is
+    `settings.lag` times longer, like every search's."""
     schedule = _timeline()
     if schedule is None:
-        safety.sleep(seconds)
+        safety.sleep(seconds * settings.lag)
         return
     now = time.perf_counter()
     if now - schedule.due > LATE_LIMIT:

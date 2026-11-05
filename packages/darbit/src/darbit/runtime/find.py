@@ -139,6 +139,7 @@ _closest = threading.local()  # the closest spot of the last search that found n
 
 def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> Match | None:
     _closest.match = None
+    timeout = timeout * settings.lag
     loaded = _loaded(whats)
     if not loaded:
         safety.sleep(timeout)
@@ -219,7 +220,7 @@ def wait(*whats: What, timeout: float | None = None, region: Region | None = Non
 def vanish(what: What, timeout: float | None = None, region: Region | None = None) -> bool:
     """True once the target is gone, waiting up to `timeout` seconds."""
     timeout = settings.timeout if timeout is None else timeout
-    deadline = time.monotonic() + timeout
+    deadline = time.monotonic() + timeout * settings.lag
     while True:
         if _search((what,), 0, region) is None:
             log(f"vanish {_names((what,))}: gone")

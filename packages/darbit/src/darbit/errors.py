@@ -24,3 +24,7 @@ class Interrupted(DarbitError):
         super().__init__(f"interrupted by {name}")
         self.name = name
         self.match = match
+
+
+class Failed(DarbitError):
+    """A bot's step couldn't be done, e.g. Failed("no Start button"). d.keep_trying records the reason and recovers."""

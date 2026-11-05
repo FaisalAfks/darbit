@@ -9,6 +9,14 @@
         ...
         quest.restart()
 
+Counters that start over by themselves each day (the bot's `day_starts`) or each week:
+
+    tries = s.per_day("boss tries", 3)          # 3 a day
+    if tries.left:
+        tries.add()
+    quests = s.per_week("quests", 70, starts="Mon 07:00 UTC")
+    quests.show("Quests this week")             # a ring on the Overview
+
 Every change is saved straight away, so a crash or the stop hotkey loses nothing.
 """
 
@@ -18,10 +26,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from .. import days
 from ..settings import settings
 
 PERIODS = "_periods"  # where the daily and weekly resets remember the last period they saw
 TIMERS = "_timers"
+COUNTERS = "_counters"
+WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 def _now() -> datetime:
@@ -55,6 +66,88 @@ class Timer:
         """Due now."""
         self.state.data.setdefault(TIMERS, {})[self.name] = 0
         self.state.save()
+
+
+def _week_start(text: str) -> tuple[int, days.DayStart]:
+    """ "Mon 07:00 UTC" -> (0, 07:00 UTC). A week that names no time starts at the bot's day start."""
+    words = text.strip().split(maxsplit=1)
+    if not words or words[0][:3].lower() not in WEEKDAYS:
+        raise ValueError(f'a week starts on a day and a time, like "Mon 07:00 UTC", not "{text}"')
+    weekday = WEEKDAYS.index(words[0][:3].lower())
+    if len(words) == 1:
+        return weekday, days.parse(settings.day_starts)
+    return weekday, days.parse(words[1])
+
+
+def _day_begins(start: days.DayStart, now: datetime) -> datetime:
+    """When the day `now` is in began (aware, in UTC or this PC's zone)."""
+    moment = now.astimezone(UTC) if start.utc else now.astimezone()
+    begun = moment.replace(hour=start.hour, minute=start.minute, second=0, microsecond=0)
+    if begun > moment:
+        begun -= timedelta(days=1)
+    return begun
+
+
+class Counter:
+    """How many of something are done this day or week; it starts over by itself when the next one begins.
+    Kept in the State, under its name."""
+
+    def __init__(self, state: "State", name: str, total: int, week: str | None, first: int) -> None:
+        self.state, self.name, self.total, self.week = state, name, total, week
+        saved = state.data.setdefault(COUNTERS, {})
+        if name not in saved:
+            saved[name] = {"period": self._period(), "done": first}
+            state.save()
+
+    def _begins(self) -> datetime:
+        """When the current day or week began."""
+        now = _now()
+        if self.week is None:
+            return _day_begins(days.parse(settings.day_starts), now)
+        weekday, start = _week_start(self.week)
+        begun = _day_begins(start, now)
+        return begun - timedelta(days=(begun.weekday() - weekday) % 7)
+
+    def _period(self) -> str:
+        return self._begins().strftime("%Y-%m-%d %H:%M")
+
+    def _saved(self) -> dict:
+        entry = self.state.data.setdefault(COUNTERS, {}).setdefault(self.name, {"period": "", "done": 0})
+        if entry.get("period") != self._period():
+            entry["period"], entry["done"] = self._period(), 0
+            self.state.save()
+        return entry
+
+    @property
+    def done(self) -> int:
+        return int(self._saved()["done"])
+
+    @property
+    def left(self) -> int:
+        return max(self.total - self.done, 0)
+
+    def full(self) -> bool:
+        return self.done >= self.total
+
+    def add(self, by: int = 1) -> int:
+        """Count `by` more done; returns how many are left."""
+        self._saved()["done"] = self.done + by
+        self.state.save()
+        return self.left
+
+    def set(self, done: int) -> None:
+        self._saved()["done"] = done
+        self.state.save()
+
+    def resets_at(self) -> datetime:
+        """When it next starts over."""
+        return self._begins() + timedelta(days=1 if self.week is None else 7)
+
+    def show(self, label: str) -> None:
+        """Its ring on darbit Studio's Overview: done of total."""
+        from .show import progress
+
+        progress(label, min(self.done, self.total), self.total)
 
 
 class State:
@@ -116,6 +209,16 @@ class State:
 
     def timer(self, name: str, minutes: float) -> Timer:
         return Timer(self, name, minutes)
+
+    def per_day(self, name: str, total: int, first: int = 0) -> Counter:
+        """A counter of `total` a day, days starting at the bot's `day_starts`. `first` is how many count as done
+        the very first time, before anything was saved."""
+        return Counter(self, name, total, None, first)
+
+    def per_week(self, name: str, total: int, starts: str = "Mon", first: int = 0) -> Counter:
+        """A counter of `total` a week, weeks starting at `starts`: "Mon" (at the day start) or "Mon 07:00 UTC"."""
+        _week_start(starts)  # a mistake shows now, not later
+        return Counter(self, name, total, starts, first)
 
     # ------------------------------------------------------------------ saving
 

@@ -111,13 +111,13 @@ screen map guide); `restart` is for when the bot itself ended.
 A bot declares its settings once; the Studio shows a form for them and `config.toml` holds the values:
 
 ```toml
-[speed_raid]
-label = "Daily quest"
+[quests]
+label = "Daily quests"
 
-  [speed_raid.enabled]
+  [quests.enabled]
   type = "bool"
   default = true
-  help = "The next character, every 30 minutes."
+  help = "The next quest, every 30 minutes."
 
   [quests.every_minutes]
   type = "int"
@@ -127,6 +127,31 @@ label = "Daily quest"
 ```
 
 Types: `bool`, `int`, `float`, `str`, `choice` (with `options`), `keys`, `target`, `region`, `location`, `list`. A missing `config.toml` is made from the defaults; a value of the wrong type or outside its limits is an error naming the key and the rule. Saving from the Studio keeps the comments in `config.toml`.
+
+The bot reads them as one object:
+
+```python
+cfg = d.config()  # settings.toml and config.toml in the bot's folder (where its darbit.toml is)
+if cfg.quests.enabled:
+    every = cfg.quests.every_minutes
+```
+
+## Trying again
+
+A step that can fail raises `d.Failed("what happened")`; `d.keep_trying` records why, gets the bot going again and
+tries once more. Each try is a step in the run report; each recovery shows on the Results page:
+
+```python
+def attempt():
+    if not d.click("Menu.Start"):
+        raise d.Failed("no Start button")
+
+
+d.keep_trying("Daily quest", attempt, recover=restart_the_game, go_on=quests_left, how="restart")
+```
+
+An observer's interrupt is handled the same way, and `recover` runs with observers muted, so closing and opening
+the game doesn't trip them. `go_on` is asked before each try; when it says no, `keep_trying` returns False.
 
 ## Mistakes
 
