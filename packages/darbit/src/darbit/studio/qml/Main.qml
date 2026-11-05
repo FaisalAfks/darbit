@@ -74,6 +74,7 @@ ApplicationWindow {
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
     HighlightWindow { objectName: "highlightWindow" }
+    HighlightPill { objectName: "highlightPill" }
     GhostWindow { objectName: "ghostWindow" }
     RunPill { objectName: "runPill" }
 

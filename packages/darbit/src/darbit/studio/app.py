@@ -51,6 +51,7 @@ def load(
     run_pill: HidingPill | None = None,
     recorder_hiding: HidingPill | None = None,
     place: tuple[QRect | None, bool] = (None, False),
+    highlight_hiding: HidingPill | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
     RuntimeError if the QML doesn't load."""
@@ -67,6 +68,8 @@ def load(
         run_pill = HidingPill()
     if recorder_hiding is None:
         recorder_hiding = HidingPill()
+    if highlight_hiding is None:
+        highlight_hiding = HidingPill()
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
@@ -75,6 +78,7 @@ def load(
     engine.rootContext().setContextProperty("ghost", ghost)
     engine.rootContext().setContextProperty("runPill", run_pill)
     engine.rootContext().setContextProperty("recorderHiding", recorder_hiding)
+    engine.rootContext().setContextProperty("highlightHiding", highlight_hiding)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
@@ -82,6 +86,8 @@ def load(
     ghost.setParent(engine)
     run_pill.setParent(engine)
     recorder_hiding.setParent(engine)
+    highlight_hiding.setParent(engine)
+    _connect_highlight_hiding(highlight, highlight_hiding)
     _connect_recorder_hiding(
         recorder, capture, recorder_hiding
     )  # here, so the recorder's pill works wherever it's loaded
@@ -225,6 +231,18 @@ def _connect_recorder_hiding(recorder: Recorder, capture: Capture, hiding: Hidin
 
     recorder.stateChanged.connect(follow)
     capture.openChanged.connect(follow)
+
+
+def _connect_highlight_hiding(highlight: Highlight, hiding: HidingPill) -> None:
+    """Highlight's pill shows while Highlight is on, and hides like the run pill."""
+
+    def follow() -> None:
+        if highlight.isOn:
+            hiding.open()
+        else:
+            hiding.close()
+
+    highlight.changed.connect(follow)
 
 
 def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> None:

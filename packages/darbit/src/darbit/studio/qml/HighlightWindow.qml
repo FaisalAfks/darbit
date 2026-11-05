@@ -1,5 +1,6 @@
 // Highlight: what's found on screen right now, over the game. Each picture found gets its box and score; one just
-// under what it needs gets a faint one. Clicks go through to the game. Ctrl+Alt+H (or Esc in the Studio) hides it.
+// under what it needs gets a faint one. Clicks go through to the game. Ctrl+Alt+H (or Esc in the Studio) hides it;
+// HighlightPill says what's found.
 import QtQuick
 import QtQuick.Window
 
@@ -48,25 +49,6 @@ Window {
                         font.pixelSize: 11
                     }
                 }
-            }
-        }
-    }
-
-    // what this is, at the top
-    Rectangle {
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: 14
-        width: info.implicitWidth + 32; height: 40; radius: 20
-        color: studio.colors.solid; border.color: studio.colors.line
-        Row {
-            id: info
-            anchors.centerIn: parent; spacing: 10
-            Rectangle { width: 9; height: 9; radius: 4.5; color: studio.colors.ok; anchors.verticalCenter: parent.verticalCenter }
-            Text {
-                text: "Highlight · " + (studio.bot.name ? studio.bot.name + " · " : "") + highlight.found + " of " + highlight.boxes.length + " found"
-                    + (highlight.alike ? " · " + highlight.alike + " look-alikes (try the colour option)" : "")
-                    + " · " + Math.round(highlight.took) + " ms · Ctrl+Alt+H hides"
-                color: studio.colors.text; font.pixelSize: 13; font.weight: Font.DemiBold
             }
         }
     }

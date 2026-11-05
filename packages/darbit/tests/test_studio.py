@@ -639,6 +639,35 @@ def test_highlight_finds_the_bots_pictures_on_screen(qt, tmp_path):
     highlight.stop()
 
 
+def test_highlight_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
+    import cv2
+    import numpy as np
+    from PySide6.QtCore import QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.core.geometry import Region
+    from darbit.studio.hiding import HidingPill
+    from darbit.studio.highlight import Highlight
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
+    (tmp_path / "images").mkdir()
+    screen = np.zeros((600, 900, 3), np.uint8)
+    screen[200:260, 300:420] = (40, 160, 220)
+    cv2.imwrite(str(tmp_path / "images" / "Menu.Start.png"), screen[190:270, 290:430])
+    highlight, hiding = Highlight(), HidingPill(watch=lambda moved: None)
+    engine = app.load(backend.Studio(FakeClient), highlight=highlight, highlight_hiding=hiding)
+    root = engine.rootObjects()[0]
+    pill = root.findChild(QQuickWindow, "highlightPill")
+    assert not hiding.isOpen and not pill.isVisible()
+    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
+    wait_until(lambda: highlight.found == 1)
+    assert hiding.isOpen and pill.isVisible()
+    wait_until(lambda: pill.findChild(QObject, "highlightFound").property("text").startswith("1 of 1 found"))
+    highlight.stop()
+    assert not hiding.isOpen and not pill.isVisible()
+    del engine
+
+
 def test_pictures_found_on_the_same_spot_are_look_alikes():
     from darbit.studio.highlight import mark_look_alikes
 
