@@ -1,8 +1,8 @@
 """`d.Region`: a rectangle on the screen that searches and clicks inside itself, the SikuliX way.
 
     menu = d.Region(442, 277, 1656, 1083)
-    if menu.exists("Lobby.Play", timeout=3):
-        menu.click("Lobby.Play")
+    if menu.exists("Menu.Start", timeout=3):
+        menu.click("Menu.Start")
 
 Each method is the module-level call (`d.exists`, `d.click`, ...) with `region=` set to this one.
 """

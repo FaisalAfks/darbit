@@ -79,7 +79,7 @@ function stepIcon(step) {
 }
 
 function stepText(step) {
-    // a step as one plain line: "Press E", "Wait 0.5 s", "Click Lobby.Play", "Play the tape from 0 to 42.5 s"
+    // a step as one plain line: "Press E", "Wait 0.5 s", "Click Menu.Start", "Play the tape from 0 to 42.5 s"
     var args = step.args || {}
     var target = args.target ? (Array.isArray(args.target) ? args.target.join(", ") : args.target) : ""
     if (step.kind === "key") {

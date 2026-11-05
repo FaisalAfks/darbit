@@ -1,7 +1,7 @@
 """A day's run report, summarised.
 
     python -m darbit.tools.report                 # today, from logs/ next to the current folder
-    python -m darbit.tools.report 2026-10-21 --logs ../ad-bot/logs
+    python -m darbit.tools.report 2026-10-21 --logs ../my-bot/logs
 
 Shows each step (how often it ran, how often it failed, its average and longest time),
 the reasons steps failed with their screenshots, the targets most often not found with

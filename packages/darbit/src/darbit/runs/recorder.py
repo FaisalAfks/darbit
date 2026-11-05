@@ -195,7 +195,7 @@ def keys_to_steps(events: list[RawEvent]) -> list[Timed]:
 
 
 def clicks_to_steps(events: list[RawEvent]) -> list[Timed]:
-    """A click where each mouse button went down; a drag (the mouse moved while it was down, like turning Roblox's
+    """A click where each mouse button went down; a drag (the mouse moved while it was down, like turning a game's
     camera with the right button) is the button going down, then up, so the movement in between plays with it held."""
     found: list[Timed] = []
     down: dict[str, RawEvent] = {}

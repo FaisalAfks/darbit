@@ -1,13 +1,13 @@
 """Named steps for the run report.
 
-    with d.step("Speed Raid"):
+    with d.step("Daily quest"):
         with d.step("pick a character"):
             ...
 
 Each step records when it started, how long it took and how it ended: ok, failed
 (with the reason and a screenshot), interrupted (by which observer) or stopped.
-Steps inside steps are recorded with their path, e.g. "Speed Raid > pick a character".
-Bots can add their own events with d.record("speed raid done", character="Naruto").
+Steps inside steps are recorded with their path, e.g. "Daily quest > pick a quest".
+Bots can add their own events with d.record("quest done", quest="Wood").
 """
 
 import functools

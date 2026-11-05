@@ -1,7 +1,7 @@
 """Talking to darbit's service from Python: the CLI and the Studio use this.
 
     with Client("darbit cli") as service:
-        service.call("bot.start", bot="ad-bot")
+        service.call("bot.start", bot="my-bot")
         service.on_event(print)        # (topic, data) for everything that happens from now on
 
 `ensure_running()` starts the service in the background first if it isn't already.

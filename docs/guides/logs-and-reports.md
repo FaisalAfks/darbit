@@ -11,9 +11,9 @@ Each day gets a log file in `.darbit/logs/` next to the script: what was looked 
 Next to each day's log, `.darbit/logs/report-<day>.jsonl` records every search (with the closest score when nothing was found), click and drag, and the script's own steps and events:
 
 ```python
-with d.step("Speed Raid"):  # timed; ends ok, failed (with a screenshot), interrupted or stopped
+with d.step("Daily quest"):  # timed; ends ok, failed (with a screenshot), interrupted or stopped
     ...
-    d.record("speed raid done", character="Naruto")  # an event of the script's own
+    d.record("quest done", quest="Wood")  # an event of the script's own
 ```
 
 ```

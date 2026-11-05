@@ -4,7 +4,7 @@
 
 A tape keeps every mouse packet with both what the mouse sent (counts) and where the cursor was, every key and
 button going down and up, and the wheel. Playing it sends each one at the time it happened. For a packet the game
-held the cursor for (a camera: Roblox's shift lock, a right-drag) it sends the same counts, which turn the camera the
+held the cursor for (a camera: a game's mouse lock, a right-drag) it sends the same counts, which turn the camera the
 same; otherwise it puts the cursor where it was, which is exact whatever the Windows mouse settings are. Places are
 kept relative to settings.window, so a moved or resized game window still lines up.
 """

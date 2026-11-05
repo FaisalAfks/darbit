@@ -1,7 +1,7 @@
 """Targets: what to look for or point at. An image, a location, or both.
 
 A target saved by the capture tool is two files with the same name:
-`lobby/play.png` (the image) and `lobby/play.json` (its settings):
+`menu/start.png` (the image) and `menu/start.json` (its settings):
 
     {"kind": "image", "region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
      "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
@@ -91,7 +91,7 @@ EXACT = 0.99  # Pattern.exact()
 
 @dataclass(frozen=True)
 class Pattern:
-    """A picture by name with settings changed in code: `Pattern("Lobby.Play").similar(0.85).offset(10, 0)`.
+    """A picture by name with settings changed in code: `Pattern("Menu.Start").similar(0.85).offset(10, 0)`.
     The picture's .json applies first, these on top."""
 
     image: str | Path
@@ -320,7 +320,7 @@ def _load(target: Target, folders: list[Path]) -> Target:
 
 
 def save(path: Path, image: np.ndarray | None, **fields) -> None:
-    """Save a target: `path` without a suffix, e.g. images/lobby/play. Fields go to the .json."""
+    """Save a target: `path` without a suffix, e.g. images/menu/start. Fields go to the .json."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if image is not None:
         ok, data = cv2.imencode(".png", image)

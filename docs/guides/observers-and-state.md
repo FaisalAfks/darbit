@@ -7,14 +7,14 @@ Watching for something in the background, and values that survive restarts.
 Watch for something in the background, and interrupt the script when it shows up:
 
 ```python
-d.observe("Roblox.Disconnected")  # an image
+d.observe("Game.Disconnected")  # an image
 
 
-def roblox_closed():
-    return not d.apps.running("Roblox")
+def game_closed():
+    return not d.apps.running("Game")
 
 
-d.observe(roblox_closed, name="Roblox closed")  # a condition
+d.observe(game_closed, name="Game closed")  # a condition
 
 try:
     play()
@@ -31,14 +31,14 @@ When an observer fires, held keys are let go and the next darbit call (a wait, a
 Values that survive restarts, kept in `.darbit/state/` next to the script:
 
 ```python
-s = d.State("speedraid")
+s = d.State("quests")
 if s.weekly(weekday=0, hour_utc=7):  # True once each week, from Monday 07:00 UTC
     s["done"] = 0
 s.count("done")  # add 1, saved at once
-raid = s.timer("speed raid", minutes=30)
-if raid.due():
+quest = s.timer("daily quest", minutes=30)
+if quest.due():
     ...
-    raid.restart()
+    quest.restart()
 ```
 
 `s.daily(hour_utc=0)` works like `weekly` for days. Every change is written straight away, so a crash or the stop hotkey loses nothing.

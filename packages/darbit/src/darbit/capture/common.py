@@ -22,7 +22,7 @@ class Item:
 
 
 def parse_item(text: str) -> Item:
-    """An item from a command-line name: `Gui.Play`, `location:afk/spot` or `region:menus/bag`."""
+    """An item from a command-line name: `Gui.Play`, `location:idle/spot` or `region:menus/bag`."""
     kind, _, name = text.partition(":")
     if name and kind in KINDS:
         return Item(name, kind)

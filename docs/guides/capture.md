@@ -27,7 +27,7 @@ A bot can ship a `guide.toml`: the screens to open, in order, and what to take o
 
 ```toml
 title = "my-bot setup"
-say = "Start in the lobby."
+say = "Start on the main menu."
 
 [[screen]]
 name = "Bag"
@@ -38,7 +38,7 @@ say = "Open the Bag and go to the Characters tab."
   say = "The whole Bag window."
 
   [[screen.take]]
-  images = ["Char.Naruto", "Char.Itadori", "Char.Killua"]
+  images = ["Item.Sword", "Item.Shield", "Item.Bow"]
   in = "Measure.bag"
   order = "list"
   say = "Each character's card, from the top of the list down."
@@ -48,4 +48,4 @@ say = "Open the Bag and go to the Characters tab."
 - `in` names the region the target is searched in; `point` is `"center"` or an offset `[dx, dy]`
 - `order = "list"` takes the names strictly in order, so a long game list is scrolled once, top to bottom
 - Unknown keys, a name used twice, or `in` naming something that isn't a region stop with a message saying where
-- A list file converted to a guide (`capture.guide.convert_list`) keeps its `[screens]` and notes; a run of 5 or more images like `SR.Char.*`, whose notes only repeat their names, becomes one `images` item
+- A list file converted to a guide (`capture.guide.convert_list`) keeps its `[screens]` and notes; a run of 5 or more images like `Shop.Item.*`, whose notes only repeat their names, becomes one `images` item

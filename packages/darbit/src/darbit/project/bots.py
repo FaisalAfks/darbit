@@ -58,7 +58,7 @@ def new(name: str, where: Path) -> Path:
 
 
 def name_from_url(url: str) -> str:
-    """`https://github.com/FaisalAfks/ad-bot.git` -> `ad-bot`."""
+    """`https://github.com/someone/my-bot.git` -> `my-bot`."""
     last = url.rstrip("/").replace("\\", "/").rsplit("/", 1)[-1]
     last = last.removesuffix(".git")
     return last
@@ -116,8 +116,8 @@ def make_environment(folder: Path) -> str:
 
 
 def entry_command(entry: str, folder: Path) -> list[str]:
-    """The command that starts a project's entry: a script (`bot.py`), a module (`ad_bot`) or a function
-    (`ad_bot.main:main`). With the project's own environment when it has a pyproject.toml."""
+    """The command that starts a project's entry: a script (`bot.py`), a module (`my_bot`) or a function
+    (`my_bot.main:main`). With the project's own environment when it has a pyproject.toml."""
     if (folder / "pyproject.toml").is_file():
         python = ["uv", "run", "--no-dev", "python"]
     else:

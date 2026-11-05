@@ -1,10 +1,10 @@
 """The screen map: a game's screens, the pictures that prove each one is showing, and the moves between them.
 
     game = d.Map()
-    game.screen("Lobby", "Lobby.Play")
+    game.screen("Menu", "Menu.Start")
     game.screen("Bag", "Bag.Title")
-    game.move("Lobby", "Bag", "Lobby.Bag")         # click Lobby.Bag
-    game.move("Bag", "Lobby", lambda: d.press("esc"))
+    game.move("Menu", "Bag", "Menu.Bag")         # click Menu.Bag
+    game.move("Bag", "Menu", lambda: d.press("esc"))
     game.go("Bag")                                 # from wherever the game is; False if it gets lost
 
 `go` finds the screen showing (one look for every screen's proofs), takes the shortest way, and checks each move

@@ -186,7 +186,7 @@ def _ended_without_saying(started: dict) -> bool:
 
 
 def now_tile(events: list[dict]) -> Tile:
-    """The steps still open, deepest last: ["Speed Raid", "Sakura", "Fight"], since when, and since when the bot
+    """The steps still open, deepest last: ["Daily quest", "Wood", "Gather"], since when, and since when the bot
     has been waiting for a locked screen (None when it isn't)."""
     open_steps: dict[str, str] = {}  # step path -> started
     for event in _steps(events):

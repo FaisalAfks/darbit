@@ -156,6 +156,8 @@
 
 ### Docs
 
+- Examples, docstrings, guides and Capture's name placeholder use neutral names (`Menu.Start`, "Daily quest", `my-bot`) instead of one bot's (decision 0018)
+
 - The rebuild plan (draft): what darbit is, every feature to design for, the core API, the process layout, the Studio on PySide6 and the order of work
 - Decision 0015: rebuild around a fast, swappable core; the roadmap, design page, 2026-10-25 plan and task pages move to `docs/archive/`; the code style relaxes (simple comprehensions and key lambdas are fine, bot code stays the plainest)
 
