@@ -1,4 +1,4 @@
-"""settings.front: the bot's window brought forward before input, and with "always" before searches too."""
+"""settings.window: the bot's window brought forward before input, and never before a search."""
 
 from types import SimpleNamespace
 
@@ -7,7 +7,6 @@ import pytest
 
 import darbit as d
 from darbit.core.geometry import Region
-from darbit.project import manifest
 from darbit.runtime import front
 
 
@@ -38,48 +37,28 @@ def game(monkeypatch):
     return windows
 
 
-def test_by_default_the_window_comes_forward_before_input_only(game):
-    front.before_search()
-    assert game.brought == 0
+def test_the_window_comes_forward_before_input(game):
     front.before_input()
     assert game.brought == 1
-
-
-def test_always_brings_it_forward_before_a_search(game, monkeypatch):
-    monkeypatch.setattr(d.settings, "front", "always")
-    front.before_search()
-    assert game.brought == 1
-    front.before_search()  # already in front: left alone
+    front.before_input()  # already in front: left alone
     assert game.brought == 1
 
 
 def test_no_window_set_or_none_open_is_left_alone(game, monkeypatch):
-    monkeypatch.setattr(d.settings, "front", "always")
     monkeypatch.setattr(d.settings, "window", None)
-    front.before_search()
+    front.before_input()
     monkeypatch.setattr(d.settings, "window", "Elsewhere")
     front.before_input()
     assert game.brought == 0
 
 
-def test_every_search_asks_first(game, monkeypatch, tmp_path):
+def test_a_search_leaves_the_windows_alone(game, monkeypatch, tmp_path):
     from darbit.core.targets import save
     from darbit.platform import screen
 
     save(tmp_path / "Play", np.full((8, 8, 3), 200, np.uint8))
     monkeypatch.setattr(d.settings, "images", [tmp_path])
     monkeypatch.setattr(d.settings, "log", False)
-    monkeypatch.setattr(d.settings, "front", "always")
     monkeypatch.setattr(screen, "grab", lambda area=None: (np.zeros((40, 40, 3), np.uint8), Region(0, 0, 40, 40)))
     assert d.exists("Play") is None
-    assert game.brought == 1
-
-
-@pytest.mark.parametrize("value", ["input", "always"])
-def test_darbit_toml_takes_front(value):
-    manifest._check_setting("front", value)
-
-
-def test_darbit_toml_refuses_another_front():
-    with pytest.raises(manifest.ProjectError, match='front is "input" or "always"'):
-        manifest._check_setting("front", "sometimes")
+    assert game.brought == 0
