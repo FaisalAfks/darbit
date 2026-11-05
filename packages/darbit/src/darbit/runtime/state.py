@@ -1,13 +1,13 @@
 """Saved values that survive restarts: counters, daily and weekly resets, timers.
 
-    s = d.State("speedraid")                  # state/speedraid.json next to the script
+    s = d.State("quests")                  # state/quests.json next to the script
     if s.weekly(weekday=0, hour_utc=7):       # True once each week, from Monday 07:00 UTC
         s["done"] = 0
     s.count("done")                           # add 1 and save
-    raid = s.timer("speed raid", minutes=30)
-    if raid.due():
+    quest = s.timer("daily quest", minutes=30)
+    if quest.due():
         ...
-        raid.restart()
+        quest.restart()
 
 Every change is saved straight away, so a crash or the stop hotkey loses nothing.
 """

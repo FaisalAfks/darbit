@@ -10,7 +10,7 @@ import darbit as d
 d.settings.timeout = 10
 
 if d.click("Gui.Play"):  # waits up to 10 s, False if it never shows
-    d.wait("Play.Raid", "Roblox.Disconnected")  # the first of several
+    d.wait("Menu.Quest", "Game.Disconnected")  # the first of several
     d.press("tab")
     d.press(*"54132")  # game keys, one after another
 

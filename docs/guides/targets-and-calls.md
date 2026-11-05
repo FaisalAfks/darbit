@@ -4,7 +4,7 @@ What a target is, every call, the settings, and stopping a script.
 
 ## Targets
 
-A target is a name like `Gui.Play` or `lobby/play`. It's looked up in the `images` folder next to the script (and the script's own folder): `Gui.Play.png`, plus an optional `Gui.Play.json` with its settings:
+A target is a name like `Gui.Play` or `menu/start`. It's looked up in the `images` folder next to the script (and the script's own folder): `Gui.Play.png`, plus an optional `Gui.Play.json` with its settings:
 
 ```json
 {"region": [2133, 404, 428, 1125], "similarity": 0.85, "offset": [0, 12]}
@@ -41,7 +41,7 @@ On the test bench (`bench/README.md`), `fast` and `grayscale` together bring a w
 
 ### Other screens and moving windows
 
-The capture tool also saves `scale` (the display scaling) and, with `--window Roblox`, the window's size and corner (`window`, `origin`). Before each search the target is placed on the screen as it is now:
+The capture tool also saves `scale` (the display scaling) and, with `--window Game`, the window's size and corner (`window`, `origin`). Before each search the target is placed on the screen as it is now:
 
 - **Taken in a window** (`window` and `origin` saved), `settings.window` set (or `[bot] window` in `darbit.toml`) and window space on (`[settings] space = "window"`; the default is `"screen"`, screen pixels): its region, location and click offset follow the window, the picture is resized by how much wider the window is now, and with no region of its own it's searched only inside the window
 - **Only `scale` saved:** the picture is resized by the change in scaling, and its region grown to fit
@@ -67,13 +67,13 @@ The capture tool also saves `scale` (the display scaling) and, with `--window Ro
 | `hold("w")`, `release("w")`, `release()` | keeps keys down; `release()` lets go of everything | |
 | `write("hello")` | types text in any keyboard language | |
 | `sleep(seconds)` | waits, but stops at once on the stop hotkey | |
-| `apps.open(path_or_url)`, `apps.close(app)`, `apps.running(app)`, `apps.focus(app)`, `apps.window(app)` | an app by window title (`"Roblox"`) or program (`"chrome.exe"`) | |
+| `apps.open(path_or_url)`, `apps.close(app)`, `apps.running(app)`, `apps.focus(app)`, `apps.window(app)` | an app by window title (`"Game"`) or program (`"chrome.exe"`) | |
 | `log(text)`, `screenshot(label)` | a line or a screenshot in today's log | |
 
 `Location(x, y)` is a fixed point. A target can be a name, a `Target`, or a `Pattern`: a name with settings changed in code, on top of its `.json`:
 
 ```python
-play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)  # also .exact(), .within(region), .options(fast=True)
+play = d.Pattern("Menu.Start").similar(0.85).offset(10, 0)  # also .exact(), .within(region), .options(fast=True)
 ```
 
 ### Regions, screens and apps
@@ -81,16 +81,16 @@ play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)  # also .exact(), .wi
 A `Region(x, y, w, h)` searches and clicks inside itself, the SikuliX way: `exists`, `find`, `wait`, `vanish`, `find_all`, `click`, `double_click`, `right_click`, `hover`, `drag` and `observe` are the calls above with `region=` set to it.
 
 ```python
-game = d.App("Roblox").window  # a Region, or None if it isn't open
+game = d.App("Game").window  # a Region, or None if it isn't open
 if game.exists(play, timeout=3):
     game.click(play)
 d.Region.of(match).grow(40).exists("Close")  # around something found
 ```
 
-Areas and points taken with the capture tool (Area or Point) are used by name, placed like pictures (in window space they follow the window): `d.area("Shop.List")` is a Region, `d.point("Bag.Slot.Main")` a Location. A picture's own search area counts too, so `d.area("Lobby.Play")` is where the Play button is looked for.
+Areas and points taken with the capture tool (Area or Point) are used by name, placed like pictures (in window space they follow the window): `d.area("Shop.List")` is a Region, `d.point("Bag.Slot.Main")` a Location. A picture's own search area counts too, so `d.area("Menu.Start")` is where the Play button is looked for.
 
 ```python
-cards = d.area("SpeedRaid.Cards")
+cards = d.area("Quest.List")
 cards.exists("SR.Char.Goku")
 d.drag("Bag.Slider", to=d.point("Bag.Slider.Top"))
 ```
@@ -108,7 +108,7 @@ d.settings.timeout = 3  # how long actions wait for a target
 d.settings.similarity = 0.7  # default similarity
 d.settings.glide = 0.5  # seconds the mouse takes to move
 d.settings.scan_rate = 5  # searches per second while waiting
-d.settings.window = "Roblox"  # bring this window to the front before any input
+d.settings.window = "Game"  # bring this window to the front before any input
 d.settings.missing_images = "skip"  # treat a missing image file as never found, instead of an error
 d.settings.screenshot_after = 20  # save a screenshot when a wait this long runs out
 d.stop_key("ctrl+alt+q")  # the stop hotkey

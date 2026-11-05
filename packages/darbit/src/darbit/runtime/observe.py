@@ -1,11 +1,11 @@
 """Observers: watch for something in the background and interrupt the script when it happens.
 
-    d.observe("Roblox.Disconnected")                       # an image appearing
+    d.observe("Game.Disconnected")                     # an image appearing
 
-    def roblox_closed():
-        return not d.apps.running("Roblox")
+    def game_closed():
+        return not d.apps.running("Game")
 
-    d.observe(roblox_closed, name="Roblox closed")         # a condition
+    d.observe(game_closed, name="Game closed")         # a condition
 
     try:
         play_the_game()

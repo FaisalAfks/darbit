@@ -1,8 +1,8 @@
 """Testing a bot without its game: saved screens stand in for the game, and clicks and keys move between them.
 
-    with FakeGame({"Lobby": "screens/lobby.png", "Bag": "screens/bag.png"}, start="Lobby") as game:
-        game.leads("Lobby", "Lobby.Bag", "Bag")         # clicking Lobby.Bag on the lobby shows the bag
-        game.leads("Bag", "esc", "Lobby", key=True)     # pressing Esc in the bag goes back
+    with FakeGame({"Menu": "screens/menu.png", "Bag": "screens/bag.png"}, start="Menu") as game:
+        game.leads("Menu", "Menu.Bag", "Bag")         # clicking Menu.Bag on the menu shows the bag
+        game.leads("Bag", "esc", "Menu", key=True)     # pressing Esc in the bag goes back
         assert my_map.go("Bag") and game.showing == "Bag"
 
 darbit's screen grabs come from the screen showing, and its clicks and key presses go to the fake game instead of

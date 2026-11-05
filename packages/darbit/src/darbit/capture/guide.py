@@ -207,7 +207,7 @@ def convert_list(path: Path, title: str = "") -> Guide:
 
 
 def _prefix(name: str) -> str:
-    """`SR.Char.Naruto` -> `SR.Char`; a name without a dot has none."""
+    """`Shop.Item.Sword` -> `Shop.Item`; a name without a dot has none."""
     if "." not in name:
         return ""
     return name.rsplit(".", 1)[0]
@@ -235,7 +235,7 @@ def _group_images(takes: list[Take]) -> list[Take]:
         names = []
         for take in run:
             names.append(take.names[0])
-        say = run[0].say.split(":")[0].strip()  # "Speed Raid list: Naruto" -> "Speed Raid list"
+        say = run[0].say.split(":")[0].strip()  # "Quest list: Wood" -> "Quest list"
         grouped.append(Take("images", names, say, order="list"))
     return grouped
 
@@ -243,8 +243,8 @@ def _group_images(takes: list[Take]) -> list[Take]:
 def _notes_only_repeat_names(run: list[Take]) -> bool:
     """Whether every note is `<where>: <the name's last part>`, so one `say` for the group loses nothing.
 
-    "Speed Raid list: Naruto" for SR.Char.Naruto repeats the name; "Play menu: Raid Challenge" for
-    Play.DailyRaid says something the name doesn't.
+    "Quest list: Wood" for Quest.Wood repeats the name; "Main menu: daily quest" for
+    Menu.Daily says something the name doesn't.
     """
     for take in run:
         if not take.say:

@@ -1,9 +1,9 @@
 """What a bot shows in darbit Studio beyond its steps and events (decisions 0011 and 0013).
 
-    d.progress("Speed Raid this week", state.sr_done, 133)   # a ring; call again with new numbers to update it
+    d.progress("Quests this week", state.quests_done, 70)   # a ring; call again with new numbers to update it
     d.next("Weekly reset", reset_time)                        # a datetime; the Studio shows "in 2 d 4 h"
-    d.record.gain("Gems", 120, total=48210, icon="◆")         # a row on the Results page: today, the week, total
-    d.plan(["Raid", "Speed Raid", "AFK"])                     # the round's order, so steps still to come show too
+    d.record.gain("Coins", 120, total=48210, icon="◆")         # a row on the Results page: today, the week, total
+    d.plan(["Quests", "Shop", "Idle"])                     # the round's order, so steps still to come show too
     d.show("Boat", 7, sub="next upgrade at 2 000 gold")      # a value of the bot's own: a block on the Overview
 
     @d.block("Bait left", every=60)                           # the same, asked for every minute while the bot runs
@@ -61,7 +61,7 @@ class Record:
         log.record(event, **fields)
 
     def gain(self, name: str, amount: float, total: float | None = None, icon: str | None = None) -> None:
-        """Report that the bot got `amount` more of `name` (gems, gold, fish), and the new total if known."""
+        """Report that the bot got `amount` more of `name` (coins, wood, fish), and the new total if known."""
         if not name:
             raise ValueError("gain needs a name")
         if not isinstance(amount, (int, float)) or isinstance(amount, bool):
@@ -74,7 +74,7 @@ class Record:
         log.record("gain", **fields)
 
     def recovered(self, how: str, why: str) -> None:
-        """The bot got itself going again: `how` ("rejoin", "back to the lobby") and `why` ("disconnected").
+        """The bot got itself going again: `how` ("rejoin", "back to the menu") and `why` ("disconnected").
         Each day's results count them, the health of a bot that runs all day."""
         log.record("recovered", how=how, why=why)
 

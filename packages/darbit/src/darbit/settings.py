@@ -35,7 +35,7 @@ class Settings:
     glide: float = 0.5  # seconds the mouse takes to move to a spot
     scan_rate: float = 5.0  # searches per second while waiting
     images: list[Path] = field(default_factory=_default_images)
-    window: str | None = None  # a window that must be in front before any input, e.g. "Roblox"
+    window: str | None = None  # a window that must be in front before any input, e.g. "Game"
     stop_key: str = "ctrl+alt+q"
     logs: Path = field(default_factory=_default_logs)
     state: Path = field(default_factory=_default_state)  # where d.State files are kept

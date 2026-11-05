@@ -700,7 +700,7 @@ Window {
                     id: nameField
                     objectName: "nameField"
                     round: true
-                    placeholderText: "Name, e.g. Lobby.Play"
+                    placeholderText: "Name, e.g. Menu.Start"
                     Layout.preferredWidth: 210; Layout.preferredHeight: 40
                     leftPadding: 16
                     font.pixelSize: 14; font.weight: Font.DemiBold

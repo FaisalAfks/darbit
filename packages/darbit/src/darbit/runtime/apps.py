@@ -1,7 +1,7 @@
 """Opening, closing and switching to apps.
 
-An app is named by its window title ("Roblox") or by its program ("chrome.exe",
-or a full path to it). `App("Roblox")` keeps the name: `App("Roblox").window` is its window as a Region.
+An app is named by its window title ("Game") or by its program ("chrome.exe",
+or a full path to it). `App("Game")` keeps the name: `App("Game").window` is its window as a Region.
 """
 
 import os
@@ -12,7 +12,7 @@ from .region import Region
 
 
 class App:
-    """An app by window title or program, the SikuliX way: `game = App("Roblox").window`."""
+    """An app by window title or program, the SikuliX way: `game = App("Game").window`."""
 
     def __init__(self, name: str) -> None:
         self.name = name

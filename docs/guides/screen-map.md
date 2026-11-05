@@ -6,16 +6,16 @@ to another, and the bot asks to *be* somewhere instead of clicking its way there
 ```python
 import darbit as d
 
-d.screens.screen("Lobby", "Lobby.Play")  # the Lobby is showing when Lobby.Play is on screen
+d.screens.screen("Menu", "Menu.Start")  # the Menu is showing when Menu.Start is on screen
 d.screens.screen("Bag", "Bag.Title")
 d.screens.screen("Shop", "Shop.Title", "Shop.Sale")  # any of these proves it
 d.screens.screen("Ad", "Ad.Close")  # a pop-up is a screen too
 
-d.screens.move("Lobby", "Bag", "Lobby.Bag")  # click Lobby.Bag
-d.screens.move("Bag", "Lobby", "Bag.Back")
-d.screens.move("Lobby", "Shop", "Lobby.Shop")
-d.screens.move("Shop", "Lobby", lambda: d.press("esc"))  # or anything: keys, an action
-d.screens.move("Ad", "Lobby", "Ad.Close")
+d.screens.move("Menu", "Bag", "Menu.Bag")  # click Menu.Bag
+d.screens.move("Bag", "Menu", "Bag.Back")
+d.screens.move("Menu", "Shop", "Menu.Shop")
+d.screens.move("Shop", "Menu", lambda: d.press("esc"))  # or anything: keys, an action
+d.screens.move("Ad", "Menu", "Ad.Close")
 
 if d.go("Shop"):  # from wherever the game is
     d.click("Shop.Buy")
@@ -39,11 +39,11 @@ from darbit.testing import FakeGame
 
 
 def test_the_shop_is_reached_past_the_ad():
-    screens = {"Lobby": "tests/screens/lobby.png", "Shop": "tests/screens/shop.png", "Ad": "tests/screens/ad.png"}
-    with FakeGame(screens, start="Lobby") as game:
-        game.leads("Lobby", "Lobby.Shop", "Ad", once=True)  # the first time, an ad pops up
-        game.leads("Lobby", "Lobby.Shop", "Shop")
-        game.leads("Ad", "Ad.Close", "Lobby")
+    screens = {"Menu": "tests/screens/menu.png", "Shop": "tests/screens/shop.png", "Ad": "tests/screens/ad.png"}
+    with FakeGame(screens, start="Menu") as game:
+        game.leads("Menu", "Menu.Shop", "Ad", once=True)  # the first time, an ad pops up
+        game.leads("Menu", "Menu.Shop", "Shop")
+        game.leads("Ad", "Ad.Close", "Menu")
         assert d.go("Shop") and game.showing == "Shop"
 ```
 

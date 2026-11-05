@@ -327,7 +327,7 @@ def remember_screen(
     point: list[float] | None,
 ) -> None:
     """Keep the shot an asset was taken on, and where the asset sits in it, under the asset's screen
-    ("Lobby" for "Lobby.Play"). Other assets already placed on that screen keep their places."""
+    ("Menu" for "Menu.Start"). Other assets already placed on that screen keep their places."""
     group = name.split(".")[0] if "." in name else "Other"
     folder = screens_folder(project)
     folder.mkdir(parents=True, exist_ok=True)

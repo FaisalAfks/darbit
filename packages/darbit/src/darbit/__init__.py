@@ -2,13 +2,13 @@
 
 import darbit as d
 
-d.click("lobby/play")                  # True if clicked, False if not found in time
+d.click("menu/start")                  # True if clicked, False if not found in time
 if d.exists("run/enemies_left", 90):    # the Match, or None after 90 s
     d.press("tab")
 d.press(*"54132")
 
-game = d.App("Roblox").window           # a Region: game.exists(...), game.click(...)
-play = d.Pattern("Lobby.Play").similar(0.85).offset(10, 0)
+game = d.App("Game").window             # a Region: game.exists(...), game.click(...)
+play = d.Pattern("Menu.Start").similar(0.85).offset(10, 0)
 """
 
 import atexit as _atexit
@@ -60,7 +60,7 @@ from .runtime.tape import replay
 from .settings import settings
 
 next = next_up  # d.next("Weekly reset", when): shown in darbit Studio (decision 0011)
-record = Record()  # d.record("event", ...) and d.record.gain("Gems", 120): the run report (decision 0013)
+record = Record()  # d.record("event", ...) and d.record.gain("Coins", 120): the run report (decision 0013)
 
 __version__ = "1.0.0.dev0"
 

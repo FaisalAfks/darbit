@@ -161,7 +161,7 @@ def mouse_up(at: Spot | None = None, button: str = "left") -> bool:
 
 def move_by(dx: int, dy: int, seconds: float = 0) -> None:
     """Move the mouse by dx, dy counts over `seconds`, like a hand on the mouse: turns a game's camera even when the
-    game holds the cursor in place (Roblox's shift lock)."""
+    game holds the cursor in place (a game's mouse lock)."""
     front.before_input()
     device.move_by(dx, dy, seconds)
 

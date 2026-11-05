@@ -1,6 +1,6 @@
 """The Library page in darbit Studio: every asset a bot uses, where it's used, and renaming without breaking it.
 
-An asset is a target in the bot's image folders: an image (`Lobby.Play.png` plus an optional `Lobby.Play.json`),
+An asset is a target in the bot's image folders: an image (`Menu.Start.png` plus an optional `Menu.Start.json`),
 a region or a point (a `.json` alone). Pictures the setup guide asks for that aren't taken yet are listed as
 missing. `uses` finds every line that names an asset, in the bot's Python files and its guide.toml. `rename`
 changes the files and every one of those lines together, or nothing at all. Decision 0013, round 4.
@@ -24,7 +24,7 @@ from .problems import DEFAULT_SIMILARITY
 THUMB = 160  # px, the longer side of a card's thumbnail
 HISTORY = 14  # last scores kept per asset for its small chart
 SKIP_DIRS = {".venv", "venv", ".darbit", ".git", "node_modules", "__pycache__", "build", "dist"}
-TOKEN = re.compile(r"[A-Za-z_][\w.\-]*")  # a dotted name in code: img.Lobby.Play, "Lobby.Play.png"
+TOKEN = re.compile(r"[A-Za-z_][\w.\-]*")  # a dotted name in code: img.Menu.Start, "Menu.Start.png"
 NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.\-]*$")
 
 
@@ -110,7 +110,7 @@ def _scores(project: Project) -> dict[str, list[float]]:
 
 
 def group_of(name: str) -> str:
-    """The screen an asset belongs to, from its name: "Lobby.Play" -> "Lobby"."""
+    """The screen an asset belongs to, from its name: "Menu.Start" -> "Menu"."""
     if "." in name:
         return name.split(".")[0]
     return "Other"
@@ -278,8 +278,8 @@ def _use_counts(project: Project, names: list[str]) -> dict[str, int]:
 
 
 def _names_in(token: str, wanted: set[str]) -> list[str]:
-    """The asset names a dotted token holds, the way _pattern matches them: "img.Lobby.Play" holds
-    "Lobby.Play" (and "Play" if that's an asset), and "Lobby.Play.png" holds "Lobby.Play"."""
+    """The asset names a dotted token holds, the way _pattern matches them: "img.Menu.Start" holds
+    "Menu.Start" (and "Play" if that's an asset), and "Menu.Start.png" holds "Menu.Start"."""
     parts = token.split(".")
     if len(parts) > 1 and parts[-1] in ("png", "json"):
         parts = parts[:-1]

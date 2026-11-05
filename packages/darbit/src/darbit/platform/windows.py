@@ -1,6 +1,6 @@
 """Finding, focusing and closing top-level windows and their apps, through the system's Windows piece.
 
-An app is named by its window title ("Roblox") or by its program file ("chrome.exe", or a full path to it).
+An app is named by its window title ("Game") or by its program file ("chrome.exe", or a full path to it).
 """
 
 from ..core.geometry import Region
