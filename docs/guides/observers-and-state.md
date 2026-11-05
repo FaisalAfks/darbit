@@ -43,6 +43,17 @@ if quest.due():
 
 `s.daily(hour_utc=0)` works like `weekly` for days. Every change is written straight away, so a crash or the stop hotkey loses nothing.
 
+Counters that start over by themselves, each day (from the bot's `day_starts`) or each week:
+
+```python
+tries = s.per_day("boss tries", 3)  # 3 a day
+if tries.left:
+    tries.add()  # one more done; returns how many are left
+quests = s.per_week("quests", 70, starts="Mon 07:00 UTC", first=5)  # first: done already, the very first time
+quests.show("Quests this week")  # its ring on the Overview
+d.next("Quests start over", quests.resets_at())
+```
+
 ## Sharing the PC with a bot
 
 Windows has one mouse and one keyboard, so a bot and a person can't both use them. With polite mode on, a bot steps

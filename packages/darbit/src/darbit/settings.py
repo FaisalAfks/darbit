@@ -34,6 +34,7 @@ class Settings:
     similarity: float = 0.7  # lowest score that counts as found, 0 to 1
     glide: float = 0.5  # seconds the mouse takes to move to a spot
     scan_rate: float = 5.0  # searches per second while waiting
+    lag: float = 1.0  # a slow game or PC: every search's wait and every d.sleep is this many times longer
     images: list[Path] = field(default_factory=_default_images)
     window: str | None = None  # a window that must be in front before any input, e.g. "Game"
     stop_key: str = "ctrl+alt+q"

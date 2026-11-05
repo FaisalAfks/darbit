@@ -4,6 +4,8 @@
 
 ### New
 
+- What every bot needs, moved out of one bot (decision 0018): `d.keep_trying` runs a step until it goes through, recording each `d.Failed` or observer interrupt and recovering in between (`runtime/retry.py`); `d.config()` reads a bot's `settings.toml` and `config.toml` as `cfg.section.key` (`runtime/config.py`); `lag` makes every search's wait and every `d.sleep` longer for a slow game or PC; `State.per_day` and `State.per_week` are counters that start over by themselves and show their ring
+
 - Decision 0018: what belongs in darbit and what in a bot, and the rule in `AGENTS.md`
 
 - Edit in the run control: opens the bot's folder in VS Code when it's installed, else in the file explorer

@@ -31,6 +31,7 @@ SETTING_KINDS = {
     "similarity": "number",
     "glide": "number",
     "scan_rate": "number",
+    "lag": "number",  # every wait this many times longer
     "screenshot_after": "number",
     "window": "text",
     "stop_key": "text",

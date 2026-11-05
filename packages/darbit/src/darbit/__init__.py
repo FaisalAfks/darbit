@@ -24,7 +24,7 @@ _screen.enable_dpi_awareness()
 
 from .core.geometry import Location
 from .core.targets import Match, Pattern, Target
-from .errors import DarbitError, Interrupted, Stopped, TargetError, UnknownKey
+from .errors import DarbitError, Failed, Interrupted, Stopped, TargetError, UnknownKey
 from .platform import input as _input
 from .platform import safety as _safety
 from .platform.keys import Keys
@@ -47,14 +47,16 @@ from .runtime.actions import (
     write,
 )
 from .runtime.apps import App
+from .runtime.config import config
 from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
 from .runtime.region import Region, Screen, area, point
+from .runtime.retry import keep_trying
 from .runtime.screens import Map, go
 from .runtime.screens import default as screens
 from .runtime.show import Record, block, next_up, plan, progress, show
-from .runtime.state import State, Timer
+from .runtime.state import Counter, State, Timer
 from .runtime.steps import flow, step
 from .runtime.tape import replay
 from .settings import settings
@@ -80,7 +82,9 @@ _project = _manifest.setup(settings, __version__)  # layer 2 of the settings: th
 
 __all__ = [
     "App",
+    "Counter",
     "DarbitError",
+    "Failed",
     "Interrupted",
     "Keys",
     "Location",
@@ -101,6 +105,7 @@ __all__ = [
     "block",
     "check",
     "click",
+    "config",
     "double_click",
     "drag",
     "exists",
@@ -110,6 +115,7 @@ __all__ = [
     "go",
     "hold",
     "hover",
+    "keep_trying",
     "log",
     "mouse_down",
     "mouse_up",
