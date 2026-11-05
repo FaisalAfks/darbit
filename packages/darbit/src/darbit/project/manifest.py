@@ -26,7 +26,6 @@ TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "w
 
 # what each darbit setting takes in [settings]; images come from [images] instead
 SPACES = ("screen", "window")  # where targets' places are kept: screen pixels, or the app window's
-FRONTS = ("input", "always")  # when the bot's window is brought forward: before input only, or before searches too
 SETTING_KINDS = {
     "timeout": "number",
     "similarity": "number",
@@ -34,7 +33,6 @@ SETTING_KINDS = {
     "scan_rate": "number",
     "screenshot_after": "number",
     "window": "text",
-    "front": "text",  # "input" (the default) or "always": when the bot's window is brought forward
     "stop_key": "text",
     "missing_images": "text",
     "log": "true or false",
@@ -169,8 +167,6 @@ def _check_setting(key: str, value: object) -> None:
         raise ProjectError(f"{MANIFEST} [settings]: {key} should be a {kind}, not {value!r}")
     if key == "space" and value not in SPACES:
         raise ProjectError(f'{MANIFEST} [settings]: space is "screen" or "window", not {value!r}')
-    if key == "front" and value not in FRONTS:
-        raise ProjectError(f'{MANIFEST} [settings]: front is "input" or "always", not {value!r}')
     if key == "day_starts":
         from .. import days
 

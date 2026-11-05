@@ -15,7 +15,7 @@ from ..core.targets import Match, Pattern, Target, find_file, load
 from ..errors import TargetError
 from ..platform import safety, screen, windows
 from ..settings import settings
-from . import front, matchers
+from . import matchers
 from .log import log, record, screenshot
 
 What = str | Path | Target | Pattern
@@ -85,7 +85,6 @@ def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Ma
     """One screen capture covering every target's area, then each target searched in its own part of it.
     Returns what was found, and the closest spot even when nothing scored high enough."""
     areas = [region if region is not None else one.region for one in chosen]
-    front.before_search()
     pixels, origin = screen.grab(_union(areas))
     closest: Match | None = None
     if pixels.size == 0:
@@ -237,7 +236,6 @@ def find_all(what: What, region: Region | None = None) -> list[Match]:
     if not usable or usable[0]._pixels is None:
         return []
     chosen = usable[0]
-    front.before_search()
     pixels, origin = screen.grab(region if region is not None else chosen.region)
     if pixels.size == 0:
         return []

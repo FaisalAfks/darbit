@@ -41,6 +41,11 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 - Never mention AI, assistants or agents in anything public. No `Co-Authored-By` or "Generated with" lines.
 - Describe what changed and why it matters to the code. Details: [docs/style/writing.md](docs/style/writing.md).
 
+**darbit and its bots** ([decision 0018](docs/decisions/0018-darbit-and-its-bots.md))
+- darbit holds what any bot for any game would use unchanged; a bot holds what only makes sense for its game (its
+  screens, modes, timings, rules, names). The test: would a bot for a different game want it as it is?
+- No setting, default or wording in darbit shaped around one bot. Examples and placeholders use neutral names.
+
 **Code**: see [docs/style/code.md](docs/style/code.md).
 - Idiomatic, readable Python (decision 0015): small functions with verb names, small dataclasses instead of tuples, simple comprehensions and key lambdas are fine; no clever one-liners, walrus, `getattr` dispatch or `from __future__ import annotations`. Bot code and `examples/` stay the plainest.
 - Every detection change (grayscale, a downscaled pass, sizes, OCR, window space) is an option; the default stays as it is.
