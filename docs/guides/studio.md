@@ -61,7 +61,9 @@ The shortcut opens the Studio with the Python it was made from, without a consol
   gets its box and score over the game, a couple of
   times a second; one just under what it needs gets a faint one. Images found on the same spot are marked ⚠ with
   the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to the
-  game. Ctrl+Alt+H again hides it.
+  game. Its pill at the top, like the run pill, says how many are found, how long a pass takes and any look-alikes,
+  with ✕ to hide Highlight and ⤢ to go back to the Studio; it slides away when the mouse leaves it. Ctrl+Alt+H again
+  hides it too.
 
   ![Highlight](../ui/images/qt-studio-highlight.png)
 - **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill at the top of the

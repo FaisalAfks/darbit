@@ -66,7 +66,7 @@ The `TextSlot` component takes `{slot, text, from?, image?}`. Text is cut at one
 | Readout chips | attached to each box or point | one line | `x, y · w × h`; click to type exact numbers |
 | Magnifier | next to the mouse | 168 px | follows the mouse; `z` pins it; shows the boxes too |
 | Guide card | top centre | ≤ 420 × 120 px | hides into a 6 px progress strip when the mouse is away |
-| Highlight | over the screen, click-through | only the boxes | a score badge per match; fades after 3 s unless pinned |
+| Highlight | over the screen, click-through; its pill top centre | the boxes, and one pill | a score badge per match; the pill slides away like the run pill |
 | Recorder bar | top centre | one pill, ≤ 360 px | never takes focus from the game |
 | Run panel | docked to a side | 300 px wide | collapses to a 40 px rail; never takes focus |
 | Hub | a normal window | 960 × 640, down to 720 × 480 | `ctrl+.` shrinks it to a mini pill with run, pause, stop and status |
@@ -82,7 +82,7 @@ The Studio is built from these (`packages/darbit/src/darbit/studio/qml`). A page
 | `Switcher`, `Stepper`, `ValueSlider`, `Dropdown` | on/off, a number, a number in a range, one of a few |
 | `Segmented`, `Toggle`, `Chip` | a choice of a few, a filter that's on or off, a small label |
 | `Glass` | a card on a page |
-| `FloatingPill`, `PillWindow` | every tool over the game (Capture, the recorder, the run pill) |
+| `FloatingPill`, `PillWindow` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill) |
 | `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard` | a page's own rows and cards, built from the above |
