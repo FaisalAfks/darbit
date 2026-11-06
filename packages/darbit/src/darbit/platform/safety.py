@@ -48,10 +48,17 @@ def on_stop(callback: Callable[[], None]) -> None:
     _on_stop.append(callback)
 
 
-def stop() -> None:
-    """Do what the stop hotkey does."""
+HOTKEY = "the stop hotkey"
+FROM_DARBIT = "Stop in darbit (the Studio, the tray or darbit stop)"
+_stopped_by = HOTKEY  # what stopped the bot, for its last line
+
+
+def stop(by: str = HOTKEY) -> None:
+    """Do what the stop hotkey does. `by` says what stopped it, for the log."""
+    global _stopped_by
     if _stopped.is_set():
         return
+    _stopped_by = by
     _stopped.set()
     _wake.set()
     for callback in _on_stop:
@@ -127,7 +134,7 @@ def check() -> None:
     """Raise Stopped if the stop hotkey was pressed; wait while darbit Studio has the bot paused."""
     arm()
     if _stopped.is_set():
-        raise Stopped("stopped by the stop hotkey")
+        raise Stopped(f"stopped by {_stopped_by}")
     if _paused.is_set():
         _wait_while_paused()
     if _polite_until > time.monotonic():
@@ -231,7 +238,7 @@ def _look_at_control(folder: Path) -> None:
     stop_file = folder / "stop"
     if stop_file.exists():
         stop_file.unlink(missing_ok=True)
-        stop()
+        stop(FROM_DARBIT)
     if (folder / "pause").exists():
         if not _paused.is_set():
             _paused.set()

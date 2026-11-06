@@ -106,3 +106,24 @@ def test_a_quiet_running_bot_is_told_once_and_the_summary_once_a_day(phone, monk
         "darbit, 2026-10-31\nfish-bot\ngained 3 Fish on 2026-10-31",
         "fish-bot may be stuck\nnothing in its report for 1 minutes",
     ]
+
+
+def test_an_image_that_may_have_stopped_matching_is_told_once(phone, monkeypatch, tmp_path):
+    url, got = phone
+    folder = tmp_path / "fish-bot"
+    folder.mkdir()
+    (folder / "darbit.toml").write_text('[bot]\nname = "fish-bot"\n', encoding="utf-8")
+    settings = notify.Settings([notify.Channel("ntfy", f"{url}/me", notify._ntfy_body)], stuck_minutes=0)
+    monkeypatch.setattr(notify.hub, "running", lambda: [folder])
+    monkeypatch.setattr(notify, "summary", lambda day: "")
+    monkeypatch.setattr(notify.dashboard, "read_events", lambda path: [])
+    failing = {"target": "Team.Card", "since": "2026-11-06T01:15:08", "sentence": "AFK failed 2 times in a row."}
+    monkeypatch.setattr(notify.problems, "failing", lambda project, events: failing)
+    notifier = notify.Notifier(settings)
+    notifier.look_now(datetime(2026, 11, 6, 1, 50))
+    notifier.look_now(datetime(2026, 11, 6, 2, 20))  # the same one: not again
+    wait_for(got, 1)
+    time.sleep(0.1)
+    assert [body for _, _, body in got] == [
+        "fish-bot: Team.Card may have stopped matching\nAFK failed 2 times in a row."
+    ]

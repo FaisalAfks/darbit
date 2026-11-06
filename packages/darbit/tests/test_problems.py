@@ -104,3 +104,41 @@ def test_the_overview_gets_the_explained_problems(project, tmp_path):
     events = run("10:00:00", "10:01:00", search("10:00:50", "Rod.Cast", 45, 0.52))
     found = overview.data(project, events, "2026-11-01", datetime(2026, 11, 1, 11), tmp_path)
     assert found["problems"][0]["cause"] == problems.CHANGED and found["problems"][0]["tone"] == "danger"
+
+
+# ---- an image that may have stopped matching
+
+
+def test_two_failures_in_a_row_on_one_image_say_it_may_have_stopped_matching(project):
+    events = [
+        *run("10:00:00", "10:02:30", search("10:01:00", "Team.Card", 60, 0.32)),
+        *run("10:30:00", "10:32:30", search("10:31:00", "Team.Card", 60, 0.6)),
+    ]
+    found = problems.failing(project, events[: len(events) // 2])
+    assert found is None  # one failure is just a failure
+    found = problems.failing(project, events)
+    assert found["target"] == "Team.Card" and found["count"] == 2
+    assert found["since"] == at("10:02:30") and found["closest"] == 0.6 and found["needs"] == 0.85
+    assert "failed 2 times in a row" in found["sentence"] and "retake it" in found["sentence"]
+    assert not found["seen_before"]
+
+
+def test_found_again_or_another_reason_ends_it(project):
+    two = [
+        *run("10:00:00", "10:02:30", search("10:01:00", "Team.Card", 60, 0.32)),
+        *run("10:30:00", "10:32:30", search("10:31:00", "Team.Card", 60, 0.32)),
+    ]
+    assert problems.failing(project, [*two, search("11:00:00", "Team.Card", 60, found=True)]) is None
+    assert problems.failing(project, [*two, *run("11:00:00", "11:00:05", reason="the bot's own")]) is None
+    other = run("11:00:00", "11:02:30", search("11:01:00", "Gui.Rod", 60, 0.1))
+    assert problems.failing(project, [*two, *other]) is None  # a different image: one failure of it so far
+
+
+def test_an_image_found_earlier_today_may_be_covered(project):
+    events = [
+        search("09:00:00", "Team.Card", 60, found=True),
+        *run("10:00:00", "10:02:30", search("10:01:00", "Team.Card", 60, 0.32)),
+        *run("10:30:00", "10:32:30", search("10:31:00", "Team.Card", 60, 0.32)),
+    ]
+    found = problems.failing(project, events)
+    assert found["seen_before"] and "a window over the game" in found["sentence"]

@@ -147,6 +147,7 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
     found["screen"] = {"picture": _last_screen(logs)}
     found["setup"] = _tile_data(dashboard.setup_tile(project))
     found["problems"] = problems.explain(project, events, logs)
+    found["failing"] = problems.failing(project, events)  # an image that may have stopped matching
     progress = _tile_data(dashboard.progress_tile(events)) or {"items": []}
     for item in progress.get("items", []):
         found[f"progress:{item['label']}"] = item
