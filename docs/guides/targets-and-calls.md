@@ -117,4 +117,4 @@ d.stop_key("ctrl+alt+q")  # the stop hotkey
 
 ## Stopping
 
-Ctrl+Alt+Q stops a running script: every held key and button is let go and the next darbit call raises `Stopped`, even in the middle of a wait or a sleep. Held keys are also let go when a script ends or crashes. While a script runs, the PC doesn't go to sleep.
+Ctrl+Alt+Q stops a running script: every held key and button is let go and the next darbit call raises `Stopped`, even in the middle of a wait or a sleep. A stopped script ends with one line saying what stopped it (the hotkey, or Stop in darbit) and exit code 0, not a traceback. Held keys are also let go when a script ends or crashes. While a script runs, the PC doesn't go to sleep.

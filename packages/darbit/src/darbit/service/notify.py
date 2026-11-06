@@ -14,6 +14,7 @@ Set in notify.toml in darbit's settings folder (%APPDATA%\\darbit on Windows); a
     failed = true                     # these are the defaults
     ended = false                     # a bot stopping on its own or from the Studio
     stuck_minutes = 15                # running, with nothing in its report for this long; 0 is off
+    failing = true                    # an image the last failures all came down to (it may have stopped matching)
     summary = "23:30"                 # each bot that ran today; "" is off
 
 Sending never raises and never holds up the service: each message goes on its own thread.
@@ -31,7 +32,7 @@ from pathlib import Path
 
 from .. import events, paths
 from ..project.manifest import ProjectError, load
-from ..server import dashboard, hub, results
+from ..server import dashboard, hub, problems, results
 
 FILE = "notify.toml"
 SEND_WAIT = 10.0  # seconds for a channel to take a message
@@ -52,6 +53,7 @@ class Settings:
     failed: bool = True
     ended: bool = False
     stuck_minutes: float = 15
+    failing: bool = True
     summary: str = "23:30"
 
 
@@ -72,6 +74,7 @@ def load_settings(path: Path | None = None) -> Settings:
         found.failed = bool(when.get("failed", found.failed))
         found.ended = bool(when.get("ended", found.ended))
         found.stuck_minutes = float(when.get("stuck_minutes", found.stuck_minutes))
+        found.failing = bool(when.get("failing", found.failing))
         found.summary = str(when.get("summary", found.summary))
     return found
 
@@ -129,6 +132,7 @@ class Notifier:
         self.settings = settings or load_settings()
         self.last_change: dict[str, float] = {}  # bot folder -> when its report last changed (monotonic)
         self.stuck_told: set[str] = set()
+        self.failing_told: set[str] = set()  # (bot, image, since) already told
         self.summary_sent = ""  # the day the summary went
         self.running = threading.Event()
         self.stop_listening: Callable[[], None] | None = None
@@ -165,6 +169,7 @@ class Notifier:
     def look_now(self, now: datetime | None = None) -> None:
         """Tell about stuck bots, and send the summary once its time has come."""
         self._stuck()
+        self._failing()
         moment = now or datetime.now()
         day = moment.strftime("%Y-%m-%d")
         if self.settings.summary and moment.strftime("%H:%M") >= self.settings.summary and self.summary_sent != day:
@@ -184,6 +189,25 @@ class Notifier:
             self.stuck_told.add(key)
             minutes = round(self.settings.stuck_minutes)
             self.tell(f"{folder.name} may be stuck", f"nothing in its report for {minutes} minutes")
+
+    def _failing(self) -> None:
+        """Tell once about an image a running bot's last failures all came down to."""
+        if not self.settings.failing:
+            return
+        for folder in hub.running():
+            try:
+                project = load(folder)
+                events = dashboard.read_events(dashboard.report_file(project, dashboard.today(project)))
+            except (ProjectError, OSError, ValueError):
+                continue
+            found = problems.failing(project, events)
+            if found is None:
+                continue
+            key = f"{folder}|{found['target']}|{found['since']}"
+            if key in self.failing_told:
+                continue
+            self.failing_told.add(key)
+            self.tell(f"{project.name}: {found['target']} may have stopped matching", found["sentence"])
 
     def _look(self) -> None:
         while self.running.is_set():

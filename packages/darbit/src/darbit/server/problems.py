@@ -17,6 +17,7 @@ OWN = "own"  # nothing ran out: the bot's own reason
 NEAR = 0.2  # how far under its line a closest match still counts as "a little different"
 LONG = 30  # seconds of looking that make a missing image trouble; a shorter look is the bot checking, and its answer
 DEFAULT_SIMILARITY = 0.7  # darbit's own, for a bot that names none
+FAILING_AFTER = 2  # failures in a row that come down to the same image: it may have stopped matching
 
 CAUSES = {
     COVERED: {"label": "Something covered the game", "tone": "warn", "act": False},
@@ -224,3 +225,67 @@ def _search_row(project: Project, search: Search, screenshots: Path) -> dict:
 def _url(folder: Path, name: str) -> str | None:
     path = folder / name
     return path.as_uri() if path.is_file() else None
+
+
+def failing(project: Project, events: list[dict]) -> dict | None:
+    """An image that may have stopped matching: the last FAILING_AFTER or more failures all came down to it (it ran
+    out before each), and it hasn't been found since the first of them. None when nothing is failing that way."""
+    watched = _watched(events)
+    streak: dict | None = None
+    for failure, run in _runs(events):
+        searches = _searches(run, watched)
+        worst = searches[0] if searches else None
+        if worst is None or worst.seconds < LONG:
+            streak = None  # the bot's own reason, not an image
+            continue
+        if streak is not None and streak["target"] == worst.target:
+            streak["count"] += 1
+            streak["closest"] = max(streak["closest"], worst.closest)
+            streak["step"] = str(failure.get("step", "")).split(" > ")[-1]
+            streak["last"] = failure.get("time")
+        else:
+            streak = {
+                "target": worst.target,
+                "count": 1,
+                "since": failure.get("time"),
+                "last": failure.get("time"),
+                "closest": worst.closest,
+                "step": str(failure.get("step", "")).split(" > ")[-1],
+            }
+    if streak is None or streak["count"] < FAILING_AFTER:
+        return None
+    for event in events:
+        if (
+            event.get("found")
+            and _name(event["found"]) == streak["target"]
+            and str(event.get("time", "")) > str(streak["last"])
+        ):
+            return None  # found again after the last failure: it matches after all
+    streak["needs"] = needs(project, streak["target"])
+    streak["closest"] = round(streak["closest"], 3)
+    streak["seen_before"] = _found_before(events, streak["target"], str(streak["since"]))
+    streak["sentence"] = failing_sentence(streak)
+    return streak
+
+
+def _found_before(events: list[dict], target: str, moment: str) -> bool:
+    for event in events:
+        if str(event.get("time", "")) >= moment:
+            return False
+        if event.get("found") and _name(event["found"]) == target:
+            return True
+    return False
+
+
+def failing_sentence(streak: dict) -> str:
+    """What a failing image means, in plain words."""
+    said = (
+        f"{streak['step']} failed {streak['count']} times in a row waiting for it "
+        f"(closest {streak['closest']:.2f} of the {streak['needs']:.2f} it needs)."
+    )
+    if streak.get("seen_before"):
+        return (
+            said
+            + " It was found earlier today: a window over the game, or the game on another screen, does this too. If not, the game changed: retake it."
+        )
+    return said + " The game may have changed how it looks: retake it, and Highlight on screen shows what's found now."

@@ -36,6 +36,7 @@ class Studio(QObject):
     botsChanged = Signal()
     botChanged = Signal()
     overviewChanged = Signal()
+    pictureFailing = Signal(str, str)  # (title, text): an image may have stopped matching, for the tray to say
     libraryChanged = Signal()
     screensChanged = Signal()
     daysChanged = Signal()
@@ -70,6 +71,7 @@ class Studio(QObject):
         self._bots: list[dict] = []
         self._bot: dict = {}
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
+        self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
         self._screens: list[
             dict
@@ -345,6 +347,19 @@ class Studio(QObject):
         self._highlighted = name
         self.toggleHighlight()
 
+    def _tell_failing(self, failing: object) -> None:
+        """Say once (per image and since when) that an image may have stopped matching."""
+        if not isinstance(failing, dict) or not failing.get("target"):
+            return
+        key = f"{self._bot.get('path', '')}|{failing['target']}|{failing.get('since')}"
+        if key in self._told_failing:
+            return
+        self._told_failing.add(key)
+        name = self._bot.get("name") or "The bot"
+        self.pictureFailing.emit(
+            f"{name}: {failing['target']} may have stopped matching", str(failing.get("sentence", ""))
+        )
+
     @Slot(str)
     def say(self, text: str) -> None:
         self.said.emit(text)
@@ -540,6 +555,7 @@ class Studio(QObject):
                 "custom": isinstance(mine, list),
             }
             self.overviewChanged.emit()
+            self._tell_failing(result.get("data", {}).get("failing") if isinstance(result.get("data"), dict) else None)
         elif what == "library" and isinstance(result, list):
             self._library = result
             self._library_bot = str(self._bot.get("path", ""))

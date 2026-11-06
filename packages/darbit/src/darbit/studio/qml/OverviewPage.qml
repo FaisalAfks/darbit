@@ -35,6 +35,7 @@ Flickable {
         }
         return latest
     }
+    readonly property var failing: data.failing || null  // an image that may have stopped matching (problems.failing)
     readonly property real gap: 16
     readonly property real unit: (column.width - 11 * gap) / 12
     // the layout as rows: blocks in order, a new row when the next one doesn't fit in what's left of 12
@@ -156,7 +157,17 @@ Flickable {
             onActed: studio.openCapture("guide")
         }
         Banner {
-            visible: page.lastProblem !== null
+            objectName: "failingBanner"
+            visible: page.failing !== null
+            Layout.fillWidth: true
+            tone: "danger"; icon: "▣"
+            title: page.failing ? page.failing.target + " may have stopped matching · since " + Format.clock(page.failing.since) : ""
+            detail: page.failing ? page.failing.sentence : ""
+            action: "Retake"
+            onActed: studio.retake(page.failing.target, "image")
+        }
+        Banner {
+            visible: page.lastProblem !== null && !(page.failing && page.lastProblem.target === page.failing.target)
             Layout.fillWidth: true
             tone: page.lastProblem ? page.lastProblem.tone : "danger"; icon: "!"
             title: page.lastProblem ? page.lastProblem.step + ": " + page.lastProblem.reason + " · " + Format.clock(page.lastProblem.times[page.lastProblem.times.length - 1]) : ""

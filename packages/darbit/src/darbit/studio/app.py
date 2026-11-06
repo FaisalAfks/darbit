@@ -152,6 +152,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     tray = _tray(app, studio, window, open_studio)
     door.knocked.connect(open_studio)
     _keep_in_tray(app, window, tray)
+    _tell_from_tray(studio, tray, open_studio)
     code = app.exec()
     door.close()
     highlight.stop()
@@ -412,6 +413,21 @@ def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callab
 
 
 TOLD = "studio.told_tray"  # ui setting: the tray message was shown once
+
+
+def _tell_from_tray(studio: Studio, tray: QSystemTrayIcon, open_studio: Callable[[], None]) -> None:
+    """What needs the person while the Studio is out of sight (an image that may have stopped matching) comes as a
+    Windows notification; clicking it opens the Studio."""
+
+    def tell(title: str, text: str) -> None:
+        if tray.isVisible():
+            tray.showMessage(title, text, QIcon(str(ICON)), TELL_MS)
+
+    studio.pictureFailing.connect(tell)
+    tray.messageClicked.connect(open_studio)
+
+
+TELL_MS = 15000  # how long a notification from the tray stays
 
 
 def _keep_in_tray(app: QApplication, window: object, tray: QSystemTrayIcon) -> None:

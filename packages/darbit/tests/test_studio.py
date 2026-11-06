@@ -1327,3 +1327,32 @@ def test_edit_opens_the_bots_folder_in_vs_code_or_the_explorer(qt, monkeypatch):
     monkeypatch.setattr(backend.shutil, "which", lambda name: None)
     studio.editBot()
     assert opened == ["/bots/ad-bot"]
+
+
+def test_an_image_that_may_have_stopped_matching_shows_and_is_told_once(qt, monkeypatch):
+    from PySide6.QtCore import QObject
+
+    answer = _overview_answer()
+    failing = {
+        "target": "Team.Card",
+        "since": "2026-11-06T01:15:08.977",
+        "count": 2,
+        "sentence": "AFK failed 2 times in a row waiting for it (closest 0.60 of the 0.85 it needs).",
+    }
+    answer["data"] = {**answer["data"], "failing": failing}
+    monkeypatch.setitem(ANSWERS, "bot.overview", answer)
+    studio = backend.Studio(FakeClient)
+    told = []
+    studio.pictureFailing.connect(lambda title, text: told.append(title))
+    engine = app.load(studio)
+    root = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    studio.loadOverview()
+    banner = root.findChild(QObject, "failingBanner")
+    wait_until(lambda: banner.property("visible"))
+    assert banner.property("title").startswith("Team.Card may have stopped matching")
+    studio.loadOverview()
+    wait_until(lambda: len(told) >= 1)
+    QtCore.QCoreApplication.processEvents()
+    assert told == ["ad-bot: Team.Card may have stopped matching"]  # once, however often the Overview comes
+    del engine

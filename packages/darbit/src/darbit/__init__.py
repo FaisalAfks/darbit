@@ -13,6 +13,7 @@ play = d.Pattern("Menu.Start").similar(0.85).offset(10, 0)
 
 import atexit as _atexit
 import os as _os
+import sys as _sys
 
 # numpy's OpenBLAS commits a buffer per CPU thread when it loads, about 750 MB on a 24-thread PC, for matrix maths
 # darbit never does (OpenCV matches on its own). Set before numpy loads; the processes darbit starts inherit it.
@@ -75,6 +76,23 @@ def stop_key(combo: str) -> None:
 
 
 _atexit.register(_input.release_all)
+
+
+def _end_quietly(kind: type, error: BaseException, trace: object) -> None:
+    """A bot that was stopped (the hotkey, or Stop in darbit) ends with one line and exit code 0, not a traceback:
+    a stop isn't a crash, and real errors stand out in the log. Everything else goes to Python's own handler."""
+    if not issubclass(kind, Stopped):
+        _previous_hook(kind, error, trace)
+        return
+    print(f"darbit: {error}", file=_sys.stderr)
+    _atexit._run_exitfuncs()  # keys let go, the PC allowed to sleep again
+    _sys.stdout.flush()
+    _sys.stderr.flush()
+    _os._exit(0)
+
+
+_previous_hook = _sys.excepthook
+_sys.excepthook = _end_quietly
 
 from .project import manifest as _manifest
 

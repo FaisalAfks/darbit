@@ -12,11 +12,15 @@ The shortcut opens the Studio with the Python it was made from, without a consol
 
 ![The Overview](../ui/images/qt-studio-overview.png)
 
+When the last two failures or more all came down to the same image, it may have stopped matching (a game update): the
+Overview says so with Retake, and a Windows notification from the tray says it once, also while the Studio is out of
+sight. A phone gets it too when `notify.toml` has a channel.
+
 - **Bots:** the bot menu at the top left lists every bot, with **New bot** (from darbit's template, from a git link, or a
   folder you have) and **darbit settings**. darbit settings can put the bots in a sidebar instead, which folds to their
   squares on a narrow window. The Studio opens on the bot shown last.
-- **Overview** (Ctrl+1): a line for anything that needs you (a locked screen, setup images not taken yet, the last
-  problem), then the bot's blocks in rows: what it's doing now, its round, rings for its progress, numbers and week
+- **Overview** (Ctrl+1): a line for anything that needs you (a locked screen, setup images not taken yet, an image
+  that may have stopped matching, with Retake, the last problem), then the bot's blocks in rows: what it's doing now, its round, rings for its progress, numbers and week
   charts for its gains, what's next, its last screen, blocks of the bot's own and buttons for its actions. The bot's
   author lays out the default (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one
   wider or narrower, take one off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to

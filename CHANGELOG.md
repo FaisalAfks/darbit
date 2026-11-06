@@ -4,6 +4,8 @@
 
 ### New
 
+- An image that may have stopped matching: when the last two failures or more all came down to the same image, the Overview says so with Retake, the tray shows a Windows notification once, and `notify.toml` channels get it (`failing = true`). It used to take someone reading the logs (`problems.failing`)
+
 - Highlight's pill is the shared pill, like the run pill: found count and time, look-alikes as a warning, ✕ to hide and ⤢ for the Studio, sliding away at the top (`HighlightPill.qml`). It was drawn by hand, thinner, as one long line
 
 - What every bot needs, moved out of one bot (decision 0018): `d.keep_trying` runs a step until it goes through, recording each `d.Failed` or observer interrupt and recovering in between (`runtime/retry.py`); `d.config()` reads a bot's `settings.toml` and `config.toml` as `cfg.section.key` (`runtime/config.py`); `lag` makes every search's wait and every `d.sleep` longer for a slow game or PC; `State.per_day` and `State.per_week` are counters that start over by themselves and show their ring
@@ -108,6 +110,8 @@
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
 
 ### Fixed
+
+- A stopped bot ends with one line saying what stopped it (the stop hotkey, or Stop in the Studio, the tray or `darbit stop`) and exit code 0, instead of a traceback that always blamed the hotkey; a hotkey stop no longer counts as a failure
 
 - A retake opens Capture with the image's name filled in again: Capture left out what was taken already, which is right for the setup guide but emptied a retake. Capture's Test also starts at the score the image needs (its own similarity, else the bot's), not 0.90
 

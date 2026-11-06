@@ -37,6 +37,7 @@ chat = "123456"
 failed = true
 ended = false                     # a bot stopping on its own or from the Studio
 stuck_minutes = 15                # 0 is off
+failing = true                    # an image the last failures all came down to: it may have stopped matching
 summary = "23:30"                 # "" is off
 ```
 
