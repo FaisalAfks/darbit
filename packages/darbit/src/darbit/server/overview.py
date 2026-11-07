@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from ..project.manifest import Project
-from . import dashboard, history, problems
+from . import dashboard, history, problems, results
 
 OVERVIEW = "overview.toml"
 KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "button")
@@ -148,6 +148,7 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
     found["setup"] = _tile_data(dashboard.setup_tile(project))
     found["problems"] = problems.explain(project, events, logs)
     found["failing"] = problems.failing(project, events)  # an image that may have stopped matching
+    found["recoveries"] = recoveries(events, day)
     progress = _tile_data(dashboard.progress_tile(events)) or {"items": []}
     for item in progress.get("items", []):
         found[f"progress:{item['label']}"] = item
@@ -161,6 +162,36 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
         if event.get("event") == "block" and event.get("name"):
             found[f"block:{event['name']}"] = {key: value for key, value in event.items() if key not in ("event",)}
     return found
+
+
+def recoveries(events: list[dict], day: str) -> dict:
+    """How often the bot got itself going again today (d.record.recovered): the count, the most common reason, the
+    last one (`at` in seconds since the day began) and each `how` with its count and its whys."""
+    hows = results.recoveries_of(events)
+    reasons: dict[str, int] = {}
+    count = 0
+    for row in hows:
+        count += row["count"]
+        for why, times in row["whys"].items():
+            reasons[why] = reasons.get(why, 0) + times
+    reason = ""
+    reason_count = 0
+    for why, times in reasons.items():
+        if times > reason_count:
+            reason = why
+            reason_count = times
+    last = None
+    for event in events:
+        if event.get("event") == "recovered":
+            last = event
+    last_one = None
+    if last is not None:
+        last_one = {
+            "at": results.seconds_of(last.get("time"), day),
+            "how": str(last.get("how", "recovered")),
+            "why": str(last.get("why", "")) or "no reason given",
+        }
+    return {"count": count, "reason": reason, "reason_count": reason_count, "last": last_one, "hows": hows}
 
 
 def _tile_data(tile: object) -> dict | None:
