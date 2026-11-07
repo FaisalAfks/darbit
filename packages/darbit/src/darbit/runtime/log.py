@@ -56,6 +56,12 @@ def later(message: str) -> None:
         _waiting.append(message)
 
 
+def forget_later() -> None:
+    """Drop the lines `later` kept and nothing wrote yet: a process that sets a bot up again starts with its own."""
+    with _waiting_lock:
+        _waiting.clear()
+
+
 def _write_waiting() -> None:
     if not _waiting:
         return
