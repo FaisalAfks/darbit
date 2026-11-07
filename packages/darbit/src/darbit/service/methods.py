@@ -111,6 +111,7 @@ METHODS: dict[str, Method] = {
     "bot.status": Method(_bot_status, "one bot: name, version, running, paused or stopped"),
     "bot.start": Method(hub.project_run, "start a bot in its own process"),
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),
+    "bot.doctor": Method(hub.project_doctor, "darbit doctor's checks: is the bot ready to start"),
     "bot.stop": Method(hub.project_stop, "stop a bot (it lets go of every key); end it if it doesn't stop in time"),
     "bot.dashboard": Method(hub.dashboard_tiles, "the bot's Overview tiles (`day`, today by default)"),
     "bot.overview": Method(hub.overview_blocks, "the bot's Overview as blocks: catalog, layout and data (`day`)"),
