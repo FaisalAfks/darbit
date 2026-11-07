@@ -8,6 +8,7 @@
 
 ### Changed
 
+- CI builds the docs site (strict: a broken link fails) and the wheel on every PR, so what used to break only after merging shows before; uv's cache in every job, and a new push to a PR cancels its older run. Two doc links that pointed outside the site go to GitHub
 - The PR rules are checked: `pr-rules` fails a PR without `Closes #<issue>` or a `CHANGELOG.md` line (unless labelled `skip-notes`), pre-commit refuses a commit on `main`, and issues opened from the forms go on the board
 
 ### Fixed
