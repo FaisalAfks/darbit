@@ -25,7 +25,7 @@ rounds are in [docs/ui/redesign/](../../ui/redesign/README.md).
 | `high-contrast` | bright edges, no transparency, bold colours |
 | custom | `theme.toml` in darbit's settings folder: `base = "glass-dark"` and any tokens on top (`accent = "#ff7ab6"`) |
 
-`ctrl+alt+t` cycles themes; darbit settings picks one. The Studio keeps the choice for next time.
+darbit settings (or the command palette) picks one, and the Studio keeps it for next time.
 
 ## Standards (decision 0012)
 
