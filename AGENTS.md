@@ -63,6 +63,26 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 - A decision that changes how things are done gets a record in `docs/decisions/`.
 - UI follows [docs/style/ui/design-system.md](docs/style/ui/design-system.md) and the keys in `packages/darbit/src/darbit/keymap.toml`.
 
+**How work is done**
+- Check how a tool, library or system really behaves (its docs, a quick test) before building on it or writing it into a plan; cite it in the decision record.
+- Plans are complete and researched before they're shown: they may be approved without every line being read.
+- UI choices are made from rendered options (HTML or an image, `.agents/skills/render-mockups`), one decision per round, structure before style, then a multiple-choice question naming them. [docs/ui/mockups.html](docs/ui/mockups.html) is the reference look.
+- Modular and finished: extend the shared component or service that exists (FloatingPill, PillWindow, PillButton, Chip, Block, ...) before adding a parallel one, and never half-do a feature. After building, check it looks and behaves like its siblings and nothing in its issue is left out.
+- One set of names everywhere (UI, docs, files, code): **Image**, **Region**, **Location**; never picture, area or point.
+
+**Working in parallel**
+- Two areas: **Studio** (`packages/darbit/src/darbit/studio/`, its QML, issues labelled `area: studio` or `area: ui`) and **core** (everything else). Each line of work takes issues from its own area.
+- Work that runs alongside other work uses its own worktree (`git worktree add ../.worktrees/<branch> -b <branch>`), never the shared clone's working tree; the shared clone stays on `main`.
+- A change one area needs from the other becomes an issue for that area. The same goes for bots: a bot asks for a change with an issue here, and gets it through a release (`v1.0.0-alpha.N`, `.agents/skills/release`) and a pin move on its side. darbit never depends on a bot.
+
+**Live testing on a desktop**
+- `DARBIT_LIVE=1 uv run pytest packages/darbit/tests/live` runs the live tests here, as CI does; `DARBIT_LIVE_SHOTS` names a folder for their screenshots.
+- `DARBIT_HOME` set to a temporary folder keeps scripts and probes away from the real settings, service and bots (the test run sets it).
+- Probes that open Qt windows draw off-screen and as tool windows; nothing shows up while a bot plays.
+- Start the Studio detached from whatever terminal or tool runs the command (`Win32_Process.Create` through WMI), or it ends, with its service and bot, when that program closes.
+- Never lock the screen to test the locked-screen pause: nothing can unlock it remotely.
+- Write files the Studio reads with Python: Windows PowerShell's `Set-Content` adds a byte-order mark.
+
 **Safety**
 - Tests use fakes and saved screenshots. Live input (mouse, keys, the capture tool on screen) only when the owner says so.
 - Never commit secrets or private game data: a private server link lives only in an environment variable.
