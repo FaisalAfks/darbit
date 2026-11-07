@@ -2,7 +2,7 @@
 
     uv run python bench/make_cases.py      # writes bench/cases/<case>/ (screen.png, images/, case.toml)
 
-bench/run.py makes them when they're missing, so they aren't committed (the noisy screens are a few MB).
+Then `darbit bench bench/cases`. They aren't committed (the noisy screens are a few MB); CI makes them first.
 
 The screens look like a game's menus: panels, buttons with labels, icons, a noisy backdrop. Each case also has
 targets that must not be found (a look-alike, something not on screen) and, in `scaled-1920`, the same screen
