@@ -36,6 +36,7 @@ class Studio(QObject):
     botsChanged = Signal()
     botChanged = Signal()
     overviewChanged = Signal()
+    checksChanged = Signal()
     pictureFailing = Signal(str, str)  # (title, text): an image may have stopped matching, for the tray to say
     libraryChanged = Signal()
     screensChanged = Signal()
@@ -71,6 +72,7 @@ class Studio(QObject):
         self._bots: list[dict] = []
         self._bot: dict = {}
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
+        self._checks: dict = {}  # darbit doctor's checks on a bot before Start: {bot, checks, problems}
         self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
         self._screens: list[
@@ -112,6 +114,9 @@ class Studio(QObject):
 
     def _get_overview(self) -> dict:
         return self._overview
+
+    def _get_checks(self) -> dict:
+        return self._checks
 
     def _get_library(self) -> list:
         return self._library
@@ -197,6 +202,7 @@ class Studio(QObject):
     overview = Property(
         dict, _get_overview, notify=overviewChanged
     )  # {catalog, layout, botLayout, custom, data, problem}
+    checks = Property(dict, _get_checks, notify=checksChanged)  # {bot, checks: [{name, ok, say}], problems}
     library = Property(list, _get_library, notify=libraryChanged)
     screens = Property(list, _get_screens, notify=screensChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
@@ -436,6 +442,15 @@ class Studio(QObject):
         self.lookChanged.emit()
 
     @Slot()
+    def checkBot(self) -> None:
+        """Run darbit doctor's checks on the shown bot, in the service (a few seconds at most)."""
+        if not self._bot or self._client is None:
+            return
+        client = self._client
+        bot = self._bot["path"]
+        self._run("checks", lambda: {**client.call("bot.doctor", bot=bot), "bot": bot})  # whose checks they are
+
+    @Slot()
     def loadOverview(self) -> None:
         self._ask("overview", "bot.overview")
 
@@ -545,6 +560,9 @@ class Studio(QObject):
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         elif what == "bots" and isinstance(result, list):
             self._set_bots(result)
+        elif what == "checks" and isinstance(result, dict):
+            self._checks = result
+            self.checksChanged.emit()
         elif what == "overview" and isinstance(result, dict):
             mine = ui_settings.get(f"{LAYOUT}:{self._bot.get('path', '')}")
             bot_layout = list(result.get("layout", []))

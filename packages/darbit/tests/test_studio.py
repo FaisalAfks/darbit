@@ -284,6 +284,13 @@ def _overview_answer() -> dict:
 
 ANSWERS["bot.overview"] = _overview_answer()
 ANSWERS["bot.library.uses"] = []
+ANSWERS["bot.doctor"] = {
+    "checks": [
+        {"name": "darbit.toml", "ok": True, "say": "ad-bot 1.0.0"},
+        {"name": "game window", "ok": False, "say": "no window called Roblox: open it first"},
+    ],
+    "problems": 1,
+}
 ANSWERS["bot.library.screens"] = [
     {
         "screen": "Bag",
@@ -1205,6 +1212,18 @@ def test_a_theme_has_a_solid_panel_and_the_kinds_colours():
     colors = theme.colors("glass-dark")
     assert colors["solid"].startswith("#ff") and colors["solid"][3:] == colors["glassStrong"][3:]
     assert colors["kindRegion"] == colors["accent2"]
+
+
+def test_the_doctors_checks_are_asked_for_the_shown_bot(qt):
+    client = FakeClient()
+    studio = backend.Studio(lambda: client)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    studio.checkBot()
+    wait_until(lambda: studio.checks.get("problems") == 1)
+    assert ("bot.doctor", {"bot": "/bots/ad-bot"}) in client.asked
+    assert studio.checks["bot"] == "/bots/ad-bot"  # whose checks they are, if another bot is shown by then
+    assert studio.checks["checks"][1]["name"] == "game window"
 
 
 def test_the_action_editor_sets_breakpoints_and_steps(qt):
