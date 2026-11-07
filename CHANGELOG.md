@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Only a running bot writes to its log: importing darbit in a bot's folder (its tests, `darbit status`) keeps the "settings from darbit.toml" line, and a version warning, until the bot writes its first line
+
 ### Docs
 
 - `AGENTS.md`: how work is done (check before claiming, complete plans, UI choices from rendered options, extend shared parts, Image/Region/Location), working in parallel (Studio and core areas, worktrees, bots asking through issues), and live testing on a desktop
