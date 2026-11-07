@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "darbit"
-version = "1.0.0a1"
+version = "1.0.0a2"
 description = "Automate any app from what's on its screen, in Python"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
