@@ -28,6 +28,8 @@ if d.go("Shop"):  # from wherever the game is
 - **`where()`** says which screen is showing (or `None`), **`route(a, b)`** the moves between two.
 - `d.screens` is the bot's map; `d.Map()` makes another.
 - Each `go` goes in the run report (`go`: there, lost or no way), so the Overview's activity shows it.
+- `d.keep_trying(..., back_to="Menu")` goes back to a screen after a failure and tries again before it
+  restarts the game ([Trying again](projects.md#trying-again)).
 
 ## Testing without the game
 

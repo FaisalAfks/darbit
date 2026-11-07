@@ -90,3 +90,46 @@ def test_go_says_when_it_is_lost_or_has_no_way(game, world):
         world.go("Moon")
     with pytest.raises(ValueError, match="no screen called"):
         world.move("Lobby", "Moon", "Lobby.Bag")
+
+
+def test_keep_trying_goes_back_to_a_screen_of_the_map(game, world, monkeypatch):
+    from darbit.runtime import retry
+
+    events, recovered = [], []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append(how))
+    with FakeGame(game, start="Lobby") as fake:
+        fake.leads("Lobby", "Lobby.Bag", "Bag").leads("Bag", "Bag.Back", "Lobby")
+
+        def attempt():
+            if fake.showing != "Lobby":  # the step only works from the Lobby
+                raise d.Failed("not in the Lobby")
+            fake.showing = "Shop"
+
+        fake.showing = "Bag"
+        done = d.keep_trying(
+            "Shop",
+            attempt,
+            recover=lambda: recovered.append(1),
+            go_on=lambda: not recovered,  # ends it instead of rejoining for ever if the way back is never taken
+            back_to="Lobby",
+            screens=world,
+        )
+        assert done is True and fake.showing == "Shop"
+    assert events == ["back to Lobby"] and recovered == []
+
+
+def test_keep_trying_recovers_when_the_way_back_is_lost(game, world, monkeypatch):
+    from darbit.runtime import retry
+
+    events, tries = [], []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append(how))
+    unknown = np.zeros((500, 800, 3), np.uint8)
+    with FakeGame({**game, "Nowhere": unknown}, start="Nowhere"):
+
+        def attempt():
+            tries.append(1)
+            if len(tries) == 1:
+                raise d.Failed("lost")
+
+        assert d.keep_trying("Shop", attempt, recover=lambda: None, how="rejoin", back_to="Lobby", screens=world)
+    assert events == ["rejoin"]
