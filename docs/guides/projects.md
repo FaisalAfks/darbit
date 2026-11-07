@@ -153,6 +153,18 @@ d.keep_trying("Daily quest", attempt, recover=restart_the_game, go_on=quests_lef
 An observer's interrupt is handled the same way, and `recover` runs with observers muted, so closing and opening
 the game doesn't trip them. `go_on` is asked before each try; when it says no, `keep_trying` returns False.
 
+With a [screen map](screen-map.md), most failures don't need a restart. `back_to` names a screen to go back to
+first:
+
+```python
+d.keep_trying("Daily quest", attempt, recover=restart_the_game, how="restart", back_to="Menu")
+```
+
+After a failure it goes back to the Menu (`d.go`, observers muted) and tries again. When that try fails too, or the
+way back is lost, it calls `recover` as before. It goes back once per run of failures: a try that goes through, or a
+`recover`, lets the next failure go back again. The Results page counts each go-back as "back to Menu", apart from
+the restarts. `screens=` takes another `d.Map()` instead of `d.screens`.
+
 ## Mistakes
 
 An unknown table or key, a missing `[bot] name`, or a setting of the wrong type (`timeout = "long"`) stops `import darbit` with a message naming the key. A `darbit = ...` that isn't plain comparisons (`>=0.3,<0.4`) gives a warning.

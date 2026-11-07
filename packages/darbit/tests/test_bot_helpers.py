@@ -68,6 +68,113 @@ def test_other_errors_are_not_swallowed():
         d.keep_trying("Quest", attempt, recover=lambda: None)
 
 
+class FakeMap:
+    """Stands in for a screen map: go answers from a list and notes whether observers were muted."""
+
+    def __init__(self, *answers):
+        self.answers = list(answers)
+        self.gone = []
+        self.muted = []
+
+    def go(self, end):
+        self.gone.append(end)
+        self.muted.append(safety._muted > 0)
+        return self.answers.pop(0)
+
+
+def keep_trying_with(monkeypatch, failures, world, **options):
+    """keep_trying on an attempt that fails the first `failures` times; the recoveries and recovers made."""
+    events, recovered, tries = [], [], []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append((how, why)))
+
+    def attempt():
+        tries.append(1)
+        if len(tries) <= failures:
+            raise d.Failed(f"try {len(tries)}")
+
+    done = d.keep_trying(
+        "Quest", attempt, recover=lambda: recovered.append(1), how="rejoin", back_to="Menu", screens=world, **options
+    )
+    assert done is True
+    return events, recovered
+
+
+def test_a_failure_goes_back_to_a_screen_and_tries_again(monkeypatch):
+    world = FakeMap(True)
+    events, recovered = keep_trying_with(monkeypatch, 1, world)
+    assert world.gone == ["Menu"] and recovered == []
+    assert events == [("back to Menu", "Quest: try 1")]
+
+
+def test_a_failure_right_after_going_back_rejoins(monkeypatch):
+    world = FakeMap(True, True)
+    events, recovered = keep_trying_with(monkeypatch, 3, world)
+    assert world.gone == ["Menu", "Menu"] and recovered == [1]  # back, rejoin, then back again
+    assert [how for how, _ in events] == ["back to Menu", "rejoin", "back to Menu"]
+
+
+def test_lost_on_the_way_back_rejoins(monkeypatch):
+    world = FakeMap(False)
+    events, recovered = keep_trying_with(monkeypatch, 1, world)
+    assert world.gone == ["Menu"] and recovered == [1]
+    assert events == [("rejoin", "Quest: try 1")]
+
+
+def test_a_success_lets_the_next_failure_go_back_again(monkeypatch):
+    world = FakeMap(True, True)
+    keep_trying_with(monkeypatch, 1, world)
+    events, recovered = keep_trying_with(monkeypatch, 1, world)
+    assert world.gone == ["Menu", "Menu"] and recovered == []
+    assert events == [("back to Menu", "Quest: try 1")]
+
+
+def test_going_back_mutes_observers_and_handles_an_interrupt(monkeypatch):
+    world = FakeMap(True)
+    events, tries = [], []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append((how, why)))
+
+    def attempt():
+        tries.append(1)
+        if len(tries) == 1:
+            raise d.Interrupted("Game closed")
+
+    assert d.keep_trying("Quest", attempt, recover=lambda: None, back_to="Menu", screens=world) is True
+    assert world.muted == [True]
+    assert events == [("back to Menu", "Quest: Game closed")]
+
+
+def test_back_to_uses_the_bots_map_by_default(monkeypatch):
+    world = FakeMap(True)
+    monkeypatch.setattr(d.screens, "go", world.go)
+    events = []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append(how))
+    tries = []
+
+    def attempt():
+        tries.append(1)
+        if len(tries) == 1:
+            raise d.Failed("no Start button")
+
+    assert d.keep_trying("Quest", attempt, recover=lambda: None, back_to="Menu") is True
+    assert world.gone == ["Menu"] and events == ["back to Menu"]
+
+
+def test_without_back_to_the_map_is_not_used(monkeypatch):
+    world = FakeMap()
+    monkeypatch.setattr(d.screens, "go", world.go)
+    events, recovered = [], []
+    monkeypatch.setattr(retry._record, "recovered", lambda how, why: events.append(how))
+    tries = []
+
+    def attempt():
+        tries.append(1)
+        if len(tries) == 1:
+            raise d.Failed("no Start button")
+
+    assert d.keep_trying("Quest", attempt, recover=lambda: recovered.append(1), how="rejoin") is True
+    assert world.gone == [] and recovered == [1] and events == ["rejoin"]
+
+
 # ---- config
 
 

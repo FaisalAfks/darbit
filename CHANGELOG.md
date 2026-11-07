@@ -4,6 +4,7 @@
 
 ### New
 
+- `d.keep_trying` takes `back_to`, a screen of the map: after a failure it goes back there and tries again, and only calls `recover` when that doesn't help; Results counts each go-back apart from the rejoins
 - The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
 
 ### Fixed
