@@ -179,6 +179,7 @@ def baseline_of(results: list[Result]) -> dict[str, float]:
 
 def from_screens(bot: Path, into: Path) -> int:
     """Cases from the screens darbit Studio saved for a bot (`.darbit/screens/`): one per screen. Says how many."""
+    bot = bot.resolve()  # `Path(".").name` is empty: the cases are named after the bot's real folder
     manifest = tomllib.loads((bot / "darbit.toml").read_text(encoding="utf-8"))
     images = bot / manifest.get("images", {}).get("folders", ["images"])[0]
     made = 0
