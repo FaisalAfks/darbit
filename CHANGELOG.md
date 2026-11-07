@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-### Fixed
-
-- The release workflow installs the Studio extra before running the tests, as CI does: without it the live tests didn't load and no release was made
-
 ## 1.0.0-alpha.1 - 2026-11-07
 
 ### New
@@ -118,6 +114,7 @@
 
 ### Fixed
 
+- The release workflow installs the Studio extra before running the tests, as CI does: without it the live tests didn't load and no release was made
 - A stopped bot ends with one line saying what stopped it (the stop hotkey, or Stop in the Studio, the tray or `darbit stop`) and exit code 0, instead of a traceback that always blamed the hotkey; a hotkey stop no longer counts as a failure
 
 - A retake opens Capture with the image's name filled in again: Capture left out what was taken already, which is right for the setup guide but emptied a retake. Capture's Test also starts at the score the image needs (its own similarity, else the bot's), not 0.90
