@@ -300,3 +300,37 @@ def test_restart_must_be_a_count(bot):
     (bot / "darbit.toml").write_text('[bot]\nname = "tick-bot"\n\n[run]\nrestart = "often"\n', encoding="utf-8")
     with pytest.raises(ProjectError, match="restart"):
         load(bot)
+
+
+def test_the_doctors_checks_come_from_the_service_with_fakes_for_each(bot, monkeypatch):
+    from darbit import doctor
+    from darbit.service import methods
+
+    (bot / "darbit.toml").write_text(
+        '[bot]\nname = "tick-bot"\nversion = "1.0.0"\nentry = "bot.py"\nwindow = "Tick Game"\n', encoding="utf-8"
+    )
+    (bot / "guide.toml").write_text(
+        '[[screen]]\nname = "Gui"\n  [[screen.take]]\n  image = "Gui.Play"\n  [[screen.take]]\n  image = "Gui.Quit"\n',
+        encoding="utf-8",
+    )
+    (bot / "images" / "Gui.Play.json").write_text(json.dumps({"scale": 1.0}), encoding="utf-8")
+    monkeypatch.setattr(doctor.display, "scale_at", lambda x, y: 1.5)
+    monkeypatch.setattr(doctor.windows, "matching", lambda name: [])
+    monkeypatch.setattr(doctor.system, "screen_usable", lambda: False)
+    found = methods.call("bot.doctor", {"bot": "tick-bot"})
+    checks = {check["name"]: check for check in found["checks"]}
+    assert checks["darbit.toml"]["ok"] is True
+    assert checks["pictures"]["ok"] is False and "Gui.Quit" in checks["pictures"]["say"]
+    assert checks["display scaling"]["ok"] is False and "150%" in checks["display scaling"]["say"]
+    assert checks["game window"]["ok"] is False and "Tick Game" in checks["game window"]["say"]
+    assert checks["screen"]["ok"] is False
+    assert found["problems"] == 4
+    assert json.dumps(found)  # it goes over the service as JSON
+
+    (bot / "images" / "Gui.Quit.png").write_bytes(b"")
+    monkeypatch.setattr(doctor.display, "scale_at", lambda x, y: 1.0)
+    monkeypatch.setattr(doctor.windows, "matching", lambda name: ["Tick Game"])
+    monkeypatch.setattr(doctor.system, "screen_usable", lambda: True)
+    found = methods.call("bot.doctor", {"bot": "tick-bot"})
+    assert found["problems"] == 0
+    assert [check["ok"] for check in found["checks"]] == [True, True, True, True, True]

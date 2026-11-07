@@ -508,6 +508,20 @@ def library_rename(data: dict) -> dict:
     return library.rename(load(_folder(data)), str(data.get("name", "")), str(data.get("to", "")))
 
 
+def project_doctor(data: dict) -> dict:
+    """darbit doctor's checks on a bot, for the Studio's Start: each with `ok` (None: couldn't look) and what it found,
+    and how many are problems."""
+    from .. import doctor
+
+    checks = []
+    problems = 0
+    for check in doctor.run(_folder(data)):
+        checks.append(asdict(check))
+        if check.ok is False:
+            problems += 1
+    return {"checks": checks, "problems": problems}
+
+
 def results_days(data: dict) -> list[dict]:
     """The Results page's day list: days with a run report, newest first, with their lead gain."""
     folder = _folder(data)
