@@ -299,50 +299,11 @@ Each is a small interface with one class per system, picked when darbit starts:
 | **6. More systems** | macOS and Linux backends, CI on all three | the test bench and a sample bot pass on all three |
 | **After** | OCR targets, masks of any shape, element targets, the VS Code extension, MCP, the installer, a registry | |
 
-### Where it stands (2026-11-01)
+### Where it stands
 
-| Milestone | State |
-|---|---|
-| 1. Core | done |
-| 2. ad-bot on the core | ad-bot PR #41 (its repo) ports it: fewer settings, until_drop, two mode fixes; waiting for a live day. Window space on the game (#158) still to measure |
-| 3. Service and history | done: service, worker, history, notifications, polite mode, ghost cursor, locked screen, restart, keep_days |
-| 4. Studio | done; idle on Windows 0.1% of a core, about 185 MB |
-| 5. Screen map | Map, d.go and FakeGame done; recording onto the map to do |
-| 6. More systems | not started |
-
-CI runs every test on Windows and Linux, and `tests/live` on a real Windows desktop (capture, clicks, keys, tapes, Highlight, Capture, the recorder pill, the ghost cursor, the Studio at 100% and 150%).
-
-**To test on the owner's PC** (nothing here has run there yet):
-- `darbit app`: no console window; the welcome on a first start; Highlight's boxes on the pictures at this PC's display scaling; the ghost cursor while a bot runs.
-- A bot through the Studio: Start, Pause, Stop; locking Windows pauses it and unlocking goes on (Overview says so); `[run] restart = 3` on a bot that fails.
-- Record an action and play it: timing and the shift-lock camera (the original complaint).
-- ad-bot PR #41 in the dev clone (`uv sync` on its branch): a full day. Check a dimension run starts by clicking its banner, and `until_drop` with a drop picture. Set again any position, region or timeout this PC's config.toml had changed (the bot prints where each went).
-
-### Next: what's missing (seen while building the Studio and porting ad-bot)
-
-In order. The first three make an unattended day far more reliable; 5 and 6 make writing a bot realistic.
-
-**Reliability**
-1. **Pictures that stop matching:** after a game update a bot fails and rejoins in a loop. Watch each picture's scores over runs, notify when one keeps scoring low ("Bag.Equip at 0.62 for an hour"), and open Capture on it from the notification or the Library.
-2. **Recovering without a rejoin:** every failure closes and opens Roblox (a minute or two), often for a stray pop-up. Port ad-bot's navigation onto the screen map, so a failure goes back to a known screen first and rejoins only when lost.
-3. **A doctor check before a run** (`darbit doctor` done; from the Studio's Start still to do): missing pictures, display scaling unlike when the pictures were taken, the game window not found, a locked screen. In seconds, from the CLI and the Studio's Start.
-4. **Rejoins counted** (`d.record.recovered` in the results and the daily summary done; the Overview still to do): how often and why, on the Overview and in the daily summary: the health number of an all-day bot.
-
-**Writing bots**
-5. **Recording that writes code:** a click on a captured picture becomes `d.click("Lobby.Play")`, a wait for one `d.wait(...)`; a tape only for movement and fights.
-6. **A real example bot (~200 lines):** a mode class, the screen map, settings, `d.step`, `Failed`, tested in CI. The template is too small to learn from and ad-bot too big.
-7. **One place for settings:** `darbit.toml`, `settings.toml`, `config.toml`, the pictures' .json and `state.json` each make sense, but the Studio's Settings should show all of them, saying where each lives.
-
-**Studio**
-8. **What the bot sees:** an optional live preview on the Overview (the last screenshot with the current target boxed), only while the window is shown.
-9. **What happened, per failure:** the screenshot, the last steps, the picture waited for and its best score, from Results.
-10. **Run one mode or one step** from the Studio, for testing a fix without editing code.
-11. **Points and areas on their screen** in the Library, drawn over the screenshot they were taken on.
-12. **Smaller:** undo for Delete and Rename in the Library; long names in cards; Capture's save bar by keyboard; empty states on every page.
-
-**Engine**
-13. **Multiple monitors and mixed scaling:** a game on the second monitor, tested live.
-14. **Window space on the game (#158):** measured, so positions survive a moved or resized window.
+Open work is tracked on the [board](https://github.com/users/FaisalAfks/projects/1), one issue per item, in the milestones
+above (plus **7. Writing bots** and **Later**). This plan says what darbit is and why; the board says what's left and
+what's being worked on. Milestones 1 and 3 are done; 2 waits on #158; 4, 5 and 6 have open issues.
 
 ## 14. Also designed for from the start
 
