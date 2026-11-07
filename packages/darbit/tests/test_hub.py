@@ -129,6 +129,20 @@ def test_the_overview_comes_from_the_report(bot):
     assert [entry["day"] for entry in listed] == [today]
 
 
+def test_the_overviews_data_counts_recoveries_from_the_report(bot):
+    logs = bot / ".darbit" / "logs"
+    logs.mkdir(parents=True)
+    today = time.strftime("%Y-%m-%d")
+    lines = [
+        {"time": f"{today}T10:00:00", "event": "step", "step": "Loop", "state": "started"},
+        {"time": f"{today}T10:05:00", "event": "recovered", "how": "restart", "why": "Loop: timed out"},
+    ]
+    (logs / f"report-{today}.jsonl").write_text("\n".join(json.dumps(line) for line in lines), encoding="utf-8")
+    rows = hub.overview_blocks({"path": str(bot)})["data"]["recoveries"]
+    assert rows["count"] == 1
+    assert rows["last"] == {"at": 10 * 3600 + 300, "how": "restart", "why": "Loop: timed out"}
+
+
 def test_settings_are_read_and_saved(bot):
     form = hub.settings_get({"path": str(bot)})
     assert form["error"] is None
