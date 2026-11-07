@@ -1,6 +1,7 @@
 """`darbit bench`: judging answers, the speed gate against a baseline, cases from saved screens, and a whole run."""
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import cv2
@@ -76,7 +77,7 @@ def test_a_wrong_answer_or_a_slowdown_fails_the_run(tmp_path, isolated, capsys):
     assert "1 more than 1 times slower" in capsys.readouterr().out
 
 
-def test_cases_come_from_the_screens_the_studio_saved(tmp_path):
+def test_cases_come_from_the_screens_the_studio_saved(tmp_path, monkeypatch):
     bot = tmp_path / "bot"
     (bot / ".darbit" / "screens").mkdir(parents=True)
     (bot / "images").mkdir()
@@ -95,3 +96,8 @@ def test_cases_come_from_the_screens_the_studio_saved(tmp_path):
     assert "Lobby.Spot" not in case
     assert (tmp_path / "cases" / "Lobby" / "images" / "Lobby.Play.png").is_file()
     assert (tmp_path / "cases" / "Lobby" / "images" / "Lobby.Buttons.json").is_file()  # its shared region comes too
+
+    monkeypatch.chdir(bot)  # run from inside the bot's folder: `--from-screens .`
+    assert bench.from_screens(Path("."), tmp_path / "here") == 1
+    here = (tmp_path / "here" / "Lobby" / "case.toml").read_text(encoding="utf-8")
+    assert here.startswith("# bot's Lobby screen")

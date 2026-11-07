@@ -5,10 +5,12 @@
 ### Fixed
 
 - Only a running bot writes to its log: importing darbit in a bot's folder (its tests, `darbit status`) keeps the "settings from darbit.toml" line, and a version warning, until the bot writes its first line
+- `darbit bench --from-screens .` names the cases after the bot's folder instead of an empty name
 
 ### Docs
 
 - `AGENTS.md`: how work is done (check before claiming, complete plans, UI choices from rendered options, extend shared parts, Image/Region/Location), working in parallel (Studio and core areas, worktrees, bots asking through issues), and live testing on a desktop
+- Design system: describes the Qt Studio's shared components, themes, surfaces and motion as they are, instead of the old Svelte UI and the dated review rounds
 
 ## 1.0.0-alpha.2 - 2026-11-08
 

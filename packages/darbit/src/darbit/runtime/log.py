@@ -23,6 +23,7 @@ logger = logging.getLogger("darbit")
 _day = ""
 _KEEP_SHOTS = 200
 _waiting: list[str] = []  # lines kept by `later` until the run writes something of its own
+_waiting_lock = threading.Lock()
 
 
 def _today() -> str:
@@ -51,12 +52,18 @@ def _handler() -> None:
 def later(message: str) -> None:
     """Keep a line for the log until the next line or report event: a script that only reads a bot (its tests,
     `darbit status`) writes nothing to the bot's log, a running bot gets the line first."""
-    _waiting.append(message)
+    with _waiting_lock:
+        _waiting.append(message)
 
 
 def _write_waiting() -> None:
-    while _waiting:
-        _write(_waiting.pop(0))
+    if not _waiting:
+        return
+    with _waiting_lock:  # observer threads log too: each kept line is written once
+        lines = list(_waiting)
+        _waiting.clear()
+    for line in lines:
+        _write(line)
 
 
 def log(message: str) -> None:
