@@ -52,9 +52,19 @@ def new(name: str, where: Path) -> Path:
         text = text.replace("{darbit}", f">={minor}")
         if ".dev" in __version__:
             text = text.replace('tag = "v{version}"', 'branch = "main"')  # a development darbit has no release tag
+        text = text.replace('tag = "v{version}"', f'tag = "{release_tag(__version__)}"')
         text = text.replace("{version}", __version__)
         (folder / target).write_text(text, encoding="utf-8", newline="\n")
     return folder
+
+
+def release_tag(version: str) -> str:
+    """The git tag of a package version: 0.4.0 -> v0.4.0, 1.0.0a1 -> v1.0.0-alpha.1, 1.0.0rc2 -> v1.0.0-rc.2."""
+    for short, long in (("a", "alpha"), ("b", "beta"), ("rc", "rc")):
+        release, found, number = version.partition(short)
+        if found and number.isdigit():
+            return f"v{release}-{long}.{number}"
+    return f"v{version}"
 
 
 def name_from_url(url: str) -> str:
