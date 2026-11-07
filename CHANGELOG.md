@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- The release workflow installs the Studio extra before running the tests, as CI does: without it the live tests didn't load and no release was made
+
 ## 1.0.0-alpha.1 - 2026-11-07
 
 ### New
