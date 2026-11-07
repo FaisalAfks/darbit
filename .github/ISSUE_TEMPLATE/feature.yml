@@ -1,6 +1,7 @@
 name: Feature
 description: A new feature or an improvement
 labels: ["type: feature"]
+projects: ["FaisalAfks/1"]
 body:
   - type: textarea
     id: what
