@@ -31,6 +31,7 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 
 **Git and GitHub**
 - Never commit or push to `main`. One branch per task (`feature/<issue>-<name>`, `fix/<issue>-<name>`, `docs/…`, `refactor/…`), and a PR into `main` that says `Closes #<issue>`.
+- GitHub checks these: pre-commit refuses a commit on `main`, the `pr-rules` check fails a PR without `Closes #<issue>` or a `CHANGELOG.md` line (label `skip-notes` when none is needed), and issues opened from the forms go on the board.
 - Merge a PR once its checks pass.
 - Every change has an issue on the "Anime Dimensions" project board, in its milestone.
 - The board is where open work lives: move an issue to In progress when work starts, and only close it once its PR is merged. A new idea or a problem found in logs becomes an issue, not a note in a doc.

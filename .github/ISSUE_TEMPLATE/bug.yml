@@ -1,6 +1,7 @@
 name: Bug
 description: Something doesn't work as it should
 labels: ["type: bug"]
+projects: ["FaisalAfks/1"]
 body:
   - type: textarea
     id: what

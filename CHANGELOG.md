@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- The PR rules are checked: `pr-rules` fails a PR without `Closes #<issue>` or a `CHANGELOG.md` line (unless labelled `skip-notes`), pre-commit refuses a commit on `main`, and issues opened from the forms go on the board
+
 ### Fixed
 
 - The release workflow installs the Studio extra before running the tests, as CI does: without it the live tests didn't load and no release was made

@@ -1,10 +1,8 @@
 name: Task
-description: A planned piece of work from docs/tasks (or a chore)
+description: A planned piece of work or a chore
 labels: ["type: task"]
+projects: ["FaisalAfks/1"]
 body:
-  - type: input
-    id: page
-    attributes: { label: Task page, description: "docs/tasks/Txx-....md, if there is one" }
   - type: textarea
     id: what
     attributes: { label: What to do }
