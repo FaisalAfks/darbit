@@ -1,144 +1,117 @@
 # Design system
 
-One look for every darbit surface: the hub app, the capture tool, highlight, the recorder bar, the run panel and the VS Code webviews. Everything here lives in `packages/ui/src/lib/tokens/` and `packages/ui/src/lib/components/`. The mockups are in [mockups.html](../../ui/mockups.html); the Studio's redesign (decision 0013) is in [docs/ui/redesign/](../../ui/redesign/README.md).
+One look for every surface of darbit Studio: its window and pages, and the tools over the game (Capture, Highlight,
+the recorder and the run pill). The Studio is Qt (PySide6 and QML): its components are in
+`packages/darbit/src/darbit/studio/qml/`, its themes in `packages/darbit/src/darbit/studio/theme.py`. The reference
+look is [mockups.html](../../ui/mockups.html), with its tokens in [tokens/](tokens/tokens.css); the Studio's redesign
+rounds are in [docs/ui/redesign/](../../ui/redesign/README.md).
 
 ## Principles
 
 1. **Small.** A tool covers as little of the screen as it can. The game is the main thing on screen; darbit sits at its edges.
-2. **Little to read.** One line of text per thing, short labels, numbers in a monospace font. Longer help lives behind F1 or a hover.
-3. **Every key is a button, every button has a key.** Hovering a button shows its keycap. Nothing is keyboard-only.
-4. **Light motion.** Only `transform` and `opacity` animate, so the GPU does it and nothing is laid out again. Nothing moves for more than 240 ms. `prefers-reduced-motion` turns motion into fades.
-5. **Themeable.** Colours come only from tokens. A theme is a set of token values; components never hard-code a colour.
+2. **Little to read.** One line of text per thing, short labels, numbers in a monospace font. Longer help lives behind a hover.
+3. **Every key is a button, every button has a key.** The command palette names each command's keys. Nothing is keyboard-only.
+4. **Light motion.** Only opacity, a short move and scale animate, which the scene graph does without laying anything
+   out again. **Smooth effects** off (darbit settings) makes every animation instant, for slower PCs.
+5. **Themeable.** Colours come only from the theme. A theme is a set of token values; components never hard-code a colour.
 
 ## Themes
 
 | Theme | For |
 |---|---|
-| `glass-dark` (default) | dark translucent panels with blur, cyan-to-violet accent glow |
+| `glass-dark` (default) | dark translucent panels, cyan-to-violet accent |
 | `glass-light` | the same in light, for bright screens |
-| `midnight` | solid near-black panels without blur: the lightest to draw, for slow PCs and OLED |
-| `high-contrast` | thick borders, no transparency, bold text |
-| custom | a `theme.toml` in the user's folder or a bot's project, overriding any tokens (e.g. a bot's own accent) |
+| `midnight` | solid near-black panels: the lightest to draw, for slow PCs and OLED |
+| `high-contrast` | bright edges, no transparency, bold colours |
+| custom | `theme.toml` in darbit's settings folder: `base = "glass-dark"` and any tokens on top (`accent = "#ff7ab6"`) |
 
-`ctrl+alt+t` cycles themes; the hub's Settings picks one. A theme is a `[data-theme="..."]` block of CSS variables in `themes.css`.
+`ctrl+alt+t` cycles themes; darbit settings picks one. The Studio keeps the choice for next time.
 
 ## Standards (decision 0012)
 
-- **Sizes follow Fluent 2,** Microsoft's design system for Windows apps: its type ramp ([typography](https://fluent2.microsoft.design/typography)) and its spacing, corner, duration and curve tokens (`microsoft/fluentui`, `packages/tokens/src/global`). Windows users already know these proportions.
-- **Text in the Studio's content is 16 px** (Fluent's Subtitle 2); controls and the overlays over the game use 14 px (Body 1); chips, keys and hints 12 px (Caption 1).
-- **Accessibility follows WCAG 2.2 AA:** text 4.5:1 against what it sits on, hint text and indicators 3:1, nothing clickable smaller than 24 × 24 px, a visible focus outline, and focus never hidden behind a sheet.
-- **Checked on every build of v0.4's web UI** (`npm run check`, in the `v0.4.0` tag; the QML Studio gets its own check): `scripts/check-tokens.ts` refuses a missing token, a colour outside the token files, and a raw pixel size in a component (only 1–2 px hairlines and a component's own named sizes, `--track-width: 44px`, are allowed); `scripts/check-contrast.ts` measures every text and control pair in all four themes, with glass mixed over the background as it shows on screen.
+- **Sizes follow Fluent 2,** Microsoft's design system for Windows apps: its type ramp
+  ([typography](https://fluent2.microsoft.design/typography)) and its spacing, corner, duration and curve tokens
+  (`microsoft/fluentui`, `packages/tokens/src/global`). Windows users already know these proportions.
+- **Accessibility follows WCAG 2.2 AA:** text 4.5:1 against what it sits on, hint text and indicators 3:1, nothing
+  clickable smaller than 24 × 24 px.
 
 ## Tokens
 
+The Studio's tokens are colours, from `theme.py`, and every QML file reads them as `studio.colors.<name>`. The names
+are the mockups' CSS names in camelCase (`--glass-strong` is `glassStrong`); a custom theme may use either.
+
 | Group | Tokens |
 |---|---|
-| Surfaces | `--bg` (behind everything), `--glass` (panel fill), `--glass-strong` (popovers), `--raised`, `--raised-hover`, `--line`, `--blur`, `--shadow` |
-| Text | `--text`, `--muted`, `--faint` |
-| Accent | `--accent`, `--accent-2`, `--glow` (the accent's shadow), `--on-accent` (text on the accent) |
-| Status | `--ok`, `--warn`, `--danger`, `--info`, `--on-status` (text on a status colour) |
-| Target kinds | `--kind-image`, `--kind-region`, `--kind-location`, `--handle-fill` (resize handles) |
-| Capture | `--screen-dim`: the frozen screen outside the selection, 42% brightness, the **same in every theme** (a light theme must not wash the game out) |
-| Text slots | `--slot-tool`, `--slot-bot`, `--slot-guide`, `--on-bot` (text on a bot's accent) |
-| Type | `--font`, `--font-strong`, `--mono`; Fluent 2's ramp, size with line height: `--size-caption` 12 / `--line-caption` 16, `--size-body` 14 / `--line-body` 20, `--size-content` 16 / `--line-content` 22, `--size-subtitle` 20 / `--line-subtitle` 26, `--size-title3` 24 / `--line-title3` 32, `--size-title` 28 / `--line-title` 36 |
-| Space | Fluent 2's spacing ramp: `--space-xxs` 2, `--space-xs` 4, `--space-s-nudge` 6, `--space-s` 8, `--space-m-nudge` 10, `--space-m` 12, `--space-l` 16, `--space-xl` 20, `--space-xxl` 24, `--space-xxxl` 32 |
-| Shape | `--radius-s` 4, `--radius-m` 8, `--radius-l` 12, `--radius-xl` 16, `--radius-pill` |
-| Size | `--control-s` 24, `--control-m` 32, `--control-l` 40 (control heights), `--row` 52 (a step or list row), `--indent` 40 (one level of nesting); widths `--width-tooltip`, `--width-toast`, `--width-sheet`, `--width-inspector`, `--width-palette` |
-| Motion | Fluent 2's durations `--duration-faster` 100, `--duration-fast` 150, `--duration-normal` 200, `--duration-slow` 300 ms; curves `--curve-decelerate` (things appearing), `--curve-accelerate` (things leaving), `--curve-easy-ease` (things moving) |
+| Surfaces | `bg` (behind everything), `glass` (a card's fill), `solid` (a panel with no see-through), `raised`, `raisedHover`, `line`, `shadow` |
+| Text | `text`, `muted`, `faint` |
+| Accent | `accent`, `accent2`, `onAccent` (text on the accent) |
+| Status | `ok`, `warn`, `danger`, `info`, `onStatus` (text on a status colour) |
+| Kinds of target | `kindImage` (the accent), `kindRegion` (`accent2`), `kindLocation` (`ok`) |
+| Bot text | `slotBot` (words a bot writes, so it's clear who is talking) |
 
-## Text slots
+`solid` and the kinds' colours are made from the others, so a custom theme gets them too. `glassStrong` is only what
+`solid` is made from: panels use `solid`.
 
-Text on any surface comes from one of three sources, and each looks different, so it's always clear who's talking:
-
-| Slot | Who writes it | Looks like | Example |
-|---|---|---|---|
-| `tool` | darbit itself | muted, small | "click to box · drag to draw" |
-| `bot` | a bot, through the API (`d.capture(..., say=...)`, `d.notify`) | a chip with the bot's name and accent | **ad-bot** · Open the bag first |
-| `guide` | the person who wrote the setup guide | body text, with an optional example picture | "The whole Bag window, with some room around it." |
-
-The `TextSlot` component takes `{slot, text, from?, image?}`. Text is cut at one line with "…" and opens fully on hover or focus. Bots can't style their text; they only choose words and an accent.
-
-## Surfaces and how much screen they take
-
-| Surface | Where | Size | Behaviour |
-|---|---|---|---|
-| Capture toolbar | bottom centre of the frozen screen | one pill, ≤ 560 px wide | moves to the top when the mouse goes near it |
-| Readout chips | attached to each box or point | one line | `x, y · w × h`; click to type exact numbers |
-| Magnifier | next to the mouse | 168 px | follows the mouse; `z` pins it; shows the boxes too |
-| Guide card | top centre | ≤ 420 × 120 px | hides into a 6 px progress strip when the mouse is away |
-| Highlight | over the screen, click-through; its pill top centre | the boxes, and one pill | a score badge per match; the pill slides away like the run pill |
-| Recorder bar | top centre | one pill, ≤ 360 px | never takes focus from the game |
-| Run panel | docked to a side | 300 px wide | collapses to a 40 px rail; never takes focus |
-| Hub | a normal window | 960 × 640, down to 720 × 480 | `ctrl+.` shrinks it to a mini pill with run, pause, stop and status |
+Sizes, type and motion aren't tokens in QML: the shared components hold them, so a page gets them by using the
+component. The mockups' [tokens.css](tokens/tokens.css) lists the Fluent 2 ramps they come from.
 
 ## Components
 
-The Studio is built from these (`packages/darbit/src/darbit/studio/qml`). A page or tool uses them rather than drawing its own; one that needs something more extends them, so everything gets it. `test_the_studio_keeps_one_look` fails on a hand-drawn text field, switch, list, slider or menu, or on see-through colours where solid ones belong.
+The Studio is built from these. A page or tool uses them rather than drawing its own; one that needs something more
+extends them, so everything gets it. `test_the_studio_keeps_one_look` fails on a hand-drawn text field, switch,
+dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `Popup` outside their component), or on
+`glassStrong` where `solid` belongs.
 
 | Component | For |
 |---|---|
-| `PillButton`, `IconButton` | every button |
+| `PillButton`, `IconButton` | every button: `kind` primary (the one main action), plain, quiet or danger; a round glyph with a tooltip |
 | `Field` | every text field (`round` with an `icon` for search, `quiet` for a name in a heading) |
 | `Switcher`, `Stepper`, `ValueSlider`, `Dropdown` | on/off, a number, a number in a range, one of a few |
 | `Segmented`, `Toggle`, `Chip` | a choice of a few, a filter that's on or off, a small label |
-| `Glass` | a card on a page |
+| `Choice` | a setting that's on or off, with its label and help |
+| `Glass` | a card on a page, with an optional small caps title |
+| `Ring`, `Bar` | progress: a ring with its number, a thin bar |
 | `FloatingPill`, `PillWindow` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill) |
 | `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
 | `Banner`, `Toast` | a line that needs you; what just happened |
-| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard` | a page's own rows and cards, built from the above |
+| `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
+| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar` | a page's own rows and cards, built from the above |
 
-`colors.solid` is the panel colour with no see-through, for menus and for anything over a game. `kindImage`, `kindRegion` and `kindLocation` are the kinds' colours.
+## Surfaces and how much screen they take
+
+| Surface | Where | Behaviour |
+|---|---|---|
+| Studio window | a normal window | the top bar holds the bot menu, the pages (Overview, Library, Results, Settings) and the run control; darbit settings can put the bots in a sidebar, which folds to their squares on a narrow window |
+| Sheets | over the Studio | things opened and closed: New bot, Record, the command palette |
+| Capture | full screen, over the frozen shot | its pill at the top; slides out of sight a few seconds after the mouse leaves it |
+| Highlight | over the screen, click-through | a box and score per match; its pill top centre, like the run pill |
+| Recorder pill | top centre | never takes focus from the game |
+| Run pill | top centre while a bot runs | the Studio hides; the pill slides up to a sliver a few seconds after the mouse leaves it |
+| Ghost cursor | over the game, click-through | a ripple where the bot clicks and the keys it presses, for a moment each |
+
+Everything over a game is `solid`, never see-through. The bot never sees the run pill in its screenshots.
 
 ## Motion
 
 | What | How |
 |---|---|
-| A panel appears | from 8 px away and 96% size to its place, `--curve-decelerate`, 200 ms |
-| A panel hides | opacity and 8 px, 120 ms |
-| Focus, current item | the accent glow grows in, 120 ms |
-| Progress | the strip's fill slides; no counting animations |
-| Highlight | boxes draw in with a short scale from 104%, then sit still |
+| A card appears | opacity and a 14 px rise, eased out, about 300 ms; `delay` staggers a page's cards |
+| A page is shown | opacity and an 18 px slide, about 250 ms |
+| A menu opens | a 150 ms fade |
+| A toast | slides up from the bottom and fades |
+| A button is pressed | scales to 96% |
+| Progress | a ring sweeps and a bar grows to its share; no counting animations |
 
-## Rules from the 2026-10-25 review
+## Rules
 
-Found while reviewing the mockups (and in a second pass by Gemini). Every component follows them.
+- **No hard-coded colours** in a component: everything is a `studio.colors` token, or a tint of one. Only real colour
+  samples (a theme's swatch in darbit settings) use their own.
+- **Panels over the game and menus are `solid`.** Cards on a page are `glass`.
+- **One line per thing:** long names and paths are cut with "…" (`elide`) instead of widening the window.
+- **States:** every list and view has its empty, loading and error states, not only the full one.
+- **Names:** Image, Region and Location everywhere; never picture, area or point.
+- **The capture overlay:** the shot outside the selection is dimmed, so the inside keeps the game's exact colours; the
+  guide, the hint and the pill never overlap.
 
-- **Tooltips** come from one layer at the top of the page (or window), placed with `position: fixed` and kept inside the viewport, flipping below when near the top. No panel's `overflow` can clip them. A tooltip shows the action's name and its keys.
-- **Focus** is a 2 px `outline` in `--accent` with 2 px offset, on `:focus-visible` only. Never a glow alone: Windows high-contrast mode removes shadows.
-- **Names:** every icon-only button has an `aria-label`; toggles use `aria-pressed`, tabs `aria-selected`, the current section `aria-current`.
-- **Colour scheme:** each theme sets `color-scheme` (light or dark), so scrollbars and form controls match. Under `@media (forced-colors: active)` panels get a `CanvasText` border and the selected item a `Highlight` outline; only real colour samples use `forced-color-adjust: none`.
-- **No hard-coded colours** outside the token files, including handles, badges and avatars. Tints are mixed with `color-mix(in oklab, …)`.
-- **Motion:** at most 200 ms, `transform` and `opacity` only. A keyframe animation always states its end values (`to { … }`), so an element never ends up invisible. Reduced motion turns movement into 80 ms fades.
-- **The capture overlay:**
-  - the selection dims everything outside it with `box-shadow: 0 0 0 100vmax var(--screen-dim)`, so the inside keeps the game's exact colours;
-  - linked regions and labels sit above the dimming;
-  - the guide card, the hint, the region label and the toolbar never overlap;
-  - the kind switch never wraps;
-  - on narrow screens the toolbar scrolls sideways and the hint and magnifier hide.
-- **Shrinking:** grid and flex children that hold code, logs or long names get `min-width: 0`, so they scroll or cut with "…" instead of widening the window.
-- **Phone width (≤ 760 px):** single columns, the Studio's rail becomes a bottom tab bar, palettes become two columns. Mockup images of phone layouts are rendered at 390 px.
-- **States:** every list and view designs its empty, loading and error states, not only the full one (see the Studio's state switch in the mockups).
-- **`[hidden]` always hides,** even on elements with their own `display`.
-
-## Room (2026-10-26 round)
-
-Some screens felt cramped and hard to read, so the Studio and the overlays got more room:
-
-- **Studio type:** 15 px body, 28 px view titles, 16–18 px card titles; buttons at least 36 px high.
-- **Labelled navigation:** a 224 px sidebar with icons and names, and the running bot's status at its foot. On a phone it becomes a bottom tab bar.
-- **The running bot first:** Home opens on a large card with what the bot is doing, its week (a ring) and its controls, then today's timeline, then every installed bot.
-- **One action per row** in a flow, 54 px high, with an icon per kind. The chosen step's details open in a panel on the right, instead of editing everything inline.
-- **Lists on demand:** the steps you can add open from an **Add step** button, not a column that is always there.
-- **Overlays:** the capture toolbar, recorder bar and run panel use 36 px buttons and 14–15 px text; the guide card is up to 390 px wide.
-
-The mockups are rendered to images with `python scripts/render_mockups.py` (into `docs/ui/images/`).
-
-## The Studio shell (2026-10-26)
-
-The Studio uses the same language as the tools, so it feels like one product:
-
-- **Over the bot's own screen:** glass panels float over the bot's last screenshot, blurred and tinted. Midnight and high-contrast use a solid background instead.
-- **A pill menu on top,** shaped like the capture toolbar: the bot switcher (which replaces a Bots page), the sections (Overview, Flows, Library, Runs, Settings), the run controls, and two buttons: **‹/›** shows where each tile's data comes from, the gear opens the Studio's own settings.
-- **A dock at the bottom** with every tool (Capture, Highlight, Record, Play, Guide, Check), the same pill as the recorder bar.
-- **The Overview is a grid of tiles the bot fills** ([decision 0011](../../decisions/0011-what-a-bot-shows.md)): Now (the step breadcrumb and last screenshot), Progress (rings and bars), Today's round, Next up, What happened, Watching. A tile with nothing to show isn't drawn.
-- **Sheets, not pages,** for things you open and close: the bot switcher, the Studio settings, Add step.
+The mockups are rendered to images with `python scripts/render_mockups.py` (into `docs/ui/images/`); the Studio's own
+pages are drawn to PNGs with `darbit.studio.app.shot()`, as the tests do.
