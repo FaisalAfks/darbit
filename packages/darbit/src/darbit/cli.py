@@ -35,6 +35,7 @@ COMMANDS = {
     "app": "open darbit Studio",
     "doctor": "check a bot is ready to run: its pictures, display scaling, window and screen",
     "kinds": "write each target's kind (image, region or location) into its settings file",
+    "bench": "measure darbit's search on saved screens with known answers: right or wrong, and how fast",
 }
 BOT_COMMANDS = {"status": "bot.status", "start": "bot.start", "pause": "bot.pause", "stop": "bot.stop"}
 
@@ -73,6 +74,10 @@ def main(argv: list[str] | None = None) -> int:
         return _doctor(args.rest)
     if command == "kinds":
         return _kinds(args.rest)
+    if command == "bench":
+        from .tools import bench
+
+        return bench.main(args.rest)
     if command in BOT_COMMANDS:
         return _bot(command, args.rest)
     return _tool(command, args.rest)

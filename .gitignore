@@ -14,9 +14,8 @@ site/
 .darbit/
 # made by scripts/setup-dev.ps1: a link to .agents/skills for Claude Code
 .claude/skills
-# the bench's made-up cases (bench/make_cases.py) and the private ones (darbit-bench)
+# the bench's made-up cases (bench/make_cases.py)
 bench/cases/
-bench/private/
 
 # screenshots the live tests save (tests/live)
 live-shots/
