@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from darbit.project.manifest import SETTING_KINDS, ProjectError, find, load, setup, version_matches
+from darbit.runtime import log
 from darbit.settings import Settings, settings
 
 MANIFEST = """
@@ -33,6 +34,12 @@ folders = ["assets/images", "more"]
 def no_log_files(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "log", False)
     monkeypatch.setattr(settings, "logs", tmp_path / "darbit-logs")
+
+
+@pytest.fixture(autouse=True)
+def no_waiting_lines(monkeypatch):
+    """`setup` keeps its lines for the log: they stay in this test's list, not in the next test's log."""
+    monkeypatch.setattr(log, "_waiting", [])
 
 
 def make(folder: Path, text: str = MANIFEST) -> Path:
@@ -104,6 +111,23 @@ def test_setup_applies_the_settings_in_order(tmp_path):
     assert mine.glide == Settings().glide  # untouched keys keep darbit's defaults
     mine.timeout = 10  # the script still wins (layer 3)
     assert mine.timeout == 10
+
+
+def test_setup_leaves_the_log_alone_until_the_bot_writes(tmp_path, monkeypatch):
+    folder = make(tmp_path / "bot", '[bot]\nname = "x"\n')
+    monkeypatch.setattr(settings, "log", True)
+    monkeypatch.setattr(settings, "logs", tmp_path / "logs")
+    setup(Settings(), "0.2.0", start=folder)
+    assert not (tmp_path / "logs").exists()  # only reading the bot (its tests, `darbit status`) writes nothing
+
+    log._day = ""  # a log file of this test's
+    log.log("go Lobby")  # the bot runs
+    for handler in list(log.logger.handlers):
+        log.logger.removeHandler(handler)
+        handler.close()
+    log._day = ""
+    lines = next((tmp_path / "logs").glob("*.log")).read_text(encoding="utf-8").splitlines()
+    assert "x: settings from" in lines[0] and lines[1].endswith("go Lobby")
 
 
 def test_setup_without_a_manifest_changes_nothing(tmp_path):

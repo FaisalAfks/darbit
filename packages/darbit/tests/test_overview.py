@@ -91,3 +91,23 @@ def test_the_data_holds_each_blocks_value(project, tmp_path):
     assert found["action:sell"] == {"name": "sell"}
     assert found["screen"]["picture"].endswith("a.jpg")
     assert json.dumps(found)  # all of it goes over the service as JSON
+
+
+def test_the_data_counts_todays_recoveries(project, tmp_path):
+    recovered = [
+        {"time": "2026-11-02T09:00:00", "event": "recovered", "how": "rejoin", "why": "disconnected"},
+        {"time": "2026-11-02T10:30:00", "event": "recovered", "how": "back to the menu", "why": "stuck"},
+        {"time": "2026-11-02T11:15:00", "event": "recovered", "how": "rejoin", "why": "disconnected"},
+        {"time": "2026-11-03T01:00:00", "event": "recovered", "how": "rejoin"},
+    ]
+    found = overview.data(project, events() + recovered, "2026-11-02", datetime(2026, 11, 3, 2), tmp_path)
+    rows = found["recoveries"]
+    assert rows["count"] == 4
+    assert (rows["reason"], rows["reason_count"]) == ("disconnected", 2)
+    assert rows["last"] == {"at": 25 * 3600, "how": "rejoin", "why": "no reason given"}  # past midnight, same day
+    assert [(row["how"], row["count"]) for row in rows["hows"]] == [("rejoin", 3), ("back to the menu", 1)]
+
+
+def test_without_recoveries_the_count_is_none(project, tmp_path):
+    rows = overview.data(project, events(), "2026-11-02", datetime(2026, 11, 2, 11), tmp_path)["recoveries"]
+    assert rows == {"count": 0, "reason": "", "reason_count": 0, "last": None, "hows": []}

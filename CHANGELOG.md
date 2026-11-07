@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### New
+
+- The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
+
 ### Fixed
 
+- Only a running bot writes to its log: importing darbit in a bot's folder (its tests, `darbit status`) keeps the "settings from darbit.toml" line, and a version warning, until the bot writes its first line
 - `darbit bench --from-screens .` names the cases after the bot's folder instead of an empty name
 
 ### Docs
