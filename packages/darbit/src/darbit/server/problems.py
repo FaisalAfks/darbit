@@ -1,7 +1,7 @@
 """Why a bot's step failed, from what its run report already holds (round 13): the searches that ran out during the
-step (each image, the closest it came against what it needs, for how long, the screenshots) and the screen when it
-failed. Each failure gets a likely cause, said as a guess, and failures with the same cause, step and reason are one
-problem on the Results page.
+step (each image, the closest it came against what it needs, for how long, the screenshots), the last things it did
+before it, and the screen when it failed. Each failure gets a likely cause, said as a guess, and failures with the
+same cause, step and reason are one problem on the Results page.
 """
 
 import json
@@ -18,6 +18,9 @@ NEAR = 0.2  # how far under its line a closest match still counts as "a little d
 LONG = 30  # seconds of looking that make a missing image trouble; a shorter look is the bot checking, and its answer
 DEFAULT_SIMILARITY = 0.7  # darbit's own, for a bot that names none
 FAILING_AFTER = 2  # failures in a row that come down to the same image: it may have stopped matching
+BEFORE = 8  # the steps before a failure shown with it
+CLICKS = ("click", "double_click", "right_click", "drag")
+LOOKS = ("exists", "wait", "find")
 
 CAUSES = {
     COVERED: {"label": "Something covered the game", "tone": "warn", "act": False},
@@ -83,6 +86,47 @@ def _searches(run: list[dict], watched: set[str]) -> list[Search]:
         if event.get("screenshot"):
             search.screenshots.append(event["screenshot"])
     return sorted(by_name.values(), key=lambda search: -search.last)
+
+
+def before(run: list[dict]) -> list[dict]:
+    """The last things the bot did before a failure, oldest first: its clicks, its looks, the steps inside it and its
+    moves between screens, each with whether it worked and a plain line."""
+    found = []
+    for event in run[1:]:  # the first is the failing step's own start
+        row = _done(event)
+        if row is not None:
+            found.append(row)
+    return found[-BEFORE:]
+
+
+def _done(event: dict) -> dict | None:
+    kind = str(event.get("event", ""))
+    time = event.get("time")
+    if kind in CLICKS:
+        what = _name(event.get("target"))
+        ok = bool(event.get("done"))
+        say = f"{kind.replace('_', ' ')} {what}" if ok else f"{kind.replace('_', ' ')} {what}: not found"
+        return {"time": time, "kind": kind, "what": what, "ok": ok, "say": say}
+    if kind in LOOKS and "targets" in event:
+        if event.get("found"):
+            what = _name(event["found"])
+            return {"time": time, "kind": kind, "what": what, "ok": True, "say": f"{kind} {what}: found"}
+        what = _name(event.get("closest_name") or event["targets"])
+        say = f"{kind} {what}: not there"
+        if event.get("timeout"):
+            say = f"{kind} {what}: not found in {_duration(float(event['timeout']))}"
+        if event.get("closest") is not None:
+            say += f" (closest {float(event['closest']):.2f})"
+        return {"time": time, "kind": kind, "what": what, "ok": False, "say": say}
+    if kind == "step":
+        what = str(event.get("step", "")).split(" > ")[-1]
+        state = str(event.get("state", ""))
+        return {"time": time, "kind": kind, "what": what, "ok": state != "failed", "say": f"{what}: {state}"}
+    if kind == "go":
+        what = str(event.get("to", ""))
+        state = str(event.get("state", ""))
+        return {"time": time, "kind": kind, "what": what, "ok": state == "there", "say": f"go to {what}: {state}"}
+    return None
 
 
 def _watched(events: list[dict]) -> set[str]:
@@ -187,6 +231,7 @@ def explain(project: Project, events: list[dict], logs: Path) -> list[dict]:
                 "screenshot": None,
                 "screenshots": [],
                 "searches": [],
+                "before": [],
             }
             groups[key] = group
         group["count"] += 1
@@ -195,6 +240,7 @@ def explain(project: Project, events: list[dict], logs: Path) -> list[dict]:
         if failure.get("screenshot"):
             group["screenshot"] = _url(screenshots, failure["screenshot"])
         group["searches"] = [_search_row(project, search, screenshots) for search in searches[:4]]
+        group["before"] = before(run)  # the latest failure's, like its searches
         for search in searches[:4]:
             for shot in search.screenshots:
                 group["screenshots"].append(_url(screenshots, shot))
