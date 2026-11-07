@@ -4,6 +4,7 @@
 
 ### New
 
+- Results' data: each problem has the last steps before its failure (clicks, looks, the steps inside it, moves between screens), and darbit Studio can retake an image on a failure's screenshot (`retakeOn`), cut to the main screen
 - The service's `bot.doctor`: darbit doctor's checks on a bot and how many are problems; darbit Studio asks for them (`checkBot`) for its Start
 - The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
 

@@ -6,13 +6,34 @@ it through an image provider (`image://capture/shot`), so a 4K screen isn't copi
 
 from pathlib import Path
 
+import cv2
 import numpy as np
 from PySide6.QtCore import Property, QObject, QSize, Signal, Slot
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
 from ..capture import service
+from ..core.geometry import Region
+from ..platform import screen
 from ..project.manifest import load
+
+
+def shot_of_failure(path: Path) -> tuple[np.ndarray, Region] | None:
+    """A bot's screenshot (the whole desktop) cut to the main screen, as Capture works on it, and where that sits.
+    None when it can't be read or the screens aren't laid out as they were when it was taken."""
+    try:
+        pixels = cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)  # imread can't open every Windows path
+    except (OSError, cv2.error):
+        return None
+    if pixels is None:
+        return None
+    desktop = screen.desktop()
+    if pixels.shape[:2] != (desktop.h, desktop.w):
+        return None
+    main = screen.monitors()[0]
+    left = main.x - desktop.x
+    top = main.y - desktop.y
+    return np.ascontiguousarray(pixels[top : top + main.h, left : left + main.w]), main
 
 
 class ShotProvider(QQuickImageProvider):
@@ -69,9 +90,16 @@ class Capture(QObject):
     source = Property(str, _get_source, notify=shotChanged)
 
     def start(
-        self, folder: Path, mode: str = "any", name: str = "", kind: str = "image", shot: np.ndarray | None = None
+        self,
+        folder: Path,
+        mode: str = "any",
+        name: str = "",
+        kind: str = "image",
+        shot: np.ndarray | None = None,
+        origin: Region | None = None,
     ) -> None:
-        """Open a session for the bot at `folder` on the screen now (or a saved `shot`)."""
+        """Open a session for the bot at `folder` on the screen now (or a saved `shot`, sitting at `origin` on the
+        desktop)."""
         project = load(folder)
         images = folder / (project.images[0] if project.images else "images")
         images.mkdir(parents=True, exist_ok=True)
@@ -79,7 +107,7 @@ class Capture(QObject):
         if shot is None:
             pixels, _ = service.freeze()
         else:
-            service.use_shot(shot)
+            service.use_shot(shot, origin)
             pixels = shot
         self.provider.set_pixels(pixels)
         self._size = (pixels.shape[1], pixels.shape[0])

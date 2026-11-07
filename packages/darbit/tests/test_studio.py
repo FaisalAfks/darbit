@@ -1093,6 +1093,42 @@ def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
     del engine
 
 
+def test_a_retake_on_a_failures_screenshot_opens_capture_on_the_main_screen_of_it(qt, tmp_path, monkeypatch):
+    import cv2
+    import numpy as np
+
+    from darbit.capture import service as capture_service
+    from darbit.core.geometry import Region
+    from darbit.studio import capture as studio_capture
+
+    # two screens side by side, the main one on the right: the screenshot is the whole desktop
+    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(-400, 0, 800, 300))
+    monkeypatch.setattr(studio_capture.screen, "monitors", lambda: [Region(0, 0, 400, 300), Region(-400, 0, 400, 300)])
+    shot = np.zeros((300, 800, 3), np.uint8)
+    shot[:, 400:] = 255  # the main screen's half
+    path = tmp_path / "failed.png"
+    cv2.imwrite(str(path), shot)
+    pixels, origin = studio_capture.shot_of_failure(path)
+    assert pixels.shape == (300, 400, 3) and pixels.min() == 255
+    assert origin == Region(0, 0, 400, 300)
+    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(0, 0, 400, 300))
+    assert studio_capture.shot_of_failure(path) is None  # the screens are laid out differently now
+    assert studio_capture.shot_of_failure(tmp_path / "gone.jpg") is None
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "fish-bot"\n', encoding="utf-8")
+    capture = studio_capture.Capture(studio_capture.ShotProvider())
+    capture.start(tmp_path, "one", "Rod.Cast", "image", shot=pixels, origin=Region(-400, 0, 400, 300))
+    assert capture_service._current().origin == Region(-400, 0, 400, 300)  # saved boxes sit where that screen was
+    capture.close()
+
+    studio = backend.Studio(FakeClient)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    wanted = []
+    studio.captureOnShotWanted.connect(lambda *args: wanted.append(args))
+    studio.retakeOn("Rod.Cast", "image", path.as_uri())
+    assert wanted == [("/bots/ad-bot", "Rod.Cast", "image", str(path).replace("\\", "/"))]
+
+
 def test_the_bot_started_anywhere_hides_the_studio_but_one_already_running_doesnt(qt):
     from darbit.studio.hiding import HidingPill
 

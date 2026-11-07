@@ -18,7 +18,7 @@ from ..platform import system
 from ..server import ui_settings
 from ..service.client import Client
 from .backend import Studio
-from .capture import Capture, ShotProvider
+from .capture import Capture, ShotProvider, shot_of_failure
 from .ghost import Ghost
 from .hiding import HidingPill
 from .highlight import Highlight
@@ -172,6 +172,14 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
         window.hide()
         QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode, name, kind))
 
+    def wanted_on_shot(folder: str, name: str, kind: str, screenshot: str) -> None:
+        found = shot_of_failure(Path(screenshot))
+        if found is None:
+            studio.say("That screenshot can't be used: the screens are laid out differently now")
+            return
+        window.hide()
+        capture.start(Path(folder), "one", name, kind, shot=found[0], origin=found[1])
+
     def closed() -> None:
         if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead
             _bring_forward(window)
@@ -180,6 +188,7 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
                 studio.loadScreens()
 
     studio.captureWanted.connect(wanted)
+    studio.captureOnShotWanted.connect(wanted_on_shot)
     capture.openChanged.connect(closed)
     capture.saved.connect(lambda name: studio.loadLibrary())
 

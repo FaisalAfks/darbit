@@ -60,6 +60,7 @@ class Studio(QObject):
     recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
 
     captureWanted = Signal(str, str, str, str)  # (the bot's folder, "any", "guide" or "one", name, kind), for app.py
+    captureOnShotWanted = Signal(str, str, str, str)  # (the bot's folder, name, kind, a screenshot file), for app.py
 
     _answered = Signal(str, object)  # (what, result), from a worker thread
     _failed = Signal(str)
@@ -283,6 +284,13 @@ class Studio(QObject):
         """Capture one picture again, by its name."""
         if self._bot.get("path"):
             self.captureWanted.emit(self._bot["path"], "one", name, kind or "image")
+
+    @Slot(str, str, str)
+    def retakeOn(self, name: str, kind: str, screenshot: str) -> None:
+        """Capture one target again on a screenshot of the bot's (a failure's, as a file URL) instead of the screen
+        now: the screen as it was when the image wasn't found."""
+        if self._bot.get("path") and screenshot:
+            self.captureOnShotWanted.emit(self._bot["path"], name, kind or "image", QUrl(screenshot).toLocalFile())
 
     @Slot()
     def loadActions(self) -> None:

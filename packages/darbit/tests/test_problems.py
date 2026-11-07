@@ -98,6 +98,36 @@ def test_a_short_check_or_a_watched_image_is_the_bots_own_reason(project, tmp_pa
     assert "Fish.Claim wasn't there after 15 s" in found[0]["sentence"]
 
 
+def test_a_problem_has_the_last_steps_before_its_failure(project, tmp_path):
+    middle = [
+        {"time": at("10:00:01"), "event": "step", "step": "Fishing > Cast", "state": "started"},
+        {"time": at("10:00:02"), "event": "click", "target": "Rod.Cast.png", "done": True, "at": [5, 5]},
+        {"time": at("10:00:03"), "event": "gain", "name": "Gold", "amount": 1},  # not a step: left out
+        {"time": at("10:00:04"), "event": "step", "step": "Fishing > Cast", "state": "ok", "seconds": 3},
+        {"time": at("10:00:05"), "event": "go", "to": "Lake", "state": "there"},
+        {"time": at("10:00:06"), "event": "wait", "targets": "Gui.Bite.png", "timeout": 5, "found": "Gui.Bite.png"},
+        {"time": at("10:00:07"), "event": "click", "target": "Gui.Reel", "done": False},
+        search("10:00:50", "Rod.Cast", 45, 0.52),
+    ]
+    found = problems.explain(project, run("10:00:00", "10:01:00", *middle), tmp_path)
+    steps = found[0]["before"]
+    assert [step["say"] for step in steps] == [
+        "Cast: started",
+        "click Rod.Cast",
+        "Cast: ok",
+        "go to Lake: there",
+        "wait Gui.Bite: found",
+        "click Gui.Reel: not found",
+        "exists Rod.Cast: not found in 45 s (closest 0.52)",
+    ]
+    assert [step["ok"] for step in steps] == [True, True, True, True, True, False, False]
+    assert steps[-1]["time"] == at("10:00:50") and steps[-1]["kind"] == "exists"
+    many = [search(f"10:00:{second:02}", "Fish.Any", 0, 0.1) for second in range(10, 30)]
+    found = problems.explain(project, run("10:00:00", "10:01:00", *many), tmp_path)
+    assert len(found[0]["before"]) == problems.BEFORE  # the last few only
+    assert found[0]["before"][-1]["time"] == at("10:00:29")
+
+
 def test_the_overview_gets_the_explained_problems(project, tmp_path):
     from darbit.server import overview
 
