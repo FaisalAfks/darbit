@@ -199,14 +199,22 @@ def from_screens(bot: Path, into: Path) -> int:
         lines = [f"# {bot.name}'s {places_file.stem} screen, saved by darbit Studio (JPEG)", 'screen = "screen.jpg"']
         lines += ['images = "images"', f"scale = {_scale_of(images, kept)}", ""]
         for name in kept:
-            for suffix in (".png", ".json"):
-                source = images / f"{name}{suffix}"
-                if source.is_file():
-                    shutil.copy(source, case / "images" / source.name)
+            for source in _files_of(images, name):
+                shutil.copy(source, case / "images" / source.name)
             lines += ["[[find]]", f'target = "{name}"', f"at = {assets[name]['box']}", ""]
         (case / "case.toml").write_text("\n".join(lines), encoding="utf-8", newline="\n")
         made += 1
     return made
+
+
+def _files_of(images: Path, name: str) -> list[Path]:
+    """An image's .png and .json, and the .json of the shared region it's searched in, if it names one."""
+    files = [path for path in (images / f"{name}.png", images / f"{name}.json") if path.is_file()]
+    if len(files) == 2:
+        region = json.loads(files[1].read_text(encoding="utf-8")).get("region")
+        if isinstance(region, str) and (images / f"{region}.json").is_file():
+            files.append(images / f"{region}.json")
+    return files
 
 
 def _scale_of(images: Path, names: list[str]) -> float:

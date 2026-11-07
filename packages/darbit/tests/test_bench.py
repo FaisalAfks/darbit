@@ -83,7 +83,8 @@ def test_cases_come_from_the_screens_the_studio_saved(tmp_path):
     (bot / "darbit.toml").write_text('[images]\nfolders = ["images"]\n', encoding="utf-8")
     cv2.imwrite(str(bot / ".darbit" / "screens" / "Lobby.jpg"), np.zeros((50, 50, 3), np.uint8))
     cv2.imwrite(str(bot / "images" / "Lobby.Play.png"), np.zeros((5, 5, 3), np.uint8))
-    (bot / "images" / "Lobby.Play.json").write_text('{"scale": 1.5}', encoding="utf-8")
+    (bot / "images" / "Lobby.Play.json").write_text('{"scale": 1.5, "region": "Lobby.Buttons"}', encoding="utf-8")
+    (bot / "images" / "Lobby.Buttons.json").write_text('{"kind": "region", "region": [0, 0, 40, 40]}', encoding="utf-8")
     places = {"assets": {"Lobby.Play": {"kind": "image", "box": [1, 2, 5, 5]}, "Lobby.Spot": {"kind": "location"}}}
     (bot / ".darbit" / "screens" / "Lobby.json").write_text(json.dumps(places), encoding="utf-8")
 
@@ -93,3 +94,4 @@ def test_cases_come_from_the_screens_the_studio_saved(tmp_path):
     assert 'target = "Lobby.Play"' in case and "at = [1, 2, 5, 5]" in case
     assert "Lobby.Spot" not in case
     assert (tmp_path / "cases" / "Lobby" / "images" / "Lobby.Play.png").is_file()
+    assert (tmp_path / "cases" / "Lobby" / "images" / "Lobby.Buttons.json").is_file()  # its shared region comes too
