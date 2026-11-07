@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.2 - 2026-11-08
+
 ### New
 
 - `darbit bench`: the test bench as a command, so any bot can measure darbit's search on its own saved screens (`--from-screens` makes the cases from what darbit Studio saved). `--baseline` fails a run when a search gets more than `--slower` (2) times slower; CI checks the made-up cases against `bench/baseline.json`. darbit's CI no longer reads a private repo of game screens: a bot's screens stay with the bot (`bench/run.py` and `bench/from_screens.py` are gone)
