@@ -22,6 +22,8 @@ from ..settings import settings
 logger = logging.getLogger("darbit")
 _day = ""
 _KEEP_SHOTS = 200
+_waiting: list[str] = []  # lines kept by `later` until the run writes something of its own
+_waiting_lock = threading.Lock()
 
 
 def _today() -> str:
@@ -47,8 +49,30 @@ def _handler() -> None:
     _day = today
 
 
+def later(message: str) -> None:
+    """Keep a line for the log until the next line or report event: a script that only reads a bot (its tests,
+    `darbit status`) writes nothing to the bot's log, a running bot gets the line first."""
+    with _waiting_lock:
+        _waiting.append(message)
+
+
+def _write_waiting() -> None:
+    if not _waiting:
+        return
+    with _waiting_lock:  # observer threads log too: each kept line is written once
+        lines = list(_waiting)
+        _waiting.clear()
+    for line in lines:
+        _write(line)
+
+
 def log(message: str) -> None:
     """Write a line to today's log file, and send it to any open darbit window."""
+    _write_waiting()
+    _write(message)
+
+
+def _write(message: str) -> None:
     publish("log", {"line": message, "time": datetime.now().strftime("%H:%M:%S")})
     if not settings.log:
         return
@@ -64,6 +88,7 @@ _report_lock = threading.Lock()
 
 def record(event: str, **fields: object) -> None:
     """Add an event to today's run report, and send it to any open darbit window."""
+    _write_waiting()
     line = {"time": datetime.now().isoformat(timespec="milliseconds"), "event": event, **fields}
     publish("record", {"event": event, "fields": line})
     if not settings.log:

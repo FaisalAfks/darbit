@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import paths
-from ..runtime.log import log
+from ..runtime import log
 from ..settings import Settings, script_folder
 
 MANIFEST = "darbit.toml"
@@ -272,7 +272,7 @@ def setup(settings: Settings, version: str, start: Path | None = None) -> Projec
         return None
     project = load(folder)
     changed = apply(project, settings)
-    log(f"{project.name}: settings from {folder / MANIFEST}: {', '.join(changed) or 'none'}")
+    log.later(f"{project.name}: settings from {folder / MANIFEST}: {', '.join(changed) or 'none'}")
     if project.darbit:
         matches = version_matches(version, project.darbit)
         if matches is False:
@@ -283,5 +283,5 @@ def setup(settings: Settings, version: str, start: Path | None = None) -> Projec
 
 
 def _warn(message: str) -> None:
-    log(message)
+    log.later(message)
     warnings.warn(message, stacklevel=3)
