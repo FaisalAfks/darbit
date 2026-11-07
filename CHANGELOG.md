@@ -6,9 +6,14 @@
 
 - The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
 
+### Fixed
+
+- `darbit bench --from-screens .` names the cases after the bot's folder instead of an empty name
+
 ### Docs
 
 - `AGENTS.md`: how work is done (check before claiming, complete plans, UI choices from rendered options, extend shared parts, Image/Region/Location), working in parallel (Studio and core areas, worktrees, bots asking through issues), and live testing on a desktop
+- Design system: describes the Qt Studio's shared components, themes, surfaces and motion as they are, instead of the old Svelte UI and the dated review rounds
 
 ## 1.0.0-alpha.2 - 2026-11-08
 
