@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- The service's `bot.doctor`: darbit doctor's checks on a bot and how many are problems; darbit Studio asks for them (`checkBot`) for its Start
+
 ### Fixed
 
 - `darbit bench --from-screens .` names the cases after the bot's folder instead of an empty name
