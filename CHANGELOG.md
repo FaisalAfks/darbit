@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.1 - 2026-11-07
+
 ### New
 
 - An image that may have stopped matching: when the last two failures or more all came down to the same image, the Overview says so with Retake, the tray shows a Windows notification once, and `notify.toml` channels get it (`failing = true`). It used to take someone reading the logs (`problems.failing`)
@@ -108,6 +110,7 @@
 - The tests run on any system: off Windows, the platform pieces come from `tests/fake_system.py` and the tests of Windows' own pieces are left out. CI runs them on Linux too
 - A bot on a system without a keyboard piece still takes the Studio's stop and pause: the stop hotkey is left off instead of ending the thread that watches both
 - `main` is `1.0.0.dev0`; a bot made with `darbit new` from it follows `main` instead of a release tag
+- Pre-releases of the rebuild are tagged `v1.0.0-alpha.N` (package `1.0.0aN`) and marked as pre-releases on GitHub; `darbit new` on one pins its tag (`bots.release_tag`)
 
 ### Fixed
 

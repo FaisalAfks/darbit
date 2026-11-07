@@ -41,7 +41,7 @@ def test_new_makes_a_project(tmp_path):
     if ".dev" in darbit.__version__:
         assert source["branch"] == "main"  # a development darbit has no release tag to pin to
     else:
-        assert source["tag"] == "v" + darbit.__version__
+        assert source["tag"] == bots.release_tag(darbit.__version__)
     tomllib.loads((folder / "guide.toml").read_text(encoding="utf-8"))
     compile((folder / "src/my_bot/bot.py").read_text(encoding="utf-8"), "bot.py", "exec")
 
@@ -165,3 +165,10 @@ def test_app_shortcut_opens_the_studio_without_a_console_and_with_darbits_icon(m
     if target.with_name("pythonw.exe").is_file():
         assert target.name == "pythonw.exe"
     assert "made" in capsys.readouterr().out
+
+
+def test_a_pre_release_version_pins_its_release_tag():
+    assert bots.release_tag("0.4.0") == "v0.4.0"
+    assert bots.release_tag("1.0.0a1") == "v1.0.0-alpha.1"
+    assert bots.release_tag("1.0.0b3") == "v1.0.0-beta.3"
+    assert bots.release_tag("1.0.0rc2") == "v1.0.0-rc.2"
