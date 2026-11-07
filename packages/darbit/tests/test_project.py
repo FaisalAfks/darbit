@@ -130,6 +130,14 @@ def test_setup_leaves_the_log_alone_until_the_bot_writes(tmp_path, monkeypatch):
     assert "x: settings from" in lines[0] and lines[1].endswith("go Lobby")
 
 
+def test_setting_up_again_keeps_only_the_last_setups_lines(tmp_path, monkeypatch):
+    folder = make(tmp_path / "bot", '[bot]\nname = "x"\n')
+    monkeypatch.setattr(log, "_waiting", [])
+    for _ in range(3):  # the service's action player and recorder set the bot up for each run
+        setup(Settings(), "0.2.0", start=folder)
+    assert len(log._waiting) == 1 and "x: settings from" in log._waiting[0]
+
+
 def test_setup_without_a_manifest_changes_nothing(tmp_path):
     mine = Settings()
     assert setup(mine, "0.2.0", start=tmp_path) is None

@@ -272,6 +272,7 @@ def setup(settings: Settings, version: str, start: Path | None = None) -> Projec
         return None
     project = load(folder)
     changed = apply(project, settings)
+    log.forget_later()  # the service sets bots up again and again: only this setup's lines wait for the log
     log.later(f"{project.name}: settings from {folder / MANIFEST}: {', '.join(changed) or 'none'}")
     if project.darbit:
         matches = version_matches(version, project.darbit)

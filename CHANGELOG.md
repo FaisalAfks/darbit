@@ -11,6 +11,7 @@
 
 ### Fixed
 
+- The service's action player and recorder set a bot up for each run without piling up its held "settings from darbit.toml" lines: each setup keeps only its own
 - Only a running bot writes to its log: importing darbit in a bot's folder (its tests, `darbit status`) keeps the "settings from darbit.toml" line, and a version warning, until the bot writes its first line
 - `darbit bench --from-screens .` names the cases after the bot's folder instead of an empty name
 
