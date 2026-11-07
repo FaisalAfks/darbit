@@ -5,7 +5,25 @@ on:
   push:
     branches: [main]
 
+concurrency:  # a new push to a PR cancels its older run; runs on main always finish
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  package:  # what only used to break after merging: the docs site (strict: no broken links) and the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --locked --group docs
+      - run: uv run mkdocs build --strict
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+      - run: uv build --package darbit --out-dir dist
+
   python:
     runs-on: windows-latest
     steps:
@@ -13,6 +31,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
+          enable-cache: true
       - run: uv sync --locked --extra studio
       - run: uv run ruff check .
       - run: uv run ruff format --check .
@@ -30,6 +49,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
+          enable-cache: true
       - run: uv sync --locked --extra studio
       - run: uv run pytest
 
@@ -43,6 +63,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
+          enable-cache: true
       - run: uv sync --locked --extra studio
       - run: uv run pytest packages/darbit/tests/live -v -s
       - name: Highlight again at 150% display scaling (Qt's scale; the machine's own is 100%)
@@ -73,6 +94,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
+          enable-cache: true
       - run: uv sync --locked
       - run: uv run python bench/run.py --repeat 5 --json bench-results.json
       - uses: actions/upload-artifact@v7

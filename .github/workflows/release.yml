@@ -16,6 +16,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
+          enable-cache: true
       - run: uv sync --locked --extra studio
       - run: uv run pytest
       - run: uv build --package darbit --out-dir dist
