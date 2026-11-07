@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- `darbit bench`: the test bench as a command, so any bot can measure darbit's search on its own saved screens (`--from-screens` makes the cases from what darbit Studio saved). `--baseline` fails a run when a search gets more than `--slower` (2) times slower; CI checks the made-up cases against `bench/baseline.json`. darbit's CI no longer reads a private repo of game screens: a bot's screens stay with the bot (`bench/run.py` and `bench/from_screens.py` are gone)
+
 ### Changed
 
 - CI builds the docs site (strict: a broken link fails) and the wheel on every PR, so what used to break only after merging shows before; uv's cache in every job, and a new push to a PR cancels its older run. Two doc links that pointed outside the site go to GitHub

@@ -79,26 +79,21 @@ jobs:
           name: live-shots
           path: live-shots
 
-  bench:
+  bench:  # darbit's search on made-up screens: every answer right, and no search much slower than bench/baseline.json
     runs-on: windows-latest
-    env:
-      HAS_BENCH_TOKEN: ${{ secrets.BENCH_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
-        if: env.HAS_BENCH_TOKEN == 'true'
-        with:
-          repository: FaisalAfks/darbit-bench
-          token: ${{ secrets.BENCH_TOKEN }}
-          path: bench/private
       - uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --locked
-      - run: uv run python bench/run.py --repeat 5 --json bench-results.json
+      - run: uv run python bench/make_cases.py
+      - run: uv run darbit bench bench/cases --repeat 5 --options fast --baseline bench/baseline.json --json bench-results.json --save-baseline bench-baseline.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bench-results
-          path: bench-results.json
+          path: |
+            bench-results.json
+            bench-baseline.json
