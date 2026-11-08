@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.6 - 2026-11-08
+
 ### Fixed
 
 - `darbit bench`'s speed gate no longer fails on a slow CI runner: each search is judged by its fastest repeat instead of its median, and against the run's own speed (the median of every search's time over its baseline), so a machine that runs the whole job 2 times slower passes while one search much slower than the rest still fails. A whole run more than `--machine-slower` (3) times slower fails. Results and the table have the fastest time too, and `--save-baseline` writes it; darbit's bench/baseline.json holds CI's fastest times. Baselines saved before hold medians, which only makes the gate a little looser until they're saved again
