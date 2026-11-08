@@ -9,6 +9,7 @@ Item {
     id: body
     required property QtObject place
     default property alias content: pill.content
+    property alias drawer: pill.drawer  // what opens under the row, inside the pill (FloatingPill)
     property alias heading: head.data   // the floating card's first line, after its grip
     property alias card: cardBody.data  // the floating card's detail
     property alias below: under.data    // panels that open beside the pill, away from its edge
