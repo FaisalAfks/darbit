@@ -4,6 +4,7 @@
 
 ### New
 
+- Every pill over the game (the run pill, Capture's, Highlight's and the recorder's) can be dragged to any screen edge: a row on the top and bottom, a labelled column on the sides, snapping to each edge's centre, its corners or near the centre, and still hiding into its edge; dragged firmly into the middle it floats as a small card with more detail and Dock. While it's dragged it tilts, takes the shape it will have, and the edge it goes to lights up with its snap places. Each pill keeps its place for next time, per screen, with display scaling
 - Capture's arrows and Ctrl+arrows speed up while held: a press still moves or resizes exactly 1 px (Shift: 10), and after about half a second of holding it goes faster, up to a top speed, until the key is let go
 - Capture resizes the image or region picked by dragging any of its edges or corners, like cropping: the cursor shows which way, the readouts and the magnifier follow, and Ctrl+Z takes a drag back
 

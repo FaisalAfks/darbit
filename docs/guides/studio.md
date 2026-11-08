@@ -49,7 +49,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   it shows it on the screen, or share the region just drawn under a name of its own; every image in it moves with it)
   or in **Its own** region. A save closes Capture when nothing is left to take. Click a readout to type exact
   numbers; **Ctrl+Z** and **Ctrl+Y** undo and redo. The pill slides out of sight a few seconds after the mouse leaves
-  it: move the mouse to the top edge to bring it back. A retake keeps the target's region and location; hold **C** to
+  it: move the mouse to its edge to bring it back. Like every pill it can be moved (see **Moving a pill**). A retake keeps the target's region and location; hold **C** to
   see the saved image over the new one. A magnifier follows the mouse with the shot's own pixels (8×; Ctrl+wheel from
   2× to 24×), the target's parts and the place and colour of the pixel under it; **Z** pins it. **T** tests the image
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
@@ -57,8 +57,17 @@ sight. A phone gets it too when `notify.toml` has a channel.
   **Enter** saves; **Esc** removes what's picked, then closes. With a setup guide, the next one to take is shown.
 - **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
-  it, it slides up and leaves a sliver; move the mouse to that edge to bring it back (the bot's own moves don't). The
+  it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
+  don't). Floating, it shows where the bot is, today's round so far and the last step that ended. The
   bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.
+- **Moving a pill:** every pill over the game (the run pill, Capture's, Highlight's and the recorder's) starts at the
+  top centre and can be dragged by its grip (⠿) or any empty part of it. On the top and bottom edges it's a row, on the
+  left and right a column with its buttons labelled; it snaps to an edge's centre, its corners or near the centre on
+  either side. While it's dragged it tilts and sways a little, takes the shape it will have, and the nearest edge lights
+  up with a circle at each snap place (filled: where it goes). Dragged past the dashed line into the middle, it floats:
+  a small card with more detail, always shown, with **Dock** to put it back on its edge (dragging it to an edge docks it
+  too). Each pill keeps its place for next time. With several screens it can go on any of them, but not on an edge one
+  screen shares with another, where it couldn't hide.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
 - **Highlight** (Highlight on screen in the Library's side panel for an image, or Ctrl+Alt+H with the game in front
@@ -66,13 +75,13 @@ sight. A phone gets it too when `notify.toml` has a channel.
   gets its box and score over the game, a couple of
   times a second; one just under what it needs gets a faint one. Images found on the same spot are marked ⚠ with
   the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to the
-  game. Its pill at the top, like the run pill, says how many are found, how long a pass takes and any look-alikes,
+  game. Its pill, like the run pill, says how many are found, how long a pass takes and any look-alikes,
   with ✕ to hide Highlight and ⤢ to go back to the Studio; it slides away when the mouse leaves it. Ctrl+Alt+H again
   hides it too.
 
   ![Highlight](../ui/images/qt-studio-highlight.png)
-- **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill at the top of the
-  screen shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
+- **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill on the screen's edge
+  shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
   **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for an image or until it's gone (Capture opens on that
   moment to take it), or a wait. ⚑ (Ctrl+Alt+K) is a checkpoint: what came before becomes its own action. ≡ shows the
   steps; ✕ throws the recording away. Clicks on the pill aren't recorded.

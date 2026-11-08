@@ -1,8 +1,9 @@
 // Capture: the frozen screen, full screen. A target is an image, the region it's searched in and the location to
 // click, made together. The kind chosen in the pill (1, 2, 3 or Tab) is what a click or drag makes and what the handles
 // and arrows change: click to box an image or region (again for bigger, right-click smaller) or drag one, drag its edges
-// and corners to resize it, click the location. The pill sits at the top and slides out of sight a few seconds after
-// the mouse leaves it; the top edge brings it back. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves.
+// and corners to resize it, click the location. The pill is the shared one (PillBody): docked on an edge it slides
+// out of sight a few seconds after the mouse leaves it and the edge brings it back; it can be dragged to another edge
+// or into the middle to float. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -39,7 +40,9 @@ Window {
     property real similarity: 0.9        // after Test: matches under it fade
     property string note: ""
     property bool noteBad: false
-    property bool tucked: false          // the pill slid up out of sight
+    // the pill slid out of sight past its edge (captureHiding, hiding.py; never while floating or dragged)
+    readonly property bool tucked: captureHiding.tucked && !capturePlace.floating && !capturePlace.dragging
+    readonly property bool stacked: pillZone.form !== "row"  // the pill is a column (a side edge) or floating
     property bool comparing: false       // C held: the saved image over the new one
     property bool gliding: false         // a click stepped to a bigger or smaller box: it glides there
     readonly property real scale: Math.min(width / Math.max(1, capture.shotWidth), height / Math.max(1, capture.shotHeight))
@@ -263,22 +266,17 @@ Window {
     Timer { id: closing; interval: studio.effects ? 520 : 0; onTriggered: capture.close() }
 
     // ---- the pill's hiding, and its messages fading
-    function showPill() { tucked = false; tuckTimer.restart() }
-    Timer { id: tuckTimer; interval: 3000; onTriggered: shotWindow.tucked = true }
+    function showPill() { captureHiding.show() }
     Timer { id: noteTimer; interval: 5000; onTriggered: shotWindow.note = "" }
 
     Item {
         id: stage
         anchors.fill: parent
         focus: true
-        // the mouse at `p` (stage pixels): the magnifier follows it, and the pill comes back at the top edge. Called by
+        // the mouse at `p` (stage pixels): the magnifier follows it, and the pill comes back at its edge. Called by
         // the hover handler and by the drawing area, which takes the mouse from it while pressed and after a click
         function follow(p) {
-            // the pill: the top edge brings it back; away from it, it slides out of sight after a few seconds
-            var near = p.y <= pillZone.y + pillZone.height + 24 && p.x >= pillZone.x - 24 && p.x <= pillZone.x + pillZone.width + 24
-            if (shotWindow.tucked) { if (p.y <= 2) shotWindow.showPill() }
-            else if (near) tuckTimer.stop()
-            else if (!tuckTimer.running) tuckTimer.start()
+            captureHiding.moveTo(Math.round(p.x), Math.round(p.y))
             if (magnifier.pinned) return
             magnifier.hoverPoint = Qt.point(p.x, p.y)
             // the pixel the mouse is on, not the nearest corner
@@ -652,11 +650,13 @@ Window {
             }
         }
 
-        // the guide's next image, top right; it slides away with the pill
+        // the guide's next image, top right (top left with the pill on the right edge), under the pill when that's
+        // in its way; it slides away with the pill
         Rectangle {
             visible: shotWindow.current !== null
-            anchors.right: parent.right; anchors.rightMargin: 24
-            y: shotWindow.tucked ? -height - 10 : 24
+            x: pillZone.side === "right" ? 24 : parent.width - width - 24
+            readonly property bool underPill: pillZone.side === "top" && pillZone.shownX + pillZone.width > x && pillZone.shownX < x + width
+            y: shotWindow.tucked ? -height - 10 : underPill ? pillZone.shownY + pillZone.height + 12 : 24
             Behavior on y { NumberAnimation { duration: studio.effects ? 200 : 0; easing.type: Easing.OutCubic } }
             width: 380; height: guide.implicitHeight + 32; radius: 16
             color: shotWindow.solid; border.color: studio.colors.line
@@ -757,25 +757,76 @@ Window {
             }
         }
 
-        // ---- the pill, top centre: the name, the kind being made, undo and redo, Test, Save; under it, a message
-        // for a few seconds. It slides out of sight and comes back at the top edge.
-        Item {
+        // ---- the pill (the shared one, on an edge or floating): the name, the kind being made, undo and redo, Test,
+        // Save; by it, a message for a few seconds. While it's dragged the guide shows where it can go.
+        PillGuide { anchors.fill: parent; place: capturePlace }
+        PillBody {
             id: pillZone
-            width: pill.width
-            height: pill.height + (under.visible ? 10 + under.height : 0)
-            x: (stage.width - width) / 2
-            y: shotWindow.tucked ? -height - 20 : 14
-            Behavior on y { NumberAnimation { duration: studio.effects ? 200 : 0; easing.type: Easing.OutCubic } }
-            HoverHandler { onHoveredChanged: if (hovered) tuckTimer.stop() }
+            place: capturePlace
+            cardWidth: 300
+            property point held: Qt.point(0, 0)
+            property real grabX: 0.5
+            property real grabY: 0.5
+            readonly property var spot: { capturePlace.screen; capturePlace.edge; return capturePlace.spotFor(face.width, face.height) }
+            readonly property real shownX: spot.x - faceX
+            readonly property real shownY: spot.y - faceY
+            x: capturePlace.dragging ? held.x - faceX - grabX * face.width
+                : shotWindow.tucked && side === "left" ? -width - 20
+                : shotWindow.tucked && side === "right" ? stage.width + 20
+                : shownX
+            y: capturePlace.dragging ? held.y - faceY - grabY * face.height
+                : shotWindow.tucked && side === "top" ? -height - 20
+                : shotWindow.tucked && side === "bottom" ? stage.height + 20
+                : shownY
+            Behavior on x { enabled: !capturePlace.dragging; NumberAnimation { duration: studio.effects ? 200 : 0; easing.type: Easing.OutCubic } }
+            Behavior on y { enabled: !capturePlace.dragging; NumberAnimation { duration: studio.effects ? 200 : 0; easing.type: Easing.OutCubic } }
+            onShownXChanged: report()
+            onShownYChanged: report()
+            onWidthChanged: report()
+            onHeightChanged: report()
+            onFormChanged: capturePlace.setSize(form, face.width, face.height)
+            // where it shows, stretched to its edge, for its hiding to watch the mouse around
+            function report() {
+                var left = shownX, top = shownY, right = shownX + width, bottom = shownY + height
+                if (side === "top") top = 0
+                else if (side === "bottom") bottom = stage.height
+                else if (side === "left") left = 0
+                else if (side === "right") right = stage.width
+                captureHiding.setPlace(Math.round(left), Math.round(top), Math.round(right - left), Math.round(bottom - top), side)
+            }
+            Connections {
+                target: stage
+                function onWidthChanged() { capturePlace.useArea(0, 0, stage.width, stage.height) }
+                function onHeightChanged() { capturePlace.useArea(0, 0, stage.width, stage.height) }
+            }
+            Component.onCompleted: capturePlace.useArea(0, 0, stage.width, stage.height)
+            Connections {
+                target: capturePlace
+                function onChanged() { captureHiding.hold(capturePlace.floating || capturePlace.dragging); pillZone.report() }
+            }
+            onPressed: shotWindow.showPill()
+            onGrabbed: function (gx, gy) {
+                var at = face.mapFromGlobal(gx, gy)
+                grabX = Math.max(0, Math.min(1, at.x / face.width))
+                grabY = Math.max(0, Math.min(1, at.y / face.height))
+                held = stage.mapFromGlobal(gx, gy)
+                capturePlace.setSize(form, face.width, face.height)
+                capturePlace.begin(held.x, held.y)
+            }
+            onMoved: function (gx, gy) { held = stage.mapFromGlobal(gx, gy); capturePlace.move(held.x, held.y) }
+            onDropped: capturePlace.end()
 
-            FloatingPill {
-                id: pill
+            heading: [
+                Text { text: "Capture"; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold },
+                Item { Layout.fillWidth: true }
+            ]
+
                 Field {
                     id: nameField
                     objectName: "nameField"
                     round: true
                     placeholderText: "Name, e.g. Menu.Start"
-                    Layout.preferredWidth: 210; Layout.preferredHeight: 40
+                    Layout.preferredWidth: shotWindow.stacked ? 190 : 210; Layout.preferredHeight: 40
                     leftPadding: 16
                     font.pixelSize: 14; font.weight: Font.DemiBold
                     onAccepted: shotWindow.save()
@@ -787,6 +838,7 @@ Window {
                 // the kind being made: a ✓ on each the target has
                 Segmented {
                     itemHeight: 32
+                    vertical: shotWindow.stacked; columnWidth: 182
                     current: shotWindow.tool
                     model: [
                         { key: "image", label: "Image", icon: "▣", count: shotWindow.image ? "✓" : undefined },
@@ -799,6 +851,7 @@ Window {
                 Segmented {
                     visible: shotWindow.tool === "region" && !!shotWindow.image
                     itemHeight: 32; strong: false
+                    vertical: shotWindow.stacked; columnWidth: 182
                     current: shotWindow.searchIn
                     model: [
                         { key: "screen", label: "Whole screen" },
@@ -807,23 +860,30 @@ Window {
                     ]
                     onPicked: function (key) { shotWindow.searchOn(key); stage.forceActiveFocus() }
                 }
-                IconButton {
-                    glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"
+                PillAction {
+                    labelled: shotWindow.stacked
+                    glyph: "⌫"; label: "Remove"; tip: "Remove the " + shotWindow.tool + " (Delete)"
                     enabled: !!shotWindow.partOf(shotWindow.tool)
                     onClicked: { shotWindow.drop(shotWindow.tool); stage.forceActiveFocus() }
                 }
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 24; color: studio.colors.line }
-                IconButton { glyph: "↶"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
-                IconButton { glyph: "↷"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
-                Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: 24; color: studio.colors.line }
-                PillButton { small: true; icon: "⌕"; text: "Test"; enabled: !!shotWindow.image; onClicked: shotWindow.test() }
-                IconButton { glyph: "✕"; tip: "Close (Esc)"; onClicked: capture.close() }
-                PillButton { kind: "primary"; small: true; text: "Save"; onClicked: shotWindow.save() }
-            }
-            Column {
+                Rectangle {
+                    Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
+                    color: studio.colors.line
+                }
+                PillAction { labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
+                PillAction { labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
+                Rectangle {
+                    Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
+                    color: studio.colors.line
+                }
+                PillButton { small: true; icon: "⌕"; text: "Test"; Layout.fillWidth: shotWindow.stacked; enabled: !!shotWindow.image; onClicked: shotWindow.test() }
+                PillAction { labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
+                PillButton { kind: "primary"; small: true; text: "Save"; Layout.fillWidth: shotWindow.stacked; onClicked: shotWindow.save() }
+
+            below: Column {
                 id: under
                 visible: shotWindow.note !== "" || shotWindow.matches.length > 0 || shotWindow.regionsOpen
-                anchors { horizontalCenter: pill.horizontalCenter; top: pill.bottom; topMargin: 10 }
+                width: parent.width
                 spacing: 8
                 Rectangle {  // the bot's regions to search this image in
                     id: regionMenu
