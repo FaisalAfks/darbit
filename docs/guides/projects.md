@@ -165,6 +165,14 @@ way back is lost, it calls `recover` as before. It goes back once per run of fai
 `recover`, lets the next failure go back again. The Results page counts each go-back as "back to Menu", apart from
 the restarts. `screens=` takes another `d.Map()` instead of `d.screens`.
 
+The way back waits as long as `d.go` does for each screen (`settings.timeout`), including for finding where the
+game is. When nothing on the map shows (a loading screen, the game closed), that's the whole timeout before
+`recover`. `back_timeout=` waits less, so a bot that's clearly lost restarts sooner:
+
+```python
+d.keep_trying("Daily quest", attempt, recover=restart_the_game, how="restart", back_to="Menu", back_timeout=10)
+```
+
 ## Mistakes
 
 An unknown table or key, a missing `[bot] name`, or a setting of the wrong type (`timeout = "long"`) stops `import darbit` with a message naming the key. A `darbit = ...` that isn't plain comparisons (`>=0.3,<0.4`) gives a warning.

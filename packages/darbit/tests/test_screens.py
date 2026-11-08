@@ -133,3 +133,28 @@ def test_keep_trying_recovers_when_the_way_back_is_lost(game, world, monkeypatch
 
         assert d.keep_trying("Shop", attempt, recover=lambda: None, how="rejoin", back_to="Lobby", screens=world)
     assert events == ["rejoin"]
+
+
+def test_keep_trying_waits_back_timeout_for_the_way_back(game, world, monkeypatch):
+    import time
+
+    monkeypatch.setattr(d.settings, "timeout", 1.0)
+    unknown = np.zeros((500, 800, 3), np.uint8)
+
+    def lost_for(back_timeout):
+        tries = []
+
+        def attempt():
+            tries.append(1)
+            if len(tries) == 1:
+                raise d.Failed("lost")
+
+        started = time.monotonic()
+        with FakeGame({**game, "Nowhere": unknown}, start="Nowhere"):
+            d.keep_trying(
+                "Shop", attempt, recover=lambda: None, back_to="Lobby", screens=world, back_timeout=back_timeout
+            )
+        return time.monotonic() - started
+
+    assert lost_for(0.05) < 0.5
+    assert lost_for(None) >= 1.0  # control: without it the way back waits the whole settings.timeout

@@ -76,7 +76,7 @@ class FakeMap:
         self.gone = []
         self.muted = []
 
-    def go(self, end):
+    def go(self, end, timeout=None):
         self.gone.append(end)
         self.muted.append(safety._muted > 0)
         return self.answers.pop(0)
