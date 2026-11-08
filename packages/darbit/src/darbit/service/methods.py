@@ -57,10 +57,6 @@ def _actions(params: dict) -> object:
     return actions_api.listing(Path(params["path"]))
 
 
-def _action_play(params: dict) -> object:
-    return actions_api.play(Path(params["path"]), str(params.get("name", "")), bool(params.get("stepping", False)))
-
-
 def _action_read(params: dict) -> object:
     return actions_api.read(Path(params["path"]), str(params.get("name", "")))
 
@@ -112,7 +108,8 @@ METHODS: dict[str, Method] = {
     "bot.status": Method(_bot_status, "one bot: name, version, running, paused or stopped"),
     "bot.start": Method(
         hub.project_run,
-        "start a bot in its own process; refused (input_bot_running) while another input bot runs, unless `replace`",
+        "start a bot in its own process; refused (input_bot_running) while another input bot or an action plays, "
+        "unless `replace`",
     ),
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),
     "bot.doctor": Method(hub.project_doctor, "darbit doctor's checks: is the bot ready to start"),
@@ -130,7 +127,11 @@ METHODS: dict[str, Method] = {
     "bot.actions": Method(_actions, "the bot's actions: steps, sections and which actions use each"),
     "bot.action.read": Method(_action_read, "an action's sections and steps, each with its line (`name`)"),
     "bot.action.save": Method(_action_save, "write an action from its `sections` (`name`); its lines come back new"),
-    "bot.action.play": Method(_action_play, "play an action (`name`) in the service; `stepping` stops at each line"),
+    "bot.action.play": Method(
+        hub.action_play,
+        "play an action (`name`) in the service; `stepping` stops at each line; refused (input_bot_running) while an "
+        "input bot runs, unless `replace`",
+    ),
     "bot.action.stop": Method(_action_stop, "stop the action playing"),
     "bot.action.resume": Method(_action_resume, "go on from a breakpoint or a step"),
     "bot.action.step": Method(_action_step, "run one line of the action playing, then stop again"),

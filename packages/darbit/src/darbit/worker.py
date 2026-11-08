@@ -3,7 +3,7 @@
 darbit Studio starts it (`python -m darbit.worker`) and talks to it over its stdin and stdout with darbit's messages
 (service/protocol.py): requests and replies, and `record.tick` events while recording. The work is
 server/record_api.py's. Bots play their tapes in their own process, which has nothing else running either.
-See the rebuild plan, section 5.
+Recording is refused while the service runs a bot that sends input (decision 0020). See the rebuild plan, section 5.
 """
 
 import sys
@@ -14,13 +14,20 @@ from typing import BinaryIO
 
 from . import events
 from .server import record_api
+from .server.refusal import InputBotRunning
+from .service import alongside
 from .service.protocol import Event, ProtocolError, Reply, Request, decode, encode
 
 _area: list[tuple[int, int, int, int] | None] = [None]  # the recorder's pill on screen: its clicks aren't recorded
 
 
 def _start(params: dict) -> object:
-    return record_api.start(Path(str(params["path"])), str(params["name"]), bool(params.get("replace", False)))
+    """Start recording, unless a bot is clicking and typing: the two would fight over the cursor and the focus."""
+    name = str(params["name"])
+    others = alongside.input_bots()
+    if others:
+        raise InputBotRunning(f"record {name}", others, replace=False)
+    return record_api.start(Path(str(params["path"])), name, bool(params.get("replace", False)))
 
 
 def _check(params: dict) -> object:
@@ -91,6 +98,8 @@ def _answer(request: Request) -> Reply:
         return Reply(request.id, error=f"no method called {request.method}")
     try:
         return Reply(request.id, method(request.params))
+    except InputBotRunning as error:
+        return Reply(request.id, error=str(error), code=error.code, detail=error.detail())
     except (ValueError, KeyError, OSError, RuntimeError) as error:  # RuntimeError: no listener on this system
         return Reply(request.id, error=str(error) or type(error).__name__)
 

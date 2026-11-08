@@ -4,7 +4,8 @@ Bots are the installed ones in %LOCALAPPDATA%\\darbit\\bots plus any project fol
 the Studio is its own process (its entry, in its environment), stopped and paused through a control folder
 the bot's darbit watches (platform/safety.py), so held keys are always let go. While a bot runs, its run
 report is watched and every change goes to the windows as `project.changed`. One bot that sends input runs at a
-time (decision 0020): starting a second is refused unless it replaces the first. See docs/archive/tasks/T20-hub.md.
+time (decision 0020): starting a second, or playing an action next to one, is refused unless it replaces the
+first. See docs/archive/tasks/T20-hub.md.
 """
 
 import os
@@ -23,6 +24,7 @@ from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
 from . import dashboard, history, library, results, ui_settings
 from .events import publish
+from .refusal import InputBotRunning
 
 ADDED = "studio.projects"  # ui setting: project folders added by hand
 WATCH_EVERY = 2.0  # seconds between looks at a running bot's report
@@ -87,23 +89,7 @@ def _adopt(folder: Path) -> Run | None:
 
 
 _lock = threading.Lock()
-_start_lock = threading.Lock()  # one start at a time, so two input bots can't both pass the check
-
-
-class InputBotRunning(ValueError):
-    """A start refused: another bot that uses the mouse and keys is running (decision 0020)."""
-
-    code = "input_bot_running"
-
-    def __init__(self, starting: str, running: list[dict]) -> None:
-        names = ", ".join(bot["name"] for bot in running)
-        super().__init__(
-            f"{names} is running and uses the mouse and keys too: stop it first, or start {starting} with replace"
-        )
-        self.running = running
-
-    def detail(self) -> dict:
-        return {"running": self.running}
+_start_lock = threading.Lock()  # one start or play at a time, so two that send input can't both pass the check
 
 
 # ---- finding bots
@@ -235,12 +221,19 @@ def bots_running(data: dict) -> list[dict]:
     return found
 
 
-def _input_bots_running(but: Path) -> list[dict]:
-    """The other bots running or paused that send input, taken-over runs included."""
+def _input_bots_running(but: Path | None) -> list[dict]:
+    """The bots running or paused that send input, taken-over runs included, but `but`; then the action playing in
+    the service, if one is: its bot's entry with `status` "playing" and its `action`."""
     found = []
     for bot in bots_running({}):
         if Path(bot["path"]) != but and bot.get("input", True):
             found.append(bot)
+    from . import actions_api  # it plays in this process; it doesn't know the bots
+
+    playing = actions_api.playing()
+    if playing is not None:
+        folder, action = playing
+        found.append({**describe(folder), "status": "playing", "input": True, "action": action})
     return found
 
 
@@ -259,19 +252,43 @@ def project_run(data: dict) -> dict:
             raise ValueError(f"{folder.name} is already running")
         project = load(folder)
         if project.input:
-            _make_room(project, bool(data.get("replace", False)))
+            _make_room(f"start {project.name}", project.folder, bool(data.get("replace", False)))
         return _start(folder, project)
 
 
-def _make_room(project: Project, replace: bool) -> None:
-    """Refuse to start an input bot while another runs, or stop the others when it replaces them."""
-    others = _input_bots_running(project.folder)
+def action_play(data: dict) -> dict:
+    """Play one of a bot's actions (`name`) in this process. Its clicks and keys are input whatever the bot's [run]
+    input says, so it's refused while any input bot runs, its own included, unless `replace` stops that first."""
+    from . import actions_api
+
+    folder = _folder(data)
+    name = str(data.get("name", ""))
+    with _start_lock:
+        _make_room(f"play {name}", None, bool(data.get("replace", False)))
+        return actions_api.play(folder, name, bool(data.get("stepping", False)))
+
+
+def _make_room(starting: str, but: Path | None, replace: bool) -> None:
+    """Refuse to start something that sends input while another one runs, or stop the others when it replaces
+    them: bots as Stop does, an action playing as its Stop does."""
+    others = _input_bots_running(but)
     if not others:
         return
     if not replace:
-        raise InputBotRunning(project.name, others)
+        raise InputBotRunning(starting, others)
     for bot in others:
-        project_stop({"path": bot["path"]})
+        if "action" in bot:
+            _stop_action()
+        else:
+            project_stop({"path": bot["path"]})
+
+
+def _stop_action() -> None:
+    """Stop the action playing and wait for it to let go of every key."""
+    from . import actions_api
+
+    if not actions_api.stop_playing(STOP_WAIT):
+        raise ValueError("the action playing didn't stop in time: stop it from the Studio first")
 
 
 def _start(folder: Path, project: Project) -> dict:

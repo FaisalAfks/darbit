@@ -3,7 +3,8 @@
 A bot's actions are `actions/<name>.py` files (runs/flowfile.py). Play runs one in this process with the bot's
 darbit settings, so its target names resolve to the bot's pictures, and sends `action.line` as each line runs,
 `action.paused` at a breakpoint or step, and `action.ended` at the end. Breakpoints live in the bot's
-`.darbit/state/breakpoints.json`, never in the file.
+`.darbit/state/breakpoints.json`, never in the file. The service plays through hub.action_play, which keeps the
+one-input-bot rule (decision 0020).
 """
 
 import json
@@ -262,6 +263,24 @@ def play(project: Path, name: str, stepping: bool = False) -> dict:
     _player.stepping = stepping
     _player.start()
     return {"playing": True}
+
+
+def playing() -> tuple[Path, str] | None:
+    """The bot folder and name of the action playing, paused at a line included; None when none is."""
+    player = _player
+    if player is None or player.thread is None or not player.thread.is_alive():
+        return None
+    return player.project, player.name
+
+
+def stop_playing(wait: float) -> bool:
+    """Stop the action playing and wait until it has let go of every key; False if it's still going after `wait`."""
+    player = _player
+    if player is None or player.thread is None:
+        return True
+    player.stop()
+    player.thread.join(wait)
+    return not player.thread.is_alive()
 
 
 def control(what: str) -> dict:
