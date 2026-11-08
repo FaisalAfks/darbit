@@ -28,12 +28,12 @@ GridView {
     readonly property var empty: ({ index: -1, name: "", kind: "image", box: [0, 0, 1, 1], scoreText: "", scoreShort: "", scoreTone: "plain" })
     // the active one stays in sight as N steps through them
     onActiveChanged: { if (vertical) console.warn("DBG activeChanged", active, "cy", contentY, "count", count, "len", entries.length, "vis", visible); Qt.callLater(showActive) }
-    onContentYChanged: if (vertical) console.warn("DBG cy ->", contentY, "h", height, "ch", contentHeight, "count", count)
+    onContentYChanged: if (vertical) console.warn("DBG cy ->", contentY, "w", width, "cw", cellWidth, "oy", originY, "h", height, "ch", contentHeight, "count", count)
     onHeightChanged: if (vertical) console.warn("DBG h ->", height)
+    onWidthChanged: if (vertical) console.warn("DBG w ->", width, "cw", cellWidth, "ch", contentHeight)
     onCountChanged: if (vertical) console.warn("DBG count ->", count)
     function showActive() {
-        if (vertical) console.warn("DBG showActive active", active, "cy", contentY, "h", height, "ch", contentHeight, "count", count, "len", entries.length, "vis", visible, "idx", JSON.stringify(entries.map(function (e) { return e.index })))
-        forceLayout()
+        if (vertical) console.warn("DBG showActive active", active, "w", width, "cw", cellWidth, "oy", originY, "cy", contentY, "h", height, "ch", contentHeight, "count", count, "len", entries.length, "vis", visible, "idx", JSON.stringify(entries.map(function (e) { return e.index })))
         for (var at = 0; at < entries.length; at++) {
             if (entries[at].index === active) { positionViewAtIndex(at, GridView.Contain); break }
         }
