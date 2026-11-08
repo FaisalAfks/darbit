@@ -99,7 +99,12 @@ says which:
 [run]
 restart = 3     # 0 (the default) leaves a failed bot stopped
 keep_days = 30  # days of run history, run reports and daily logs kept (30 by default); older ones are deleted
+input = true    # the bot uses the mouse and keys (the default); false for one that only watches or reads
 ```
+
+Bots on one desktop share one mouse and keyboard, so the service runs one bot with `input = true` at a time; a bot
+with `input = false` runs alongside anything. See [the service](service.md#one-bot-that-sends-input-at-a-time). Each
+`[run]` key is checked, so a bot that sets `input` needs a darbit newer than 1.0.0-alpha.6.
 
 The service tidies when it starts and every six hours. Screenshots keep the newest few hundred whatever their age.
 

@@ -3,7 +3,8 @@
 Bots are the installed ones in %LOCALAPPDATA%\\darbit\\bots plus any project folder added by hand. A bot run from
 the Studio is its own process (its entry, in its environment), stopped and paused through a control folder
 the bot's darbit watches (platform/safety.py), so held keys are always let go. While a bot runs, its run
-report is watched and every change goes to the windows as `project.changed`. See docs/archive/tasks/T20-hub.md.
+report is watched and every change goes to the windows as `project.changed`. One bot that sends input runs at a
+time (decision 0020): starting a second is refused unless it replaces the first. See docs/archive/tasks/T20-hub.md.
 """
 
 import os
@@ -86,6 +87,23 @@ def _adopt(folder: Path) -> Run | None:
 
 
 _lock = threading.Lock()
+_start_lock = threading.Lock()  # one start at a time, so two input bots can't both pass the check
+
+
+class InputBotRunning(ValueError):
+    """A start refused: another bot that uses the mouse and keys is running (decision 0020)."""
+
+    code = "input_bot_running"
+
+    def __init__(self, starting: str, running: list[dict]) -> None:
+        names = ", ".join(bot["name"] for bot in running)
+        super().__init__(
+            f"{names} is running and uses the mouse and keys too: stop it first, or start {starting} with replace"
+        )
+        self.running = running
+
+    def detail(self) -> dict:
+        return {"running": self.running}
 
 
 # ---- finding bots
@@ -122,7 +140,7 @@ def describe(folder: Path) -> dict:
     try:
         project = load(folder)
     except ProjectError as error:
-        return {"path": str(folder), "name": folder.name, "error": str(error), "status": "broken"}
+        return {"path": str(folder), "name": folder.name, "error": str(error), "status": "broken", "input": True}
     installed = folder.parent == paths.bots_dir()
     return {
         "path": str(folder),
@@ -133,6 +151,7 @@ def describe(folder: Path) -> dict:
         "installed": installed,
         "status": status(folder),
         "since": _started(folder),
+        "input": project.input,
     }
 
 
@@ -199,6 +218,32 @@ def running() -> list[Path]:
     return found
 
 
+def sends_input(folder: Path) -> bool:
+    """Whether the bot uses the mouse and keys: its [run] input, true unless it says otherwise."""
+    try:
+        return load(folder).input
+    except (ProjectError, OSError):
+        return True  # a bot that can't be read is taken to send input
+
+
+def bots_running(data: dict) -> list[dict]:
+    """Every bot running or paused, each with whether it sends input."""
+    found = []
+    for folder in project_folders():
+        if status(folder) != "stopped":
+            found.append(describe(folder))
+    return found
+
+
+def _input_bots_running(but: Path) -> list[dict]:
+    """The other bots running or paused that send input, taken-over runs included."""
+    found = []
+    for bot in bots_running({}):
+        if Path(bot["path"]) != but and bot.get("input", True):
+            found.append(bot)
+    return found
+
+
 def stop_all() -> None:
     """Stop every bot this Studio started (quitting darbit)."""
     for folder in running():
@@ -206,11 +251,30 @@ def stop_all() -> None:
 
 
 def project_run(data: dict) -> dict:
-    """Start a bot as its own process, in its environment, with the Studio's control folder."""
+    """Start a bot as its own process, in its environment, with the Studio's control folder. A bot that sends input
+    is refused while another one runs (InputBotRunning), unless `replace` stops that one first."""
     folder = _folder(data)
-    if status(folder) != "stopped":
-        raise ValueError(f"{folder.name} is already running")
-    project = load(folder)
+    with _start_lock:
+        if status(folder) != "stopped":
+            raise ValueError(f"{folder.name} is already running")
+        project = load(folder)
+        if project.input:
+            _make_room(project, bool(data.get("replace", False)))
+        return _start(folder, project)
+
+
+def _make_room(project: Project, replace: bool) -> None:
+    """Refuse to start an input bot while another runs, or stop the others when it replaces them."""
+    others = _input_bots_running(project.folder)
+    if not others:
+        return
+    if not replace:
+        raise InputBotRunning(project.name, others)
+    for bot in others:
+        project_stop({"path": bot["path"]})
+
+
+def _start(folder: Path, project: Project) -> dict:
     control = control_dir(folder)
     control.mkdir(parents=True, exist_ok=True)
     for name in ("stop", "pause"):

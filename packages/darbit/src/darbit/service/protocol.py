@@ -5,14 +5,14 @@ with a reply carrying the same id, and sends events (a bot started, a report lin
 
     {"type": "hello", "token": "...", "client": "darbit cli", "version": 1}
     {"type": "request", "id": 1, "method": "bots.list", "params": {}}
-    {"type": "reply", "id": 1, "result": [...]}                 # or "error": "..."
+    {"type": "reply", "id": 1, "result": [...]}                 # or "error": "...", maybe with "code" and "detail"
     {"type": "event", "topic": "bot.status", "data": {...}}
 
 Any language can speak it, so the Studio, a phone bridge, the VS Code extension or MCP use the same channel.
 """
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 
 VERSION = 1
 HOST = "127.0.0.1"
@@ -41,6 +41,8 @@ class Reply:
     id: int
     result: object = None
     error: str | None = None
+    code: str | None = None  # a refusal a client can act on, e.g. "input_bot_running"; sent only when set
+    detail: dict | None = None  # what goes with the code, e.g. {"running": [the bots in the way]}
 
 
 @dataclass
@@ -58,6 +60,10 @@ def encode(message: Message) -> bytes:
     """One line of JSON, ending in a line break."""
     data = {"type": NAMES[type(message)]}
     data.update(asdict(message))
+    if isinstance(message, Reply):
+        for name in ("code", "detail"):
+            if data[name] is None:
+                del data[name]  # a reply without them reads the same to an older client
     return (json.dumps(data, separators=(",", ":"), default=str) + "\n").encode("utf-8")
 
 
@@ -72,7 +78,9 @@ def decode(line: bytes | str) -> Message:
     kind = TYPES.get(str(data.pop("type", "")))
     if kind is None:
         raise ProtocolError("unknown message type")
+    known = {item.name for item in fields(kind)}
+    given = {name: value for name, value in data.items() if name in known}  # a newer service's fields are skipped
     try:
-        return kind(**data)
+        return kind(**given)
     except TypeError as error:
         raise ProtocolError(f"wrong fields: {error}") from error
