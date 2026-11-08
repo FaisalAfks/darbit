@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.13"
           enable-cache: true
-      - run: uv sync --locked --extra studio
+      - run: uv sync --locked --extra studio --extra ocr  # the ocr extra here: the tests with the real models run
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pre-commit run plain-python --all-files
@@ -87,7 +87,7 @@ jobs:
         with:
           python-version: "3.13"
           enable-cache: true
-      - run: uv sync --locked
+      - run: uv sync --locked --extra ocr  # the [[read]] cases need a reader
       - run: uv run python bench/make_cases.py
       - run: uv run darbit bench bench/cases --repeat 5 --options fast --baseline bench/baseline.json --json bench-results.json --save-baseline bench-baseline.json
       - uses: actions/upload-artifact@v7

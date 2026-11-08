@@ -8,6 +8,7 @@ if d.exists("run/enemies_left", 90):    # the Match, or None after 90 s
 d.press(*"54132")
 
 game = d.App("Game").window             # a Region: game.exists(...), game.click(...)
+coins = d.read_number("Shop.Coins")     # 4.99M on screen: 4990000.0 (the ocr extra)
 play = d.Pattern("Menu.Start").similar(0.85).offset(10, 0)
 """
 
@@ -52,6 +53,7 @@ from .runtime.config import config
 from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
+from .runtime.read import read, read_number, read_time
 from .runtime.region import Region, Screen, area, point
 from .runtime.retry import keep_trying
 from .runtime.screens import Map, go
@@ -146,6 +148,9 @@ __all__ = [
     "point",
     "press",
     "progress",
+    "read",
+    "read_number",
+    "read_time",
     "record",
     "release",
     "replay",

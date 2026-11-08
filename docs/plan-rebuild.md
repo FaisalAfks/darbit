@@ -182,7 +182,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 | `Listener` | Raw Input | pynput | real keys and mouse for the recorder and the run pill |
 | `Hotkeys` | RegisterHotKey | pynput | global shortcuts |
 | `Matcher` | template (default) | grayscale, downscaled first pass, multi-size, features | find a picture in pixels |
-| `Reader` | RapidOCR or Tesseract | | read text in an area |
+| `Reader` | RapidOCR (the `ocr` extra, [decision 0019](decisions/0019-reading-text.md)) | Windows OCR (#399) | read text in a region |
 
 **Plugins** add matchers, readers, tools and Studio panels through Python entry points (`darbit.matchers`, `darbit.readers`, `darbit.tools`).
 

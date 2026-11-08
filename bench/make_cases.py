@@ -65,6 +65,14 @@ def panel(image: np.ndarray, x: int, y: int, w: int, h: int) -> list[int]:
     return [x, y, w, h]
 
 
+def label(image: np.ndarray, x: int, y: int, text: str, scale: float) -> list[int]:
+    """Text as a game's counter or timer shows it, light on the backdrop; returns a box with room around it."""
+    size, baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, scale, 2)
+    cv2.putText(image, text, (x, y + size[1]), cv2.FONT_HERSHEY_DUPLEX, scale, (235, 235, 235), 2, cv2.LINE_AA)
+    room = 24  # a Region drawn loosely around the text, as one taken by hand would be
+    return [x - room, y - room, size[0] + 2 * room, size[1] + baseline + 2 * room]
+
+
 def menu_screen() -> tuple[np.ndarray, dict[str, list[int]]]:
     """The main made-up screen at 2560 x 1600, and the true box of everything on it."""
     rng = np.random.default_rng(SEED)
@@ -82,6 +90,11 @@ def menu_screen() -> tuple[np.ndarray, dict[str, list[int]]]:
         boxes[f"Char.{index}"] = icon(image, 520 + column * 300, 400 + row * 330, 180, SEED + index)
     # a look-alike of Claim: the same button with one letter different
     boxes["Menu.Clamp"] = button(image, 1400, 1200, 300, 100, "CLAMP", (40, 60, 210))
+    # counters and a timer above the panel, for the reads
+    boxes["Top.Coins"] = label(image, 80, 60, "4.99M", 1.0)
+    boxes["Top.Gems"] = label(image, 80, 150, "1,234", 0.8)
+    boxes["Top.Timer"] = label(image, 360, 60, "02:31", 1.0)
+    boxes["Top.Title"] = label(image, 360, 150, "Daily quest", 0.8)
     return image, boxes
 
 
@@ -98,6 +111,8 @@ def write_case(
     finds: list[dict],
     note: str,
     window: list[int] | None = None,
+    reads: list[dict] | None = None,
+    regions: dict[str, dict] | None = None,
 ) -> None:
     folder = HERE / name
     images = folder / "images"
@@ -108,6 +123,8 @@ def write_case(
         extra = settings.get(target_name)
         if extra:
             (images / f"{target_name}.json").write_text(json.dumps(extra, indent=2) + "\n", encoding="utf-8")
+    for region_name, fields in (regions or {}).items():
+        (images / f"{region_name}.json").write_text(json.dumps(fields, indent=2) + "\n", encoding="utf-8")
     lines = [f"# {note}", 'screen = "screen.png"', 'images = "images"']
     if window is not None:
         lines.append(f"window = {window}  # where the app's window is on this screen: x, y, width, height")
@@ -121,6 +138,11 @@ def write_case(
             lines.append("absent = true")
         if "option" in find:
             lines.append(f'option = "{find["option"]}"')
+        lines.append("")
+    for read in reads or []:
+        lines.append("[[read]]")
+        for key, value in read.items():
+            lines.append(f"{key} = {json.dumps(value)}")
         lines.append("")
     (folder / "case.toml").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
@@ -147,7 +169,26 @@ def main() -> None:
     finds = [{"target": name, "at": boxes[name]} for name in names]
     finds.append({"target": "Char.Missing"})
     finds.append({"target": "Char.ColourTwin", "option": "colour"})
-    write_case("menu-2560", screen, targets, settings, finds, "made-up menus at 2560 x 1600; every target taken here")
+    regions = {
+        "Top.Coins": {"kind": "region", "region": boxes["Top.Coins"], "text": "number"},
+        "Top.Timer": {"kind": "region", "region": boxes["Top.Timer"], "text": "time"},
+    }
+    reads = [
+        {"target": "Top.Coins", "number": 4990000},
+        {"target": "Top.Timer", "time": 151},
+        {"region": boxes["Top.Gems"], "number": 1234},
+        {"region": boxes["Top.Title"], "text": "Daily quest"},
+    ]
+    write_case(
+        "menu-2560",
+        screen,
+        targets,
+        settings,
+        finds,
+        "made-up menus at 2560 x 1600; every target taken here",
+        reads=reads,
+        regions=regions,
+    )
 
     scaled = cv2.resize(screen, (1920, 1200), interpolation=cv2.INTER_AREA)
     scaled_finds = []

@@ -4,7 +4,8 @@
     if menu.exists("Menu.Start", timeout=3):
         menu.click("Menu.Start")
 
-Each method is the module-level call (`d.exists`, `d.click`, ...) with `region=` set to this one.
+Each method is the module-level call (`d.exists`, `d.click`, ...) with `region=` set to this one; `read`,
+`read_number` and `read_time` read the text in it.
 """
 
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ from ..core import geometry
 from ..core.targets import Match
 from ..errors import TargetError
 from ..platform import screen
-from . import actions, find, observe
+from . import actions, find, observe, read
 from .actions import Spot
 from .find import What
 
@@ -64,6 +65,18 @@ class Region(geometry.Region):
     def drag(self, what: Spot, to: Spot, timeout: float | None = None) -> bool:
         """Drag from a spot found in this region to another spot (found anywhere)."""
         return actions.drag(what, to, timeout, self)
+
+    def read(self, chars: str | None = None) -> str | None:
+        """The text in this region (`d.read`); None if it can't be read."""
+        return read.read(self, chars)
+
+    def read_number(self) -> float | None:
+        """The number in this region (`d.read_number`): `4.99M` is 4990000.0."""
+        return read.read_number(self)
+
+    def read_time(self) -> float | None:
+        """The time in this region, in seconds (`d.read_time`): `02:31` is 151.0."""
+        return read.read_time(self)
 
     def observe(self, what: What, name: str | None = None) -> observe.Observer:
         """Watch this region for the target, and interrupt the script when it shows up."""

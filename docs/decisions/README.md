@@ -22,5 +22,6 @@ Architecture decision records: one short file per decision, with its context, th
 | [0016](0016-names-and-one-look.md) | Image, region, location; and one look for the Studio | 2026-11-02 |
 | [0017](0017-overview-blocks.md) | The Overview is blocks: the bot lays them out, the person arranges them | 2026-11-02 |
 | [0018](0018-darbit-and-its-bots.md) | What belongs in darbit, and what in a bot | 2026-11-05 |
+| [0019](0019-reading-text.md) | Reading text: RapidOCR as an optional extra, one line straight to the recogniser | 2026-11-08 |
 
 0001 to 0014 came from the [2026-10-25 plan](../archive/plan-2026-10-25.md); 0015 and later from the [rebuild plan](../plan-rebuild.md).

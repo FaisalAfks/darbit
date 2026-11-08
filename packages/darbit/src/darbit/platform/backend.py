@@ -3,7 +3,8 @@
     backend.screen().grab(region)       # the Screen piece of the system darbit runs on
 
 Pieces: Screen (pixels, monitors, scaling), Input (mouse and keys), Windows (finding and focusing apps), Listener
-(real keys and mouse, for the recorder), Hotkeys (global shortcuts) and System (staying awake, processes). Windows
+(real keys and mouse, for the recorder), Hotkeys (global shortcuts) and System (staying awake, processes); Reader
+(text in pixels) is the interface every text reader has. Windows
 is the only system so far; macOS and Linux come in milestone 6 of the rebuild plan. A system's modules are loaded
 the first time a piece is used, so `import darbit` works anywhere.
 """
@@ -19,6 +20,7 @@ from typing import Protocol
 import numpy as np
 
 from ..core.geometry import Region
+from ..core.reading import Reading
 
 
 class NotSupported(RuntimeError):
@@ -96,6 +98,14 @@ class System(Protocol):
     def site_packages(self, venv: Path) -> Path: ...
     def name_app(self, app_id: str) -> None: ...
     def add_shortcut(self, name: str, target: Path, arguments: str, icon: Path) -> list[Path]: ...
+
+
+class Reader(Protocol):
+    """Reads text in pixels (BGR), using only the `allowed` characters when given. Not a system piece: readers are
+    picked by settings.reader (runtime/readers.py), darbit's own is core/rapid.py."""
+
+    def line(self, pixels: np.ndarray, allowed: str | None) -> Reading: ...
+    def lines(self, pixels: np.ndarray, allowed: str | None) -> list[Reading]: ...
 
 
 # each piece's module, per system

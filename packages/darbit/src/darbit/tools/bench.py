@@ -10,7 +10,10 @@ A case is a folder with `case.toml`: the screen, the folder of its targets, the 
 give: `at = [x, y, w, h]`, or `absent = true`. A find with `option = "..."` only counts when that option is on
 (`"window|sizes"`: either). The option `window` is window space (settings.space), not a matching option. Each
 search goes through `d.exists`, with the screen grab and the scaling taken from the case, so it measures what a bot
-gets. Exits 1 when an answer is wrong, or when a search is over the baseline's speed by more than `--slower` times.
+gets. A `[[read]]` reads text in a `region = [x, y, w, h]` or a named `target`, and expects `text = "..."`,
+`number = 4990000` or `time = 151` (seconds), through `d.read`, `d.read_number` or `d.read_time`; without the ocr
+extra it counts as "needs ocr". `--options lines` (or upscale, invert, threshold) turns on a reading option. Exits 1 when an answer is wrong, or when a search is over the baseline's speed by more
+than `--slower` times.
 """
 
 import argparse
@@ -24,6 +27,7 @@ from pathlib import Path
 
 GOAL_IN_REGION = 10.0  # ms for one search inside a region (rebuild plan, section 9)
 GOAL_WHOLE_SCREEN = 40.0  # ms for one search of the whole screen
+GOAL_READ = 25.0  # ms for reading a short line, a number or a timer (decision 0019)
 OVERLAP = 0.5  # share of the expected box a match must cover (intersection over union) to be right
 SLOWER = 2.0  # how many times slower than its baseline a search may get before the bench fails
 NOISE_MS = 3.0  # differences smaller than this are timer noise, never a slowdown
@@ -33,7 +37,7 @@ NOISE_MS = 3.0  # differences smaller than this are timer noise, never a slowdow
 class Result:
     case: str
     target: str
-    answer: str  # right, missed, false match, wrong place, or "needs <option>"
+    answer: str  # right, missed, false match, wrong place, misread (a read), or "needs <option>"
     score: float | None
     median_ms: float
     worst_ms: float
@@ -69,6 +73,74 @@ def judge(match: object, item: dict) -> str:
         return "false match"
     box = [match.x, match.y, match.w, match.h]
     return "right" if overlap(box, expected) >= OVERLAP else "wrong place"
+
+
+READ_KINDS = ("text", "number", "time")  # what a [[read]] expects, and so which call reads it
+READ_OPTIONS = ("lines", "upscale", "invert", "threshold")  # --options that are reading options (core/reading.py)
+
+
+def judge_read(value: str | float | None, item: dict) -> str:
+    """right, missed or misread, for one read against what the case expects."""
+    if value is None:
+        return "missed"
+    for kind in READ_KINDS:
+        if kind not in item:
+            continue
+        expected = item[kind]
+        if kind == "text":
+            return "right" if value == expected else f"misread {value!r}"
+        return "right" if abs(float(value) - float(expected)) < 1e-6 else f"misread {value:g}"
+    raise SystemExit(f"a [[read]] needs text, number or time: {item}")
+
+
+def _read_once(item: dict) -> tuple[str | float | None, float | None]:
+    """One read as the case says, and the confidence darbit recorded for it."""
+    from ..core.geometry import Region
+    from ..events import listen
+    from ..runtime import read
+
+    seen: list[float] = []
+
+    def note(topic: str, data: dict) -> None:
+        fields = data.get("fields", {})
+        if topic == "record" and str(data.get("event", "")).startswith("read"):
+            seen.append(fields.get("confidence"))
+
+    where = item["target"] if "target" in item else Region(*item["region"])
+    stop = listen(note)
+    try:
+        if "number" in item:
+            value = read.read_number(where)
+        elif "time" in item:
+            value = read.read_time(where)
+        else:
+            value = read.read(where, item.get("chars"))
+    finally:
+        stop()
+    return value, seen[-1] if seen else None
+
+
+def run_reads(folder: Path, spec: dict, repeat: int) -> list[Result]:
+    """Read every `[[read]]` of one case `repeat` times (after one read that loads the reader) and judge it."""
+    from ..runtime import readers
+
+    results = []
+    for item in spec.get("read", []):
+        label = item.get("target") or "read " + ",".join(str(value) for value in item["region"])
+        if readers.current() is None:
+            results.append(Result(folder.name, label, "needs ocr", None, 0.0, 0.0, GOAL_READ, True))
+            continue
+        _read_once(item)
+        times = []
+        value, confidence = None, None
+        for _ in range(repeat):
+            started = time.perf_counter()
+            value, confidence = _read_once(item)
+            times.append((time.perf_counter() - started) * 1000)
+        score = None if confidence is None else round(confidence, 3)
+        answer = judge_read(value, item)
+        results.append(Result(folder.name, label, answer, score, statistics.median(times), max(times), GOAL_READ, True))
+    return results
 
 
 def cases_in(folders: list[Path]) -> list[Path]:
@@ -133,7 +205,8 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
         raise SystemExit(f"{folder}: can't read its screen")
     _use_case_screen(pixels, float(spec.get("scale", 1.0)))
     settings.images = [folder / spec.get("images", "images")]
-    settings.match = {name: True for name in options if name != "window"}
+    settings.match = {name: True for name in options if name != "window" and name not in READ_OPTIONS}
+    settings.read = {name: True for name in options if name in READ_OPTIONS}
     settings.log = False
     settings.space = "window" if "window" in options else "screen"
     settings.window = "Game" if spec.get("window") else None
@@ -157,6 +230,7 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
         results.append(
             Result(folder.name, name, judge(match, item), score, statistics.median(times), max(times), goal, in_region)
         )
+    results.extend(run_reads(folder, spec, repeat))
     return results
 
 
@@ -271,6 +345,9 @@ def main(argv: list[str] | None = None) -> int:
     over_goal = [result for result in counted if result.median_ms > result.goal_ms]
     print()
     print(f"{len(counted) - len(wrong)} of {len(counted)} right; {len(over_goal)} over their speed goal")
+    needs_ocr = [result for result in results if result.answer == "needs ocr"]
+    if needs_ocr:
+        print(f"{len(needs_ocr)} read(s) not run: they need the ocr extra (pip install darbit[ocr])")
     slow = []
     if args.baseline:
         slow = slower_than(results, json.loads(args.baseline.read_text(encoding="utf-8")), args.slower)
