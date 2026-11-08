@@ -303,6 +303,7 @@ ANSWERS["bot.library.screens"] = [
     {
         "screen": "Bag",
         "picture": "",
+        "shot": "C:/bots/ad-bot/screens/Bag.jpg",
         "w": 1600,
         "h": 900,
         "assets": {
@@ -1186,12 +1187,14 @@ def test_a_retake_on_a_failures_screenshot_opens_capture_on_the_main_screen_of_i
     shot[:, 400:] = 255  # the main screen's half
     path = tmp_path / "failed.png"
     cv2.imwrite(str(path), shot)
-    pixels, origin = studio_capture.shot_of_failure(path)
-    assert pixels.shape == (300, 400, 3) and pixels.min() == 255
-    assert origin == Region(0, 0, 400, 300)
-    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(0, 0, 400, 300))
-    assert studio_capture.shot_of_failure(path) is None  # the screens are laid out differently now
-    assert studio_capture.shot_of_failure(tmp_path / "gone.jpg") is None
+    found = studio_capture.saved_shot(path)
+    assert found.pixels.shape == (300, 400, 3) and found.pixels.min() == 255
+    assert found.origin == Region(0, 0, 400, 300) and not found.lossy
+    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(0, 0, 400, 400))
+    assert studio_capture.saved_shot(path) is None  # the screens are laid out differently now
+    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(-400, 0, 800, 300))
+    assert studio_capture.saved_shot(tmp_path / "gone.jpg") is None
+    pixels = found.pixels
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "fish-bot"\n', encoding="utf-8")
     capture = studio_capture.Capture(studio_capture.ShotProvider())
     capture.start(tmp_path, "one", "Rod.Cast", "image", shot=pixels, origin=Region(-400, 0, 400, 300))
@@ -1204,7 +1207,38 @@ def test_a_retake_on_a_failures_screenshot_opens_capture_on_the_main_screen_of_i
     wanted = []
     studio.captureOnShotWanted.connect(lambda *args: wanted.append(args))
     studio.retakeOn("Rod.Cast", "image", path.as_uri())
-    assert wanted == [("/bots/ad-bot", "Rod.Cast", "image", str(path).replace("\\", "/"))]
+    studio.retakeOn("Rod.Cast", "image", "C:/bots/ad-bot/screens/Rod.jpg")  # a path, from the Library or Scout
+    assert wanted == [
+        ("/bots/ad-bot", "Rod.Cast", "image", str(path).replace("\\", "/")),
+        ("/bots/ad-bot", "Rod.Cast", "image", "C:/bots/ad-bot/screens/Rod.jpg"),
+    ]
+
+
+def test_a_saved_shot_of_the_main_screen_is_used_as_it_is_and_a_lossless_twin_before_its_jpeg(
+    qt, tmp_path, monkeypatch
+):
+    import cv2
+    import numpy as np
+
+    from darbit.core.geometry import Region
+    from darbit.studio import capture as studio_capture
+
+    monkeypatch.setattr(studio_capture.screen, "desktop", lambda: Region(-400, 0, 800, 300))
+    monkeypatch.setattr(studio_capture.screen, "monitors", lambda: [Region(0, 0, 400, 300), Region(-400, 0, 400, 300)])
+    jpeg = tmp_path / "Menu.jpg"
+    cv2.imwrite(str(jpeg), np.full((300, 400, 3), 90, np.uint8))  # a screen's last shot: the main screen only
+    found = studio_capture.saved_shot(jpeg)
+    assert found.pixels.shape == (300, 400, 3) and found.lossy  # at its own pixels, and said to be softer
+    assert found.origin == Region(0, 0, 400, 300)
+    cv2.imwrite(str(tmp_path / "Menu.png"), np.full((300, 400, 3), 200, np.uint8))
+    found = studio_capture.saved_shot(jpeg)
+    assert not found.lossy and found.pixels.min() == 200  # the lossless one is used where there is one
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "fish-bot"\n', encoding="utf-8")
+    capture = studio_capture.Capture(studio_capture.ShotProvider())
+    capture.start(tmp_path, "one", "Rod.Cast", "image", shot=found.pixels, origin=found.origin, lossy=True)
+    assert "JPEG" in capture.property("shotNote")
+    capture.close()
+    assert capture.property("shotNote") == ""
 
 
 def test_the_bot_started_anywhere_hides_the_studio_but_one_already_running_doesnt(qt):
@@ -1398,6 +1432,15 @@ def test_the_library_shows_targets_where_they_sit_on_their_screen(qt):
     QMetaObject.invokeMethod(view, "picked", Q_ARG("QString", "Bag.Equip"), Q_ARG("QString", "image"))
     wait_until(lambda: page.property("chosen") == "Bag.Equip")
     assert not page.property("chosenIsAction")
+    # the side panel retakes it on the shot it was taken on, or on the screen now
+    on_shot = next(item for item in walk(window.contentItem()) if item.objectName() == "retakeOnSavedShot")
+    wait_until(on_shot.isVisible)
+    wanted = []
+    studio.captureOnShotWanted.connect(lambda *args: wanted.append(args))
+    QMetaObject.invokeMethod(on_shot, "clicked")
+    assert wanted == [("/bots/ad-bot", "Bag.Equip", "image", "C:/bots/ad-bot/screens/Bag.jpg")]
+    page.setProperty("showScreens", False)  # the grid has no saved shot to offer
+    wait_until(lambda: not on_shot.isVisible())
     del engine
 
 

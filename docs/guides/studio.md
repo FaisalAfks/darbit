@@ -34,7 +34,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
-  place (a new shot of a screen starts it over); click one for the side panel.
+  place (a new shot of a screen starts it over); click one for the side panel, where **Retake on this shot** opens
+  Capture on that shot instead of the screen now.
 
   ![The Library](../ui/images/qt-studio-library.png)
 - **Kinds of target.** Each target's settings file names its kind: an **image** (searched in its region, the whole
@@ -55,6 +56,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
   how many look-alikes score under the line, with each match's score and a slider for the similarity it needs.
   **Enter** saves; **Esc** removes what's picked, then closes. With a setup guide, the next one to take is shown.
+  A retake can also open on a saved screenshot (a failure's on Results, a screen's last shot in the Library): the
+  image is cut from it at its own pixels, and Capture says so; saved shots are JPEG, so it's a little softer than one
+  from the screen now.
 - **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves

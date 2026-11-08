@@ -4,6 +4,8 @@ The work is capture/service.py's; this hands it to QML. The shot never leaves th
 it through an image provider (`image://capture/shot`), so a 4K screen isn't copied anywhere.
 """
 
+import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
@@ -17,23 +19,53 @@ from ..core.geometry import Region
 from ..platform import screen
 from ..project.manifest import load
 
+LOSSLESS = (".png", ".bmp")
 
-def shot_of_failure(path: Path) -> tuple[np.ndarray, Region] | None:
-    """A bot's screenshot (the whole desktop) cut to the main screen, as Capture works on it, and where that sits.
-    None when it can't be read or the screens aren't laid out as they were when it was taken."""
+
+@dataclass
+class SavedShot:
+    """A saved screenshot cut to the main screen, as Capture works on it: its pixels, where they sat on the desktop,
+    and whether they went through JPEG (a little softer than the screen)."""
+
+    pixels: np.ndarray
+    origin: Region
+    lossy: bool
+    shot_id: str = ""  # a screen's last shot from Capture names its shot, so the boxes placed on it stay
+
+
+def shot_id_beside(path: Path) -> str:
+    """The shot a screen's last shot is (its .json beside it, from Capture), or "" for any other screenshot."""
+    try:
+        places = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    return str(places.get("shot", "")) if isinstance(places, dict) else ""
+
+
+def saved_shot(path: Path) -> SavedShot | None:
+    """A saved screenshot (a failure's, Scout's or a screen's last shot) for Capture, at its own pixels: the whole
+    desktop is cut to the main screen, a shot of the main screen is used as it is. A lossless copy beside a JPEG
+    (same name, .png) is used in its place. None when it can't be read or the screens aren't laid out as they were."""
+    for twin in (path.with_suffix(suffix) for suffix in LOSSLESS):
+        if path.suffix.lower() not in LOSSLESS and twin.is_file():
+            path = twin
+            break
     try:
         pixels = cv2.imdecode(np.fromfile(path, np.uint8), cv2.IMREAD_COLOR)  # imread can't open every Windows path
     except (OSError, cv2.error):
         return None
     if pixels is None:
         return None
+    lossy = path.suffix.lower() not in LOSSLESS
     desktop = screen.desktop()
+    main = screen.monitors()[0]
+    if pixels.shape[:2] == (main.h, main.w):
+        return SavedShot(np.ascontiguousarray(pixels), main, lossy, shot_id_beside(path))
     if pixels.shape[:2] != (desktop.h, desktop.w):
         return None
-    main = screen.monitors()[0]
     left = main.x - desktop.x
     top = main.y - desktop.y
-    return np.ascontiguousarray(pixels[top : top + main.h, left : left + main.w]), main
+    return SavedShot(np.ascontiguousarray(pixels[top : top + main.h, left : left + main.w]), main, lossy)
 
 
 class ShotProvider(QQuickImageProvider):
@@ -67,6 +99,7 @@ class Capture(QObject):
         self._items: list[dict] = []
         self._size = (0, 0)
         self._shot_number = 0
+        self._note = ""
 
     def _get_open(self) -> bool:
         return self._open
@@ -83,11 +116,15 @@ class Capture(QObject):
     def _get_source(self) -> str:
         return f"image://capture/shot{self._shot_number}" if self._open else ""
 
+    def _get_note(self) -> str:
+        return self._note
+
     isOpen = Property(bool, _get_open, notify=openChanged)
     items = Property(list, _get_items, notify=itemsChanged)
     shotWidth = Property(int, _get_width, notify=shotChanged)
     shotHeight = Property(int, _get_height, notify=shotChanged)
     source = Property(str, _get_source, notify=shotChanged)
+    shotNote = Property(str, _get_note, notify=shotChanged)  # what the shot is, when it isn't the screen now
 
     def start(
         self,
@@ -97,17 +134,21 @@ class Capture(QObject):
         kind: str = "image",
         shot: np.ndarray | None = None,
         origin: Region | None = None,
+        lossy: bool = False,
+        shot_id: str = "",
     ) -> None:
         """Open a session for the bot at `folder` on the screen now (or a saved `shot`, sitting at `origin` on the
-        desktop)."""
+        desktop; `lossy` when it went through JPEG)."""
         project = load(folder)
         images = folder / (project.images[0] if project.images else "images")
         images.mkdir(parents=True, exist_ok=True)
         started = service.start(folder, images, service.items_for(folder, mode, name, kind), retake=mode == "one")
         if shot is None:
             pixels, _ = service.freeze()
+            self._note = ""
         else:
-            service.use_shot(shot, origin)
+            self._note = "On a saved shot (JPEG: a little softer than the screen)" if lossy else "On a saved shot"
+            service.use_shot(shot, origin, shot_id)
             pixels = shot
         self.provider.set_pixels(pixels)
         self._size = (pixels.shape[1], pixels.shape[0])
@@ -180,6 +221,7 @@ class Capture(QObject):
     def close(self) -> None:
         service.stop()
         self._open = False
+        self._note = ""
         self.provider.image = QImage()
         self.openChanged.emit()
         self.shotChanged.emit()

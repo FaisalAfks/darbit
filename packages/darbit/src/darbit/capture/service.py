@@ -96,13 +96,14 @@ def freeze() -> tuple[np.ndarray, Region]:
     return shot, origin
 
 
-def use_shot(shot: np.ndarray, origin: Region | None = None) -> None:
-    """Work on a saved screen instead of grabbing one (a retake from the bot's saved screens, or a test)."""
+def use_shot(shot: np.ndarray, origin: Region | None = None, shot_id: str = "") -> None:
+    """Work on a saved screen instead of grabbing one (a retake from the bot's saved screens, or a test). A screen's
+    own last shot passes its `shot_id`, so the boxes already placed on it stay."""
     session = _current()
     session.shot = shot
     session.origin = origin or Region(0, 0, shot.shape[1], shot.shape[0])
     session.prepared = prepare(shot)
-    session.shot_id = uuid.uuid4().hex
+    session.shot_id = shot_id or uuid.uuid4().hex
 
 
 def _frozen() -> tuple[Session, np.ndarray, Region, Prepared]:
@@ -337,7 +338,6 @@ def remember_screen(
     group = name.split(".")[0] if "." in name else "Other"
     folder = screens_folder(project)
     folder.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(folder / f"{group}.jpg"), shot, [cv2.IMWRITE_JPEG_QUALITY, SCREEN_QUALITY])
     places_file = folder / f"{group}.json"
     places: dict = {}
     if places_file.is_file():
@@ -345,6 +345,9 @@ def remember_screen(
             places = json.loads(places_file.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             places = {}
+    picture = folder / f"{group}.jpg"
+    if not shot_id or places.get("shot") != shot_id or not picture.is_file():  # the same shot isn't encoded again
+        cv2.imwrite(str(picture), shot, [cv2.IMWRITE_JPEG_QUALITY, SCREEN_QUALITY])
     boxes = places.get("assets", {})
     if not shot_id or places.get("shot") != shot_id:
         boxes = {}

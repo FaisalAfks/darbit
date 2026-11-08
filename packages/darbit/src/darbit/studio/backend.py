@@ -320,10 +320,12 @@ class Studio(QObject):
 
     @Slot(str, str, str)
     def retakeOn(self, name: str, kind: str, screenshot: str) -> None:
-        """Capture one target again on a screenshot of the bot's (a failure's, as a file URL) instead of the screen
-        now: the screen as it was when the image wasn't found."""
-        if self._bot.get("path") and screenshot:
-            self.captureOnShotWanted.emit(self._bot["path"], name, kind or "image", QUrl(screenshot).toLocalFile())
+        """Capture one target again on a saved screenshot instead of the screen now: a failure's, the one Scout last
+        saw it on, or a screen's last shot in the Library (a file URL or a path)."""
+        if not self._bot.get("path") or not screenshot:
+            return
+        path = QUrl(screenshot).toLocalFile() if screenshot.startswith("file:") else screenshot
+        self.captureOnShotWanted.emit(self._bot["path"], name, kind or "image", path)
 
     @Slot()
     def loadActions(self) -> None:

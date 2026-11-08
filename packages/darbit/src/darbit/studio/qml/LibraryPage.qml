@@ -172,6 +172,7 @@ Item {
 
     // ---- the cards
     ScreenView {
+        id: screenView
         visible: page.showScreens
         anchors { left: parent.left; leftMargin: 24; top: tools.bottom; topMargin: 18; bottom: parent.bottom; bottomMargin: 24
                   right: parent.right; rightMargin: inspector.open ? page.roomForInspector + 24 : 24 }
@@ -267,6 +268,7 @@ Item {
     Inspector {
         id: inspector
         readonly property bool open: page.chosenAsset !== null || page.chosenAction !== null
+        savedShot: page.showScreens ? screenView.chosenShot : ""
         anchors { top: tools.bottom; topMargin: 18; bottom: parent.bottom; bottomMargin: 24 }
         width: 330
         x: open ? page.width - width - 24 : page.width + 10

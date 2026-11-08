@@ -16,6 +16,8 @@ Item {
         return screens.length ? screens[0] : null
     }
     readonly property var names: screen ? Object.keys(screen.assets) : []
+    // the shown screen's saved shot when the chosen target was taken on it, for a retake on that shot
+    readonly property string chosenShot: screen && screen.shot && screen.assets[chosenName] ? screen.shot : ""
     readonly property real fit: screen ? Math.min(shot.parent.width / screen.w, shot.parent.height / screen.h) : 1
     function inkOf(kind) { return kind === "region" ? studio.colors.kindRegion : kind === "location" ? studio.colors.kindLocation : studio.colors.kindImage }
 

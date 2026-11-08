@@ -673,6 +673,13 @@ Window {
                     Chip { text: shotWindow.current ? shotWindow.kindOf(shotWindow.current.kind) : ""; tone: "accent" }
                     Text { text: shotWindow.current ? shotWindow.current.name : ""; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
                 }
+                Text {  // a retake on a saved shot says so, and that a JPEG one is a little softer
+                    objectName: "shotNote"
+                    visible: text !== ""
+                    text: capture.shotNote
+                    color: studio.colors.warn; font.pixelSize: 12
+                    width: parent.width; wrapMode: Text.Wrap
+                }
                 Text {
                     visible: text !== ""
                     text: shotWindow.current ? (shotWindow.current.say || "") : ""
