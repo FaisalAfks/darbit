@@ -14,6 +14,11 @@ gets. A `[[read]]` reads text in a `region = [x, y, w, h]` or a named `target`, 
 `number = 4990000` or `time = 151` (seconds), through `d.read`, `d.read_number` or `d.read_time`; without the ocr
 extra it counts as "needs ocr", and fails the run when the baseline has a time for it. `--options lines` (or upscale, invert, threshold) turns on a reading option. Exits 1 when an answer is wrong, or when a search is over the baseline's speed by more
 than `--slower` times.
+
+The speed gate compares each search's fastest repeat (the least noisy: a busy machine only ever adds time) with the
+baseline, and allows for the machine: the run's own speed is the median of every search's time against its
+baseline, so a shared CI runner that runs the whole job 2 times slower moves every search alike, and only a search
+much slower than the rest fails. A whole run more than `--machine-slower` times slower fails too.
 """
 
 import argparse
@@ -31,6 +36,8 @@ GOAL_READ = 25.0  # ms for reading a short line, a number or a timer (decision 0
 OVERLAP = 0.5  # share of the expected box a match must cover (intersection over union) to be right
 SLOWER = 2.0  # how many times slower than its baseline a search may get before the bench fails
 NOISE_MS = 3.0  # differences smaller than this are timer noise, never a slowdown
+MACHINE_SLOWER = 3.0  # how many times slower a whole run may be (a slow machine) before it counts as a slowdown
+MACHINE_SEARCHES = 3  # searches with a baseline over NOISE_MS it takes to judge the run's own speed
 
 
 @dataclass
@@ -39,6 +46,7 @@ class Result:
     target: str
     answer: str  # right, missed, false match, wrong place, misread (a read), or "needs <option>"
     score: float | None
+    fastest_ms: float
     median_ms: float
     worst_ms: float
     goal_ms: float
@@ -128,7 +136,7 @@ def run_reads(folder: Path, spec: dict, repeat: int) -> list[Result]:
     for item in spec.get("read", []):
         label = item.get("target") or "read " + ",".join(str(value) for value in item["region"])
         if readers.current() is None:
-            results.append(Result(folder.name, label, "needs ocr", None, 0.0, 0.0, GOAL_READ, True))
+            results.append(Result(folder.name, label, "needs ocr", None, 0.0, 0.0, 0.0, GOAL_READ, True))
             continue
         _read_once(item)
         times = []
@@ -139,8 +147,13 @@ def run_reads(folder: Path, spec: dict, repeat: int) -> list[Result]:
             times.append((time.perf_counter() - started) * 1000)
         score = None if confidence is None else round(confidence, 3)
         answer = judge_read(value, item)
-        results.append(Result(folder.name, label, answer, score, statistics.median(times), max(times), GOAL_READ, True))
+        results.append(Result(folder.name, label, answer, score, *_timing(times), GOAL_READ, True))
     return results
+
+
+def _timing(times: list[float]) -> tuple[float, float, float]:
+    """The fastest, median and worst of a search's repeats, in ms."""
+    return min(times), statistics.median(times), max(times)
 
 
 def cases_in(folders: list[Path]) -> list[Path]:
@@ -218,7 +231,7 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
         in_region = load(name, settings.images).region is not None
         goal = GOAL_IN_REGION if in_region else GOAL_WHOLE_SCREEN
         if option and not options.intersection(option.split("|")):
-            results.append(Result(folder.name, name, f"needs {option}", None, 0.0, 0.0, goal, in_region))
+            results.append(Result(folder.name, name, f"needs {option}", None, 0.0, 0.0, 0.0, goal, in_region))
             continue
         times = []
         match = None
@@ -227,22 +240,45 @@ def run_case(folder: Path, options: set[str], repeat: int) -> list[Result]:
             match = find.exists(name)
             times.append((time.perf_counter() - started) * 1000)
         score = round(match.score, 3) if match is not None else None
-        results.append(
-            Result(folder.name, name, judge(match, item), score, statistics.median(times), max(times), goal, in_region)
-        )
+        results.append(Result(folder.name, name, judge(match, item), score, *_timing(times), goal, in_region))
     results.extend(run_reads(folder, spec, repeat))
     return results
 
 
-def slower_than(results: list[Result], baseline: dict[str, float], times: float = SLOWER) -> list[str]:
-    """The searches that took more than `times` their baseline (and more than timer noise), as sentences."""
+def machine_speed(results: list[Result], baseline: dict[str, float]) -> float:
+    """How many times the baseline's time this run takes as a whole: the median of each search's fastest time over
+    its baseline, among the searches too long to be timer noise. 1.0 when too few searches say."""
+    ratios = []
+    for result in results:
+        before = baseline.get(result.key)
+        if result.counted and before is not None and before > NOISE_MS:
+            ratios.append(result.fastest_ms / before)
+    if len(ratios) < MACHINE_SEARCHES:
+        return 1.0
+    return statistics.median(ratios)
+
+
+def slower_than(
+    results: list[Result], baseline: dict[str, float], times: float = SLOWER, machine: float = MACHINE_SLOWER
+) -> list[str]:
+    """The searches whose fastest time was more than `times` their baseline (and more than timer noise), after
+    allowing for a machine up to `machine` times slower than the baseline's, as sentences. A whole run slower than
+    that is a slowdown too."""
+    speed = machine_speed(results, baseline)
     slow = []
+    if speed > machine:
+        slow.append(f"the whole run: {speed:.1f} times slower than the baseline (a slow machine may be {machine:g})")
+    allowed = min(max(speed, 1.0), machine)  # a faster machine never makes the gate stricter
     for result in results:
         before = baseline.get(result.key)
         if not result.counted or before is None:
             continue
-        if result.median_ms > before * times and result.median_ms - before > NOISE_MS:
-            slow.append(f"{result.key}: {result.median_ms:.1f} ms, was {before:.1f} ms")
+        expected = before * allowed
+        if result.fastest_ms > expected * times and result.fastest_ms - expected > NOISE_MS:
+            sentence = f"{result.key}: {result.fastest_ms:.1f} ms, was {before:.1f} ms"
+            if round(allowed, 1) > 1.0:
+                sentence += f" (the run as a whole {allowed:.1f} times slower)"
+            slow.append(sentence)
     return slow
 
 
@@ -258,8 +294,8 @@ def not_run(results: list[Result], baseline: dict[str, float]) -> list[str]:
 
 
 def baseline_of(results: list[Result]) -> dict[str, float]:
-    """Each counted search's median time, keyed by case/target: what --baseline compares with."""
-    return {result.key: round(result.median_ms, 2) for result in results if result.counted}
+    """Each counted search's fastest time, keyed by case/target: what --baseline compares with."""
+    return {result.key: round(result.fastest_ms, 2) for result in results if result.counted}
 
 
 def from_screens(bot: Path, into: Path) -> int:
@@ -315,11 +351,14 @@ def _scale_of(images: Path, names: list[str]) -> float:
 
 
 def _print_table(results: list[Result]) -> None:
-    print(f"{'case':16} {'target':24} {'answer':14} {'score':>6} {'median':>8} {'worst':>8} {'goal':>6}")
+    header = f"{'case':16} {'target':24} {'answer':14} {'score':>6} {'fastest':>8} {'median':>8} {'worst':>8}"
+    print(f"{header} {'goal':>6}")
     for result in results:
         score = "" if result.score is None else f"{result.score:.3f}"
-        timing = f"{result.median_ms:7.1f}ms {result.worst_ms:7.1f}ms" if result.counted else ""
-        print(f"{result.case:16} {result.target:24} {result.answer:14} {score:>6} {timing:18} {result.goal_ms:4.0f}ms")
+        timing = ""
+        if result.counted:
+            timing = f"{result.fastest_ms:7.1f}ms {result.median_ms:7.1f}ms {result.worst_ms:7.1f}ms"
+        print(f"{result.case:16} {result.target:24} {result.answer:14} {score:>6} {timing:27} {result.goal_ms:4.0f}ms")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -332,6 +371,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", type=Path, help="also write the results here")
     parser.add_argument("--baseline", type=Path, help="fail when a search is much slower than in this file")
     parser.add_argument("--slower", type=float, default=SLOWER, help="how many times slower counts (default 2)")
+    parser.add_argument(
+        "--machine-slower",
+        type=float,
+        default=MACHINE_SLOWER,
+        help="how many times slower a whole run may be, a slow machine (default 3)",
+    )
     parser.add_argument("--save-baseline", type=Path, help="write this run's times as a baseline")
     parser.add_argument("--from-screens", nargs=2, type=Path, metavar=("BOT", "INTO"), help="make cases instead")
     args = parser.parse_args(argv)
@@ -362,7 +407,8 @@ def main(argv: list[str] | None = None) -> int:
     slow = []
     if args.baseline:
         before = json.loads(args.baseline.read_text(encoding="utf-8"))
-        slow = slower_than(results, before, args.slower)
+        slow = slower_than(results, before, args.slower, args.machine_slower)
+        print(f"the run as a whole: {machine_speed(results, before):.2f} times the baseline's time")
         print(f"{len(slow)} more than {args.slower:g} times slower than {args.baseline}")
         for sentence in slow:
             print(f"  {sentence}")
