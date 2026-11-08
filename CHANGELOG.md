@@ -5,10 +5,15 @@
 ### New
 
 - darbit Studio's Results shows a failure opened as the screen when it stopped, with the closest match of the image it waited for boxed and scored, beside that image (best against what it needs) and the steps before it; under the screen, Retake on that screen or on the screen now
+- darbit Studio's Overview has a Recoveries block: how often the bot recovered today, the most common reason and the last one, or that it hasn't had to; darbit's default layout ends with it, and `overview.toml` places it with `kind = "recoveries"`
 
 ### Changed
 
 - darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
+
+### Fixed
+
+- A new shot of a screen in Capture no longer keeps other targets' boxes from older shots of it: `.darbit/screens/<Screen>.json` holds only the boxes taken on the shot saved beside it, so the Library's Screen view and `darbit bench --from-screens` don't place them where they no longer are
 
 ## 1.0.0-alpha.3 - 2026-11-08
 

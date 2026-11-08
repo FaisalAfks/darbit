@@ -49,7 +49,7 @@ Most of a bot's Overview comes from what darbit already records: the open `d.ste
 ```python
 d.progress("Quests this week", done, 133)  # a ring; call again with new numbers
 d.next("Weekly reset", reset_time)  # a datetime; shown as "in 2 d 4 h"
-d.record.recovered("rejoin", "disconnected")  # counted by reason in the day's results
+d.record.recovered("rejoin", "disconnected")  # counted by reason in the day's results and the Overview's Recoveries
 d.show(
     "Boat", 7, sub="next upgrade at 2 000 gold"
 )  # a block of the bot's own: a number, a ring (total=), a list or text
@@ -65,12 +65,12 @@ default layout is `overview.toml` beside `darbit.toml`, read from top to bottom 
 
 ```toml
 [[block]]
-kind = "now"           # now, round, list, number, ring, chart, text, screen or button
+kind = "now"           # now, round, list, number, ring, chart, text, screen, button or recoveries
 width = 8              # 3, 4, 6, 8 or 12
 
 [[block]]
 kind = "ring"
-shows = "progress:Quests this week"   # now, round, next, failures, watching, activity, screen,
+shows = "progress:Quests this week"   # now, round, next, failures, watching, activity, screen, recoveries,
 width = 4                                 # progress:<label>, gain:<name>, block:<name>, action:<name>
 
 [[block]]
