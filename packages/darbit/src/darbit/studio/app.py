@@ -9,7 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QGuiApplication, QIcon
+from PySide6.QtGui import QGuiApplication, QIcon, QWindow
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
@@ -316,7 +316,8 @@ def _connect_capture_hiding(capture: Capture, hiding: HidingPill) -> None:
 
 def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> None:
     """The bot starting (from Play or anywhere else) hides the Studio behind the run pill; the bot stopping or
-    failing, or the pill's ⤢, brings it back."""
+    failing, or the pill's ⤢, brings it back. Closing or minimizing the Studio with a bot running opens the pill
+    too, and showing the Studio again closes it."""
     seen_running: list[bool] = []  # the bot ran since Play: until then, "stopped" is the status from before
 
     def started() -> None:
@@ -343,9 +344,41 @@ def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> N
         elif state == "failed" or seen_running:
             run_pill.close()
 
+    def out_of_sight() -> None:
+        """The Studio closed to the tray or minimized: a bot running or paused stays in reach in the pill, the shown
+        one first, else the first running one, which becomes the shown bot."""
+        if not studio.runPill or run_pill.isOpen:
+            return
+        bot = _running_bot(studio)
+        if bot is None:
+            return
+        if bot.get("path") != studio.bot.get("path"):
+            studio.selectBot(str(bot.get("path")))
+        seen_running[:] = [True]
+        run_pill.open()
+
+    def visibility(shown: QWindow.Visibility) -> None:
+        if shown == QWindow.Minimized:
+            out_of_sight()
+        elif shown in IN_SIGHT and run_pill.isOpen:
+            run_pill.close()  # the Studio is back (its taskbar button): the pill makes way
+
     studio.started.connect(started)
     studio.botChanged.connect(status)
     run_pill.closed.connect(lambda: _bring_forward(window))
+    window.closing.connect(out_of_sight)
+    window.visibilityChanged.connect(visibility)
+
+
+IN_SIGHT = (QWindow.Windowed, QWindow.Maximized, QWindow.FullScreen)  # the Studio's window on screen
+
+
+def _running_bot(studio: Studio) -> dict | None:
+    """The bot running or paused: the shown one if it is, else the first other one; None when none is."""
+    for bot in [studio.bot, *studio.bots]:
+        if bot.get("status") in ("running", "paused"):
+            return bot
+    return None
 
 
 def _connect_ghost(studio: Studio, ghost: Ghost) -> None:

@@ -1027,7 +1027,11 @@ class Runs(FakeClient):
         return super().call(method, **params)
 
 
-class Window:
+class Window(QtCore.QObject):
+    """The Studio's window: shown or not, closed to the tray or minimized."""
+
+    closing = QtCore.Signal()
+    visibilityChanged = QtCore.Signal(object)
     shown = True
 
     def hide(self):
@@ -1533,6 +1537,51 @@ def test_the_bot_started_anywhere_hides_the_studio_but_one_already_running_doesn
     other.connect()
     wait_until(lambda: other.bot.get("status") == "running")
     assert other_window.shown and not other_pill.isOpen  # opening the Studio on a running bot shows it
+
+
+def test_closing_or_minimizing_the_studio_with_a_bot_running_opens_the_run_pill(qt):
+    from PySide6.QtGui import QWindow
+
+    from darbit.studio.hiding import HidingPill
+
+    client = Runs()
+    studio = backend.Studio(lambda: client)
+    pill = HidingPill(watch=lambda on_move: lambda: None)
+    window = Window()
+    app._connect_run_pill(studio, pill, window)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("status") == "stopped")
+    window.closing.emit()
+    assert not pill.isOpen  # control: no bot runs, nothing to keep in reach
+    client.status = "running"
+    studio._on_event("project.status", {"path": BOT["path"], "status": "running"})
+    wait_until(lambda: pill.isOpen)
+    pill.close()  # ⤢: the Studio is back, the bot still running
+    assert window.shown and not pill.isOpen
+    window.closing.emit()
+    assert pill.isOpen
+    window.visibilityChanged.emit(QWindow.Windowed)  # the Studio opened again
+    assert not pill.isOpen
+    window.visibilityChanged.emit(QWindow.Minimized)
+    assert pill.isOpen
+    pill.close()
+    studio.setRunPill(False)  # off: closing leaves no pill
+    window.closing.emit()
+    assert not pill.isOpen
+
+
+def test_closing_the_studio_shows_another_running_bot_in_the_run_pill(qt):
+    from darbit.studio.hiding import HidingPill
+
+    client = FakeClient()  # ad-bot runs; "other" doesn't
+    studio = backend.Studio(lambda: client, bot="/bots/other")
+    pill = HidingPill(watch=lambda on_move: lambda: None)
+    window = Window()
+    app._connect_run_pill(studio, pill, window)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "other")
+    window.closing.emit()
+    assert pill.isOpen and studio.bot.get("name") == "ad-bot"
 
 
 def test_typing_a_known_name_after_boxing_brings_its_region_and_location_back(qt, tmp_path):

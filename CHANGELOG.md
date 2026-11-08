@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Closing the Studio to the tray or minimizing it while a bot is running or paused opens the run pill, as a bot starting does; it shows that bot, the shown one first. Showing the Studio again closes the pill
+
 ## 1.0.0-alpha.6 - 2026-11-08
 
 ### Fixed
