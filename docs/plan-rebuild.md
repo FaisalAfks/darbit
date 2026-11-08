@@ -69,7 +69,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | A watcher that catches errors (disconnected, teleport failed) instead of checking everywhere | Have (observers) |
 | The stop hotkey; pause and stop from the Studio (control folder) | Have |
 | Keeping the PC awake while a bot runs | Have |
-| A `doctor` check before a run: window size, display scale, missing targets, settings | Planned |
+| A `doctor` check before a run: window size, display scale, missing targets, settings | Have (`darbit doctor`, the service's `bot.doctor`): each check says what it found and its fix |
 | A recapture check after a game update: which targets no longer match | Planned (Check, Test on screen) |
 
 ### Bots and projects
