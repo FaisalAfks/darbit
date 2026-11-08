@@ -14,7 +14,7 @@ import threading
 from pathlib import Path
 
 from .. import events, paths
-from ..server.hub import InputBotRunning
+from ..server.refusal import InputBotRunning
 from . import methods
 from .notify import Notifier
 from .protocol import HOST, VERSION, Event, Hello, ProtocolError, Reply, Request, decode, encode

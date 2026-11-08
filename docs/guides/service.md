@@ -42,6 +42,12 @@ A bot with `input = false` starts alongside anything, and anything starts alongs
 service's start, so every way of starting a bot keeps it: the Studio, the CLI, and the service itself starting a
 failed bot again (`[run] restart`): a restart that would collide is told as a failure, with the reason.
 
+An action played from the Studio (Play, Step through, breakpoints; `bot.action.play`) clicks and types from the
+service, so it counts too: it's refused while a bot that sends input runs or is paused, its own bot included, and
+`replace: true` on `bot.action.play` stops that bot first. Starting a bot that sends input while an action plays (or
+waits at a breakpoint) is refused the same way, and `replace` stops the action. Recording an action is refused while
+a bot that sends input runs or is paused: stop it first. Starting a bot during a recording isn't refused yet (#431).
+
 A bot started without the service (`uv run my-bot`, `darbit run`) can't be refused: the service doesn't know about
 it, and won't stop a bot started after it. As it starts, such a bot asks the service whether a bot that sends input
 is running and warns (in its log and on the terminal) when one is. Start bots through the service to have them kept
@@ -92,7 +98,7 @@ The service listens on 127.0.0.1 only. Its port and a token are in `service.json
 {"type": "event", "topic": "project.status", "data": {"path": "...", "status": "running"}}
 ```
 
-The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it. A client asks the person, then sends `bot.start` again with `replace: true`. Fields a client doesn't know are skipped (from the release after 1.0.0-alpha.6; an older client can't read a refusal with a `code`). `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
+The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it (an action playing is its bot's entry with `status` `"playing"` and `action`, its name). A client asks the person, then sends `bot.start` (or `bot.action.play`) again with `replace: true`. Fields a client doesn't know are skipped (from the release after 1.0.0-alpha.6; an older client can't read a refusal with a `code`). `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
 
 ```python
 from darbit.service.client import Client, ServiceError, ensure_running
