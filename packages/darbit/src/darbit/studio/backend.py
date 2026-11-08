@@ -194,6 +194,17 @@ class Studio(QObject):
     def _get_symbols(self) -> str:
         return symbol_font()
 
+    def _get_desktop_origin(self) -> list:
+        """Where the desktop starts: a bot's screenshot is the whole desktop, and matches are in screen pixels."""
+        from ..platform import screen
+        from ..platform.backend import NotSupported
+
+        try:
+            area = screen.desktop()
+        except (NotSupported, OSError):
+            return [0, 0]
+        return [area.x, area.y]
+
     def _get_version(self) -> str:
         from .. import __version__
 
@@ -230,6 +241,7 @@ class Studio(QObject):
     ghost = Property(bool, _get_ghost, notify=lookChanged)
     runPill = Property(bool, _get_run_pill, notify=lookChanged)
     version = Property(str, _get_version, constant=True)
+    desktopOrigin = Property(list, _get_desktop_origin, constant=True)  # [x, y], to place a match on a screenshot
     symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
 
     # ---- what the pages ask for

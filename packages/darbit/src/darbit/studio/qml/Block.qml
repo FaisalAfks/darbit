@@ -28,7 +28,8 @@ Glass {
         sourceComponent: block.info === null || block.info === undefined ? nothingYet
             : block.kind === "now" ? nowView : block.kind === "round" ? roundView : block.kind === "ring" ? ringView
             : block.kind === "number" ? numberView : block.kind === "chart" ? chartView : block.kind === "list" ? listView
-            : block.kind === "screen" ? screenView : block.kind === "button" ? buttonView : textView
+            : block.kind === "screen" ? screenView : block.kind === "button" ? buttonView
+            : block.kind === "recoveries" ? recoveriesView : textView
     }
 
     // ---- Customize: the grip, ✕ and the corner
@@ -228,6 +229,44 @@ Glass {
             Image { anchors.fill: parent; source: block.info.picture || ""; fillMode: Image.PreserveAspectFit; asynchronous: true; sourceSize.width: 640 }
             Text { visible: !block.info.picture; anchors.centerIn: parent; text: "No screenshot yet"; color: studio.colors.faint; font.pixelSize: 13 }
             MouseArea { anchors.fill: parent; enabled: !!block.info.picture && !block.editing; cursorShape: Qt.PointingHandCursor; onClicked: Qt.openUrlExternally(block.info.picture) }
+        }
+    }
+    Component {
+        // how often the bot got itself going again today (d.record.recovered): the count, the most common reason, the
+        // last one
+        id: recoveriesView
+        Column {
+            id: recovered
+            width: parent ? parent.width : 0; spacing: 6
+            readonly property int count: Number(block.info.count) || 0
+            readonly property var last: block.info.last || null
+            Row {
+                spacing: 8
+                Text {
+                    id: recoveredCount
+                    text: recovered.count > 0 ? String(recovered.count) : "None"
+                    color: recovered.count > 0 ? studio.colors.warn : studio.colors.ok
+                    font.pixelSize: 30; font.weight: Font.Bold
+                }
+                Text {
+                    anchors.baseline: recoveredCount.baseline
+                    text: recovered.count === 1 ? "time today" : recovered.count > 1 ? "times today" : "today"
+                    color: studio.colors.muted; font.pixelSize: 14
+                }
+            }
+            Text {
+                width: parent.width; elide: Text.ElideRight
+                text: recovered.count === 0 ? "It hasn't had to recover today."
+                    : "mostly " + (block.info.reason || "no reason given") + " (" + block.info.reason_count + " of " + recovered.count + ")"
+                color: recovered.count === 0 ? studio.colors.muted : studio.colors.text
+                font.pixelSize: 13; font.weight: recovered.count === 0 ? Font.Normal : Font.DemiBold
+            }
+            Text {
+                visible: recovered.last !== null
+                width: parent.width; elide: Text.ElideRight
+                text: recovered.last ? "last " + Format.clockOf(recovered.last.at) + " · " + recovered.last.how + ": " + recovered.last.why : ""
+                color: studio.colors.muted; font.pixelSize: 12
+            }
         }
     }
     Component {

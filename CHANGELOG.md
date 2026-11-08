@@ -5,6 +5,8 @@
 ### New
 
 - darbit Studio's Play runs darbit doctor's checks first: with a problem, a sheet shows every check with what it found and how to fix it (Take them opens Capture on the targets not taken), with Cancel, Check again and Start anyway; with none, the bot starts at once
+- darbit Studio's Results shows a failure opened as the screen when it stopped, with the closest match of the image it waited for boxed and scored, beside that image (best against what it needs) and the steps before it; under the screen, Retake on that screen or on the screen now
+- darbit Studio's Overview has a Recoveries block: how often the bot recovered today, the most common reason and the last one, or that it hasn't had to; darbit's default layout ends with it, and `overview.toml` places it with `kind = "recoveries"`
 
 ### Changed
 
