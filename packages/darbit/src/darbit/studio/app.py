@@ -196,7 +196,16 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
             studio.say("That screenshot can't be used: the screens are laid out differently now")
             return
         window.hide()
-        capture.start(Path(folder), "one", name, kind, shot=found.pixels, origin=found.origin, lossy=found.lossy)
+        capture.start(
+            Path(folder),
+            "one",
+            name,
+            kind,
+            shot=found.pixels,
+            origin=found.origin,
+            lossy=found.lossy,
+            shot_id=found.shot_id,
+        )
 
     def closed() -> None:
         if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead

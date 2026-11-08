@@ -7,7 +7,7 @@
 - Every pill over the game (the run pill, Capture's, Highlight's and the recorder's) can be dragged to any screen edge: a row on the top and bottom, a labelled column on the sides, snapping to each edge's centre, its corners or near the centre, and still hiding into its edge; dragged firmly into the middle it floats as a small card with more detail and Dock. While it's dragged it tilts, takes the shape it will have, and the edge it goes to lights up with its snap places. Each pill keeps its place for next time, per screen, with display scaling
 - Capture's arrows and Ctrl+arrows speed up while held: a press still moves or resizes exactly 1 px (Shift: 10), and after about half a second of holding it goes faster, up to a top speed, until the key is let go
 - Capture resizes the image or region picked by dragging any of its edges or corners, like cropping: the cursor shows which way, the readouts and the magnifier follow, and Ctrl+Z takes a drag back
-- Capture can retake a target on a saved screenshot instead of the screen now: a failure's on Results, and a screen's last shot in the Library's Screen view (Retake on this shot). The image is cut from that shot at its own pixels; a lossless copy beside a JPEG is used first, and Capture says when the shot is JPEG and so a little softer
+- Capture can retake a target on a saved screenshot instead of the screen now: a failure's on Results, and a screen's last shot in the Library's Screen view (Retake on this shot). The image is cut from that shot at its own pixels; a lossless copy beside a JPEG is used first, and Capture says when the shot is JPEG and so a little softer. A retake on a screen's own shot keeps the other targets placed on it, and the shot isn't encoded again
 
 ## 1.0.0-alpha.4 - 2026-11-08
 
