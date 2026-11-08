@@ -222,6 +222,20 @@ Window {
         id: stage
         anchors.fill: parent
         focus: true
+        // the mouse at `p` (stage pixels): the magnifier follows it, and the pill comes back at the top edge. Called by
+        // the hover handler and by the drawing area, which takes the mouse from it while pressed and after a click
+        function follow(p) {
+            // the pill: the top edge brings it back; away from it, it slides out of sight after a few seconds
+            var near = p.y <= pillZone.y + pillZone.height + 24 && p.x >= pillZone.x - 24 && p.x <= pillZone.x + pillZone.width + 24
+            if (shotWindow.tucked) { if (p.y <= 2) shotWindow.showPill() }
+            else if (near) tuckTimer.stop()
+            else if (!tuckTimer.running) tuckTimer.start()
+            if (magnifier.pinned) return
+            magnifier.hoverPoint = Qt.point(p.x, p.y)
+            // the pixel the mouse is on, not the nearest corner
+            magnifier.at = Qt.point(Math.min(capture.shotWidth - 1, Math.floor(p.x / shotWindow.scale)),
+                                    Math.min(capture.shotHeight - 1, Math.floor(p.y / shotWindow.scale)))
+        }
         Keys.onPressed: function (event) {
             var step = (event.modifiers & Qt.ShiftModifier) ? 10 : 1
             var control = (event.modifiers & Qt.ControlModifier) !== 0
@@ -272,6 +286,7 @@ Window {
             id: drawing
             anchors.fill: shot
             acceptedButtons: Qt.LeftButton | Qt.RightButton
+            hoverEnabled: true  // the mouse's moves reach the magnifier through here too (stage.follow)
             property var from: null
             property bool dragged: false
             property var moving: null  // the chosen box and the shot pixel the drag started at
@@ -283,6 +298,7 @@ Window {
                     moving = { box: part.slice(), at: at }
             }
             onPositionChanged: function (mouse) {
+                stage.follow(mapToItem(stage, mouse.x, mouse.y))
                 if (!from || mouse.buttons !== Qt.LeftButton) return
                 if (!dragged && Math.abs(mouse.x - from[0]) + Math.abs(mouse.y - from[1]) < 6) return
                 if (!dragged) shotWindow.remember()
@@ -659,19 +675,7 @@ Window {
         }
         HoverHandler {
             target: stage
-            onPointChanged: {
-                var p = point.position
-                // the pill: the top edge brings it back; away from it, it slides out of sight after a few seconds
-                var near = p.y <= pillZone.y + pillZone.height + 24 && p.x >= pillZone.x - 24 && p.x <= pillZone.x + pillZone.width + 24
-                if (shotWindow.tucked) { if (p.y <= 2) shotWindow.showPill() }
-                else if (near) tuckTimer.stop()
-                else if (!tuckTimer.running) tuckTimer.start()
-                if (magnifier.pinned) return
-                magnifier.hoverPoint = p
-                // the pixel the mouse is on, not the nearest corner
-                magnifier.at = Qt.point(Math.min(capture.shotWidth - 1, Math.floor(p.x / shotWindow.scale)),
-                                        Math.min(capture.shotHeight - 1, Math.floor(p.y / shotWindow.scale)))
-            }
+            onPointChanged: stage.follow(point.position)
         }
         WheelHandler {
             target: null

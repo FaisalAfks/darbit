@@ -1657,3 +1657,47 @@ def test_play_shows_the_checks_when_they_find_a_problem_with_start_anyway(qt):
     wait_until(lambda: ("bot.start", {"bot": "/bots/ad-bot"}) in client.asked)
     wait_until(lambda: not sheet.property("visible"))
     del engine
+
+
+def test_the_magnifier_follows_the_mouse_after_a_click_and_ctrl_wheel_zooms_it(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    wait_until(window.isVisible)
+    window.resize(800, 600)
+    QtCore.QCoreApplication.processEvents()
+    magnifier = window.findChild(QObject, "magnifier")
+
+    def under_mouse():
+        at = magnifier.property("at")
+        return (round(at.x()), round(at.y()))
+
+    QTest.mouseMove(window, QPoint(200, 300))
+    wait_until(lambda: under_mouse() == (200, 300))
+    QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, QPoint(200, 300))
+    QTest.mouseMove(window, QPoint(420, 350))
+    wait_until(lambda: under_mouse() == (420, 350))  # it still follows the mouse
+    QTest.mousePress(window, Qt.LeftButton, Qt.NoModifier, QPoint(420, 350))
+    QTest.mouseMove(window, QPoint(500, 420))
+    wait_until(lambda: under_mouse() == (500, 420))  # and while a box is drawn
+    QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, QPoint(500, 420))
+    zoom = magnifier.property("zoom")
+    at = QPointF(500, 420)
+    wheel = QWheelEvent(
+        at, window.mapToGlobal(at), QPoint(), QPoint(0, 120), Qt.NoButton, Qt.ControlModifier, Qt.NoScrollPhase, False
+    )
+    QtCore.QCoreApplication.sendEvent(window, wheel)
+    wait_until(lambda: magnifier.property("zoom") > zoom)  # Ctrl+wheel: closer
+    capture.close()
+    del engine
