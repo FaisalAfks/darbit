@@ -1662,7 +1662,7 @@ def test_the_studio_keeps_one_look():
 
     # a control drawn by hand is how the pages drift apart: the shared ones are in docs/style/ui/design-system.md
     shared_in = {"TextField": "Field", "Switch": "Switcher", "ComboBox": "Dropdown", "Slider": "ValueSlider"}
-    sheets = {"NewBotSheet", "RecordSheet", "ChecksSheet"}  # whole sheets, not menus
+    sheets = {"Sheet"}  # every sheet over the Studio is a Sheet: one frame
     for page in (Path(app.__file__).parent / "qml").glob("*.qml"):
         source = page.read_text(encoding="utf-8")
         for control, home in shared_in.items():
@@ -2499,7 +2499,7 @@ def test_the_tray_panel_lists_the_running_bots_and_says_what_quit_does(qt):
     studio.connect()
     wait_until(lambda: studio.bots)
     panel = root.findChild(QQuickWindow, "trayPanel")
-    assert [bot["name"] for bot in panel.property("running").toVariant()] == ["ad-bot"]  # the stopped one isn't listed
+    assert [bot["name"] for bot in panel.property("running")] == ["ad-bot"]  # the stopped one isn't listed
     assert studio.quitLabel == "Quit and stop ad-bot"
     studio.setKeepBots(True)
     assert studio.quitLabel == "Quit (bots go on)"
@@ -2536,3 +2536,194 @@ def test_the_tray_panel_controls_each_running_bot_by_its_own_folder(qt):
     assert ("bot.pause", {"bot": "/bots/ad-bot"}) in client.asked
     controls = [params["bot"] for method, params in client.asked if method in ("bot.pause", "bot.stop")]
     assert controls == ["/bots/ad-bot", "/bots/ad-bot"]  # control: the shown bot isn't touched
+
+
+class OneAtATime(FakeClient):
+    """The service's one input bot at a time (decision 0020): ad-bot runs and sends input, other is stopped and sends
+    input too, watcher is stopped and sends none. A start in the way of a running input bot is refused unless it
+    replaces it."""
+
+    def __init__(self, doctor_problems=0):
+        super().__init__()
+        self.doctor_problems = doctor_problems
+        self.bots = {
+            "/bots/ad-bot": {**BOT, "input": True},
+            "/bots/other": {**BOT, "path": "/bots/other", "name": "other", "status": "stopped", "since": None},
+            "/bots/watcher": {
+                **BOT,
+                "path": "/bots/watcher",
+                "name": "watcher",
+                "status": "stopped",
+                "since": None,
+                "input": False,
+            },
+        }
+
+    def call(self, method, **params):
+        if method == "bots.list":
+            self.asked.append((method, params))
+            return [dict(bot) for bot in self.bots.values()]
+        if method == "bot.doctor":
+            self.asked.append((method, params))
+            return {
+                "checks": [{"name": "targets", "ok": False, "found": "1 not taken", "missing": ["A"]}],
+                "problems": 1,
+            }
+        if method == "bot.stop":
+            self.bots[params["bot"]]["status"] = "stopped"
+        if method == "bot.start":
+            self.asked.append((method, params))
+            return self.start(params["bot"], bool(params.get("replace")))
+        return super().call(method, **params)
+
+    def start(self, path, replace):
+        from darbit.service.client import ServiceError
+
+        bot = self.bots[path]
+        in_the_way = [
+            dict(other)
+            for other in self.bots.values()
+            if other["path"] != path and other["status"] in ("running", "paused") and other.get("input", True)
+        ]
+        if bot.get("input", True) and in_the_way:
+            if not replace:
+                raise ServiceError(
+                    f"{in_the_way[0]['name']} is running and uses the mouse and keys too",
+                    code="input_bot_running",
+                    detail={"running": in_the_way},
+                )
+            for other in in_the_way:
+                self.bots[other["path"]]["status"] = "stopped"
+        bot["status"] = "running"
+        bot["since"] = time.time()
+        return {"status": "running"}
+
+
+def _walk(item):
+    yield item
+    for child in item.childItems():
+        yield from _walk(child)
+
+
+def _sheet_button(sheet, name):
+    return next(item for item in _walk(sheet.property("contentItem")) if item.objectName() == name)
+
+
+def _studio_showing(client, bot):
+    studio = backend.Studio(lambda: client, bot=bot)
+    engine = app.load(studio)
+    root = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("path") == bot)
+    return studio, engine, root
+
+
+def test_play_while_another_input_bot_runs_asks_to_stop_it_and_start_this_one(qt):
+    from PySide6.QtCore import QObject
+
+    client = OneAtATime()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    started = []
+    studio.started.connect(lambda: started.append(True))
+    sheet = root.findChild(QObject, "stopAndStartSheet")
+    studio.start()
+    wait_until(lambda: sheet.property("opened"))
+    question = next(item for item in _walk(sheet.property("contentItem")) if item.objectName() == "question")
+    assert question.property("text") == "ad-bot is running and uses the mouse and keys. Stop it and start other?"
+    assert started == [] and studio.message == ""  # a question, not a failure
+    QMetaObject.invokeMethod(_sheet_button(sheet, "stopAndStart"), "clicked")
+    wait_until(lambda: started == [True])
+    assert ("bot.start", {"bot": "/bots/other", "replace": True}) in client.asked
+    wait_until(lambda: studio.bot.get("status") == "running")
+    assert client.bots["/bots/ad-bot"]["status"] == "stopped"
+    assert not sheet.property("visible") and studio.inTheWay == {}
+    del engine
+
+
+def test_cancel_leaves_the_running_bot_and_starts_nothing(qt):
+    from PySide6.QtCore import QObject
+
+    client = OneAtATime()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    sheet = root.findChild(QObject, "stopAndStartSheet")
+    studio.start()
+    wait_until(lambda: sheet.property("opened"))
+    QMetaObject.invokeMethod(_sheet_button(sheet, "keepRunning"), "clicked")
+    wait_until(lambda: not sheet.property("visible"))
+    assert studio.inTheWay == {}
+    studio.replaceAndStart()  # nothing asked any more: nothing to replace
+    QtCore.QCoreApplication.processEvents()
+    starts = [params for method, params in client.asked if method == "bot.start"]
+    assert starts == [{"bot": "/bots/other"}]
+    assert client.bots["/bots/ad-bot"]["status"] == "running" and client.bots["/bots/other"]["status"] == "stopped"
+    del engine
+
+
+def test_start_anyway_after_the_checks_asks_too(qt):
+    from PySide6.QtCore import QObject
+
+    client = OneAtATime()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    checks = root.findChild(QObject, "checksSheet")
+    question = root.findChild(QObject, "stopAndStartSheet")
+    studio.play()
+    wait_until(lambda: checks.property("opened"))
+    QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    wait_until(lambda: question.property("opened"))
+    assert not checks.property("visible")
+    del engine
+
+
+def test_a_bot_that_sends_no_input_starts_alongside_without_asking(qt):
+    from PySide6.QtCore import QObject
+
+    client = OneAtATime()
+    studio, engine, root = _studio_showing(client, "/bots/watcher")
+    sheet = root.findChild(QObject, "stopAndStartSheet")
+    asked = []
+    studio.askedToReplace.connect(lambda: asked.append(True))
+    started = []
+    studio.started.connect(lambda: started.append(True))
+    studio.start()
+    wait_until(lambda: started == [True])
+    wait_until(lambda: len(studio.running) == 2)
+    assert asked == [] and not sheet.property("visible")
+    assert [bot["name"] for bot in studio.running] == ["ad-bot", "watcher"]  # both run
+    del engine
+
+
+def test_the_run_pill_has_a_line_for_each_running_bot_with_its_own_controls(qt):
+    from PySide6.QtCore import QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.hiding import HidingPill
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        client = OneAtATime()
+        client.bots["/bots/watcher"]["status"] = "running"
+        hiding = HidingPill(watch=lambda on_move: lambda: None)
+        studio = backend.Studio(lambda: client, bot="/bots/watcher")
+        engine = app.load(studio, run_pill=hiding)
+        root = engine.rootObjects()[0]
+        wait_until(lambda: len(studio.running) == 2)
+        hiding.open()
+        window = root.findChild(QQuickWindow, "runPill")
+        wait_until(window.isVisible)
+        assert [bot["name"] for bot in window.property("others").toVariant()] == ["ad-bot"]
+        lines = window.findChild(QObject, "otherLines")
+        wait_until(lambda: lines.property("visible"))
+        stop = next(item for item in _walk(lines) if item.objectName() == "otherStop")
+        pause = next(item for item in _walk(lines) if item.objectName() == "otherPause")
+        QMetaObject.invokeMethod(pause, "clicked")
+        QMetaObject.invokeMethod(stop, "clicked")
+        wait_until(lambda: ("bot.stop", {"bot": "/bots/ad-bot"}) in client.asked)
+        controls = [params["bot"] for method, params in client.asked if method in ("bot.pause", "bot.stop")]
+        assert controls == ["/bots/ad-bot", "/bots/ad-bot"]  # control: the shown bot isn't touched
+        wait_until(lambda: not lines.property("visible"))  # ad-bot stopped: only the shown bot is left
+        assert window.property("others").toVariant() == []
+        hiding.close()
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []

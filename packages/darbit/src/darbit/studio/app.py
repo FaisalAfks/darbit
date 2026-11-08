@@ -178,6 +178,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
 
     tray = _tray(app, studio, window, open_studio, tray_panel)
     studio.checksFound.connect(open_studio)  # Play from the tray with the Studio hidden: its checks show in it
+    studio.askedToReplace.connect(open_studio)  # and so does the question before stopping a bot in the way
     door.knocked.connect(open_studio)
     _keep_in_tray(app, window, tray)
     _tell_from_tray(studio, tray, open_studio)

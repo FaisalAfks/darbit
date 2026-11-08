@@ -6,6 +6,9 @@
 
 - One bot that sends input runs at a time: bots on one desktop share one mouse and keyboard. The service refuses to start a bot while another one that sends input runs or is paused, with a reply naming it (`code` `input_bot_running`, `detail.running`), unless `bot.start` has `replace: true`, which stops that one cleanly first. `darbit start` says which bot is in the way and has `--replace`. A bot that never sends input says `[run] input = false` in its darbit.toml and runs alongside anything. A failed bot started again by `[run] restart` follows the same rule. `bots.list` and `bot.status` say each bot's `input`, and `bots.running` lists the running ones. A bot started without the service warns when the service runs another bot that sends input (decision 0020)
 - The service's replies can carry a `code` and a `detail` with an error, and `ServiceError` has them; fields a client doesn't know are skipped
+- The Studio asks before stopping a bot in the way: Play (the run control, F5, the command palette, the tray panel, Start anyway) while another bot that sends input runs says "fish-bot is running and uses the mouse and keys. Stop it and start my-bot?", with Cancel and Stop and start, which starts it again with `replace`. A bot with `[run] input = false` never asks
+- The run pill shows every running bot: a line each under the shown one (a block each in a column, "Also running" floating), with its state, time and its own Pause and Stop. A bot that sends no input says "alongside" there and in the tray panel
+- `Sheet`, the one frame every sheet over the Studio uses (New bot, Record, Play's checks, Stop and start)
 
 ### Fixed
 

@@ -40,6 +40,8 @@ class Studio(QObject):
     overviewChanged = Signal()
     checksChanged = Signal()
     checksFound = Signal()  # Play's checks found a problem: the Studio shows them, with Start anyway
+    inTheWayChanged = Signal()
+    askedToReplace = Signal()  # a start refused for a bot that sends input running: the Studio asks to stop it
     pictureFailing = Signal(str, str)  # (title, text): an image may have stopped matching, for the tray to say
     libraryChanged = Signal()
     screensChanged = Signal()
@@ -78,6 +80,7 @@ class Studio(QObject):
         self._bot: dict = {}
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
         self._checks: dict = {}  # darbit doctor's checks on a bot before Start: {bot, checks, problems}
+        self._in_the_way: dict = {}  # a refused start: {bot, name, running}, until Stop and start or Cancel
         self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
         self._screens: list[
@@ -122,6 +125,12 @@ class Studio(QObject):
 
     def _get_checks(self) -> dict:
         return self._checks
+
+    def _get_in_the_way(self) -> dict:
+        return self._in_the_way
+
+    def _get_running(self) -> list:
+        return [bot for bot in self._bots if bot.get("status") in RUNNING]
 
     def _get_library(self) -> list:
         return self._library
@@ -227,6 +236,9 @@ class Studio(QObject):
     checks = Property(
         dict, _get_checks, notify=checksChanged
     )  # {bot, checks: [{name, ok, found, fix, missing}], problems}
+    # a refused start: {bot, name, running: [{name, path, status, input}]}, the bots in the way
+    inTheWay = Property(dict, _get_in_the_way, notify=inTheWayChanged)
+    running = Property(list, _get_running, notify=botsChanged)  # every bot running or paused, each with `input`
     library = Property(list, _get_library, notify=libraryChanged)
     screens = Property(list, _get_screens, notify=screensChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
@@ -277,7 +289,40 @@ class Studio(QObject):
 
     @Slot()
     def start(self) -> None:
-        self._ask("started", "bot.start")
+        """Start the shown bot. One refused because a bot that sends input runs asks first (`askedToReplace`)."""
+        if not self._bot or self._client is None:
+            return
+        client = self._client
+        bot = {"path": self._bot["path"], "name": self._bot.get("name", "")}
+
+        def start() -> dict:
+            try:
+                return client.call("bot.start", bot=bot["path"])
+            except ServiceError as error:
+                if error.code != "input_bot_running":
+                    raise
+                return {"refused": True, **bot, "running": list(error.detail.get("running", []))}
+
+        self._run("started", start)
+
+    @Slot()
+    def replaceAndStart(self) -> None:
+        """Stop and start: the bots in the way stop cleanly, then the refused bot starts."""
+        asked = self._in_the_way
+        self._set_in_the_way({})
+        client = self._client
+        if not asked or client is None:
+            return
+        self._run("started", lambda: client.call("bot.start", bot=asked["path"], replace=True))
+
+    @Slot()
+    def keepRunning(self) -> None:
+        """Cancel: the bots in the way go on, and the refused bot doesn't start."""
+        self._set_in_the_way({})
+
+    def _set_in_the_way(self, asked: dict) -> None:
+        self._in_the_way = asked
+        self.inTheWayChanged.emit()
 
     @Slot()
     def play(self) -> None:
@@ -653,6 +698,9 @@ class Studio(QObject):
         self.busyChanged.emit()
         if what == "connected" and isinstance(result, list):
             self._set_bots(result)
+        elif what == "started" and isinstance(result, dict) and result.get("refused"):
+            self._set_in_the_way({key: result[key] for key in ("path", "name", "running")})
+            self.askedToReplace.emit()
         elif what in ("status", "started"):
             if what == "started":
                 self.started.emit()

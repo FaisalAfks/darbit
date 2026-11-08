@@ -15,6 +15,7 @@ Window {
     default property alias content: body.content
     property alias heading: body.heading
     property alias card: body.card
+    property alias drawer: body.drawer  // what opens under the row, inside the pill
     property alias below: body.below
     property alias ink: body.ink
     property alias cardWidth: body.cardWidth

@@ -1,7 +1,7 @@
 // The panel darbit's tray icon opens, in darbit's own menu (MenuPanel, MenuLine): every running bot with its state,
-// Pause or Go on and Stop (the shown bot's Play when none runs), the tools with their keys, Open darbit Studio, and
-// Quit saying what it does with the running bots. app.py places it by the icon on the taskbar's edge and shows it; a
-// click outside or Esc closes it.
+// Pause or Go on and Stop, alongside for one that sends no input (the shown bot's Play when none runs), the tools
+// with their keys, Open darbit Studio, and Quit saying what it does with the running bots. app.py places it by the
+// icon on the taskbar's edge and shows it; a click outside or Esc closes it.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Window
@@ -9,7 +9,7 @@ import "format.js" as Format
 
 Window {
     id: panel
-    readonly property var running: studio.bots.filter(function (bot) { return bot.status === "running" || bot.status === "paused" })
+    readonly property var running: studio.running
     transientParent: null  // its own window: it shows while the Studio is hidden
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
     color: "transparent"
@@ -53,6 +53,11 @@ Window {
                     visible: line.state === "running" && !!line.bot.since
                     text: Format.duration(studio.now - line.bot.since)
                     color: studio.colors.muted; font.pixelSize: 12; font.family: "monospace"
+                }
+                Text {
+                    // a bot that sends no input runs next to anything (decision 0020)
+                    visible: line.playing && line.bot.input === false
+                    text: "· alongside"; color: studio.colors.muted; font.pixelSize: 12
                 }
             }
         }
