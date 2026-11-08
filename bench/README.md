@@ -12,7 +12,7 @@ uv run darbit bench --from-screens ../my-bot cases             # cases from a bo
 
 - **Made-up cases** (`make_cases.py`): a 2560 x 1600 menu screen drawn from code, every target's place known, with counters, a timer and a title to read (`[[read]]`, [Reading text](../docs/guides/reading-text.md)); look-alikes and a missing picture that must not be found; the same screen at 1920 x 1200 (`option = "sizes"`) and a recoloured icon (`option = "colour"`) that only count with those options on. Generated, not committed.
 - **A bot's own cases** stay with the bot: `darbit bench --from-screens` makes them from the screens darbit Studio saved, and the bot's CI can run `darbit bench` on them. darbit never reads a bot's screens.
-- A case is a folder with `case.toml` (see `darbit/tools/bench.py`). The run exits 1 when an answer is wrong, or, with `--baseline`, when a search is more than `--slower` (2) times slower than the baseline and more than 3 ms slower. Speed is also reported against the goals (10 ms in a region, 40 ms for the whole screen).
+- A case is a folder with `case.toml` (see `darbit/tools/bench.py`). The run exits 1 when an answer is wrong, or, with `--baseline`, when a search or a read is more than `--slower` (2) times slower than the baseline and more than 3 ms slower, or a read in the baseline didn't run (the `ocr` extra missing). Speed is also reported against the goals (10 ms in a region, 40 ms for the whole screen, 25 ms for a read).
 - **The baseline** (`baseline.json`) holds CI's own times, since CI's machines are slower than a desktop. After a change that is meant to be slower or faster, download the `bench-results` artifact's baseline from that PR's run and commit it.
 
 ## Baseline (2026-10-30, before any option)

@@ -136,3 +136,15 @@ def test_a_run_reads_text_and_says_when_it_needs_the_ocr_extra(tmp_path, isolate
     assert bench.main([str(tmp_path / "cases"), "--repeat", "1"]) == 0
     out = capsys.readouterr().out
     assert "needs ocr" in out and "1 of 1 right" in out and "need the ocr extra" in out
+
+
+def test_the_speed_gate_covers_reads_and_fails_when_they_did_not_run():
+    def result(target, ms, answer="right"):
+        return bench.Result("menu", target, answer, 0.99, ms, ms, bench.GOAL_READ, True)
+
+    baseline = {"menu/Top.Coins": 16.0, "menu/Top.Timer": 16.0}
+    slow_read = [result("Top.Coins", 50.0), result("Top.Timer", 17.0)]
+    assert bench.slower_than(slow_read, baseline) == ["menu/Top.Coins: 50.0 ms, was 16.0 ms"]
+    skipped = [result("Top.Coins", 0.0, "needs ocr"), result("Top.Timer", 17.0)]
+    assert bench.not_run(skipped, baseline) == ["menu/Top.Coins: not run (it needs the ocr extra), was 16.0 ms"]
+    assert bench.not_run(skipped, {}) == []  # control: a read with no time in the baseline isn't missed
