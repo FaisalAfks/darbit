@@ -1703,6 +1703,64 @@ def test_the_magnifier_follows_the_mouse_after_a_click_and_ctrl_wheel_zooms_it(q
     del engine
 
 
+def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    wait_until(window.isVisible)
+    window.resize(800, 600)
+    QtCore.QCoreApplication.processEvents()
+    magnifier = window.findChild(QObject, "magnifier")
+
+    def box(name="image"):
+        value = window.property(name)
+        value = value.toVariant() if hasattr(value, "toVariant") else value
+        return [round(number) for number in value]
+
+    def drag(start, end):
+        QTest.mousePress(window, Qt.LeftButton, Qt.NoModifier, QPoint(*start))
+        QTest.mouseMove(window, QPoint((start[0] + end[0]) // 2, (start[1] + end[1]) // 2))
+        QTest.mouseMove(window, QPoint(*end))
+        QtCore.QCoreApplication.processEvents()
+        QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, QPoint(*end))
+        QtCore.QCoreApplication.processEvents()
+
+    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "image"), Q_ARG("QVariant", [200, 200, 100, 80]))
+    QtCore.QCoreApplication.processEvents()
+    drag((250, 240), (260, 250))  # a drag from inside moves it, as before
+    assert box() == [210, 210, 100, 80]
+    drag((310, 225), (360, 225))  # its right edge, away from the handle: wider, the rest stays
+    assert box() == [210, 210, 150, 80]
+    at = magnifier.property("at")
+    assert (round(at.x()), round(at.y())) == (360, 225)  # the magnifier followed the drag
+    drag((211, 211), (190, 180))  # its top-left corner
+    assert box() == [190, 180, 170, 110]
+    drag((220, 290), (220, 400))  # its bottom edge
+    assert box() == [190, 180, 170, 220]
+    QMetaObject.invokeMethod(window, "undo")  # each drag is one undo step
+    assert box() == [190, 180, 170, 110]
+    QMetaObject.invokeMethod(window, "undo")
+    assert box() == [210, 210, 150, 80]
+    # a region resizes the same way when it's the kind picked
+    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "region"), Q_ARG("QVariant", [100, 100, 400, 300]))
+    QtCore.QCoreApplication.processEvents()
+    drag((99, 130), (50, 130))  # its left edge
+    assert box("region") == [50, 100, 450, 300]
+    assert box() == [210, 210, 150, 80]  # the image stays
+    capture.close()
+    del engine
+
+
 def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, Qt
