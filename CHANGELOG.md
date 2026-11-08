@@ -5,6 +5,7 @@
 ### New
 
 - darbit Studio's Overview has a Recoveries block: how often the bot recovered today, the most common reason and the last one, or that it hasn't had to; darbit's default layout ends with it, and `overview.toml` places it with `kind = "recoveries"`
+- `d.keep_trying` takes `back_timeout`: how long the go-back to `back_to` waits for each screen, finding where the game is included; None keeps `settings.timeout`, so a bot that's clearly lost recovers sooner
 
 ### Changed
 

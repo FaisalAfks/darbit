@@ -24,12 +24,13 @@ if d.go("Shop"):  # from wherever the game is
 - **`d.go(name)`** looks for every screen's proofs at once to find where the game is, takes the fewest moves, and
   checks each move arrived. A move that lands somewhere else (an ad, a disconnect screen you mapped) isn't a failure:
   it looks again and takes the way from there, a few times. It returns `False` when none of the screens is showing,
-  there's no way, or it doesn't get there; it never raises for that.
+  there's no way, or it doesn't get there; it never raises for that. `d.go(name, timeout=5)` waits that long for each
+  screen (finding where the game is too) instead of `settings.timeout`.
 - **`where()`** says which screen is showing (or `None`), **`route(a, b)`** the moves between two.
 - `d.screens` is the bot's map; `d.Map()` makes another.
 - Each `go` goes in the run report (`go`: there, lost or no way), so the Overview's activity shows it.
 - `d.keep_trying(..., back_to="Menu")` goes back to a screen after a failure and tries again before it
-  restarts the game ([Trying again](projects.md#trying-again)).
+  restarts the game; `back_timeout=` is the `timeout` it gives that `go` ([Trying again](projects.md#trying-again)).
 
 ## Testing without the game
 
