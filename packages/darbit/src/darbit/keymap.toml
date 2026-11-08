@@ -17,6 +17,10 @@
 "run.pause"        = "ctrl+alt+p"         # pause or resume the bot, a recording or a played run
 "run.stop"         = "ctrl+alt+q"         # stop everything (the stop hotkey)
 
+[scout]                                   # only while Scout is on, with the game in front (the game doesn't get them then)
+"scout.next"       = "n"                  # land on the next image of the group shown
+"scout.previous"   = "shift+n"
+
 [app]                                     # in every darbit window
 "palette.open"     = "ctrl+k"             # the command palette: every action by name
 "keys.show"        = "f1"                 # the keys for what's on screen

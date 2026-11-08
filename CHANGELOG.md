@@ -8,6 +8,7 @@
 - Capture's arrows and Ctrl+arrows speed up while held: a press still moves or resizes exactly 1 px (Shift: 10), and after about half a second of holding it goes faster, up to a top speed, until the key is let go
 - Capture resizes the image or region picked by dragging any of its edges or corners, like cropping: the cursor shows which way, the readouts and the magnifier follow, and Ctrl+Z takes a drag back
 - Capture can retake a target on a saved screenshot instead of the screen now: a failure's on Results, and a screen's last shot in the Library's Screen view (Retake on this shot). The image is cut from that shot at its own pixels; a lossless copy beside a JPEG is used first, and Capture says when the shot is JPEG and so a little softer. A retake on a screen's own shot keeps the other targets placed on it, and the shot isn't encoded again
+- Scout's pill in three forms: docked on the top or bottom, a group filter and a strip of the group's images stepped through with N and Shift+N, the one landed on boxed on the game with what's wrong and its retakes (on the shot where it was seen, or on the screen now); docked on a side, a ring and the groups in a list, a line hovered showing its retakes; floating, a grid of every image coloured by its state, one clicked shown large beside the shot where it was seen with its score against what it needs. The Regions and Locations of the screens showing are drawn on the game. A retake hides Scout while Capture is open and brings it back after
 
 ### Changed
 

@@ -13,6 +13,11 @@ Every shortcut is in one file, [`packages/darbit/src/darbit/keymap.toml`](https:
 | `Ctrl+Alt+P` | pause or resume |
 | `Ctrl+Alt+Q` | stop everything |
 
+## While Scout is on
+
+`N` / `Shift+N` the next image of the group shown, and the one before (with the game in front; the game doesn't get
+them while Scout is on)
+
 ## In every darbit window
 
 `Ctrl+K` command palette · `F1` keys for this screen · `Ctrl+Z` / `Ctrl+Y` undo and redo · `Ctrl+S` save · `Ctrl+Alt+T` next theme · `Ctrl+.` compact
