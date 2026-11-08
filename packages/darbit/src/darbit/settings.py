@@ -45,6 +45,10 @@ class Settings:
     screenshot_after: float = 20.0  # save a screenshot when a wait this long (or longer) runs out
     match: dict = field(default_factory=dict)  # matching options for every target, e.g. {"fast": True}
     matcher: str = "template"  # which matcher finds images: darbit's own, or one from a plugin
+    reader: str = "rapidocr"  # which reader reads text (d.read): darbit's own (the ocr extra), or one from a plugin
+    read: dict = field(default_factory=dict)  # how to read text everywhere, e.g. {"upscale": 2} (core/reading.py)
+    read_confidence: float = 0.5  # lowest confidence, 0 to 1, a read needs to count; below it d.read gives None
+    read_threads: int = 4  # CPU threads a read uses; more is no faster on a PC busy with a game
     polite: float = (
         0.0  # seconds without the person's mouse or keys before the bot goes on after they use them; 0 is off
     )

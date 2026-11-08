@@ -21,6 +21,7 @@ FAILING_AFTER = 2  # failures in a row that come down to the same image: it may 
 BEFORE = 8  # the steps before a failure shown with it
 CLICKS = ("click", "double_click", "right_click", "drag")
 LOOKS = ("exists", "wait", "find")
+READS = ("read", "read_number", "read_time")
 
 CAUSES = {
     COVERED: {"label": "Something covered the game", "tone": "warn", "act": False},
@@ -89,8 +90,8 @@ def _searches(run: list[dict], watched: set[str]) -> list[Search]:
 
 
 def before(run: list[dict]) -> list[dict]:
-    """The last things the bot did before a failure, oldest first: its clicks, its looks, the steps inside it and its
-    moves between screens, each with whether it worked and a plain line."""
+    """The last things the bot did before a failure, oldest first: its clicks, its looks, its reads, the steps inside it
+    and its moves between screens, each with whether it worked and a plain line."""
     found = []
     for event in run[1:]:  # the first is the failing step's own start
         row = _done(event)
@@ -118,6 +119,12 @@ def _done(event: dict) -> dict | None:
         if event.get("closest") is not None:
             say += f" (closest {float(event['closest']):.2f})"
         return {"time": time, "kind": kind, "what": what, "ok": False, "say": say}
+    if kind in READS:
+        what = _name(event.get("target"))
+        ok = bool(event.get("counted"))
+        text = event.get("text") or ""
+        say = f"{kind.replace('_', ' ')} {what}: {text!r}" if ok else f"{kind.replace('_', ' ')} {what}: unreadable"
+        return {"time": time, "kind": kind, "what": what, "ok": ok, "say": say}
     if kind == "step":
         what = str(event.get("step", "")).split(" > ")[-1]
         state = str(event.get("state", ""))

@@ -4,12 +4,13 @@ A target saved by the capture tool is two files with the same name:
 `menu/start.png` (the image) and `menu/start.json` (its settings):
 
     {"kind": "image", "region": [x, y, w, h], "similarity": 0.85, "offset": [dx, dy],
-     "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y]}
+     "location": [x, y], "scale": 1.5, "window": [w, h], "origin": [x, y], "text": "digits"}
 
 `region` is a box, or the name of a region target in the same folder ("Bag.List"): images that are searched in the
 same place share one, and moving it moves them all. `kind` says what the target is: an image (searched in its region, the whole screen without one, and clicked at its
 centre moved by `offset`), a region, or a location. Files from before it say nothing; `kind_of` works it out from what
-they have. Every other field is optional.
+they have. A region's `text` says what it holds for `d.read` ("digits", "number", "time", or the characters themselves).
+Every other field is optional.
 `window` and `origin` are the size and top-left corner of the app window it was taken in;
 with them, core/placement.py follows the window when it moves or changes size.
 
@@ -43,6 +44,8 @@ class Target:
     window: tuple[int, int] | None = None  # size of the window it was captured in
     origin: tuple[int, int] | None = None  # that window's top-left corner on screen, when captured
     match: dict | None = None  # matching options for this target (core/matching.py), over settings.match
+    text: str | None = None  # what a Region holds, for d.read: "digits", "number", "time" or the characters
+    read: dict | None = None  # how to read text in it (core/reading.py), over settings.read
     _pixels: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     @property
@@ -84,6 +87,25 @@ class Match:
     def point(self) -> Location:
         """Where a click on this match lands: the centre plus the target's offset."""
         return self.center.moved(*self.target.offset)
+
+    # reading inside a match is a runtime call (it grabs the screen): imported when used, so core doesn't load it
+    def read(self, chars: str | None = None) -> str | None:
+        """The text inside this match (`d.read`)."""
+        from ..runtime import read
+
+        return read.read(self, chars)
+
+    def read_number(self) -> float | None:
+        """The number inside this match (`d.read_number`)."""
+        from ..runtime import read
+
+        return read.read_number(self)
+
+    def read_time(self) -> float | None:
+        """The time inside this match, in seconds (`d.read_time`)."""
+        from ..runtime import read
+
+        return read.read_time(self)
 
 
 EXACT = 0.99  # Pattern.exact()
@@ -234,6 +256,10 @@ def _from_json(target: Target, path: Path) -> Target:
         changes["origin"] = tuple(data["origin"])
     if isinstance(data.get("match"), dict):
         changes["match"] = data["match"]
+    if isinstance(data.get("text"), str):
+        changes["text"] = data["text"]
+    if isinstance(data.get("read"), dict):
+        changes["read"] = data["read"]
     return replace(target, **changes)
 
 

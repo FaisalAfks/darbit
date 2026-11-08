@@ -21,7 +21,7 @@ def isolated(monkeypatch):
     monkeypatch.setattr(screen, "scale_at", screen.scale_at)
     monkeypatch.setattr(find.windows, "matching", find.windows.matching)
     monkeypatch.setattr(find.windows, "region", find.windows.region)
-    for name in ("images", "match", "log", "space", "window"):
+    for name in ("images", "match", "read", "log", "space", "window"):
         monkeypatch.setattr(d.settings, name, getattr(d.settings, name))
 
 
@@ -101,3 +101,38 @@ def test_cases_come_from_the_screens_the_studio_saved(tmp_path, monkeypatch):
     assert bench.from_screens(Path("."), tmp_path / "here") == 1
     here = (tmp_path / "here" / "Lobby" / "case.toml").read_text(encoding="utf-8")
     assert here.startswith("# bot's Lobby screen")
+
+
+def test_reads_are_judged_against_the_text_number_or_time_expected():
+    assert bench.judge_read("Daily quest", {"text": "Daily quest"}) == "right"
+    assert bench.judge_read("Daily guest", {"text": "Daily quest"}) == "misread 'Daily guest'"
+    assert bench.judge_read(4990000.0, {"number": 4990000}) == "right"
+    assert bench.judge_read(499.0, {"number": 4990000}) == "misread 499"
+    assert bench.judge_read(151.0, {"time": 151}) == "right"
+    assert bench.judge_read(None, {"time": 151}) == "missed"
+
+
+class SaysNumber:
+    def line(self, pixels, allowed):
+        from darbit.core.reading import Reading
+
+        return Reading("4.99M", 0.98)
+
+    def lines(self, pixels, allowed):
+        return []
+
+
+def test_a_run_reads_text_and_says_when_it_needs_the_ocr_extra(tmp_path, isolated, monkeypatch, capsys):
+    from darbit.runtime import readers
+
+    make_case(tmp_path / "cases" / "noise")
+    case = tmp_path / "cases" / "noise" / "case.toml"
+    case.write_text(case.read_text(encoding="utf-8") + "\n[[read]]\nregion = [0, 0, 80, 30]\nnumber = 4990000\n")
+    monkeypatch.setattr(readers, "current", lambda: SaysNumber())
+    assert bench.main([str(tmp_path / "cases"), "--repeat", "2"]) == 0
+    out = capsys.readouterr().out
+    assert "2 of 2 right" in out and "read 0,0,80,30" in out and "0.980" in out
+    monkeypatch.setattr(readers, "current", lambda: None)  # control: no reader, the read isn't counted
+    assert bench.main([str(tmp_path / "cases"), "--repeat", "1"]) == 0
+    out = capsys.readouterr().out
+    assert "needs ocr" in out and "1 of 1 right" in out and "need the ocr extra" in out

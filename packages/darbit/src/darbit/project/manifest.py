@@ -41,6 +41,10 @@ SETTING_KINDS = {
     "state": "folder",
     "matcher": "text",
     "match": "table",  # matching options: [settings.match] fast = true
+    "reader": "text",
+    "read": "table",  # how to read text: [settings.read] upscale = 2
+    "read_confidence": "number",
+    "read_threads": "number",
     "space": "text",  # "screen" (the default) or "window"
     "day_starts": "text",  # when the bot's day starts: "03:00", or "00:00 UTC"
     "polite": "number",  # polite mode: seconds of quiet before the bot goes on after the person used the mouse

@@ -1,5 +1,6 @@
 """Saving captures, and taking them back."""
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from ..platform import screen
 from .common import Item, Result, distinct
 
 RISKY = 0.7
+KEPT = ("similarity", "match", "text", "read")  # what a target's .json says that a capture doesn't: a retake keeps it
 
 
 @dataclass
@@ -29,8 +31,22 @@ class Saved:
 
 
 def _files(path: Path, kind: str) -> list[Path]:
-    json = path.with_name(path.name + ".json")
-    return [json] if kind != "image" else [path.with_name(path.name + ".png"), json]
+    settings = path.with_name(path.name + ".json")
+    return [settings] if kind != "image" else [path.with_name(path.name + ".png"), settings]
+
+
+def _kept(path: Path) -> dict:
+    """The settings of a target taken before that a capture leaves alone (its similarity, options, text)."""
+    settings_file = path.with_name(path.name + ".json")
+    if not settings_file.is_file():
+        return {}
+    try:
+        data = json.loads(settings_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {key: data[key] for key in KEPT if key in data}
 
 
 def _backup(files: list[Path]) -> dict[Path, bytes | None]:
@@ -53,6 +69,7 @@ def save_result(
     follows the window when it moves or changes size (core/placement.py)."""
     path = folder / item.name
     before = _backup(_files(path, item.kind))
+    kept = _kept(path)
     window_size = None
     window_corner = None
     if window is not None:
@@ -60,11 +77,19 @@ def save_result(
         window_corner = [window.x, window.y]
     if item.kind == "location":
         p = result.point
-        save(path, None, kind="location", location=[round(p.x), round(p.y)], window=window_size, origin=window_corner)
+        save(
+            path,
+            None,
+            kind="location",
+            location=[round(p.x), round(p.y)],
+            window=window_size,
+            origin=window_corner,
+            **kept,
+        )
         return Saved(item, f"saved {path}.json: location {round(p.x)},{round(p.y)}", before)
     if item.kind == "region":
         r = result.region
-        save(path, None, kind="region", region=[r.x, r.y, r.w, r.h], window=window_size, origin=window_corner)
+        save(path, None, kind="region", region=[r.x, r.y, r.w, r.h], window=window_size, origin=window_corner, **kept)
         return Saved(item, f"saved {path}.json: region {r.x},{r.y},{r.w},{r.h}", before)
     box = result.image
     image = shot[box.y - origin.y : box.bottom - origin.y, box.x - origin.x : box.right - origin.x].copy()
@@ -76,7 +101,17 @@ def save_result(
     if result.region_name:
         region = result.region_name
     scale = screen.scale_at(box.x, box.y)
-    save(path, image, kind="image", region=region, offset=offset, scale=scale, window=window_size, origin=window_corner)
+    save(
+        path,
+        image,
+        kind="image",
+        region=region,
+        offset=offset,
+        scale=scale,
+        window=window_size,
+        origin=window_corner,
+        **kept,
+    )
     elsewhere = distinct(image, shot, Region(box.x - origin.x, box.y - origin.y, box.w, box.h))
     verdict = "distinct" if elsewhere < RISKY else "RISKY, something else looks alike"
     message = (

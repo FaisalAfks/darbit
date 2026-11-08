@@ -10,7 +10,7 @@ uv run darbit bench bench/cases --options fast --baseline bench/baseline.json   
 uv run darbit bench --from-screens ../my-bot cases             # cases from a bot's saved screens
 ```
 
-- **Made-up cases** (`make_cases.py`): a 2560 x 1600 menu screen drawn from code, every target's place known; look-alikes and a missing picture that must not be found; the same screen at 1920 x 1200 (`option = "sizes"`) and a recoloured icon (`option = "colour"`) that only count with those options on. Generated, not committed.
+- **Made-up cases** (`make_cases.py`): a 2560 x 1600 menu screen drawn from code, every target's place known, with counters, a timer and a title to read (`[[read]]`, [Reading text](../docs/guides/reading-text.md)); look-alikes and a missing picture that must not be found; the same screen at 1920 x 1200 (`option = "sizes"`) and a recoloured icon (`option = "colour"`) that only count with those options on. Generated, not committed.
 - **A bot's own cases** stay with the bot: `darbit bench --from-screens` makes them from the screens darbit Studio saved, and the bot's CI can run `darbit bench` on them. darbit never reads a bot's screens.
 - A case is a folder with `case.toml` (see `darbit/tools/bench.py`). The run exits 1 when an answer is wrong, or, with `--baseline`, when a search is more than `--slower` (2) times slower than the baseline and more than 3 ms slower. Speed is also reported against the goals (10 ms in a region, 40 ms for the whole screen).
 - **The baseline** (`baseline.json`) holds CI's own times, since CI's machines are slower than a desktop. After a change that is meant to be slower or faster, download the `bench-results` artifact's baseline from that PR's run and commit it.
@@ -84,3 +84,16 @@ own only inside the window. Median of 3 searches per target:
 Both find every target, and window space is about ten times quicker, because it knows the size instead of trying
 each one. It still has to be measured on the owner's game (the window's title bar and borders, display scaling)
 before it's recommended; screen pixels stay the default.
+
+## Reading text (2026-11-08)
+
+The menu case's four `[[read]]` entries (two named Regions with `"text"`, two loose boxes), on the owner's PC with a
+game running, RapidOCR's bundled PP-OCRv6 small models, median of 5 reads ([decision 0019](../docs/decisions/0019-reading-text.md)):
+
+| How | Right | Median per read |
+|---|---|---|
+| one line, cut to its text, recogniser only (default) | 4 of 4 | 9 to 10 ms |
+| `lines`: the text found first | 4 of 4 | 15 to 47 ms |
+
+A short number (`4.99M`) in a loose Region: 10.7 ms on 4 threads (the default), 15.5 ms on 2, 26.5 ms on 1; the first
+read of a run about 1 s (loading RapidOCR and its models).

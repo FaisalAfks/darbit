@@ -172,3 +172,17 @@ def test_an_image_found_earlier_today_may_be_covered(project):
     ]
     found = problems.failing(project, events)
     assert found["seen_before"] and "a window over the game" in found["sentence"]
+
+
+def test_reads_are_among_the_last_steps_before_a_failure():
+    from darbit.server import problems
+
+    run = [
+        {"event": "step", "step": "Shop", "state": "started"},
+        {"event": "read_number", "target": "Shop.Coins", "text": "4.99M", "confidence": 0.98, "counted": True},
+        {"event": "read_time", "target": "Run.Timer", "text": "0z", "confidence": 0.2, "counted": False},
+        {"event": "log", "line": "not a step"},  # control: what isn't a step stays out
+    ]
+    rows = problems.before(run)
+    assert [row["say"] for row in rows] == ["read number Shop.Coins: '4.99M'", "read time Run.Timer: unreadable"]
+    assert [row["ok"] for row in rows] == [True, False]

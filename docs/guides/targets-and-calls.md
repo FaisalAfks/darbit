@@ -15,6 +15,8 @@ A target is a name like `Gui.Play` or `menu/start`. It's looked up in the `image
 - `offset`: click point from the image's centre
 - `location`: a fixed point, for targets without an image
 - `match`: matching options for this target (below)
+- `text`: what a Region holds, for reading it: `"digits"`, `"number"`, `"time"` or the characters ([Reading text](reading-text.md))
+- `read`: reading options for this Region, over `[settings.read]`
 
 A target can also be made in code: `d.Target("Bag.Character.png", similarity=0.6)`.
 
@@ -60,6 +62,8 @@ The capture tool also saves `scale` (the display scaling) and, with `--window Ga
 | `vanish(target, timeout=None)` | waits until the target is gone | `True` / `False` |
 | `find_all(target)` | every place the target is | list of `Match` |
 | `check(*targets)` | names of targets whose image file is missing | list |
+| `read(where, chars=None)` | the text in a Region, a Match, or a named Region or Image ([Reading text](reading-text.md), the `ocr` extra) | text or `None` |
+| `read_number(where)`, `read_time(where)` | a number (`4.99M` is 4990000.0) or a time in seconds (`02:31` is 151.0) shown there | `float` or `None` |
 | `click`, `double_click`, `right_click`, `hover` | on a target, a `Match` or a `Location`; waits up to `settings.timeout` for a target | `True` / `False` |
 | `drag(target, to=...)` | drag and drop, like SikuliX's `dragDrop` | `True` / `False` |
 | `scroll(notches, at=None)` | mouse wheel; positive scrolls up | `True` / `False` |
@@ -78,7 +82,7 @@ play = d.Pattern("Menu.Start").similar(0.85).offset(10, 0)  # also .exact(), .wi
 
 ### Regions, screens and apps
 
-A `Region(x, y, w, h)` searches and clicks inside itself, the SikuliX way: `exists`, `find`, `wait`, `vanish`, `find_all`, `click`, `double_click`, `right_click`, `hover`, `drag` and `observe` are the calls above with `region=` set to it.
+A `Region(x, y, w, h)` searches and clicks inside itself, the SikuliX way: `exists`, `find`, `wait`, `vanish`, `find_all`, `click`, `double_click`, `right_click`, `hover`, `drag` and `observe` are the calls above with `region=` set to it, and `read`, `read_number` and `read_time` read the text in it (a `Match` has them too).
 
 ```python
 game = d.App("Game").window  # a Region, or None if it isn't open
@@ -112,6 +116,8 @@ d.settings.lag = 1.5  # a slow game or PC: every search's wait and every d.sleep
 d.settings.window = "Game"  # bring this window to the front before any input
 d.settings.missing_images = "skip"  # treat a missing image file as never found, instead of an error
 d.settings.screenshot_after = 20  # save a screenshot when a wait this long runs out
+d.settings.read_confidence = 0.5  # lowest confidence a read needs to count (Reading text)
+d.settings.read = {"upscale": 2}  # how text is read everywhere; read_threads, reader: Reading text
 d.stop_key("ctrl+alt+q")  # the stop hotkey
 ```
 

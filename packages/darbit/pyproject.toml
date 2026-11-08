@@ -18,6 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 studio = ["PySide6-Essentials>=6.8"]  # darbit Studio: darbit app
+ocr = ["rapidocr>=3.10,<4", "onnxruntime>=1.20"]  # reading text (d.read): RapidOCR and its models, decision 0019
 
 [project.scripts]
 darbit = "darbit.cli:main"
