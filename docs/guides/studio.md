@@ -30,7 +30,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; a region is a place of its own, which images name), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
   numbers and last scores (an image also says its region and location, the defaults included: the whole screen and
-  its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Highlight on screen**
+  its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Scout on screen**
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
@@ -76,7 +76,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
   don't). Floating, it shows where the bot is, today's round so far and the last step that ended. The
   bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.
-- **Moving a pill:** every pill over the game (the run pill, Capture's, Highlight's and the recorder's) starts at the
+- **Moving a pill:** every pill over the game (the run pill, Capture's, Scout's and the recorder's) starts at the
   top centre and can be dragged by its grip (⠿) or any empty part of it. On the top and bottom edges it's a row, on the
   left and right a column with its buttons labelled; it snaps to an edge's centre, its corners or near the centre on
   either side. While it's dragged it tilts and sways a little, takes the shape it will have, and the nearest edge lights
@@ -86,16 +86,19 @@ sight. A phone gets it too when `notify.toml` has a channel.
   screen shares with another, where it couldn't hide.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
-- **Highlight** (Highlight on screen in the Library's side panel for an image, or Ctrl+Alt+H with the game in front
-  for the last one chosen): where that image is found on screen right now. The Studio steps aside and the image
-  gets its box and score over the game, a couple of
-  times a second; one just under what it needs gets a faint one. Images found on the same spot are marked ⚠ with
-  the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to the
-  game. Its pill, like the run pill, says how many are found, how long a pass takes and any look-alikes,
-  with ✕ to hide Highlight and ⤢ to go back to the Studio; it slides away when the mouse leaves it. Ctrl+Alt+H again
-  hides it too.
+- **Scout** (Ctrl+Alt+S with the game in front, Tools in the tray or the command palette, or Scout on screen in the
+  Library's side panel to land on one image): a check of the whole library while the game's menus are gone through by
+  hand. The Studio steps aside and every image of the bot is searched a couple of times a second; each one found gets
+  its box and score over the game, one just under what it needs a faint one. Images found on the same spot are marked
+  ⚠ with the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to
+  the game. Scout keeps a record for the session: each image is **seen** (when, its best score, on which screen),
+  **weak** (found under what it needs, or with a look-alike) or **not seen yet**, and the latest shot of each screen
+  it saw is kept (one per screen, in the bot's `.darbit/scout`) for a retake on it. Its pill, like the run pill, says
+  "Scout: 31 of 40 seen" with the weak ones and those not seen yet, with ✕ to hide Scout and ⤢ to go back to the
+  Studio; floating, it has **Reset the session**. The record stays while Scout is hidden. Its key again hides it too;
+  a key set for Highlight before (`highlight.toggle`) still works.
 
-  ![Highlight](../ui/images/qt-studio-highlight.png)
+  ![Scout](../ui/images/qt-studio-highlight.png)
 - **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill on the screen's edge
   shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
   **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for an image or until it's gone (Capture opens on that
@@ -117,7 +120,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   reason) with a sentence of what the bot saw; opened, it shows the screen when it stopped with the closest match of
   the image it waited for boxed and scored, beside the images that ran out before it stopped (best against what each
   needs, for how long) and the steps before it. Under the screen, **Retake** takes the image again on that screen (the
-  moment it failed) or on the screen now; Highlight, the screenshots and Not a problem are beside the steps.
+  moment it failed) or on the screen now; Scout, the screenshots and Not a problem are beside the steps.
 - **Settings** (Ctrl+4): the bot's `settings.toml`, one row per setting with a control made for its type: a switch, a
   stepper (a number with − and +, kept in its range), a slider for a number with a min and a max, a list, or a field.
   The section cards flow into two columns on a wide window; the section list has search (Ctrl+F), counts, and a dot on
@@ -139,4 +142,4 @@ Closing the Studio stops nothing: bots run in the service, which keeps going (se
 
 The pages follow the mockups in `docs/ui/` and the tokens in [the design system](../style/ui/design-system.md); `darbit.studio.app.shot()` draws any page into a PNG with no screen, which the tests use for every page and theme.
 
-Highlight, the recorder and the action editor come next (rebuild plan, milestone 4).
+Scout, the recorder and the action editor come next (rebuild plan, milestone 4).

@@ -158,7 +158,7 @@ def test_an_image_is_tagged_only_as_an_image():
 
 
 def test_an_image_needs_its_own_similarity_else_the_bots(project, tmp_path):
-    from darbit.studio.highlight import targets_of
+    from darbit.studio.scout import targets_of
 
     toml = tmp_path / "darbit.toml"
     toml.write_text(toml.read_text(encoding="utf-8") + "[settings]\nsimilarity = 0.8\n", encoding="utf-8")
@@ -168,4 +168,4 @@ def test_an_image_needs_its_own_similarity_else_the_bots(project, tmp_path):
     needs = {}
     for target in targets_of(tmp_path):
         needs[target.name] = target.similarity
-    assert needs == {"Lobby.Play": 0.85, "Lobby.PlayButton": 0.8}  # Highlight on screen too
+    assert needs == {"Lobby.Play": 0.85, "Lobby.PlayButton": 0.8}  # Scout too

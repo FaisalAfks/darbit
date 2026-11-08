@@ -334,4 +334,4 @@ def failing_sentence(streak: dict) -> str:
             said
             + " It was found earlier today: a window over the game, or the game on another screen, does this too. If not, the game changed: retake it."
         )
-    return said + " The game may have changed how it looks: retake it, and Highlight on screen shows what's found now."
+    return said + " The game may have changed how it looks: retake it, and Scout shows what's found now."

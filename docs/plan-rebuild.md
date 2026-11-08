@@ -119,7 +119,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Test: find the boxed picture in its region and mark every match with its score | Have |
 | Snapping to edges and guide lines | Have (edges), planned (guides) |
 | The setup guide's next-picture bar and Ctrl+Alt+C to freeze again | Have |
-| Highlight: what's found on screen right now, with scores | Planned |
+| Scout (was Highlight): what's found on screen right now, with scores, and a record of what's been seen | Planned |
 
 ### Studio
 
@@ -130,7 +130,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | Closing keeps darbit in the tray; the window remembers its size and place | Have |
 | Overview in blocks anyone can rearrange, filled from what the bot records | Have |
 | Results: a summary sentence, gains and progress, a whole-day timeline, problems with Retake | Have, but Retake to do (#250) |
-| Library: every asset type, grid and Screen view, inspector, Test on screen, Retake, Rename, Delete | Have (Test on screen is Highlight on screen) |
+| Library: every asset type, grid and Screen view, inspector, Test on screen, Retake, Rename, Delete | Have (Test on screen is Scout on screen) |
 | Settings: sections, search, defaults, a save bar | Have |
 | Themes (glass dark, glass light, midnight, high contrast, custom), a remappable keymap, a command palette | Have |
 | A second launch brings the open Studio forward | Have |
@@ -232,7 +232,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 ## 7. Studio
 
 - **PySide6 with QML:** the screens are written in QML (Qt's declarative UI language, built for styled and animated interfaces and drawn on the GPU), with Python behind them for the data and logic. One process for the UI.
-- **Native overlays** for Capture, Highlight, the recorder bar and the run pill: real transparency and click-through on every system, screen pictures shown directly with no frames sent anywhere.
+- **Native overlays** for Capture, Scout, the recorder bar and the run pill: real transparency and click-through on every system, screen pictures shown directly with no frames sent anywhere.
 - **The tray** through `QSystemTrayIcon`.
 - **Pages read from the service and SQLite,** and update from the service's events, not by polling.
 - **The design system** carried over as QML components: the same tokens, themes and keymap.

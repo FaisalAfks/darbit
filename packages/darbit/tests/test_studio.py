@@ -625,12 +625,12 @@ def test_the_recorder_records_checks_and_saves_an_action(qt, tmp_path, monkeypat
     recorder.close()
 
 
-def test_highlight_finds_the_bots_pictures_on_screen(qt, tmp_path):
+def test_scout_finds_the_bots_images_on_screen(qt, tmp_path):
     import cv2
     import numpy as np
 
     from darbit.core.geometry import Region
-    from darbit.studio.highlight import Highlight
+    from darbit.studio.scout import Scout
 
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
     rng = np.random.default_rng(3)
@@ -640,22 +640,86 @@ def test_highlight_finds_the_bots_pictures_on_screen(qt, tmp_path):
     stripes = np.zeros((40, 40, 3), np.uint8)
     stripes[:, ::8] = (0, 0, 255)  # not on this screen
     cv2.imwrite(str(tmp_path / "images" / "Lobby.Gone.png"), stripes)
-    highlight = Highlight()
-    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
-    wait_until(lambda: len(highlight.boxes) == 2)
-    boxes = {box["name"]: box for box in highlight.boxes}
+    scout = Scout()
+    scout.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
+    wait_until(lambda: len(scout.boxes) == 2)
+    boxes = {box["name"]: box for box in scout.boxes}
     assert boxes["Lobby.Play"]["found"] and (boxes["Lobby.Play"]["x"], boxes["Lobby.Play"]["y"]) == (300, 200)
     assert not boxes["Lobby.Gone"]["found"]
-    assert highlight.found == 1 and highlight.isOn
-    highlight.stop()
-    assert not highlight.isOn and highlight.boxes == []
-    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)), only="Lobby.Play")
-    wait_until(lambda: len(highlight.boxes) == 1)  # only the picture chosen in the Library
-    assert highlight.boxes[0]["name"] == "Lobby.Play"
-    highlight.stop()
+    assert scout.found == 1 and scout.isOn
+    wait_until(lambda: scout.seen == 1)
+    assert scout.notSeen == 1 and scout.total == 2
+    scout.stop()
+    assert not scout.isOn and scout.boxes == []
+    assert scout.seen == 1  # the session's record stays while Scout is hidden
+    scout.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)), land_on="Lobby.Play")
+    wait_until(lambda: len(scout.boxes) == 2)  # every image still, landed on the one picked in the Library
+    assert scout.landed == "Lobby.Play"
+    scout.stop()
 
 
-def test_highlight_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
+def test_scout_keeps_a_record_of_each_image_with_the_latest_shot_of_each_screen(qt, tmp_path, monkeypatch):
+    import cv2
+    import numpy as np
+
+    from darbit.core.geometry import Region
+    from darbit.studio import scout as scout_module
+    from darbit.studio.scout import Scout
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
+    (tmp_path / "images").mkdir()
+    for name in ("Shop.Buy", "Shop.Back", "Card.Rin", "Daily.Claim"):
+        cv2.imwrite(str(tmp_path / "images" / f"{name}.png"), np.zeros((10, 10, 3), np.uint8))
+    scout = Scout()
+    scout.start(tmp_path, grab=lambda: (np.zeros((600, 900, 3), np.uint8), Region(0, 0, 900, 600)))
+    scout.stop()
+    pixels = np.full((600, 900, 3), 90, np.uint8)
+    origin = Region(-100, 0, 900, 600)
+
+    def box(name, score, x, found=True, alike=()):
+        return {
+            "name": name,
+            "found": found,
+            "score": score,
+            "needs": 0.9,
+            "x": x,
+            "y": 50,
+            "w": 40,
+            "h": 20,
+            "with": list(alike),
+        }
+
+    clock = [1000.0]
+    monkeypatch.setattr(scout_module.time, "time", lambda: clock[0])
+    scout.note(
+        [
+            box("Shop.Buy", 0.86, 0, found=False),
+            box("Shop.Back", 0.99, 200),
+            box("Card.Rin", 0.95, 400, alike=["Card.Aki"]),
+        ],
+        pixels,
+        origin,
+    )
+    images = {image["name"]: image for image in scout.images}
+    assert images["Shop.Back"]["state"] == "seen" and images["Shop.Back"]["seenOn"] == "Shop"
+    assert images["Shop.Buy"]["state"] == "weak"  # found under what it needs
+    assert images["Card.Rin"]["state"] == "weak" and images["Card.Rin"]["alike"] == ["Card.Aki"]
+    assert images["Card.Rin"]["seenOn"] == "Shop"  # the screen showing, not the one in its name
+    assert images["Daily.Claim"]["state"] == "not" and images["Daily.Claim"]["screen"] == "Daily"
+    shot = scout_module.shots_folder(tmp_path) / "Shop.jpg"
+    assert shot.is_file() and images["Shop.Back"]["shot"] == str(shot)
+    assert images["Shop.Back"]["box"] == [300, 50, 40, 20]  # in the shot's own pixels
+    assert (scout.seen, scout.weak, scout.notSeen, scout.total) == (1, 2, 1, 4)
+    written = shot.stat().st_mtime_ns
+    clock[0] += 1
+    scout.note([box("Shop.Back", 0.995, 200)], pixels, origin)  # nothing new on the screen: the shot stays
+    assert shot.stat().st_mtime_ns == written
+    assert {image["name"]: image for image in scout.images}["Shop.Buy"]["shot"] == str(shot)
+    scout.reset()
+    assert scout.seen == 0 and scout.notSeen == 4 and scout.images[0]["shot"] == ""
+
+
+def test_scout_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
     import cv2
     import numpy as np
     from PySide6.QtCore import QObject
@@ -663,29 +727,29 @@ def test_highlight_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
 
     from darbit.core.geometry import Region
     from darbit.studio.hiding import HidingPill
-    from darbit.studio.highlight import Highlight
+    from darbit.studio.scout import Scout
 
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
     (tmp_path / "images").mkdir()
     screen = np.zeros((600, 900, 3), np.uint8)
     screen[200:260, 300:420] = (40, 160, 220)
     cv2.imwrite(str(tmp_path / "images" / "Menu.Start.png"), screen[190:270, 290:430])
-    highlight, hiding = Highlight(), HidingPill(watch=lambda moved: None)
-    engine = app.load(backend.Studio(FakeClient), highlight=highlight, highlight_hiding=hiding)
+    scout, hiding = Scout(), HidingPill(watch=lambda moved: None)
+    engine = app.load(backend.Studio(FakeClient), scout=scout, scout_hiding=hiding)
     root = engine.rootObjects()[0]
-    pill = root.findChild(QQuickWindow, "highlightPill")
+    pill = root.findChild(QQuickWindow, "scoutPill")
     assert not hiding.isOpen and not pill.isVisible()
-    highlight.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
-    wait_until(lambda: highlight.found == 1)
+    scout.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
+    wait_until(lambda: scout.found == 1)
     assert hiding.isOpen and pill.isVisible()
-    wait_until(lambda: pill.findChild(QObject, "highlightFound").property("text").startswith("1 of 1 found"))
-    highlight.stop()
+    wait_until(lambda: pill.findChild(QObject, "scoutSeen").property("text") == "Scout: 1 of 1 seen")
+    scout.stop()
     assert not hiding.isOpen and not pill.isVisible()
     del engine
 
 
 def test_pictures_found_on_the_same_spot_are_look_alikes():
-    from darbit.studio.highlight import mark_look_alikes
+    from darbit.studio.scout import mark_look_alikes
 
     boxes = mark_look_alikes(
         [
@@ -975,16 +1039,16 @@ def test_the_library_sorts_assets_by_the_kinds_the_service_names():
         assert f'key: "{kind}"' in page  # a tab for each kind the service sends
 
 
-def test_highlight_one_picture_from_the_library(qt):
+def test_scout_lands_on_one_image_from_the_library(qt):
     client = FakeClient()
     studio = backend.Studio(lambda: client)
     wanted = []
-    studio.highlightWanted.connect(lambda folder, name: wanted.append((folder, name)))
+    studio.scoutWanted.connect(lambda folder, name: wanted.append((folder, name)))
     studio.connect()
     wait_until(lambda: studio.bot.get("path"))
-    studio.highlightOne("Bag.Equip")
-    studio.toggleHighlight()  # Ctrl+Alt+H: the same picture again
-    assert wanted == [("/bots/ad-bot", "Bag.Equip"), ("/bots/ad-bot", "Bag.Equip")]
+    studio.scoutOne("Bag.Equip")
+    studio.toggleScout()  # its key: every image, on or off
+    assert wanted == [("/bots/ad-bot", "Bag.Equip"), ("/bots/ad-bot", "")]
 
 
 def test_capture_makes_an_image_its_region_and_its_location_together(qt, tmp_path):
