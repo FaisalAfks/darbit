@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Capture's tiles in the side column keep the active one in sight: the column had no width until the window's layout gave it one, so tiles placed before then stacked one a row, and when they reflowed into two the list kept that offset and stepping to another target scrolled it the wrong way. The column has its width from the start
 - `darbit bench`'s speed gate no longer fails on a slow CI runner: each search is judged by its fastest repeat instead of its median, and against the run's own speed (the median of every search's time over its baseline), so a machine that runs the whole job 2 times slower passes while one search much slower than the rest still fails. A whole run more than `--machine-slower` (3) times slower fails. Results and the table have the fastest time too, and `--save-baseline` writes it; darbit's bench/baseline.json holds CI's fastest times. Baselines saved before hold medians, which only makes the gate a little looser until they're saved again
 
 ### New
