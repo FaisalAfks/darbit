@@ -72,6 +72,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | `Glass` | a card on a page, with an optional small caps title |
 | `Ring`, `Bar` | progress: a ring with its number, a thin bar |
 | `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
+| `ShotTargets` | the targets taken on one shot, as tiles in Capture's pill: a row that scrolls sideways, or two columns that scroll up and down |
 | `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |

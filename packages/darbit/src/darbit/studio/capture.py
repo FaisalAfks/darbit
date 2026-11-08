@@ -10,7 +10,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PySide6.QtCore import Property, QObject, QSize, Signal, Slot
+from PySide6.QtCore import Property, QObject, QRect, QSize, Signal, Slot
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -81,7 +81,15 @@ class ShotProvider(QQuickImageProvider):
         self.image = QImage(rgb.data, width, height, width * 3, QImage.Format.Format_RGB888).copy()
 
     def requestImage(self, name: str, size: QSize, wanted: QSize) -> QImage:
-        return self.image
+        """The shot, or a part of it for a tile: "shot3/x,y,w,h" in the shot's pixels."""
+        if "/" not in name:
+            return self.image
+        part = name.split("/", 1)[1].split(",")
+        try:
+            x, y, w, h = (round(float(value)) for value in part)
+        except ValueError:
+            return QImage()
+        return self.image.copy(QRect(x, y, max(1, w), max(1, h)))
 
 
 class Capture(QObject):
