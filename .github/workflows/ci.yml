@@ -66,8 +66,8 @@ jobs:
           enable-cache: true
       - run: uv sync --locked --extra studio
       - run: uv run pytest packages/darbit/tests/live -v -s
-      - name: Highlight again at 150% display scaling (Qt's scale; the machine's own is 100%)
-        run: uv run pytest packages/darbit/tests/live -v -s -k highlight
+      - name: Scout again at 150% display scaling (Qt's scale; the machine's own is 100%)
+        run: uv run pytest packages/darbit/tests/live -v -s -k scout
         env:
           QT_SCALE_FACTOR: "1.5"
       - name: the Studio's pictures in the log too, as JPEG in base64 (for reading them where artifacts can't be fetched)
