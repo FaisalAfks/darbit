@@ -68,7 +68,8 @@ What was checked (2026-11-08):
 - `import darbit` stays free of the extra; RapidOCR is imported on the first read.
 - RapidOCR depends on `opencv-python-headless`, darbit on `opencv-python`: both install the same `cv2` files. They
   are the same OpenCV at the same version, and darbit uses nothing of the GUI part, so either copy works; uninstalling
-  one of them leaves `cv2` broken until the other is installed again.
+  one of them leaves `cv2` broken until the other is installed again. Since #406 darbit depends on
+  `opencv-python-headless` too, so an environment has one OpenCV.
 - Reading with some characters uses RapidOCR's recogniser below its public call (its model session, resizing and
   alphabet), so the extra is pinned below RapidOCR 4 and the tests with the real models run in CI.
 - The Windows `python` job and the `bench` job install the extra; `python-linux` doesn't, so the tests that need the
