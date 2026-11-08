@@ -2574,7 +2574,23 @@ class OneAtATime(FakeClient):
         if method == "bot.start":
             self.asked.append((method, params))
             return self.start(params["bot"], bool(params.get("replace")))
+        if method == "bot.action.play":
+            self.asked.append((method, params))
+            return self.play(params["name"], bool(params.get("replace")))
         return super().call(method, **params)
+
+    def play(self, name, replace):
+        """An action sends input from the service: refused while any bot that sends input runs, its own included."""
+        from darbit.service.client import ServiceError
+
+        in_the_way = [
+            dict(bot) for bot in self.bots.values() if bot["status"] in ("running", "paused") and bot.get("input", True)
+        ]
+        if in_the_way and not replace:
+            raise ServiceError("in the way", code="input_bot_running", detail={"running": in_the_way})
+        for bot in in_the_way:
+            self.bots[bot["path"]]["status"] = "stopped"
+        return {"playing": True}
 
     def start(self, path, replace):
         from darbit.service.client import ServiceError
@@ -2727,3 +2743,49 @@ def test_the_run_pill_has_a_line_for_each_running_bot_with_its_own_controls(qt):
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_playing_an_action_while_a_bot_runs_asks_to_stop_it_and_play(qt):
+    from PySide6.QtCore import QObject
+
+    client = OneAtATime()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    sheet = root.findChild(QObject, "stopAndStartSheet")
+    said = []
+    studio.said.connect(said.append)
+    studio.playAction("go_to_boss")
+    wait_until(lambda: sheet.property("opened"))
+    question = next(item for item in _walk(sheet.property("contentItem")) if item.objectName() == "question")
+    assert question.property("text") == "ad-bot is running and uses the mouse and keys. Stop it and play go_to_boss?"
+    assert said == []  # control: nothing played yet
+    assert _sheet_button(sheet, "stopAndStart").property("text") == "Stop and play"
+    QMetaObject.invokeMethod(_sheet_button(sheet, "stopAndStart"), "clicked")
+    wait_until(
+        lambda: ("bot.action.play", {"bot": "/bots/other", "name": "go_to_boss", "replace": True}) in client.asked
+    )
+    wait_until(lambda: len(said) == 1)  # played: the Studio says so, as without a question
+    assert client.bots["/bots/ad-bot"]["status"] == "stopped"
+    del engine
+
+
+def test_recording_refused_while_a_bot_runs_says_why_and_brings_the_studio_back(qt):
+    class Recorder(QtCore.QObject):
+        finished = QtCore.Signal(str)
+        pictureWanted = QtCore.Signal(str, bool)
+        active = False
+
+        def start(self, folder, name, again):
+            return "ad-bot is running and uses the mouse and keys too: stop it to record dim_run"
+
+    class Capture(QtCore.QObject):
+        saved = QtCore.Signal(str)
+
+    studio = backend.Studio(lambda: OneAtATime())
+    window = Window()
+    app._connect_recorder(studio, Capture(), Recorder(), window)
+    said = []
+    studio.said.connect(said.append)
+    studio.recordWanted.emit("/bots/other", "dim_run", False)
+    assert not window.shown  # the Studio steps aside first
+    wait_until(lambda: said == ["ad-bot is running and uses the mouse and keys too: stop it to record dim_run"])
+    assert window.shown

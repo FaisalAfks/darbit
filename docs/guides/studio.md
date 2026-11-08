@@ -150,8 +150,10 @@ sight. A phone gets it too when `notify.toml` has a channel.
   and how to fix it (**Take them** opens Capture on the targets not taken yet), with **Cancel**, **Check again** and
   **Start anyway**. One bot that sends input runs at a time ([the service](service.md)): Play (any of them, Start
   anyway too) while another one runs asks "fish-bot is running and uses the mouse and keys. Stop it and start
-  my-bot?", with **Cancel** and **Stop and start**, which stops it cleanly and starts this one. A bot with
-  `[run] input = false` never asks, and starts alongside.
+  my-bot?", with **Cancel** and **Stop and start**, which stops it cleanly and starts this one. Playing an action
+  (Play, Step through) asks the same, with **Stop and play**: an action clicks and types too. A bot with
+  `[run] input = false` never asks, and starts alongside. Record while a bot that sends input runs says why it can't
+  start, and the Studio comes back.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
   the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), whether bots go on
