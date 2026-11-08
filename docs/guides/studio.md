@@ -93,12 +93,25 @@ sight. A phone gets it too when `notify.toml` has a channel.
   ⚠ with the others' names: the bot can't tell them apart there, which the `colour` option often fixes. Clicks go to
   the game. Scout keeps a record for the session: each image is **seen** (when, its best score, on which screen),
   **weak** (found under what it needs, or with a look-alike) or **not seen yet**, and the latest shot of each screen
-  it saw is kept (one per screen, in the bot's `.darbit/scout`) for a retake on it. Its pill, like the run pill, says
-  "Scout: 31 of 40 seen" with the weak ones and those not seen yet, with ✕ to hide Scout and ⤢ to go back to the
-  Studio; floating, it has **Reset the session**. The record stays while Scout is hidden. Its key again hides it too;
-  a key set for Highlight before (`highlight.toggle`) still works.
+  it saw is kept (one per screen, in the bot's `.darbit/scout`) for a retake on it. The Regions and Locations of the
+  screens showing are drawn on them in their kinds' colours. Its pill says "Scout: 31 of 40 seen", in three forms:
+  - **Docked on the top or bottom:** a group filter (All, Weak, Not yet, Seen) and a strip of the group's images that
+    scrolls sideways. **N** and **Shift+N** (or ‹ ›) step through it, with the game in front; the one landed on is
+    boxed on the game in the accent, with its region dashed and what's wrong, and a line under the strip says where and
+    how well it was seen, with its retakes: **on the shot where it was seen** (Capture on that saved shot) and **on the
+    screen now**. One never seen has only now. While Scout is on, N and Shift+N go to Scout, not the game (change them
+    in darbit settings).
+  - **Docked on a side:** a ring with how many are seen, then the groups (Not seen yet, Weak, Seen), each folding, in a
+    list that scrolls; a line hovered shows its retakes.
+  - **Floating:** every image in a grid, coloured by its state; one clicked opens in full: the image large beside the
+    saved shot where it was seen with its box, its best score against what it needs, why it's weak and its retakes;
+    ‹ › step on, **Every image** goes back to the grid.
 
-  ![Scout](../ui/images/qt-studio-highlight.png)
+  ✕ hides Scout, ⤢ goes back to the Studio, **Reset the session** starts the record over. A retake hides Scout while
+  Capture is open and brings it back after, with that image's record started over. The record stays while Scout is
+  hidden. Its key again hides it too; a key set for Highlight before (`highlight.toggle`) still works.
+
+  ![Scout](../ui/images/qt-studio-scout.png)
 - **Record** (the Library's Record button): name the action, and the Studio steps aside. A pill on the screen's edge
   shows the time and the steps caught; every key, click, wheel notch and mouse move goes in, on one clock, until
   **Done**. **Pause** (Ctrl+Alt+P) to add a check: wait for an image or until it's gone (Capture opens on that

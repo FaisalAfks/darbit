@@ -719,6 +719,192 @@ def test_scout_keeps_a_record_of_each_image_with_the_latest_shot_of_each_screen(
     assert scout.seen == 0 and scout.notSeen == 4 and scout.images[0]["shot"] == ""
 
 
+def _scout_bot(tmp_path):
+    """A bot with images on two screens, a Region and a Location, and a Scout that has seen some of them."""
+    import json
+
+    import cv2
+    import numpy as np
+
+    from darbit.core.geometry import Region
+    from darbit.studio.scout import Scout
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "hi-bot"\n', encoding="utf-8")
+    images = tmp_path / "images"
+    images.mkdir()
+    for name in ("Shop.Back", "Shop.Buy", "Shop.Card", "Daily.Claim"):
+        cv2.imwrite(str(images / f"{name}.png"), np.full((20, 40, 3), 120, np.uint8))
+    (images / "Shop.List.json").write_text(json.dumps({"kind": "region", "region": [10, 10, 300, 200]}))
+    (images / "Shop.Spot.json").write_text(json.dumps({"kind": "location", "location": [50, 60]}))
+    (images / "Shop.Buy.json").write_text(json.dumps({"kind": "image", "similarity": 0.9}))
+    from darbit.platform.backend import NotSupported
+
+    def grab():
+        raise NotSupported("the test feeds the passes")
+
+    scout = Scout()
+    scout.start(tmp_path, grab=grab)
+
+    def box(name, score, x):
+        return {
+            "name": name,
+            "found": score >= 0.9,
+            "score": score,
+            "needs": 0.9,
+            "x": x,
+            "y": 40,
+            "w": 40,
+            "h": 20,
+            "with": [],
+            "shown": True,
+            "region": None,
+        }
+
+    boxes = [box("Shop.Back", 0.99, 100), box("Shop.Buy", 0.86, 200), box("Shop.Card", 0.95, 300)]
+    scout.note(boxes, np.full((300, 400, 3), 70, np.uint8), Region(0, 0, 400, 300))
+    scout._take(boxes, 40.0)
+    return scout
+
+
+def test_scout_steps_through_a_group_and_lands_on_its_first(qt, tmp_path):
+    from darbit.studio.scout import places_of
+
+    scout = _scout_bot(tmp_path)
+    assert (scout.seen, scout.weak, scout.notSeen) == (2, 1, 1)
+    assert [image["name"] for image in scout.listed] == ["Shop.Buy", "Daily.Claim", "Shop.Back", "Shop.Card"]
+    scout.setGroup("seen")
+    assert [image["name"] for image in scout.listed] == ["Shop.Back", "Shop.Card"]
+    assert scout.landed == "Shop.Back"  # landed on the group's first
+    scout.next()
+    assert scout.landed == "Shop.Card"
+    scout.next()
+    assert scout.landed == "Shop.Back"  # round again
+    scout.previous()
+    assert scout.landed == "Shop.Card"
+    scout.setGroup("nothing")  # not a group: nothing changes
+    assert scout.group == "seen"
+    scout.setGroup("not")
+    assert scout.landed == "Daily.Claim"
+    assert scout.present == ["Shop"]
+    assert places_of(tmp_path) == [
+        {"name": "Shop.List", "kind": "region", "screen": "Shop", "box": [10, 10, 300, 200]},
+        {"name": "Shop.Spot", "kind": "location", "screen": "Shop", "box": [50, 60, 0, 0]},
+    ]  # an image's settings file isn't a place
+    assert scout.places == places_of(tmp_path)
+    buy = next(image for image in scout.images if image["name"] == "Shop.Buy")
+    assert buy["shown"] == "image://scout/Shop/1" and buy["shotSize"] == [400, 300]
+    assert not scout.shots.get("Shop").isNull()  # the shot, small, for the pill
+    scout.forget("Shop.Buy")  # taken again
+    assert next(image for image in scout.images if image["name"] == "Shop.Buy")["state"] == "not"
+    scout.stop()
+
+
+def test_scouts_lists_are_built_again_only_when_what_they_show_changes(qt, tmp_path):
+    import numpy as np
+
+    from darbit.core.geometry import Region
+
+    scout = _scout_bot(tmp_path)
+    told = []
+    scout.recordChanged.connect(lambda: told.append(1))
+    boxes = [dict(box) for box in scout.boxes]
+    for _ in range(3):  # the same screen, pass after pass: the pill's lists stay as they are (hover, scrolling)
+        scout.note(boxes, np.full((300, 400, 3), 70, np.uint8), Region(0, 0, 400, 300))
+        scout._take(boxes, 41.0)
+    assert told == []
+    boxes[1] = {**boxes[1], "score": 0.93, "found": True}  # Shop.Buy found as it needs now
+    scout.note(boxes, np.full((300, 400, 3), 70, np.uint8), Region(0, 0, 400, 300))
+    scout._take(boxes, 41.0)
+    assert told == [1] and scout.weak == 0
+    scout.stop()
+
+
+def _scout_pill(tmp_path, where):
+    """Scout's pill dragged to `where` on a 1600 x 900 screen, with its engine."""
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.docking import PillPlace, Rect
+    from darbit.studio.hiding import HidingPill
+
+    scout = _scout_bot(tmp_path)
+    place = PillPlace("scout", screens=lambda: {"main": Rect(0, 0, 1600, 900)}, keep=False)
+    hiding = HidingPill(watch=lambda moved: None)
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio, scout=scout, scout_hiding=hiding, pill_places={"scout": place})
+    root = engine.rootObjects()[0]
+    pill = root.findChild(QQuickWindow, "scoutPill")
+    wait_until(lambda: hiding.isOpen)
+    place.begin(800, 30)
+    place.move(*where)
+    place.end()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    pill.setProperty("heldRoot", root)  # held, or Qt deletes the window under findChild
+    return scout, studio, (engine, root), pill
+
+
+def _named(window, name):
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    return next((item for item in walk(window.contentItem()) if item.objectName() == name), None)
+
+
+def test_scouts_pill_docked_on_top_steps_through_tiles_and_retakes_the_one_landed_on(qt, tmp_path):
+    scout, studio, engine, pill = _scout_pill(tmp_path, (800, 3))
+    assert pill.property("form") == "row"
+    scout.setGroup("weak")
+    strip = _named(pill, "scoutStrip")
+    wait_until(strip.isVisible)
+    tiles = _named(pill, "scoutTiles")
+    wait_until(lambda: tiles.property("count") == 1)
+    assert _named(pill, "scoutLandedLine").property("text").startswith("Image · seen on Shop now · best 0.86")
+    on_shot, now = [], []
+    studio.captureOnShotWanted.connect(lambda *args: on_shot.append(args))
+    studio.captureWanted.connect(lambda *args: now.append(args))
+    QMetaObject.invokeMethod(_named(pill, "stripRetakeOnShot"), "clicked")
+    QMetaObject.invokeMethod(_named(pill, "stripRetakeNow"), "clicked")
+    shot = str(tmp_path / ".darbit" / "scout" / "Shop.jpg")
+    assert on_shot == [("/bots/ad-bot", "Shop.Buy", "image", shot)]
+    assert now == [("/bots/ad-bot", "one", "Shop.Buy", "image")]
+    scout.setGroup("not")  # one never seen: only the screen now
+    wait_until(lambda: scout.landed == "Daily.Claim")
+    wait_until(lambda: not _named(pill, "stripRetakeOnShot").isVisible())
+    scout.stop()
+    del engine
+
+
+def test_scouts_pill_on_a_side_lists_the_groups_and_floating_shows_a_grid_then_one_in_full(qt, tmp_path):
+    scout, studio, engine, pill = _scout_pill(tmp_path, (1597, 450))
+    assert pill.property("form") == "column"
+    lines = _named(pill, "scoutLines")
+    wait_until(lambda: lines.isVisible() and lines.property("count") == 4)
+    assert not _named(pill, "scoutStrip").isVisible()  # the strip is the row's
+    pill.setProperty("folded", {"seen": True})  # a group folded away keeps only its heading
+    wait_until(lambda: lines.property("count") == 3)
+    scout.stop()
+    del engine
+
+    (tmp_path / "again").mkdir()
+    scout, studio, engine, pill = _scout_pill(tmp_path / "again", (1100, 450))
+    assert pill.property("form") == "card"
+    grid = _named(pill, "scoutGrid")
+    wait_until(grid.isVisible)
+    QMetaObject.invokeMethod(pill, "open", Q_ARG("QVariant", "Shop.Buy"))
+    detail = _named(pill, "scoutDetail")
+    wait_until(lambda: detail.isVisible() and not grid.isVisible())
+    assert scout.group == "all" and scout.landed == "Shop.Buy"
+    wanted = []
+    studio.captureOnShotWanted.connect(lambda *args: wanted.append(args))
+    QMetaObject.invokeMethod(_named(pill, "detailRetakeOnShot"), "clicked")
+    assert wanted and wanted[0][1] == "Shop.Buy"
+    QMetaObject.invokeMethod(_named(pill, "scoutBack"), "clicked")
+    wait_until(grid.isVisible)
+    scout.stop()
+    del engine
+
+
 def test_scout_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
     import cv2
     import numpy as np

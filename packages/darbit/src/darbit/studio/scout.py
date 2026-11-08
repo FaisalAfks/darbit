@@ -8,6 +8,7 @@ the game. Each image's record says when it was last seen, its best score and on 
 each screen (one per screen) for a retake on it: an image is seen, weak or not seen yet.
 """
 
+import json
 import threading
 import time
 from dataclasses import dataclass, field, replace
@@ -15,12 +16,14 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QSize, Signal, Slot
+from PySide6.QtGui import QImage
+from PySide6.QtQuick import QQuickImageProvider
 
 from .. import paths
 from ..core import matching
 from ..core.geometry import Region
-from ..core.targets import Target, load
+from ..core.targets import Target, kind_of, load
 from ..platform import screen
 from ..platform.backend import NotSupported
 from ..project.manifest import ProjectError
@@ -31,6 +34,8 @@ SIMILARITY = 0.7  # what counts as found when neither the image nor the bot name
 NEAR = 0.15  # an image this far under what it needs is weak (the overlay gives it a faint box); further, not seen
 SHOT_EVERY = 3.0  # seconds before a screen's shot is saved again just for a better score
 SHOT_QUALITY = 85  # JPEG quality of the shots Scout keeps
+SHOWN_WIDTH = 960  # px, a screen's shot is shown in the pill at most this wide
+GROUPS = ("all", "weak", "not", "seen")  # the pill's filter; "all" lists the weak first, then those not seen yet
 
 
 def image_files(folder: Path) -> list[Path]:
@@ -149,6 +154,8 @@ class Sighting:
     seen_on: str = ""  # the screen it was last seen on
     shot: str = ""  # that screen's saved shot, while it's still the shot this image was seen in
     box: list[int] | None = None  # where it is in the shot's pixels
+    shot_version: int = 0  # how many times that shot has been saved, so the pill shows the latest
+    shot_size: tuple[int, int] = (0, 0)  # the shot's width and height in pixels
     alike: list[str] = field(default_factory=list)  # images found on the same spot
 
     @property
@@ -171,7 +178,9 @@ class Sighting:
             "times": self.times,
             "seenOn": self.seen_on,
             "shot": self.shot,
+            "shown": f"image://scout/{Path(self.shot).stem}/{self.shot_version}" if self.shot else "",
             "box": self.box,
+            "shotSize": list(self.shot_size),
             "alike": list(self.alike),
             "file": Path(self.file).as_uri() if self.file else "",
         }
@@ -184,6 +193,83 @@ class ScreenShot:
     path: Path
     names: set[str]
     at: float
+    version: int = 1
+
+
+def places_of(folder: Path) -> list[dict]:
+    """The bot's Regions and Locations, each with the screen it belongs to, for Scout to show on that screen."""
+    found = []
+    for name in load_project(folder).images or ["images"]:
+        images = folder / name
+        if not images.is_dir():
+            continue
+        for path in sorted(images.glob("*.json")):
+            if _with_suffix(path, ".png").is_file():
+                continue  # an image's settings
+            try:
+                settings = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(settings, dict):
+                continue
+            place = _place_of(path.stem, settings)
+            if place is not None:
+                found.append(place)
+    return found
+
+
+def _with_suffix(path: Path, suffix: str) -> Path:
+    return path.with_name(path.stem + suffix)
+
+
+def _place_of(name: str, settings: dict) -> dict | None:
+    kind = kind_of(settings, False)
+    region = settings.get("region")
+    location = settings.get("location")
+    if kind == "region" and isinstance(region, list) and len(region) == 4:
+        return {"name": name, "kind": kind, "screen": screen_of(name), "box": [int(value) for value in region]}
+    if kind == "location" and isinstance(location, list) and len(location) == 2:
+        x, y = (int(value) for value in location)
+        return {"name": name, "kind": kind, "screen": screen_of(name), "box": [x, y, 0, 0]}
+    return None
+
+
+class ShownShots:
+    """Each screen's latest shot, made small, for the pill to show."""
+
+    def __init__(self) -> None:
+        self.images: dict[str, QImage] = {}
+        self.lock = threading.Lock()
+
+    def keep(self, screen_name: str, pixels: np.ndarray) -> None:
+        height, width = pixels.shape[:2]
+        if width > SHOWN_WIDTH:
+            height = round(height * SHOWN_WIDTH / width)
+            width = SHOWN_WIDTH
+            pixels = cv2.resize(pixels, (width, height), interpolation=cv2.INTER_AREA)
+        rgb = np.ascontiguousarray(pixels[:, :, ::-1])  # OpenCV's BGR as Qt's RGB
+        image = QImage(rgb.data, width, height, width * 3, QImage.Format.Format_RGB888).copy()
+        with self.lock:
+            self.images[screen_name] = image
+
+    def clear(self) -> None:
+        with self.lock:
+            self.images = {}
+
+    def get(self, screen_name: str) -> QImage:
+        with self.lock:
+            return self.images.get(screen_name, QImage())
+
+
+class ShotsProvider(QQuickImageProvider):
+    """Scout's shots for QML's Image: `image://scout/<screen>/<version>` (the version makes it load the latest)."""
+
+    def __init__(self, shots: ShownShots) -> None:
+        super().__init__(QQuickImageProvider.ImageType.Image)
+        self.shots = shots
+
+    def requestImage(self, name: str, size: QSize, wanted: QSize) -> QImage:
+        return self.shots.get(name.split("/")[0])
 
 
 def screen_of(name: str) -> str:
@@ -232,6 +318,12 @@ class Scout(QObject):
         self._shots: dict[str, ScreenShot] = {}
         self._lock = threading.Lock()  # the record is written by the scanning thread and read by QML's
         self._landed = ""
+        self._last_shown: list[tuple] = []
+        self._group = "all"
+        self._showing = ""
+        self._present: list[str] = []
+        self._places: list[dict] = []
+        self.shots = ShownShots()
         self._scanned.connect(self._take)
 
     def _get_on(self) -> bool:
@@ -275,6 +367,35 @@ class Scout(QObject):
     def _get_landed(self) -> str:
         return self._landed
 
+    @property
+    def folder(self) -> str:
+        """The bot Scout is on (or was on last), as a path."""
+        return str(self._folder or "")
+
+    def _get_group(self) -> str:
+        return self._group
+
+    def _get_listed(self) -> list:
+        return [sighting.as_dict() for sighting in self._listed()]
+
+    def _get_showing(self) -> str:
+        return self._showing
+
+    def _get_present(self) -> list:
+        return self._present
+
+    def _get_places(self) -> list:
+        return self._places
+
+    def _listed(self) -> list[Sighting]:
+        """The images in the group picked, in the order the pill steps through them."""
+        with self._lock:
+            every = list(self._record.values())
+        if self._group == "all":
+            order = {"weak": 0, "not": 1, "seen": 2}
+            return sorted(every, key=lambda sighting: order[sighting.state])
+        return [sighting for sighting in every if sighting.state == self._group]
+
     isOn = Property(bool, _get_on, notify=changed)
     boxes = Property(list, _get_boxes, notify=changed)
     took = Property(float, _get_took, notify=changed)  # ms the last pass took
@@ -287,6 +408,11 @@ class Scout(QObject):
     notSeen = Property(int, _get_not_seen, notify=recordChanged)
     total = Property(int, _get_total, notify=recordChanged)
     landed = Property(str, _get_landed, notify=recordChanged)  # the image picked to look at, "" for none
+    group = Property(str, _get_group, notify=recordChanged)  # all, weak, not or seen: what the pill lists
+    listed = Property(list, _get_listed, notify=recordChanged)  # the images in that group, in order
+    showing = Property(str, _get_showing, notify=changed)  # the screen showing now, from the images found on it
+    present = Property(list, _get_present, notify=changed)  # every screen with an image found now
+    places = Property(list, _get_places, notify=recordChanged)  # the bot's Regions and Locations, by screen
 
     def start(self, folder: Path, grab: object = None, land_on: str = "") -> None:
         """Start scouting the bot at `folder`'s images (`grab`: the screen, for tests), landed on `land_on`. The
@@ -299,11 +425,13 @@ class Scout(QObject):
                 self._folder = folder
                 self._shots = {}
                 self._record = {}
+                self.shots.clear()
             kept = self._record
             self._record = {
                 target.name: kept.get(target.name) or _sighting_of(target, files.get(target.name)) for target in targets
             }
         self._landed = land_on
+        self._places = places_of(folder)
         options = options_of(folder)
         self._running.set()
         self._on = True
@@ -317,6 +445,8 @@ class Scout(QObject):
         if self._on:
             self._on = False
             self._boxes = []
+            self._showing = ""
+            self._present = []
             self.changed.emit()
 
     @Slot()
@@ -327,12 +457,53 @@ class Scout(QObject):
                 name: Sighting(name, sighting.needs, sighting.file) for name, sighting in self._record.items()
             }
             self._shots = {}
+        self.shots.clear()
+        self.recordChanged.emit()
+
+    @Slot(str)
+    def forget(self, name: str) -> None:
+        """Start one image's record over (it was taken again)."""
+        with self._lock:
+            sighting = self._record.get(name)
+            if sighting is not None:
+                self._record[name] = Sighting(name, sighting.needs, sighting.file)
         self.recordChanged.emit()
 
     @Slot(str)
     def landOn(self, name: str) -> None:
-        """Pick one image to look at."""
+        """Pick one image to look at ("" for none)."""
         self._landed = name
+        self.recordChanged.emit()
+
+    @Slot(str)
+    def setGroup(self, group: str) -> None:
+        """List all the images, or only the weak ones, those not seen yet or those seen; landed on its first."""
+        if group not in GROUPS:
+            return
+        self._group = group
+        names = [sighting.name for sighting in self._listed()]
+        if self._landed not in names:
+            self._landed = names[0] if names else ""
+        self.recordChanged.emit()
+
+    @Slot()
+    def next(self) -> None:
+        """Land on the next image of the group (N)."""
+        self.step(1)
+
+    @Slot()
+    def previous(self) -> None:
+        """Land on the image before in the group (Shift+N)."""
+        self.step(-1)
+
+    def step(self, by: int) -> None:
+        names = [sighting.name for sighting in self._listed()]
+        if not names:
+            return
+        if self._landed in names:
+            self._landed = names[(names.index(self._landed) + by) % len(names)]
+        else:
+            self._landed = names[0] if by > 0 else names[-1]
         self.recordChanged.emit()
 
     def _loop(self, targets: list[Target], options: matching.Options, grab: object) -> None:
@@ -355,6 +526,8 @@ class Scout(QObject):
         now = time.time()
         where = showing(boxes)
         near = [box for box in boxes if near_enough(box)]
+        self._showing = where
+        self._present = sorted({screen_of(box["name"]) for box in near})
         better = False
         with self._lock:
             for box in near:
@@ -397,6 +570,8 @@ class Scout(QObject):
             data.tofile(str(path))  # imwrite can't write every Windows path
         except OSError:
             return
+        self.shots.keep(where, pixels)
+        version = kept.version + 1 if kept is not None else 1
         with self._lock:
             if kept is not None:
                 for name in kept.names - names:  # not in this screen's shot any more
@@ -404,12 +579,15 @@ class Scout(QObject):
                     if sighting is not None and sighting.shot == str(path):
                         sighting.shot = ""
                         sighting.box = None
+                        sighting.shot_size = (0, 0)
             for box in near:
                 sighting = self._record.get(box["name"])
                 if sighting is not None:
                     sighting.shot = str(path)
+                    sighting.shot_version = version
+                    sighting.shot_size = (pixels.shape[1], pixels.shape[0])
                     sighting.box = [box["x"] - origin.x, box["y"] - origin.y, box["w"], box["h"]]
-        self._shots[where] = ScreenShot(path, names, now)
+        self._shots[where] = ScreenShot(path, names, now, version)
 
     @Slot(object, float)
     def _take(self, boxes: object, took: float) -> None:
@@ -417,7 +595,25 @@ class Scout(QObject):
             self._boxes = boxes
             self._took = took
             self.changed.emit()
-            self.recordChanged.emit()
+            shown = self._shown()
+            if shown != self._last_shown:  # the lists in the pill are built again only when what they show changed
+                self._last_shown = shown
+                self.recordChanged.emit()
+
+    def _shown(self) -> list[tuple]:
+        """What the pill shows of each image: its state, best score, screen, shot and look-alikes."""
+        with self._lock:
+            return [
+                (
+                    sighting.name,
+                    sighting.state,
+                    round(sighting.best, 2),
+                    sighting.seen_on,
+                    sighting.shot_version,
+                    tuple(sighting.alike),
+                )
+                for sighting in self._record.values()
+            ]
 
 
 def _sighting_of(target: Target, file: Path | None) -> Sighting:

@@ -209,6 +209,9 @@ def test_scout_finds_the_image_and_lets_clicks_through(target, pictures, tmp_pat
         assert any(g > 150 and g > r + 40 for b, g, r in left_of_it), "Scout's box isn't around the image"
         before = len(target.events("click"))
         x, y, w, h = picture_box(target)
+        # the pill (with its strip of images) takes clicks, like every pill; it's the boxes that mustn't
+        root.findChild(QQuickWindow, "scoutPill").setVisible(False)
+        spin(0.2)
         device.click(x + w // 2, y + h // 2, 0.0)
         spin(0.4)
         assert len(target.events("click")) == before + 1, "the click stopped at Scout's overlay"
