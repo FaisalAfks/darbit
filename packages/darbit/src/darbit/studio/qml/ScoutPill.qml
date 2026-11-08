@@ -31,6 +31,10 @@ PillWindow {
             if (images[index].name === scout.landed) return images[index]
         return null
     }
+    // the one landed on is on screen now (found, or nearly)
+    readonly property bool landedHere: scout.boxes.some(function (box) {
+        return box.name === scout.landed && box.w && box.score >= box.needs - 0.15
+    })
     readonly property var groups: [
         { key: "all", label: "All", count: scout.total },
         { key: "weak", label: "Weak", count: scout.weak, tone: scout.weak > 0 ? "warn" : undefined },
@@ -226,7 +230,7 @@ PillWindow {
                     }
                     Text {
                         objectName: "scoutLandedLine"
-                        text: "Image · " + Scout.seenLine(scoutPill.landedImage, scoutPill.now)
+                        text: "Image · " + Scout.seenLine(scoutPill.landedImage, scoutPill.now, scoutPill.landedHere)
                         color: studio.colors.muted; font.pixelSize: 12
                     }
                 }
@@ -323,6 +327,7 @@ PillWindow {
             width: parent.width
             image: scoutPill.landedImage
             now: scoutPill.now
+            here: scoutPill.landedHere
             onRetakeOnShot: scoutPill.retakeOnShot(scoutPill.landedImage)
             onRetakeNow: scoutPill.retakeNow(scoutPill.landedImage)
         },

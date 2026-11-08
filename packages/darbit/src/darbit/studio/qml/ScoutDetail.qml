@@ -9,6 +9,7 @@ Column {
     id: detail
     required property var image
     property real now: 0
+    property bool here: false  // on screen now
     signal retakeOnShot()
     signal retakeNow()
     readonly property color ink: Scout.ink(studio.colors, image)
@@ -39,7 +40,7 @@ Column {
             Text {
                 width: parent.width; elide: Text.ElideRight
                 text: !detail.image || detail.image.state === "not" ? "Not seen yet: no shot of it"
-                    : detail.hasShot ? "Where it was seen: " + detail.image.seenOn + ", " + Scout.ago(detail.now - detail.image.seenAt)
+                    : detail.hasShot ? "Where it was seen: " + detail.image.seenOn + ", " + Scout.when(detail.image, detail.now, detail.here)
                     : "Seen on " + detail.image.seenOn + "; its shot is a newer one now"
                 color: studio.colors.muted; font.pixelSize: 12
             }

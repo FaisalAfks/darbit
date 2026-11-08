@@ -20,11 +20,16 @@ function ago(seconds) {
     return Math.round(seconds / 3600) + " h ago"
 }
 
+// when it was seen: "now" while it's on screen (`here`), else how long ago
+function when(image, now, here) {
+    return here ? "now" : ago(now - image.seenAt)
+}
+
 // one line of where and how well it was seen: "seen on Shop now · best 0.86, needs 0.90"
-function seenLine(image, now) {
+function seenLine(image, now, here) {
     if (!image) return ""
     if (image.state === "not") return "not seen yet · its screen: " + image.screen
-    return "seen on " + image.seenOn + " " + ago(now - image.seenAt) + " · best " + image.best.toFixed(2)
+    return "seen on " + image.seenOn + " " + when(image, now, here) + " · best " + image.best.toFixed(2)
         + ", needs " + image.needs.toFixed(2)
 }
 

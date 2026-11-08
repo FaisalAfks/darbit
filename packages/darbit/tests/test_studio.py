@@ -799,6 +799,26 @@ def test_scout_steps_through_a_group_and_lands_on_its_first(qt, tmp_path):
     scout.stop()
 
 
+def test_scouts_lists_are_built_again_only_when_what_they_show_changes(qt, tmp_path):
+    import numpy as np
+
+    from darbit.core.geometry import Region
+
+    scout = _scout_bot(tmp_path)
+    told = []
+    scout.recordChanged.connect(lambda: told.append(1))
+    boxes = [dict(box) for box in scout.boxes]
+    for _ in range(3):  # the same screen, pass after pass: the pill's lists stay as they are (hover, scrolling)
+        scout.note(boxes, np.full((300, 400, 3), 70, np.uint8), Region(0, 0, 400, 300))
+        scout._take(boxes, 41.0)
+    assert told == []
+    boxes[1] = {**boxes[1], "score": 0.93, "found": True}  # Shop.Buy found as it needs now
+    scout.note(boxes, np.full((300, 400, 3), 70, np.uint8), Region(0, 0, 400, 300))
+    scout._take(boxes, 41.0)
+    assert told == [1] and scout.weak == 0
+    scout.stop()
+
+
 def _scout_pill(tmp_path, where):
     """Scout's pill dragged to `where` on a 1600 x 900 screen, with its engine."""
     from PySide6.QtQuick import QQuickWindow

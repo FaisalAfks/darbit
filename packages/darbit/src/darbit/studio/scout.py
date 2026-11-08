@@ -318,6 +318,7 @@ class Scout(QObject):
         self._shots: dict[str, ScreenShot] = {}
         self._lock = threading.Lock()  # the record is written by the scanning thread and read by QML's
         self._landed = ""
+        self._last_shown: list[tuple] = []
         self._group = "all"
         self._showing = ""
         self._present: list[str] = []
@@ -594,7 +595,25 @@ class Scout(QObject):
             self._boxes = boxes
             self._took = took
             self.changed.emit()
-            self.recordChanged.emit()
+            shown = self._shown()
+            if shown != self._last_shown:  # the lists in the pill are built again only when what they show changed
+                self._last_shown = shown
+                self.recordChanged.emit()
+
+    def _shown(self) -> list[tuple]:
+        """What the pill shows of each image: its state, best score, screen, shot and look-alikes."""
+        with self._lock:
+            return [
+                (
+                    sighting.name,
+                    sighting.state,
+                    round(sighting.best, 2),
+                    sighting.seen_on,
+                    sighting.shot_version,
+                    tuple(sighting.alike),
+                )
+                for sighting in self._record.values()
+            ]
 
 
 def _sighting_of(target: Target, file: Path | None) -> Sighting:
