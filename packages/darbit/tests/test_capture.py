@@ -63,6 +63,26 @@ def test_undo_restores_what_was_there(tmp_path):
     assert not (tmp_path / "Old.json").exists()
 
 
+def test_a_retake_keeps_what_the_target_says_besides_its_place(tmp_path):
+    import json
+
+    from darbit.capture.common import Item, Result
+    from darbit.capture.store import save_result
+    from darbit.core.geometry import Region
+
+    shot = np.zeros((200, 300, 3), np.uint8)
+    old = {"kind": "region", "region": [0, 0, 10, 10], "text": "digits", "read": {"upscale": 2}, "similarity": 0.9}
+    (tmp_path / "Shop.Coins.json").write_text(json.dumps(old), encoding="utf-8")
+    moved = Result(region=Region(20, 30, 100, 40))
+    save_result(tmp_path, Item("Shop.Coins", "region"), moved, shot, Region(0, 0, 300, 200), None)
+    saved = json.loads((tmp_path / "Shop.Coins.json").read_text(encoding="utf-8"))
+    assert saved["region"] == [20, 30, 100, 40]
+    assert saved["text"] == "digits" and saved["read"] == {"upscale": 2} and saved["similarity"] == 0.9
+    save_result(tmp_path, Item("Shop.New", "region"), moved, shot, Region(0, 0, 300, 200), None)
+    fresh = json.loads((tmp_path / "Shop.New.json").read_text(encoding="utf-8"))
+    assert "text" not in fresh  # control: a new target has nothing to keep
+
+
 def test_list_screens(tmp_path):
     from darbit.capture.common import Item, add_to_list, read_list
 

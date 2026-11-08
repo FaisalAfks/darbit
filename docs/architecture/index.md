@@ -5,7 +5,8 @@ How darbit's code fits together. The decisions behind it are in [decisions/](../
 ## Layers
 
 ```
-core       geometry, targets, matching            pure: no screen, no input; easy to test
+core       geometry, targets, matching,           pure: no screen, no input; easy to test
+           reading text (reading.py, rapid.py)
 platform   screen capture, input, windows, DPI,   small interfaces (platform/backend.py: Screen, Input,
            the stop hotkey                        Windows, Listener, Hotkeys, System), each forwarded to
                                                   the system's version; Windows' is platform/win32/
@@ -35,6 +36,8 @@ A layer only imports from the layers above it in this list. `import darbit` load
 5. **`_front()`** brings `settings.window` to the front, if set.
 6. **`platform/input.py` `click()`** glides the mouse there with `SendInput`, in small steps over `settings.glide` seconds (some games ignore a jump), then presses and releases.
 7. The click is written to the day's log and to the run report (`runtime/log.py`), and `True` is returned. Not found means `False`, never an exception.
+
+`d.read_number("Shop.Coins")` goes the same way to a Region (`runtime/read.py`), grabs it, and hands the pixels to the reader `settings.reader` names (`runtime/readers.py`; RapidOCR in `core/rapid.py`, the `ocr` extra); `core/reading.py` cuts a line to its text, decodes with only the allowed characters and turns the text into a number. See [Reading text](../guides/reading-text.md).
 
 ## Where things are kept
 

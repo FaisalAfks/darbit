@@ -236,6 +236,14 @@ def test_a_name_with_nothing_to_read_in_is_a_mistake(screen_with_text, tmp_path)
     (tmp_path / "Bag.Slot.json").write_text(json.dumps({"kind": "location", "location": [5, 5]}), encoding="utf-8")
     with pytest.raises(d.TargetError):
         d.read("Bag.Slot")
+    (tmp_path / "Bag.List.json").write_text(json.dumps({"kind": "region", "region": [5, 5, 40, 20]}), encoding="utf-8")
+    assert d.read("Bag.List") == "4.99M"  # control: a Region by name reads
+
+
+def test_a_region_off_the_screen_reads_nothing(screen_with_text):
+    fake, _, _, _ = screen_with_text
+    assert d.read(Region(1000, 1000, 50, 20)) is None
+    assert fake.asked == []
 
 
 def test_without_the_extra_a_read_warns_once_and_is_none(monkeypatch):
@@ -254,7 +262,33 @@ def test_without_the_extra_a_read_warns_once_and_is_none(monkeypatch):
         assert d.read(Region(0, 0, 10, 10)) is None
 
 
-def test_an_unknown_reader_is_a_mistake(monkeypatch):
+class Plugin:
+    """An installed reader's entry point."""
+
+    def __init__(self, made):
+        self.made = made
+
+    def load(self):
+        return self.made
+
+
+def test_a_reader_from_a_plugin_is_used_and_an_unknown_one_is_a_mistake(monkeypatch):
+    fake = FakeReader()
+    made_with = []
+
+    def make(threads):
+        made_with.append(threads)
+        return fake
+
+    def entry_points(group, name):
+        return [Plugin(make)] if group == "darbit.readers" and name == "plugin" else []
+
+    monkeypatch.setattr(readers, "entry_points", entry_points)
+    monkeypatch.setattr(readers, "_made", {})
+    monkeypatch.setattr(d.settings, "reader", "plugin")
+    monkeypatch.setattr(d.settings, "read_threads", 2.0)  # darbit.toml numbers come as floats
+    assert readers.current() is fake
+    assert made_with == [2]
     monkeypatch.setattr(d.settings, "reader", "no-such-reader")
     with pytest.raises(ValueError, match="no reader called"):
         readers.current()
@@ -271,6 +305,9 @@ def test_the_bot_can_set_reading_in_darbit_toml(tmp_path):
     project = manifest.load(tmp_path)
     assert project.settings["read"] == {"upscale": 2}
     assert project.settings["read_threads"] == 2
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "x"\n[settings]\nread = 2\n', encoding="utf-8")
+    with pytest.raises(manifest.ProjectError, match="read should be a table"):
+        manifest.load(tmp_path)  # control: the wrong kind of value
 
 
 def drawn(text: str, room: int = 0) -> np.ndarray:

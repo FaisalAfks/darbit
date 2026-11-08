@@ -4,7 +4,7 @@ Reading numbers, timers and words off the screen: `d.read`, `d.read_number` and 
 
 ## Install
 
-Reading needs the `ocr` extra (RapidOCR and its models, about 45 MB):
+Reading needs the `ocr` extra: RapidOCR, its models and onnxruntime, about 90 MB installed (about half of it a second copy of OpenCV, see decision 0019):
 
 ```bash
 pip install "darbit[ocr]"     # or, in a checkout: uv sync --extra ocr
