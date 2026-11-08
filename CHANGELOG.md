@@ -9,6 +9,10 @@
 - The service's `bot.doctor`: darbit doctor's checks on a bot and how many are problems; darbit Studio asks for them (`checkBot`) for its Start
 - The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
 
+### Changed
+
+- darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
+
 ### Fixed
 
 - The service's action player and recorder set a bot up for each run without piling up its held "settings from darbit.toml" lines: each setup keeps only its own

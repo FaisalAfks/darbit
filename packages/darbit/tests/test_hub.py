@@ -320,10 +320,13 @@ def test_the_doctors_checks_come_from_the_service_with_fakes_for_each(bot, monke
     found = methods.call("bot.doctor", {"bot": "tick-bot"})
     checks = {check["name"]: check for check in found["checks"]}
     assert checks["darbit.toml"]["ok"] is True
-    assert checks["pictures"]["ok"] is False and "Gui.Quit" in checks["pictures"]["say"]
-    assert checks["display scaling"]["ok"] is False and "150%" in checks["display scaling"]["say"]
-    assert checks["game window"]["ok"] is False and "Tick Game" in checks["game window"]["say"]
-    assert checks["screen"]["ok"] is False
+    assert checks["targets"]["ok"] is False and "Gui.Quit" in checks["targets"]["found"]
+    assert checks["targets"]["missing"] == ["Gui.Quit"] and "Capture" in checks["targets"]["fix"]
+    assert checks["display scaling"]["ok"] is False and "150%" in checks["display scaling"]["found"]
+    assert checks["display scaling"]["fix"]
+    assert checks["game window"]["ok"] is False and "Tick Game" in checks["game window"]["found"]
+    assert checks["game window"]["fix"] == "open it first"
+    assert checks["screen"]["ok"] is False and checks["screen"]["fix"] == "unlock it"
     assert found["problems"] == 4
     assert json.dumps(found)  # it goes over the service as JSON
 
@@ -334,3 +337,4 @@ def test_the_doctors_checks_come_from_the_service_with_fakes_for_each(bot, monke
     found = methods.call("bot.doctor", {"bot": "tick-bot"})
     assert found["problems"] == 0
     assert [check["ok"] for check in found["checks"]] == [True, True, True, True, True]
+    assert [check["fix"] for check in found["checks"]] == ["", "", "", "", ""]
