@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.4 - 2026-11-08
+
 ### New
 
 - darbit Studio's Play runs darbit doctor's checks first: with a problem, a sheet shows every check with what it found and how to fix it (Take them opens Capture on the targets not taken), with Cancel, Check again and Start anyway; with none, the bot starts at once
