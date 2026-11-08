@@ -15,6 +15,7 @@
 
 ### Changed
 
+- darbit depends on `opencv-python-headless` instead of `opencv-python`: the same OpenCV without its GUI part, which darbit doesn't use, and the one the `ocr` extra needs, so an environment has one `cv2` instead of two that overwrite each other
 - The bench baseline has CI's times for the reads, so a slower read fails CI, and so does a read in the baseline that didn't run because the `ocr` extra is missing
 - A retake in Capture keeps what a target's .json says besides its place: its similarity, matching options and, for a Region, its `text` and reading options
 
