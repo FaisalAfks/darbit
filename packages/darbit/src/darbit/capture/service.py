@@ -273,7 +273,7 @@ def save(
     """Write a target's files from the frozen shot, then move on to the next item."""
     session, shot, origin, _ = _frozen()
     if not name:
-        raise CaptureError("Give it a name first, in the pill")
+        raise CaptureError("Give it a name first, by its box")
     capture_kind = KINDS.get(kind)
     if capture_kind is None:
         raise CaptureError(f"no kind called {kind}")
