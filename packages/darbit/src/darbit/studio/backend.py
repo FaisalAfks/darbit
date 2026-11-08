@@ -40,6 +40,8 @@ class Studio(QObject):
     overviewChanged = Signal()
     checksChanged = Signal()
     checksFound = Signal()  # Play's checks found a problem: the Studio shows them, with Start anyway
+    inTheWayChanged = Signal()
+    askedToReplace = Signal()  # a start refused for a bot that sends input running: the Studio asks to stop it
     pictureFailing = Signal(str, str)  # (title, text): an image may have stopped matching, for the tray to say
     libraryChanged = Signal()
     screensChanged = Signal()
@@ -78,6 +80,7 @@ class Studio(QObject):
         self._bot: dict = {}
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
         self._checks: dict = {}  # darbit doctor's checks on a bot before Start: {bot, checks, problems}
+        self._in_the_way: dict = {}  # a refused start or play, until Stop and start or Cancel
         self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
         self._screens: list[
@@ -122,6 +125,12 @@ class Studio(QObject):
 
     def _get_checks(self) -> dict:
         return self._checks
+
+    def _get_in_the_way(self) -> dict:
+        return self._in_the_way
+
+    def _get_running(self) -> list:
+        return [bot for bot in self._bots if bot.get("status") in RUNNING]
 
     def _get_library(self) -> list:
         return self._library
@@ -227,6 +236,10 @@ class Studio(QObject):
     checks = Property(
         dict, _get_checks, notify=checksChanged
     )  # {bot, checks: [{name, ok, found, fix, missing}], problems}
+    # a refused start or action play: {path, name, what, method, params, running: [{name, path, status, input,
+    # action}]}, the bots (or an action playing) in the way
+    inTheWay = Property(dict, _get_in_the_way, notify=inTheWayChanged)
+    running = Property(list, _get_running, notify=botsChanged)  # every bot running or paused, each with `input`
     library = Property(list, _get_library, notify=libraryChanged)
     screens = Property(list, _get_screens, notify=screensChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
@@ -277,7 +290,47 @@ class Studio(QObject):
 
     @Slot()
     def start(self) -> None:
-        self._ask("started", "bot.start")
+        """Start the shown bot. One refused because a bot that sends input runs asks first (`askedToReplace`)."""
+        self._ask_to_replace("started", "bot.start")
+
+    @Slot()
+    def replaceAndStart(self) -> None:
+        """Stop and start (or play): what's in the way stops cleanly, then what was refused is asked for again."""
+        asked = self._in_the_way
+        self._set_in_the_way({})
+        client = self._client
+        if not asked or client is None:
+            return
+        params = {**asked["params"], "replace": True}
+        self._run(asked["what"], lambda: client.call(asked["method"], bot=asked["path"], **params))
+
+    def _ask_to_replace(self, what: str, method: str, **params: object) -> None:
+        """A request for the shown bot that sends input (a start, an action's play): refused because a bot or an
+        action that sends input runs, it's kept in `inTheWay` and the Studio asks whether to stop that first."""
+        if not self._bot or self._client is None:
+            return
+        client = self._client
+        bot = {"path": self._bot["path"], "name": self._bot.get("name", "")}
+
+        def ask() -> object:
+            try:
+                return client.call(method, bot=bot["path"], **params)
+            except ServiceError as error:
+                if error.code != "input_bot_running":
+                    raise
+                running = list(error.detail.get("running", []))
+                return {"refused": True, **bot, "what": what, "method": method, "params": params, "running": running}
+
+        self._run(what, ask)
+
+    @Slot()
+    def keepRunning(self) -> None:
+        """Cancel: the bots in the way go on, and the refused bot doesn't start."""
+        self._set_in_the_way({})
+
+    def _set_in_the_way(self, asked: dict) -> None:
+        self._in_the_way = asked
+        self.inTheWayChanged.emit()
 
     @Slot()
     def play(self) -> None:
@@ -363,7 +416,7 @@ class Studio(QObject):
 
     @Slot(str)
     def playAction(self, name: str) -> None:
-        self._ask("played", "bot.action.play", name=name)
+        self._ask_to_replace("played", "bot.action.play", name=name)
 
     @Slot()
     def stopAction(self) -> None:
@@ -372,7 +425,7 @@ class Studio(QObject):
     @Slot(str)
     def stepThroughAction(self, name: str) -> None:
         """Play an action stopping at its first line, for Next line and Go on."""
-        self._ask("", "bot.action.play", name=name, stepping=True)
+        self._ask_to_replace("", "bot.action.play", name=name, stepping=True)
 
     @Slot()
     def resumeAction(self) -> None:
@@ -653,6 +706,9 @@ class Studio(QObject):
         self.busyChanged.emit()
         if what == "connected" and isinstance(result, list):
             self._set_bots(result)
+        elif isinstance(result, dict) and result.get("refused"):
+            self._set_in_the_way({key: value for key, value in result.items() if key != "refused"})
+            self.askedToReplace.emit()
         elif what in ("status", "started"):
             if what == "started":
                 self.started.emit()

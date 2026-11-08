@@ -59,7 +59,7 @@ component. The mockups' [tokens.css](tokens/tokens.css) lists the Fluent 2 ramps
 
 The Studio is built from these. A page or tool uses them rather than drawing its own; one that needs something more
 extends them, so everything gets it. `test_the_studio_keeps_one_look` fails on a hand-drawn text field, switch,
-dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `Popup` outside their component), or on
+dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `Popup` outside their component), or on
 `glassStrong` where `solid` belongs.
 
 | Component | For |
@@ -74,6 +74,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Scout's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
 | `ShotTargets` | the targets taken on one shot, as tiles in Capture's pill: a row that scrolls sideways, or two columns that scroll up and down |
 | `MenuPanel`, `MenuLine` | a menu that drops down (and the tray panel), and its lines, with their keys on the right |
+| `Sheet` | every sheet over the Studio (New bot, Record, Play's checks, Stop and start): one solid frame over the dimmed window |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
 | `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
@@ -83,11 +84,11 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | Surface | Where | Behaviour |
 |---|---|---|
 | Studio window | a normal window | the top bar holds the bot menu, the pages (Overview, Library, Results, Settings) and the run control; darbit settings can put the bots in a sidebar, which folds to their squares on a narrow window |
-| Sheets | over the Studio | things opened and closed: New bot, Record, the command palette |
+| Sheets | over the Studio | things opened and closed: New bot, Record, Play's checks, Stop and start, the command palette |
 | Capture | full screen, over the frozen shot | its pill on an edge (top centre to start); slides out of sight a few seconds after the mouse leaves it |
 | Scout | over the screen, click-through, its pill in three forms (a row with a strip of images, a column of groups, a card with a grid) | a box and score per match; its pill on an edge, like the run pill |
 | Recorder pill | on an edge (top centre to start) | never takes focus from the game |
-| Run pill | on an edge while a bot runs | the Studio hides; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
+| Run pill | on an edge while a bot runs | the Studio hides; a line for each other bot running, with its own controls; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
 | Tray panel | by the tray icon, on the taskbar's edge | darbit's menu (`MenuPanel`, `MenuLine`) in its own window; a click outside or Esc closes it |
 
 Every pill moves the same way (#384): dragged to any edge it snaps to the edge's centre, its corners or near the

@@ -4,27 +4,13 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
-Popup {
+Sheet {
     id: sheet
     objectName: "checksSheet"
     readonly property var checks: studio.checks.bot === studio.bot.path ? (studio.checks.checks || []) : []
     readonly property int problems: studio.checks.bot === studio.bot.path ? (studio.checks.problems || 0) : 0
     property bool checking: false
-    parent: Overlay.overlay
-    anchors.centerIn: parent
     width: 560
-    modal: true
-    focus: true
-    padding: 26
-    Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.45) }
-    background: Rectangle { radius: 22; color: studio.colors.solid; border.color: studio.colors.line }
-    enter: Transition {
-        ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 180 : 0 }
-            NumberAnimation { property: "scale"; from: 0.94; to: 1; duration: studio.effects ? 240 : 0; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
-        }
-    }
-    exit: Transition { NumberAnimation { property: "opacity"; to: 0; duration: studio.effects ? 120 : 0 } }
     Connections {
         target: studio
         function onChecksChanged() { sheet.checking = false }
@@ -71,8 +57,7 @@ Popup {
                         Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 12
                         color: Qt.rgba(ink.r, ink.g, ink.b, 0.2)
                         Text {
-                            anchors.centerIn: parent
-                            text: modelData.ok === true ? "✓" : modelData.ok === false ? "!" : "–"
+                                                    text: modelData.ok === true ? "✓" : modelData.ok === false ? "!" : "–"
                             color: line.ink; font.pixelSize: 13; font.weight: Font.Bold
                         }
                     }

@@ -8,6 +8,9 @@
 - An action played from the Studio follows the one-input-bot rule too: `bot.action.play` is refused while a bot that sends input runs or is paused, its own bot included (`code` `input_bot_running`), unless `replace: true` stops that bot first; starting a bot that sends input while an action plays or waits at a breakpoint is refused the same way, and `replace` stops the action. Recording an action is refused while a bot that sends input runs or is paused (decision 0020)
 - Starting a bot that sends input, or playing an action, during a recording is refused the same way (`detail.running` has the recording with `status` `"recording"`); `replace` doesn't stop a recording. The input worker leaves `recording.json` in darbit's data folder while it records, and one left by a worker that's gone is ignored
 - The service's replies can carry a `code` and a `detail` with an error, and `ServiceError` has them; fields a client doesn't know are skipped
+- The Studio asks before stopping a bot in the way: Play (the run control, F5, the command palette, the tray panel, Start anyway) while another bot that sends input runs says "fish-bot is running and uses the mouse and keys. Stop it and start my-bot?", with Cancel and Stop and start, which starts it again with `replace`. Playing an action (Play, Step through) asks the same, with Stop and play. A bot with `[run] input = false` never asks. Record refused while a bot that sends input runs says why
+- The run pill shows every running bot: a line each under the shown one (a block each in a column, "Also running" floating), with its state, time and its own Pause and Stop. A bot that sends no input says "alongside" there and in the tray panel
+- `Sheet`, the one frame every sheet over the Studio uses (New bot, Record, Play's checks, Stop and start)
 
 ### Fixed
 

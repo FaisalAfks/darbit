@@ -74,7 +74,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
 - **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
-  don't). Floating, it shows where the bot is, today's round so far and the last step that ended. The
+  don't). Floating, it shows where the bot is, today's round so far and the last step that ended. Every other bot
+  running or paused gets a line of its own under it (in a column, a block of its own), with its state, its time and
+  its own Pause and Stop; one with `[run] input = false` says **alongside**. The
   bot never sees it in its screenshots. Closing the Studio to the tray or minimizing it while a bot is running or
   paused opens the pill too, with that bot. The Studio comes back when the bot stops or fails, or from the tray, and
   showing it closes the pill.
@@ -146,7 +148,12 @@ sight. A phone gets it too when `notify.toml` has a channel.
   its time with Pause and Stop. Play (also from the command palette and the tray) first runs darbit doctor's checks,
   in a second or two: with nothing wrong the bot just starts; otherwise a sheet lists every check with what it found
   and how to fix it (**Take them** opens Capture on the targets not taken yet), with **Cancel**, **Check again** and
-  **Start anyway**.
+  **Start anyway**. One bot that sends input runs at a time ([the service](service.md)): Play (any of them, Start
+  anyway too) while another one runs asks "fish-bot is running and uses the mouse and keys. Stop it and start
+  my-bot?", with **Cancel** and **Stop and start**, which stops it cleanly and starts this one. Playing an action
+  (Play, Step through) asks the same, with **Stop and play**: an action clicks and types too. A bot with
+  `[run] input = false` never asks, and starts alongside. Record while a bot that sends input runs says why it can't
+  start, and the Studio comes back.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
   the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), whether bots go on
@@ -157,7 +164,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
 Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray. Quitting stops every running bot first, cleanly through the service (it lets go of every key), as nothing would be left to control them; the tray panel's Quit says so ("Quit and stop fish-bot"). **Bots go on after quitting** in darbit settings leaves them running instead ("Quit (bots go on)"). It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
 
 **The tray panel:** a click on darbit's tray icon opens a small panel by it, on whichever edge the taskbar is: **Bots**
-lists every running bot with its state and time, Pause (or Go on) and Stop; with none running, the shown bot and
+lists every running bot with its state and time (alongside for one that sends no input), Pause (or Go on) and Stop; with none running, the shown bot and
 Play. **Tools** has Capture, Scout and Record an action, with their keys; then **Open darbit Studio** and Quit. A
 click anywhere else or Esc closes it; a double click on the icon opens the Studio.
 

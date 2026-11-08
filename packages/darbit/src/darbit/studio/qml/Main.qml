@@ -25,6 +25,7 @@ ApplicationWindow {
         function onMadeBot(name) { toast.show(name + " is ready") }
         function onSaid(text) { toast.show(text) }
         function onChecksFound() { checksSheet.open() }
+        function onAskedToReplace() { stopAndStartSheet.open() }
     }
 
     Backdrop { anchors.fill: parent }
@@ -73,6 +74,7 @@ ApplicationWindow {
     NewBotSheet { id: sheet }
     RecordSheet { id: recordSheet }
     ChecksSheet { id: checksSheet }
+    StopAndStartSheet { id: stopAndStartSheet }
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
     ScoutWindow { objectName: "scoutWindow" }

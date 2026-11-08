@@ -2,23 +2,12 @@
 import QtQuick
 import QtQuick.Controls.Basic
 
-Popup {
+Sheet {
     id: sheet
     property bool again: false
-    parent: Overlay.overlay
-    anchors.centerIn: parent
     width: 480
-    modal: true; focus: true; padding: 26
     function openFor(name) { again = name !== ""; field.text = name; open() }
     onOpened: field.forceActiveFocus()
-    Overlay.modal: Rectangle { color: Qt.rgba(0, 0, 0, 0.45) }
-    background: Rectangle { radius: 22; color: studio.colors.solid; border.color: studio.colors.line }
-    enter: Transition {
-        ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 180 : 0 }
-            NumberAnimation { property: "scale"; from: 0.94; to: 1; duration: studio.effects ? 240 : 0; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
-        }
-    }
     function submit() {
         var name = field.text.trim()
         if (name === "") return
