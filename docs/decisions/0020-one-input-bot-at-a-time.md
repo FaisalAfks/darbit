@@ -39,6 +39,21 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
   `input = true` and the service didn't start it), it asks the service on a thread of its own whether another input
   bot is running, and warns in its log and on the terminal when one is. It never stops the bot or waits for the
   service. The other way round, the service doesn't see such a bot at all, and starts an input bot next to it.
+- **An action played in the service counts as an input bot** (#428). `bot.action.play` (Play, Step through and
+  breakpoints in the Studio) clicks and types from the service's own process, so it's refused while any input bot
+  runs or is paused, its own bot included (that would be two at once too), and whatever the bot's `[run] input`
+  says. The refusal is the same: `code` `input_bot_running`, `detail.running`. `replace: true` stops the bots in the
+  way as Stop does, then plays. The other way round, an input bot's start is refused while an action plays, paused at
+  a breakpoint or a step included; `detail.running` has the action as its bot's entry with `status` `"playing"` and
+  `action` (its name). `replace` stops the action and waits for it to let go of every key (10 s at most) before the
+  bot starts. Both go under the start's lock.
+- **Recording is refused while an input bot runs or is paused.** The recorder leaves out input that was sent rather
+  than typed (Raw Input from `SendInput` has no device, `platform/win32/listener.py`), so a bot's clicks wouldn't
+  end up in the action, but the bot would still move the cursor, take the focus and change the screen under the
+  person recording, and the recorded places would be wrong. The recorder runs in the Studio's input worker, not the
+  service: before it starts, the worker asks the service (`bots.list`) and answers `record.start` with the same
+  refusal, its error ending "stop it to record ...". There is no replace: `record.start`'s `replace` already means
+  Re-record. No service answering means nothing to refuse.
 
 ## Consequences
 
@@ -48,7 +63,6 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
   the CLI come with the service, so only a mix of versions meets this.
 - Each `[run]` key is checked, so a bot that sets `input` needs a darbit that knows it: an older one refuses the
   darbit.toml.
-- Playing an action from the service (`bot.action.play`) sends input from the service's own process and isn't covered
-  yet (#428).
+- The service doesn't know when the Studio records, so it starts an input bot during a recording (#431).
 - The Studio's side, asking before replacing and listing every running bot in the run pill and the tray, is #427 and
   #424.
