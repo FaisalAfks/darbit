@@ -79,6 +79,23 @@ def input_bots(but: Path | None = None) -> list[dict]:
     return found
 
 
+def inputs_running() -> list[dict]:
+    """Everything the service says sends input now (`inputs.running`): input bots, the action playing, the recording
+    on; an older service without it is asked for its input bots instead; none when no service answers."""
+    from . import client
+
+    try:
+        with client.Client("darbit", wait=ASK_WAIT) as service:
+            found = service.call("inputs.running")
+    except client.ServiceError as error:
+        if "no method called" in str(error):
+            return input_bots()  # a service from before inputs.running
+        return []
+    if not isinstance(found, list):
+        return []
+    return found
+
+
 def _same(path: str, folder: Path) -> bool:
     try:
         return Path(path).resolve() == folder.resolve()

@@ -102,6 +102,11 @@ def _bot_status(params: dict) -> object:
 METHODS: dict[str, Method] = {
     "bots.list": Method(hub.projects_list, "every bot: installed ones and added project folders", one_bot=False),
     "bots.running": Method(hub.bots_running, "the bots running or paused, each with `input`", one_bot=False),
+    "inputs.running": Method(
+        hub.inputs_running,
+        "what sends input now: input bots running or paused, the action playing, the recording on",
+        one_bot=False,
+    ),
     "bots.add": Method(_bots_add, "add a project folder (`path`)", one_bot=False),
     "bots.new": Method(_bots_new, "make a bot from the template (`name`, `where`)", one_bot=False),
     "bots.install": Method(_bots_install, "install a bot from its git link (`url`)", one_bot=False),
