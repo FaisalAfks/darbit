@@ -1,4 +1,4 @@
-// The pill every darbit tool floats over the game: Capture's, the recorder's, Highlight's and the run pill. One shape
+// The pill every darbit tool floats over the game: Capture's, the recorder's, Scout's and the run pill. One shape
 // and one solid colour (no see-through glass over a game), so they never drift apart. Put its controls inside, in
 // order: a row on the top and bottom edges, a column on the sides (`vertical`), where they show their labels. The grip
 // at its start is where it's dragged from; PillBody places it and moves it. `drawer` holds what opens under the row,

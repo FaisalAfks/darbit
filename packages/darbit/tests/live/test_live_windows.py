@@ -155,8 +155,8 @@ def test_the_studio_draws_on_windows(page, tmp_path):
     assert path.is_file() and path.stat().st_size > 10_000
 
 
-def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, tmp_path):
-    """Highlight on the real screen: it boxes the picture where it is, and its overlay doesn't take the clicks."""
+def test_scout_finds_the_image_and_lets_clicks_through(target, pictures, tmp_path):
+    """Scout on the real screen: it boxes the image where it is, and its overlay doesn't take the clicks."""
     import shutil
 
     from PySide6.QtCore import QCoreApplication
@@ -169,19 +169,19 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
     from darbit.service.client import Client
     from darbit.studio.app import load
     from darbit.studio.backend import Studio
-    from darbit.studio.highlight import Highlight
+    from darbit.studio.scout import Scout
 
-    folder = bots.new("highlight-bot", tmp_path)
+    folder = bots.new("scout-bot", tmp_path)
     shutil.copy(pictures / f"{PICTURE}.png", folder / "assets" / "images" / f"{PICTURE}.png")
     front(target)
     app = QGuiApplication.instance() or QGuiApplication(["live"])
     studio = Studio(lambda: Client("live"), "glass-dark", "")
-    highlight = Highlight()
-    engine = load(studio, highlight=highlight)
+    scout = Scout()
+    engine = load(studio, scout=scout)
     root = engine.rootObjects()[0]  # held, or Qt deletes it under findChild
-    overlay = root.findChild(QQuickWindow, "highlightWindow")
+    overlay = root.findChild(QQuickWindow, "scoutWindow")
     root.hide()
-    highlight.start(folder)
+    scout.start(folder)
 
     def spin(seconds: float) -> None:
         deadline = time.monotonic() + seconds
@@ -191,10 +191,10 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
 
     try:
         deadline = time.monotonic() + 10
-        while highlight.found < 1 and time.monotonic() < deadline:
+        while scout.found < 1 and time.monotonic() < deadline:
             spin(0.1)
-        boxes = [box for box in highlight.boxes if box["name"] == PICTURE]
-        assert boxes and boxes[0]["found"], f"Highlight didn't find the picture: {highlight.boxes}"
+        boxes = [box for box in scout.boxes if box["name"] == PICTURE]
+        assert boxes and boxes[0]["found"], f"Scout didn't find the image: {scout.boxes}"
         assert (boxes[0]["x"], boxes[0]["y"], boxes[0]["w"], boxes[0]["h"]) == picture_box(target)
         assert overlay.isVisible()
         spin(0.5)
@@ -203,17 +203,20 @@ def test_highlight_finds_the_picture_and_lets_clicks_through(target, pictures, t
         import cv2
 
         scale = os.environ.get("QT_SCALE_FACTOR", "1")
-        cv2.imwrite(str(SHOTS / f"highlight-on-windows-{scale}.png"), pixels)
+        cv2.imwrite(str(SHOTS / f"scout-on-windows-{scale}.png"), pixels)
         x, y, w, h = picture_box(target)
         left_of_it = pixels[y + h // 2, x - 8 : x].astype(int)  # the box's border is drawn just outside the picture
-        assert any(g > 150 and g > r + 40 for b, g, r in left_of_it), "Highlight's box isn't around the picture"
+        assert any(g > 150 and g > r + 40 for b, g, r in left_of_it), "Scout's box isn't around the image"
         before = len(target.events("click"))
         x, y, w, h = picture_box(target)
+        # the pill (with its strip of images) takes clicks, like every pill; it's the boxes that mustn't
+        root.findChild(QQuickWindow, "scoutPill").setVisible(False)
+        spin(0.2)
         device.click(x + w // 2, y + h // 2, 0.0)
         spin(0.4)
-        assert len(target.events("click")) == before + 1, "the click stopped at Highlight's overlay"
+        assert len(target.events("click")) == before + 1, "the click stopped at Scout's overlay"
     finally:
-        highlight.stop()
+        scout.stop()
         spin(0.2)
         del engine
         app.processEvents()

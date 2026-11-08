@@ -1,4 +1,4 @@
-# Every shortcut in darbit: the hub, the capture tool, highlight, the recorder and the run panel.
+# Every shortcut in darbit: the hub, the capture tool, Scout, the recorder and the run panel.
 #
 # Override any of them in %APPDATA%\darbit\keymap.toml (yours) or in a project's darbit.toml under [keys]
 # (that bot's). Later wins: this file < yours < the project's. A key set to "" turns the shortcut off.
@@ -11,11 +11,15 @@
 
 [global]                                  # anywhere, even with the game in front
 "capture.freeze"   = "ctrl+alt+c"         # freeze the screen and capture (or retake the current guide item)
-"highlight.toggle" = "ctrl+alt+h"         # show what's found on screen, with scores; again to hide
+"scout.toggle"     = "ctrl+alt+s"         # Scout: every image searched on screen, with scores; again to hide
 "record.toggle"    = "ctrl+alt+r"         # start recording; again to stop
 "record.mark"      = "ctrl+alt+k"         # while recording: a checkpoint; what came before becomes its own action
 "run.pause"        = "ctrl+alt+p"         # pause or resume the bot, a recording or a played run
 "run.stop"         = "ctrl+alt+q"         # stop everything (the stop hotkey)
+
+[scout]                                   # only while Scout is on, with the game in front (the game doesn't get them then)
+"scout.next"       = "n"                  # land on the next image of the group shown
+"scout.previous"   = "shift+n"
 
 [app]                                     # in every darbit window
 "palette.open"     = "ctrl+k"             # the command palette: every action by name

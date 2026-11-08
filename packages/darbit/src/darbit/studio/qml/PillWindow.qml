@@ -1,4 +1,4 @@
-// A window for a pill floating over the game: the run pill's, the recorder's and Highlight's. It sits on a screen
+// A window for a pill floating over the game: the run pill's, the recorder's and Scout's. It sits on a screen
 // edge at a snap place, or floats (`place`, docking.py); it can be dragged to another edge, or firmly into the middle
 // to float as a small card with Dock. Docked, it shows while its `hiding` (hiding.py) is open and slides out of sight
 // past its edge while that's tucked; a real mouse move to that edge beside it brings it back. While it's dragged a

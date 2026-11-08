@@ -1,6 +1,6 @@
 # Design system
 
-One look for every surface of darbit Studio: its window and pages, and the tools over the game (Capture, Highlight,
+One look for every surface of darbit Studio: its window and pages, and the tools over the game (Capture, Scout,
 the recorder and the run pill). The Studio is Qt (PySide6 and QML): its components are in
 `packages/darbit/src/darbit/studio/qml/`, its themes in `packages/darbit/src/darbit/studio/theme.py`. The reference
 look is [mockups.html](../../ui/mockups.html), with its tokens in [tokens/](tokens/tokens.css); the Studio's redesign
@@ -71,12 +71,12 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | `Choice` | a setting that's on or off, with its label and help |
 | `Glass` | a card on a page, with an optional small caps title |
 | `Ring`, `Bar` | progress: a ring with its number, a thin bar |
-| `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
+| `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Scout's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
 | `ShotTargets` | the targets taken on one shot, as tiles in Capture's pill: a row that scrolls sideways, or two columns that scroll up and down |
 | `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
-| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar` | a page's own rows and cards, built from the above |
+| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
 
 ## Surfaces and how much screen they take
 
@@ -85,7 +85,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | Studio window | a normal window | the top bar holds the bot menu, the pages (Overview, Library, Results, Settings) and the run control; darbit settings can put the bots in a sidebar, which folds to their squares on a narrow window |
 | Sheets | over the Studio | things opened and closed: New bot, Record, the command palette |
 | Capture | full screen, over the frozen shot | its pill on an edge (top centre to start); slides out of sight a few seconds after the mouse leaves it |
-| Highlight | over the screen, click-through | a box and score per match; its pill on an edge, like the run pill |
+| Scout | over the screen, click-through, its pill in three forms (a row with a strip of images, a column of groups, a card with a grid) | a box and score per match; its pill on an edge, like the run pill |
 | Recorder pill | on an edge (top centre to start) | never takes focus from the game |
 | Run pill | on an edge while a bot runs | the Studio hides; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
 

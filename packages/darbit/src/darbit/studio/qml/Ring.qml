@@ -1,5 +1,5 @@
 // A progress ring: `done` of `total` in the accent's two colours, the number in the middle and a caption under it.
-// It sweeps to its share when the number changes.
+// It sweeps to its share when the number changes. `small` is a pill's: only the number, sized to fit.
 import QtQuick
 import QtQuick.Shapes
 
@@ -9,6 +9,7 @@ Item {
     property real total: 1
     property real thickness: 12
     property string caption: ""
+    property bool small: false
     readonly property real share: total > 0 ? Math.min(done / total, 1) : 0
     property real shown: 0
     width: 120; height: 120
@@ -44,9 +45,10 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Math.round(ring.done)
             color: studio.colors.text
-            font.pixelSize: ring.width * 0.22; font.weight: Font.Bold
+            font.pixelSize: ring.width * (ring.small ? 0.34 : 0.22); font.weight: Font.Bold
         }
         Text {
+            visible: !ring.small
             anchors.horizontalCenter: parent.horizontalCenter
             text: "of " + ring.total
             color: studio.colors.muted

@@ -75,8 +75,8 @@ ApplicationWindow {
     ChecksSheet { id: checksSheet }
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
-    HighlightWindow { objectName: "highlightWindow" }
-    HighlightPill { objectName: "highlightPill" }
+    ScoutWindow { objectName: "scoutWindow" }
+    ScoutPill { objectName: "scoutPill" }
     GhostWindow { objectName: "ghostWindow" }
     RunPill { objectName: "runPill" }
 

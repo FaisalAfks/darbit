@@ -162,7 +162,7 @@ def test_points_become_pixels_from_the_screens_own_corner():
 
 def test_every_pill_is_the_shared_one():
     qml = Path(docking.__file__).parent / "qml"
-    for name in ("RunPill", "HighlightPill", "RecorderPill"):
+    for name in ("RunPill", "ScoutPill", "RecorderPill"):
         source = (qml / f"{name}.qml").read_text(encoding="utf-8")
         assert "\nPillWindow {" in source, f"{name} is a PillWindow"
         assert "IconButton" not in source, f"{name}: a pill's buttons are PillActions, labelled in a column"

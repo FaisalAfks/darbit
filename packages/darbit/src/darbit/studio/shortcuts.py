@@ -19,7 +19,9 @@ EDITABLE = [
     ("search", "Search the page", "In the Studio"),
     ("file.save", "Save", "In the Studio"),
     ("capture.freeze", "Capture", "With the game in front"),
-    ("highlight.toggle", "Highlight", "With the game in front"),
+    ("scout.toggle", "Scout", "With the game in front"),
+    ("scout.next", "Scout: next image", "While Scout is on"),
+    ("scout.previous", "Scout: image before", "While Scout is on"),
     ("record.mark", "Recording: checkpoint", "With the game in front"),
     ("run.pause", "Recording: pause", "With the game in front"),
 ]

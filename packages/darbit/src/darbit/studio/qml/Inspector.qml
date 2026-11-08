@@ -94,7 +94,7 @@ Rectangle {
                 visible: missing || weak
                 Layout.fillWidth: true; wrapMode: Text.Wrap
                 text: missing ? "Not taken yet: the setup guide lists it, and the bot skips what needs it. Retake takes it."
-                    : weak ? "Close to failing: its last score was " + (panel.score === null ? "" : panel.score.toFixed(2)) + " and it needs " + panel.needs.toFixed(2) + ". If the game changed, retake it; Highlight on screen shows where it's found now."
+                    : weak ? "Close to failing: its last score was " + (panel.score === null ? "" : panel.score.toFixed(2)) + " and it needs " + panel.needs.toFixed(2) + ". If the game changed, retake it; Scout on screen shows where it's found now."
                     : ""
                 color: missing ? studio.colors.danger : studio.colors.warn
                 font.pixelSize: 13
@@ -161,8 +161,8 @@ Rectangle {
                 PillButton {
                     visible: panel.asset !== null && panel.asset.kind === "image" && !panel.asset.missing
                     Layout.fillWidth: true; Layout.columnSpan: 2
-                    icon: "◎"; text: "Highlight on screen"
-                    onClicked: studio.highlightOne(panel.asset.name)
+                    icon: "◎"; text: "Scout on screen"
+                    onClicked: studio.scoutOne(panel.asset.name)
                 }
             }
             RowLayout {

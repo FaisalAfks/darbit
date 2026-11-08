@@ -22,8 +22,8 @@ from .capture import Capture, ShotProvider, saved_shot
 from .docking import PillPlace
 from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
-from .highlight import Highlight
 from .recorder import Recorder
+from .scout import Scout, ShotsProvider
 from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
@@ -32,7 +32,7 @@ ICON = HERE / "darbit.ico"  # every size Windows asks for: taskbar, tray, Alt+Ta
 APP_ID = "darbit.studio"  # Windows' name for the Studio: its taskbar button is its own, not python.exe's
 SHOT_WAIT_MS = 1500  # time for the pages to get their data and draw before a shot
 HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture grabs it
-PILLS = ("run", "recorder", "highlight", "capture")  # every pill over the game: each keeps its own place (#384)
+PILLS = ("run", "recorder", "scout", "capture")  # every pill over the game: each keeps its own place (#384)
 
 
 def _client() -> Client:
@@ -48,33 +48,33 @@ def load(
     studio: Studio,
     capture: Capture | None = None,
     recorder: Recorder | None = None,
-    highlight: Highlight | None = None,
+    scout: Scout | None = None,
     ghost: Ghost | None = None,
     run_pill: HidingPill | None = None,
     recorder_hiding: HidingPill | None = None,
     place: tuple[QRect | None, bool] = (None, False),
-    highlight_hiding: HidingPill | None = None,
+    scout_hiding: HidingPill | None = None,
     pill_places: dict[str, PillPlace] | None = None,
     capture_hiding: HidingPill | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
-    RuntimeError if the QML doesn't load. `pill_places` are the pills' places by name (run, recorder, highlight,
+    RuntimeError if the QML doesn't load. `pill_places` are the pills' places by name (run, recorder, scout,
     capture), each made here when not given."""
     engine = QQmlApplicationEngine()
     if capture is None:
         capture = Capture(ShotProvider())
     if recorder is None:
         recorder = Recorder()
-    if highlight is None:
-        highlight = Highlight()
+    if scout is None:
+        scout = Scout()
     if ghost is None:
         ghost = Ghost()
     if run_pill is None:
         run_pill = HidingPill()
     if recorder_hiding is None:
         recorder_hiding = HidingPill()
-    if highlight_hiding is None:
-        highlight_hiding = HidingPill()
+    if scout_hiding is None:
+        scout_hiding = HidingPill()
     if capture_hiding is None:
         capture_hiding = HidingPill(watch=told_by_window)
     places = dict(pill_places or {})
@@ -82,14 +82,15 @@ def load(
         if name not in places:
             places[name] = PillPlace(name, in_window=name == "capture")
     engine.addImageProvider("capture", capture.provider)
+    engine.addImageProvider("scout", ShotsProvider(scout.shots))  # the engine owns it
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
     engine.rootContext().setContextProperty("recorder", recorder)
-    engine.rootContext().setContextProperty("highlight", highlight)
+    engine.rootContext().setContextProperty("scout", scout)
     engine.rootContext().setContextProperty("ghost", ghost)
     engine.rootContext().setContextProperty("runPill", run_pill)
     engine.rootContext().setContextProperty("recorderHiding", recorder_hiding)
-    engine.rootContext().setContextProperty("highlightHiding", highlight_hiding)
+    engine.rootContext().setContextProperty("scoutHiding", scout_hiding)
     engine.rootContext().setContextProperty("captureHiding", capture_hiding)
     for name, pill_place in places.items():
         engine.rootContext().setContextProperty(name + "Place", pill_place)
@@ -97,13 +98,13 @@ def load(
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
-    highlight.setParent(engine)
+    scout.setParent(engine)
     ghost.setParent(engine)
     run_pill.setParent(engine)
     recorder_hiding.setParent(engine)
-    highlight_hiding.setParent(engine)
+    scout_hiding.setParent(engine)
     capture_hiding.setParent(engine)
-    _connect_highlight_hiding(highlight, highlight_hiding)
+    _connect_scout_hiding(scout, scout_hiding)
     _connect_capture_hiding(capture, capture_hiding)
     _connect_recorder_hiding(
         recorder, capture, recorder_hiding
@@ -125,7 +126,7 @@ def load(
 
 def _release_when_hidden(root: QQuickWindow) -> None:
     """Every window gives back its graphics memory while it's hidden: the Studio is hidden for as long as a bot runs,
-    and Capture and Highlight most of the time."""
+    and Capture and Scout most of the time."""
     for window in [root, *root.findChildren(QQuickWindow)]:
         window.setPersistentGraphics(False)
         window.setPersistentSceneGraph(False)
@@ -144,21 +145,21 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     studio = Studio(connect)
     capture = Capture(ShotProvider())
     recorder = Recorder()
-    highlight = Highlight()
+    scout = Scout()
     ghost = Ghost()
     run_pill = HidingPill()
     recorder_hiding = HidingPill()
     place = fit(ui_settings.get(PLACE), screens())
-    engine = load(studio, capture, recorder, highlight, ghost, run_pill, recorder_hiding, place)
+    engine = load(studio, capture, recorder, scout, ghost, run_pill, recorder_hiding, place)
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
-    _connect_highlight(studio, highlight, window)
-    keys = _GlobalKeys(
-        {"highlight.toggle": studio.toggleHighlight, "capture.freeze": lambda: _capture_now(studio, capture)}
-    )
+    _connect_scout(studio, scout, window)
+    keys = _GlobalKeys({"scout.toggle": studio.toggleScout, "capture.freeze": lambda: _capture_now(studio, capture)})
     keys.register()
     studio.keysChanged.connect(keys.register)  # a key changed in darbit settings works at once
-    _connect_capture(studio, capture, recorder, window)
+    stepping = _GlobalKeys({"scout.next": scout.next, "scout.previous": scout.previous})
+    _step_while_scouting(scout, stepping, studio)
+    _connect_capture(studio, capture, recorder, window, scout)
     _connect_recorder(studio, capture, recorder, window)
     _connect_run_pill(studio, run_pill, window)
 
@@ -173,21 +174,31 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     _tell_from_tray(studio, tray, open_studio)
     code = app.exec()
     door.close()
-    highlight.stop()
+    scout.stop()
     ghost.stop()
     run_pill.close()
     recorder_hiding.close()
     recorder.close()
     keys.stop()
+    stepping.stop()
     tray.hide()
     return code
 
 
-def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, window: object) -> None:
-    """Capture hides the Studio, grabs the screen without it, and brings it back when it closes."""
+def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, window: object, scout: Scout) -> None:
+    """Capture hides the Studio, grabs the screen without it, and brings it back when it closes. A retake from
+    Scout's pill hides Scout instead, and Scout comes back after it."""
+    scouting: list[str] = []  # the bot Scout was on for, to come back to
+
+    def step_aside() -> None:
+        window.hide()
+        scouting.clear()
+        if scout.isOn:
+            scouting.append(scout.folder)
+            scout.stop()
 
     def wanted(folder: str, mode: str, name: str, kind: str) -> None:
-        window.hide()
+        step_aside()
         QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode, name, kind))
 
     def wanted_on_shot(folder: str, name: str, kind: str, screenshot: str) -> None:
@@ -195,7 +206,7 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
         if found is None:
             studio.say("That screenshot can't be used: the screens are laid out differently now")
             return
-        window.hide()
+        step_aside()
         capture.start(
             Path(folder),
             "one",
@@ -208,7 +219,14 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
         )
 
     def closed() -> None:
-        if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead
+        if capture.isOpen:
+            return
+        if scouting:
+            folder = Path(scouting.pop())
+            QTimer.singleShot(HIDE_WAIT_MS, lambda: scout.start(folder, land_on=scout.landed))  # once Capture is gone
+            studio.loadLibrary()
+            return
+        if not recorder.active:  # while recording, the recorder comes back instead
             _bring_forward(window)
             studio.loadLibrary()
             if studio.screens:  # the Screen view has been opened: a new shot may be there
@@ -218,6 +236,7 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
     studio.captureOnShotWanted.connect(wanted_on_shot)
     capture.openChanged.connect(closed)
     capture.saved.connect(lambda name: studio.loadLibrary())
+    capture.saved.connect(scout.forget)  # taken again: Scout looks at it afresh
 
 
 def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, window: object) -> None:
@@ -270,16 +289,17 @@ def _connect_recorder_hiding(recorder: Recorder, capture: Capture, hiding: Hidin
     capture.openChanged.connect(follow)
 
 
-def _connect_highlight_hiding(highlight: Highlight, hiding: HidingPill) -> None:
-    """Highlight's pill shows while Highlight is on, and hides like the run pill."""
+def _connect_scout_hiding(scout: Scout, hiding: HidingPill) -> None:
+    """Scout's pill shows while Scout is on, and hides like the run pill."""
 
     def follow() -> None:
-        if highlight.isOn:
+        if scout.isOn:
             hiding.open()
         else:
             hiding.close()
 
-    highlight.changed.connect(follow)
+    scout.changed.connect(follow)
+    follow()
 
 
 def _connect_capture_hiding(capture: Capture, hiding: HidingPill) -> None:
@@ -341,18 +361,39 @@ def _connect_ghost(studio: Studio, ghost: Ghost) -> None:
     follow()
 
 
-def _connect_highlight(studio: Studio, highlight: Highlight, window: object) -> None:
-    """Highlight hides the Studio while it's on; Ctrl+Alt+H turns it on and off with the game in front."""
+def _connect_scout(studio: Studio, scout: Scout, window: object) -> None:
+    """Scout hides the Studio while it's on; its key turns it on and off with the game in front. From the Library
+    or Results it lands on the image picked there."""
 
     def toggle(folder: str, name: str) -> None:
-        if highlight.isOn:
-            highlight.stop()
+        if scout.isOn and not name:
+            scout.stop()
             _bring_forward(window)
+        elif scout.isOn:
+            scout.landOn(name)
         else:
             window.hide()
-            QTimer.singleShot(HIDE_WAIT_MS, lambda: highlight.start(Path(folder), only=name))
+            QTimer.singleShot(HIDE_WAIT_MS, lambda: scout.start(Path(folder), land_on=name))
 
-    studio.highlightWanted.connect(toggle)
+    studio.scoutWanted.connect(toggle)
+
+
+def _step_while_scouting(scout: Scout, stepping: "_GlobalKeys", studio: Studio) -> None:
+    """N and Shift+N step through Scout's images while it's on, with the game in front; they're the game's again
+    once it's hidden."""
+
+    def follow() -> None:
+        if scout.isOn and stepping.registered is None:
+            stepping.register()
+        elif not scout.isOn and stepping.registered is not None:
+            stepping.stop()
+
+    def keys_changed() -> None:
+        if scout.isOn:
+            stepping.register()
+
+    scout.changed.connect(follow)
+    studio.keysChanged.connect(keys_changed)
 
 
 def _capture_now(studio: Studio, capture: Capture) -> None:
@@ -445,7 +486,7 @@ def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callab
             pages.addAction(label, lambda name=name: open_page(name))
         tools = menu.addMenu("Tools")
         tools.addAction("Capture (Ctrl+Alt+C)", lambda: studio.openCapture("any"))
-        tools.addAction("Highlight the last image (Ctrl+Alt+H)", studio.toggleHighlight)
+        tools.addAction("Scout (Ctrl+Alt+S)", studio.toggleScout)
         tools.addAction("Record an action…", record)
         menu.addAction("darbit settings", lambda: open_page("studio"))
         menu.addSeparator()

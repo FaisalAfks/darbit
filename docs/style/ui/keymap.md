@@ -7,11 +7,16 @@ Every shortcut is in one file, [`packages/darbit/src/darbit/keymap.toml`](https:
 | Keys | Does |
 |---|---|
 | `Ctrl+Alt+C` | freeze the screen and capture |
-| `Ctrl+Alt+H` | highlight what's found, with scores (again to hide) |
+| `Ctrl+Alt+S` | Scout: every image searched on screen, with scores (again to hide) |
 | `Ctrl+Alt+R` | record (again to stop) |
 | `Ctrl+Alt+K` | a checkpoint while recording: what came before becomes its own action |
 | `Ctrl+Alt+P` | pause or resume |
 | `Ctrl+Alt+Q` | stop everything |
+
+## While Scout is on
+
+`N` / `Shift+N` the next image of the group shown, and the one before (with the game in front; the game doesn't get
+them while Scout is on)
 
 ## In every darbit window
 
