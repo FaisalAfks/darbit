@@ -27,17 +27,18 @@ GridView {
     model: entries.length
     readonly property var empty: ({ index: -1, name: "", kind: "image", box: [0, 0, 1, 1], scoreText: "", scoreShort: "", scoreTone: "plain" })
     // the active one stays in sight as N steps through them
-    onActiveChanged: { if (vertical) console.log("DBG activeChanged", active, "cy", contentY, "count", count, "len", entries.length, "vis", visible); Qt.callLater(showActive) }
-    onContentYChanged: if (vertical) console.log("DBG cy ->", contentY, "h", height, "ch", contentHeight, "count", count)
-    onHeightChanged: if (vertical) console.log("DBG h ->", height)
-    onCountChanged: if (vertical) console.log("DBG count ->", count)
+    onActiveChanged: { if (vertical) console.warn("DBG activeChanged", active, "cy", contentY, "count", count, "len", entries.length, "vis", visible); Qt.callLater(showActive) }
+    onContentYChanged: if (vertical) console.warn("DBG cy ->", contentY, "h", height, "ch", contentHeight, "count", count)
+    onHeightChanged: if (vertical) console.warn("DBG h ->", height)
+    onCountChanged: if (vertical) console.warn("DBG count ->", count)
     function showActive() {
-        if (vertical) console.log("DBG showActive active", active, "cy", contentY, "h", height, "ch", contentHeight, "count", count, "len", entries.length, "vis", visible, "idx", JSON.stringify(entries.map(function (e) { return e.index })))
+        if (vertical) console.warn("DBG showActive active", active, "cy", contentY, "h", height, "ch", contentHeight, "count", count, "len", entries.length, "vis", visible, "idx", JSON.stringify(entries.map(function (e) { return e.index })))
         for (var at = 0; at < entries.length; at++) {
             if (entries[at].index === active) { positionViewAtIndex(at, GridView.Contain); break }
         }
-        if (vertical) console.log("DBG after showActive cy", contentY)
+        if (vertical) console.warn("DBG after showActive cy", contentY)
     }
+    Component.onCompleted: console.warn("DBG completed", objectName, vertical)
     SmoothWheel { view: tiles; sideways: !tiles.vertical }
 
     function inkOf(kind) { return kind === "region" ? studio.colors.kindRegion : kind === "location" ? studio.colors.kindLocation : studio.colors.kindImage }

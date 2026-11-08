@@ -2175,7 +2175,11 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     from darbit.studio.docking import PillPlace
 
     warnings = []
-    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    QtCore.qInstallMessageHandler(
+        lambda kind, context, text: (
+            print(text) if "DBG" in text else (warnings.append(text) if ".qml" in text else None)
+        )
+    )
     monkeypatch.setattr(paths, "config_dir", lambda: tmp_path)
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
     place = PillPlace("capture", keep=False, in_window=True)
