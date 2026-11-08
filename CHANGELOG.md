@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- `darbit bench`'s speed gate no longer fails on a slow CI runner: each search is judged by its fastest repeat instead of its median, and against the run's own speed (the median of every search's time over its baseline), so a machine that runs the whole job 2 times slower passes while one search much slower than the rest still fails. A whole run more than `--machine-slower` (3) times slower fails. Results and the table have the fastest time too, and `--save-baseline` writes it; darbit's bench/baseline.json holds CI's fastest times. Baselines saved before hold medians, which only makes the gate a little looser until they're saved again
+
 ### New
 
 - `DARBIT_NO_REAL_INPUT=1` turns real input off: every click, key, mouse move, hold, scroll, drag, app open, close or focus and screen grab raises `RealInputOff` naming the call, instead of touching the PC. Read-only calls (the cursor, open windows, `App.running`, monitors) still work, and `darbit.testing.FakeGame`'s fakes are used first. A bot's tests turn it on with one line in their conftest.py, `pytest_plugins = ["darbit.testing.no_real_input"]`, whose `real_input` fixture turns it back on for one test. darbit's own tests run with it on, except the live tests

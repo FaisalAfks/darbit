@@ -48,7 +48,7 @@ def test_answers_are_judged_by_how_much_the_boxes_overlap():
 
 def test_a_search_much_slower_than_its_baseline_fails_but_noise_does_not():
     def result(target, ms):
-        return bench.Result("menu", target, "right", 0.99, ms, ms, 40.0, False)
+        return bench.Result("menu", target, "right", 0.99, ms, ms, ms, 40.0, False)
 
     results = [result("Play", 30.0), result("Bag", 2.5), result("Shop", 11.0), result("New", 50.0)]
     baseline = {"menu/Play": 10.0, "menu/Bag": 1.0, "menu/Shop": 10.0}
@@ -56,6 +56,66 @@ def test_a_search_much_slower_than_its_baseline_fails_but_noise_does_not():
     assert bench.slower_than(results, baseline) == ["menu/Play: 30.0 ms, was 10.0 ms"]
     assert bench.slower_than(results, baseline, times=4) == []
     assert bench.baseline_of(results)["menu/Bag"] == 2.5
+
+
+def timed(target, fastest, median=None):
+    """A right search of the menu case: its fastest repeat, and its median (the fastest if not given)."""
+    median = fastest if median is None else median
+    return bench.Result("menu", target, "right", 0.99, fastest, median, median, 40.0, False)
+
+
+MENU = {"menu/Play": 20.0, "menu/Shop": 18.0, "menu/Bag": 16.0, "menu/Claim": 30.0, "menu/Close": 1.5}
+
+
+def test_the_gate_compares_the_fastest_repeat_not_the_median():
+    noisy = [timed("Play", 21.0, median=45.0)]  # one slow spell among the repeats: the fastest is as before
+    assert bench.slower_than(noisy, MENU) == []
+    slow = [timed("Play", 45.0)]  # control: every repeat slower
+    assert bench.slower_than(slow, MENU) == ["menu/Play: 45.0 ms, was 20.0 ms"]
+    assert bench.baseline_of(noisy) == {"menu/Play": 21.0}
+
+
+def test_a_slow_machine_moves_every_search_alike_and_passes():
+    # a shared runner about 2.2 times slower for the whole job; Close is too short to say
+    run = [timed(name.split("/")[1], ms * 2.2) for name, ms in MENU.items()]
+    assert bench.machine_speed(run, MENU) == pytest.approx(2.2)
+    assert bench.slower_than(run, MENU) == []
+    # control: judged without allowing for the machine, the run and every long search would fail
+    assert len(bench.slower_than(run, MENU, machine=1.0)) == 1 + 4
+
+
+def test_one_search_much_slower_than_the_rest_fails_on_a_slow_machine_too():
+    run = [timed("Play", 20.0 * 2 * 2.5), timed("Shop", 36.0), timed("Bag", 32.0), timed("Claim", 60.0)]
+    assert bench.machine_speed(run, MENU) == pytest.approx(2.0)
+    assert bench.slower_than(run, MENU) == ["menu/Play: 100.0 ms, was 20.0 ms (the run as a whole 2.0 times slower)"]
+    # control: the same search only as slow as the rest passes
+    run[0] = timed("Play", 40.0)
+    assert bench.slower_than(run, MENU) == []
+
+
+def test_one_search_twice_as_slow_on_a_normal_machine_fails():
+    run = [timed("Play", 45.0), timed("Shop", 18.5), timed("Bag", 15.8), timed("Claim", 31.0)]
+    assert bench.machine_speed(run, MENU) < 1.1
+    assert bench.slower_than(run, MENU) == ["menu/Play: 45.0 ms, was 20.0 ms"]
+
+
+def test_a_whole_run_far_slower_than_any_machine_fails():
+    run = [timed(name.split("/")[1], ms * 4) for name, ms in MENU.items()]
+    slow = bench.slower_than(run, MENU)
+    assert slow == ["the whole run: 4.0 times slower than the baseline (a slow machine may be 3)"]
+    assert bench.slower_than(run, MENU, machine=5.0) == []  # control: allowed with a larger --machine-slower
+
+
+def test_a_faster_machine_does_not_make_the_gate_stricter():
+    run = [timed("Play", 30.0), timed("Shop", 9.0), timed("Bag", 8.0), timed("Claim", 15.0)]
+    assert bench.machine_speed(run, MENU) == pytest.approx(0.5)
+    assert bench.slower_than(run, MENU) == []  # Play is 3 times the others, but within 2 times its baseline
+
+
+def test_too_few_searches_leave_the_machine_alone():
+    run = [timed("Play", 50.0), timed("Shop", 45.0)]
+    assert bench.machine_speed(run, MENU) == 1.0
+    assert len(bench.slower_than(run, MENU)) == 2
 
 
 def test_a_whole_run_finds_the_patch_and_writes_a_baseline(tmp_path, isolated, capsys):
@@ -140,7 +200,7 @@ def test_a_run_reads_text_and_says_when_it_needs_the_ocr_extra(tmp_path, isolate
 
 def test_the_speed_gate_covers_reads_and_fails_when_they_did_not_run():
     def result(target, ms, answer="right"):
-        return bench.Result("menu", target, answer, 0.99, ms, ms, bench.GOAL_READ, True)
+        return bench.Result("menu", target, answer, 0.99, ms, ms, ms, bench.GOAL_READ, True)
 
     baseline = {"menu/Top.Coins": 16.0, "menu/Top.Timer": 16.0}
     slow_read = [result("Top.Coins", 50.0), result("Top.Timer", 17.0)]
