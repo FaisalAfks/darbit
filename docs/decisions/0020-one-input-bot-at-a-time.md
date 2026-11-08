@@ -54,6 +54,14 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
   service: before it starts, the worker asks the service (`bots.list`) and answers `record.start` with the same
   refusal, its error ending "stop it to record ...". There is no replace: `record.start`'s `replace` already means
   Re-record. No service answering means nothing to refuse.
+- **An input bot's start and an action's play are refused during a recording** (#431). The worker writes
+  `recording.json` in darbit's data folder (its pid, the bot's folder, the action's name) as a recording starts and
+  takes it away as it stops; the service reads it under the start's lock. A file whose worker is gone (it crashed,
+  the Studio was ended) counts for nothing, so the start goes ahead. The refusal is the same, with the recording as
+  its bot's entry in `detail.running` with `status` `"recording"` and `action`. `replace` doesn't stop a recording:
+  only the person recording ends it, so the start is refused even with `replace`, its error saying to finish or
+  cancel the recording first. A file rather than a message to the service, so a recording started before the
+  service (or before it was restarted) still counts.
 
 ## Consequences
 
@@ -63,6 +71,5 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
   the CLI come with the service, so only a mix of versions meets this.
 - Each `[run]` key is checked, so a bot that sets `input` needs a darbit that knows it: an older one refuses the
   darbit.toml.
-- The service doesn't know when the Studio records, so it starts an input bot during a recording (#431).
 - The Studio's side, asking before replacing and listing every running bot in the run pill and the tray, is #427 and
   #424.

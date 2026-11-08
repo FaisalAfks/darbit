@@ -12,7 +12,7 @@ from test_service import service  # noqa: F401 - the fixture
 
 from darbit import events
 from darbit.project.manifest import ProjectError, load
-from darbit.server import actions_api, hub
+from darbit.server import actions_api, hub, recording_mark
 from darbit.service import alongside, client, protocol
 
 
@@ -320,3 +320,72 @@ def test_recording_is_refused_while_an_input_bot_runs(service, bot, runs):  # no
     assert reply.error == "tick-bot is running and uses the mouse and keys too: stop it to record run"
     assert [found["name"] for found in reply.detail["running"]] == ["tick-bot"]
     assert worker.record_api._recording is None
+
+
+# ---- starting during a recording (#431)
+
+
+@pytest.fixture
+def recording(actions, monkeypatch):
+    """tick-bot recording actions/run.py in this process, on fake hooks; stopped after the test."""
+    from darbit.platform import hooks
+    from darbit.server import record_api
+
+    def fake_start(on_event, moves=False):
+        return lambda: None
+
+    monkeypatch.setattr(hooks, "start", fake_start)
+    monkeypatch.setattr(hooks, "health", lambda restart=False: {})
+    monkeypatch.setattr(record_api, "on_end", None)
+    record_api.start(actions, "run")
+    yield actions
+    if record_api._recording is not None:
+        record_api.stop(False)
+
+
+def test_a_bot_is_refused_during_a_recording_even_with_replace(recording, runs):
+    other = _another(recording, "other-bot")
+    for replace in (False, True):
+        with pytest.raises(hub.InputBotRunning) as refused:
+            hub.project_run({"path": str(other), "replace": replace})
+        said = str(refused.value)
+        assert said.startswith("a recording of tick-bot's action run is running")
+        assert "finish or cancel the recording to start other-bot (replace doesn't stop a recording)" in said
+        assert [(found["name"], found["status"], found["action"]) for found in refused.value.running] == [
+            ("tick-bot", "recording", "run")
+        ]
+    assert hub.status(other) == "stopped"
+    assert recording_mark.current() is not None  # the recording goes on
+    quiet = _another(recording, "quiet-bot", sends_input=False)
+    assert hub.project_run({"path": str(quiet)})["status"] == "running"  # the control: no input, no refusal
+
+
+def test_an_action_is_refused_during_a_recording_even_with_replace(recording, runs):
+    for replace in (False, True):
+        with pytest.raises(hub.InputBotRunning, match="finish or cancel the recording to play forever"):
+            hub.action_play({"path": str(recording), "name": "forever", "replace": replace})
+    assert actions_api.playing() is None
+
+
+def test_once_the_recording_ends_or_its_worker_is_gone_starts_go_ahead(recording, runs):
+    from darbit.server import record_api
+
+    record_api.stop(False)
+    assert recording_mark.current() is None
+    assert hub.project_run({"path": str(recording)})["status"] == "running"  # the control: nothing in the way
+    hub.project_stop({"path": str(recording)})
+    recording_mark.write(recording, "run")
+    mark = recording_mark._file()
+    mark.write_text(mark.read_text(encoding="utf-8").replace(str(os.getpid()), "999999"), encoding="utf-8")
+    assert recording_mark.current() is None  # a worker that's gone left it: it counts for nothing
+    assert hub.project_run({"path": str(recording)})["status"] == "running"
+    recording_mark.clear()
+
+
+def test_the_recording_refusal_comes_over_the_socket(service, recording, runs):  # noqa: F811
+    with client.Client("test") as connection:
+        with pytest.raises(client.ServiceError) as refused:
+            connection.call("bot.start", bot="tick-bot", replace=True)
+        assert refused.value.code == "input_bot_running"
+        assert refused.value.detail["running"][0]["status"] == "recording"
+        assert connection.call("bot.status", bot="tick-bot")["status"] == "stopped"

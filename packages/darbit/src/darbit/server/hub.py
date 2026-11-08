@@ -22,7 +22,7 @@ from ..platform import system
 from ..project import bots
 from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, history, library, results, ui_settings
+from . import dashboard, history, library, recording_mark, refusal, results, ui_settings
 from .events import publish
 from .refusal import InputBotRunning
 
@@ -223,7 +223,8 @@ def bots_running(data: dict) -> list[dict]:
 
 def _input_bots_running(but: Path | None) -> list[dict]:
     """The bots running or paused that send input, taken-over runs included, but `but`; then the action playing in
-    the service, if one is: its bot's entry with `status` "playing" and its `action`."""
+    the service and the recording the Studio's input worker has on, if any: each its bot's entry with `status`
+    "playing" or "recording" and its `action`."""
     found = []
     for bot in bots_running({}):
         if Path(bot["path"]) != but and bot.get("input", True):
@@ -234,6 +235,9 @@ def _input_bots_running(but: Path | None) -> list[dict]:
     if playing is not None:
         folder, action = playing
         found.append({**describe(folder), "status": "playing", "input": True, "action": action})
+    mark = recording_mark.current()
+    if mark is not None:
+        found.append({**describe(mark.project), "status": "recording", "input": True, "action": mark.name})
     return found
 
 
@@ -270,12 +274,12 @@ def action_play(data: dict) -> dict:
 
 def _make_room(starting: str, but: Path | None, replace: bool) -> None:
     """Refuse to start something that sends input while another one runs, or stop the others when it replaces
-    them: bots as Stop does, an action playing as its Stop does."""
+    them: bots as Stop does, an action playing as its Stop does. A recording is never stopped from here."""
     others = _input_bots_running(but)
     if not others:
         return
-    if not replace:
-        raise InputBotRunning(starting, others)
+    if not replace or refusal.recording_in(others):
+        raise InputBotRunning(starting, others)  # replace never ends someone's recording
     for bot in others:
         if "action" in bot:
             _stop_action()
