@@ -92,7 +92,7 @@ The service listens on 127.0.0.1 only. Its port and a token are in `service.json
 {"type": "event", "topic": "project.status", "data": {"path": "...", "status": "running"}}
 ```
 
-The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it. A client asks the person, then sends `bot.start` again with `replace: true`. Fields a client doesn't know are skipped. `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
+The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it. A client asks the person, then sends `bot.start` again with `replace: true`. Fields a client doesn't know are skipped (from the release after 1.0.0-alpha.6; an older client can't read a refusal with a `code`). `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
 
 ```python
 from darbit.service.client import Client, ServiceError, ensure_running

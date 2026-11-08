@@ -43,8 +43,9 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
 ## Consequences
 
 - Replies can carry `code` and `detail` beside `error`; they're left out when unset, so a reply without them reads the
-  same as before, and the protocol's decoder skips fields it doesn't know, so a newer service's replies don't break
-  an older client.
+  same as before. From this release on the protocol's decoder skips fields it doesn't know; a client from
+  1.0.0-alpha.6 or before can't read a refusal that has them and waits until its request times out. The Studio and
+  the CLI come with the service, so only a mix of versions meets this.
 - Each `[run]` key is checked, so a bot that sets `input` needs a darbit that knows it: an older one refuses the
   darbit.toml.
 - Playing an action from the service (`bot.action.play`) sends input from the service's own process and isn't covered

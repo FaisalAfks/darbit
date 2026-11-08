@@ -140,7 +140,7 @@ def describe(folder: Path) -> dict:
     try:
         project = load(folder)
     except ProjectError as error:
-        return {"path": str(folder), "name": folder.name, "error": str(error), "status": "broken"}
+        return {"path": str(folder), "name": folder.name, "error": str(error), "status": "broken", "input": True}
     installed = folder.parent == paths.bots_dir()
     return {
         "path": str(folder),
