@@ -509,8 +509,8 @@ def library_rename(data: dict) -> dict:
 
 
 def project_doctor(data: dict) -> dict:
-    """darbit doctor's checks on a bot, for the Studio's Start: each with `ok` (None: couldn't look) and what it found,
-    and how many are problems."""
+    """darbit doctor's checks on a bot, for the Studio's Start: each with `name`, `ok` (None: couldn't look), what it
+    `found`, its `fix` (empty when none) and the targets not taken (`missing`), and how many are problems."""
     from .. import doctor
 
     checks = []

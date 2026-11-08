@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
+
 ## 1.0.0-alpha.3 - 2026-11-08
 
 ### New
