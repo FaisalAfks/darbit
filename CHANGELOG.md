@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.3 - 2026-11-08
+
 ### New
 
 - `d.keep_trying` takes `back_to`, a screen of the map: after a failure it goes back there and tries again, and only calls `recover` when that doesn't help; Results counts each go-back apart from the rejoins
