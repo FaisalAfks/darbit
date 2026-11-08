@@ -3,6 +3,7 @@
 Needs the studio extra (PySide6); skipped without it. The service is a fake client with canned answers.
 """
 
+import json
 import os
 import time
 from pathlib import Path
@@ -341,7 +342,24 @@ def qt(monkeypatch, tmp_path):
 
     monkeypatch.setattr(paths, "config_dir", lambda: tmp_path / "config")
     monkeypatch.setattr("darbit.service.client.ensure_running", lambda: None)
+    # still windows: with effects off every Behavior and animation lands at once, so a test reads where things end
+    # up, not where an animation happens to be; and no pill slides away on the clock while a slow run goes on
+    _keep_effects(tmp_path, False)
+    monkeypatch.setattr("darbit.studio.hiding.HIDE_AFTER", float("inf"))
     return QGuiApplication.instance() or QGuiApplication(["test"])
+
+
+@pytest.fixture
+def effects(qt, tmp_path):
+    """The windows with their motion and glass on, for the tests that only check they draw without a warning."""
+    _keep_effects(tmp_path, True)
+    return qt
+
+
+def _keep_effects(tmp_path, on):
+    config = tmp_path / "config"
+    config.mkdir(exist_ok=True)
+    (config / "ui.json").write_text(json.dumps({"studio.effects": on}), encoding="utf-8")
 
 
 def wait_until(check, seconds=5.0):
@@ -411,7 +429,7 @@ def test_a_refused_request_shows_its_reason(qt):
 
 @pytest.mark.parametrize("theme_name", ["glass-dark", "high-contrast"])
 @pytest.mark.parametrize("page", ["overview", "library", "results", "settings", "studio", "action"])
-def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
+def test_every_page_draws_without_a_qml_warning(effects, tmp_path, page, theme_name):
     warnings = []
 
     def keep(kind, context, text):
@@ -428,7 +446,7 @@ def test_every_page_draws_without_a_qml_warning(qt, tmp_path, page, theme_name):
     assert warnings == []
 
 
-def test_the_ghost_cursor_draws_without_a_qml_warning(qt, tmp_path):
+def test_the_ghost_cursor_draws_without_a_qml_warning(effects, tmp_path):
     from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.ghost import Ghost
@@ -475,7 +493,7 @@ class NoBots(FakeClient):
         return super().call(method, **params)
 
 
-def test_the_first_overview_welcomes_without_a_qml_warning(qt, tmp_path):
+def test_the_first_overview_welcomes_without_a_qml_warning(effects, tmp_path):
     warnings = []
 
     def keep(kind, context, text):
@@ -517,7 +535,7 @@ def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     assert not capture.isOpen
 
 
-def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tmp_path):
+def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(effects, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject
     from PySide6.QtQuick import QQuickWindow
@@ -2275,11 +2293,12 @@ def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path)
     assert box() == [190, 180, 170, 110]
     QMetaObject.invokeMethod(window, "undo")
     assert box() == [210, 210, 150, 80]
-    # a region resizes the same way when it's the kind picked
-    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "region"), Q_ARG("QVariant", [100, 100, 400, 300]))
+    # a region resizes the same way when it's the kind picked (its edge grabbed below the pill and its tiles, which
+    # sit over the top of the shot)
+    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "region"), Q_ARG("QVariant", [100, 100, 400, 400]))
     QtCore.QCoreApplication.processEvents()
-    drag((99, 130), (50, 130))  # its left edge
-    assert box("region") == [50, 100, 450, 300]
+    drag((99, 400), (50, 400))  # its left edge
+    assert box("region") == [50, 100, 450, 400]
     assert box() == [210, 210, 150, 80]  # the image stays
     capture.close()
     del engine
