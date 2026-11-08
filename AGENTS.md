@@ -84,7 +84,7 @@ python scripts/render_mockups.py   # mockup images into docs/ui/images/
 - Write files the Studio reads with Python: Windows PowerShell's `Set-Content` adds a byte-order mark.
 
 **Safety**
-- Tests use fakes and saved screenshots. Live input (mouse, keys, the capture tool on screen) only when the owner says so.
+- Tests use fakes and saved screenshots, with `DARBIT_NO_REAL_INPUT=1` (tests/conftest.py): a real click, key, app control or screen grab raises. Live input (mouse, keys, the capture tool on screen) only when the owner says so.
 - Never commit secrets or private game data: a private server link lives only in an environment variable.
 
 **Asking**

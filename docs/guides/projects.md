@@ -173,6 +173,12 @@ game is. When nothing on the map shows (a loading screen, the game closed), that
 d.keep_trying("Daily quest", attempt, recover=restart_the_game, how="restart", back_to="Menu", back_timeout=10)
 ```
 
+## Tests
+
+A bot's tests run on saved screens with `darbit.testing.FakeGame`, and with real input off so a call a test forgot
+to fake raises instead of clicking the PC: `pytest_plugins = ["darbit.testing.no_real_input"]` in
+`tests/conftest.py` ([Testing without the game](screen-map.md#testing-without-the-game)).
+
 ## Mistakes
 
 An unknown table or key, a missing `[bot] name`, or a setting of the wrong type (`timeout = "long"`) stops `import darbit` with a message naming the key. A `darbit = ...` that isn't plain comparisons (`>=0.3,<0.4`) gives a warning.

@@ -3,7 +3,7 @@
 import numpy as np
 
 from ..core.geometry import Region
-from . import backend
+from . import backend, real
 
 
 def enable_dpi_awareness() -> None:
@@ -26,6 +26,7 @@ def monitors() -> list[Region]:
 def grab(region: Region | None = None) -> tuple[np.ndarray, Region]:
     """Capture a region (the whole desktop for None) as BGR pixels, clipped to the screen. Returns the pixels and
     the region actually captured."""
+    real.refuse("screen.grab")
     return backend.screen().grab(region)
 
 

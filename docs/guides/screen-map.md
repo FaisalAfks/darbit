@@ -51,3 +51,19 @@ def test_the_shop_is_reached_past_the_ad():
 ```
 
 The screens darbit Studio saves when you capture (`.darbit/screens`) make good stand-ins.
+
+### Real input off
+
+A test that forgets to fake one call still reaches the real PC: a click or key goes to whatever is in front, even a
+bot playing live. One line in the bot's `tests/conftest.py` turns real input off for all its tests:
+
+```python
+pytest_plugins = ["darbit.testing.no_real_input"]
+```
+
+It sets `DARBIT_NO_REAL_INPUT=1` (setting it by hand does the same), for the tests and every process they start.
+Then every real input (click, key, mouse move, hold, scroll, drag), app control (`App.open`, `close`, `focus`, and
+bringing `window` to the front) and screen grab raises `RealInputOff` naming the call, e.g.
+`input.click: real input is off`. Calls that only look (where the cursor is, which windows are open, `App.running`,
+the monitors) still work. FakeGame's fakes are used before the switch is checked, so tests on saved screens work as
+before. A test that fakes input another way asks for the `real_input` fixture to turn it back on for itself.

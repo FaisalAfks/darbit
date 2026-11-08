@@ -90,7 +90,7 @@ def test_no_interrupts_inside_a_quiet_block():
         d.sleep(0)
 
 
-def test_an_interrupt_lets_go_of_held_keys(clean):
+def test_an_interrupt_lets_go_of_held_keys(clean, real_input):
     d.hold("w")
     d.observe(lambda: True, name="x")
     obs.tick()

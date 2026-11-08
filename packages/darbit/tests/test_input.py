@@ -10,7 +10,7 @@ KEYUP, UNICODE = 0x0002, 0x0004
 
 
 @pytest.fixture
-def sent(monkeypatch):
+def sent(monkeypatch, real_input):
     events = []
     monkeypatch.setattr(device, "_send", lambda *e: events.extend(e))
     monkeypatch.setattr(device, "EVENT_DELAY", 0)

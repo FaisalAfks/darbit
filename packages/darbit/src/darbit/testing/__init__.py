@@ -5,9 +5,14 @@
         game.leads("Bag", "esc", "Menu", key=True)     # pressing Esc in the bag goes back
         assert my_map.go("Bag") and game.showing == "Bag"
 
-darbit's screen grabs come from the screen showing, and its clicks and key presses go to the fake game instead of
-the PC: nothing real is touched. Bots' saved screens (.darbit/screens) make good stand-ins. See the rebuild plan,
+darbit's screen grabs come from the screen showing, its clicks and key presses go to the fake game instead of
+the PC, and bringing the game's window to the front (settings.window) does nothing: nothing real is touched. Bots' saved screens (.darbit/screens) make good stand-ins. See the rebuild plan,
 section 8 (offline tests).
+
+A call a test forgot to fake would still reach the real PC. One line in a bot's conftest.py turns real input off
+for every test, so such a call raises instead (darbit.testing.no_real_input):
+
+    pytest_plugins = ["darbit.testing.no_real_input"]
 """
 
 from dataclasses import dataclass, field
@@ -17,12 +22,15 @@ from typing import Self
 import cv2
 import numpy as np
 
-from .core import matching
-from .core.geometry import Region
-from .core.targets import load
-from .platform import input as device
-from .platform import screen
-from .settings import settings
+from ..core import matching
+from ..core.geometry import Region
+from ..core.targets import load
+from ..platform import input as device
+from ..platform import screen, windows
+from ..platform.real import RealInputOff
+from ..settings import settings
+
+__all__ = ["FakeGame", "RealInputOff"]
 
 
 @dataclass
@@ -66,11 +74,18 @@ class FakeGame:
         return self
 
     def __enter__(self) -> Self:
-        self._real = {"grab": screen.grab, "click": device.click, "tap": device.tap, "move": device.move}
+        self._real = {
+            "grab": screen.grab,
+            "click": device.click,
+            "tap": device.tap,
+            "move": device.move,
+            "bring_to_front": windows.bring_to_front,
+        }
         screen.grab = self._grab
         device.click = self._click
         device.tap = self._tap
         device.move = self._move
+        windows.bring_to_front = self._bring_to_front
         return self
 
     def __exit__(self, *args: object) -> None:
@@ -78,6 +93,7 @@ class FakeGame:
         device.click = self._real["click"]
         device.tap = self._real["tap"]
         device.move = self._real["move"]
+        windows.bring_to_front = self._real["bring_to_front"]
 
     def _grab(self, region: Region | None = None) -> tuple[np.ndarray, Region]:
         pixels = self._pixels[self.showing]
@@ -108,6 +124,9 @@ class FakeGame:
 
     def _move(self, x: int, y: int, glide: float = 0) -> None:
         return None
+
+    def _bring_to_front(self, handle: int) -> bool:
+        return True  # the fake game is always in front
 
     def _inside(self, picture: str, x: int, y: int) -> bool:
         """Whether (x, y) is on `picture` where it is on the screen showing."""
