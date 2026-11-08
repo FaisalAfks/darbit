@@ -89,9 +89,10 @@ sight. A phone gets it too when `notify.toml` has a channel.
 - **Results** (Ctrl+3): the bot's days; the chosen one in a sentence, its problems, what it got (today, the week, the
   total) and a timeline of its modes, from the run history. **Problems** are explained: each kind is grouped by its
   likely cause (something covered the game, an image looks different now, an image wasn't on screen, or the bot's own
-  reason) with a sentence of what the bot saw; opened, it shows the images that ran out before it stopped (how close
-  each came against what it needs, for how long), the screen when it stopped, and Highlight, Retake, the screenshots,
-  or Not a problem.
+  reason) with a sentence of what the bot saw; opened, it shows the screen when it stopped with the closest match of
+  the image it waited for boxed and scored, beside the images that ran out before it stopped (best against what each
+  needs, for how long) and the steps before it. Under the screen, **Retake** takes the image again on that screen (the
+  moment it failed) or on the screen now; Highlight, the screenshots and Not a problem are beside the steps.
 - **Settings** (Ctrl+4): the bot's `settings.toml`, one row per setting with a control made for its type: a switch, a
   stepper (a number with − and +, kept in its range), a slider for a number with a min and a max, a list, or a field.
   The section cards flow into two columns on a wide window; the section list has search (Ctrl+F), counts, and a dot on

@@ -1455,3 +1455,129 @@ def test_the_recoveries_block_says_how_often_and_why(qt, monkeypatch, recoveries
 
     wait_until(lambda: all(line in texts() for line in said))
     del engine
+
+
+def _failure(tmp_path, screenshot=True, target="Lobby.Play"):
+    """A problem on the Results page as server/problems.py says it: the image it waited for, its closest match on the
+    screenshot it was seen on, and the steps before it."""
+    import cv2
+    import numpy as np
+
+    cv2.imwrite(str(tmp_path / "Lobby.Play.png"), np.full((40, 100, 3), 200, np.uint8))
+    cv2.imwrite(str(tmp_path / "shot.jpg"), np.zeros((900, 1600, 3), np.uint8))
+    shot = (tmp_path / "shot.jpg").as_uri() if screenshot else None
+    search = {"target": target, "seconds": 120, "closest": 0.62, "needs": 0.85, "at": [700, 430]}
+    search |= {"picture": (tmp_path / "Lobby.Play.png").as_uri(), "screenshot": shot}
+    before = [
+        {
+            "time": "2026-10-31T11:57:58.000",
+            "kind": "click",
+            "what": "Lobby.Join",
+            "ok": False,
+            "say": "click Lobby.Join: not found",
+        },
+    ]
+    return {
+        "cause": "changed",
+        "label": "An image looks different now",
+        "tone": "danger",
+        "act": True,
+        "step": "Rejoin",
+        "path": "Rejoin",
+        "reason": "Lobby.Play didn't show",
+        "sentence": "It couldn't find Lobby.Play for 2 minutes.",
+        "target": target,
+        "count": 1,
+        "times": ["2026-10-31T12:00:04.000"],
+        "screenshot": shot,
+        "screenshots": [shot] if shot else [],
+        "searches": [search] if target else [],
+        "before": before,
+    }
+
+
+def _results_page(monkeypatch, problem):
+    from darbit.core.geometry import Region
+    from darbit.platform import screen
+
+    monkeypatch.setattr(screen, "desktop", lambda: Region(-400, 0, 2000, 900))  # a screen left of the main one
+    monkeypatch.setitem(ANSWERS, "bot.day", {**ANSWERS["bot.day"], "problems": [problem]})
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1400, 1000)
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+
+    def find(name):
+        def walk(item):
+            yield item
+            for child in item.childItems():
+                yield from walk(child)
+
+        for item in walk(window.contentItem()):
+            if item.objectName() == name:
+                return item
+        return None
+
+    wait_until(lambda: find("retakeNow") is not None and find("retakeNow").isVisible())
+    return studio, engine, find
+
+
+def test_a_failure_shows_its_closest_match_and_retakes_on_its_screen(qt, tmp_path, monkeypatch):
+    studio, engine, find = _results_page(monkeypatch, _failure(tmp_path))
+    match = find("closestMatch")
+    wait_until(match.isVisible)
+    shot = match.parentItem()
+    scale = (shot.width() - 2) / 1600  # the screenshot fills the frame's width
+    top = 1 + (shot.height() - 2 - 900 * scale) / 2
+    assert abs(match.x() - (1 + 1100 * scale)) < 1  # 700 on screen is 1100 into a desktop starting at -400
+    assert abs(match.y() - (top + 430 * scale)) < 1
+    assert abs(match.width() - 100 * scale) < 1  # as big as the image it waited for
+    on_shot, now = [], []
+    studio.captureOnShotWanted.connect(lambda *args: on_shot.append(args))
+    studio.captureWanted.connect(lambda *args: now.append(args))
+    QMetaObject.invokeMethod(find("retakeOnShot"), "clicked")
+    QMetaObject.invokeMethod(find("retakeNow"), "clicked")
+    assert on_shot == [("/bots/ad-bot", "Lobby.Play", "image", str(tmp_path / "shot.jpg").replace("\\", "/"))]
+    assert now == [("/bots/ad-bot", "one", "Lobby.Play", "image")]
+    del engine
+
+
+def test_a_failure_without_a_screenshot_retakes_on_the_screen_now(qt, tmp_path, monkeypatch):
+    _studio, engine, find = _results_page(monkeypatch, _failure(tmp_path, screenshot=False))
+    assert not find("retakeOnShot").isVisible()
+    assert not find("closestMatch").isVisible()
+    assert find("retakeNow").property("text") == "Retake Lobby.Play on the screen now"
+    del engine
+
+
+def test_a_failure_with_no_image_waited_for_has_no_retake(qt, tmp_path, monkeypatch):
+    problem = _failure(tmp_path, target="")
+    problem["act"] = True
+    monkeypatch.setitem(ANSWERS, "bot.day", {**ANSWERS["bot.day"], "problems": [problem]})
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+    wait_until(lambda: studio.day.get("problems"))
+    QtCore.QCoreApplication.processEvents()
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    texts = []
+    wait_until(
+        lambda: (
+            "Nothing it looked for ran out before it stopped."
+            in [i.property("text") for i in walk(window.contentItem())]
+        )
+    )
+    for item in walk(window.contentItem()):
+        if item.objectName() in ("retakeNow", "retakeOnShot"):
+            texts.append(item.isVisible())
+    assert texts and not any(texts)
+    del engine

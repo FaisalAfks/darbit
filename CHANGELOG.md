@@ -4,6 +4,7 @@
 
 ### New
 
+- darbit Studio's Results shows a failure opened as the screen when it stopped, with the closest match of the image it waited for boxed and scored, beside that image (best against what it needs) and the steps before it; under the screen, Retake on that screen or on the screen now
 - darbit Studio's Overview has a Recoveries block: how often the bot recovered today, the most common reason and the last one, or that it hasn't had to; darbit's default layout ends with it, and `overview.toml` places it with `kind = "recoveries"`
 
 ### Changed
