@@ -75,7 +75,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
   don't). Floating, it shows where the bot is, today's round so far and the last step that ended. The
-  bot never sees it in its screenshots. The Studio comes back when the bot stops or fails, or from the tray.
+  bot never sees it in its screenshots. Closing the Studio to the tray or minimizing it while a bot is running or
+  paused opens the pill too, with that bot. The Studio comes back when the bot stops or fails, or from the tray, and
+  showing it closes the pill.
 - **Moving a pill:** every pill over the game (the run pill, Capture's, Scout's and the recorder's) starts at the
   top centre and can be dragged by its grip (⠿) or any empty part of it. On the top and bottom edges it's a row, on the
   left and right a column with its buttons labelled; it snaps to an edge's centre, its corners or near the centre on
