@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.5 - 2026-11-08
+
 ### New
 
 - Reading text on screen: `d.read(where)`, `d.read_number(where)` (`4.99M`, `126.62B`, `1,234`, `12%`, `1.5k`) and `d.read_time(where)` (`02:31`, `1:02:03`, `2m 30s`, in seconds), also on a Region and a Match. `where` is a Region, a Match, a named Region or a named Image. A Region's .json can say what it holds (`"text": "digits"`), and a read uses only those characters. Unreadable or unsure text is None. The reader is RapidOCR with its bundled models, in the new `ocr` extra (`pip install "darbit[ocr]"`); a single line reads in about 10 ms. Each read is logged and recorded with its confidence, `[settings.read]` has preparing options (upscale, invert, threshold, lines), and `darbit bench` judges and times `[[read]]` entries (decision 0019)

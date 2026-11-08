@@ -260,7 +260,7 @@ wheels = [
 
 [[package]]
 name = "darbit"
-version = "1.0.0a4"
+version = "1.0.0a5"
 source = { editable = "packages/darbit" }
 dependencies = [
     { name = "mss" },
