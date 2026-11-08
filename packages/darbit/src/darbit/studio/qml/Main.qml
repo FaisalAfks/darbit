@@ -24,6 +24,7 @@ ApplicationWindow {
         target: studio
         function onMadeBot(name) { toast.show(name + " is ready") }
         function onSaid(text) { toast.show(text) }
+        function onChecksFound() { checksSheet.open() }
     }
 
     Backdrop { anchors.fill: parent }
@@ -71,6 +72,7 @@ ApplicationWindow {
     CommandPalette { id: palette; objectName: "commandPalette" }
     NewBotSheet { id: sheet }
     RecordSheet { id: recordSheet }
+    ChecksSheet { id: checksSheet }
     CaptureWindow { objectName: "captureWindow" }
     RecorderPill { objectName: "recorderPill" }
     HighlightWindow { objectName: "highlightWindow" }
@@ -97,5 +99,5 @@ ApplicationWindow {
     function newBot(way) { sheet.way = way || "new"; sheet.open() }
     function recordAction(name) { recordSheet.openFor(name || "") }
     function openAction(name) { studio.openAction(name); page = "action" }
-    Shortcut { sequence: window.keyOf("run.toggle"); onActivated: window.running ? null : studio.start() }
+    Shortcut { sequence: window.keyOf("run.toggle"); onActivated: window.running ? null : studio.play() }
 }

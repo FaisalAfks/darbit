@@ -60,7 +60,7 @@ Rectangle {
             visible: !control.active
             kind: "primary"; icon: "▶"; text: "Play"; small: true
             anchors.verticalCenter: parent.verticalCenter
-            onClicked: studio.start()
+            onClicked: studio.play()
         }
         PillButton {
             visible: control.active

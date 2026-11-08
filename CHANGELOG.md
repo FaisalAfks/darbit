@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- darbit Studio's Play runs darbit doctor's checks first: with a problem, a sheet shows every check with what it found and how to fix it (Take them opens Capture on the targets not taken), with Cancel, Check again and Start anyway; with none, the bot starts at once
+
 ### Changed
 
 - darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image

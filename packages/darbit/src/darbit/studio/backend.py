@@ -37,6 +37,7 @@ class Studio(QObject):
     botChanged = Signal()
     overviewChanged = Signal()
     checksChanged = Signal()
+    checksFound = Signal()  # Play's checks found a problem: the Studio shows them, with Start anyway
     pictureFailing = Signal(str, str)  # (title, text): an image may have stopped matching, for the tray to say
     libraryChanged = Signal()
     screensChanged = Signal()
@@ -203,7 +204,9 @@ class Studio(QObject):
     overview = Property(
         dict, _get_overview, notify=overviewChanged
     )  # {catalog, layout, botLayout, custom, data, problem}
-    checks = Property(dict, _get_checks, notify=checksChanged)  # {bot, checks: [{name, ok, say}], problems}
+    checks = Property(
+        dict, _get_checks, notify=checksChanged
+    )  # {bot, checks: [{name, ok, found, fix, missing}], problems}
     library = Property(list, _get_library, notify=libraryChanged)
     screens = Property(list, _get_screens, notify=screensChanged)
     libraryReady = Property(bool, _get_library_ready, notify=libraryChanged)
@@ -252,6 +255,24 @@ class Studio(QObject):
     @Slot()
     def start(self) -> None:
         self._ask("started", "bot.start")
+
+    @Slot()
+    def play(self) -> None:
+        """Start the shown bot after darbit doctor's checks: at once when they find nothing, else `checksFound`, for
+        the Studio to show what's wrong with Start anyway. A service that can't check starts it as before."""
+        if not self._bot or self._client is None:
+            return
+        client = self._client
+        bot = self._bot["path"]
+
+        def check() -> dict:
+            try:
+                found = client.call("bot.doctor", bot=bot)
+            except ServiceError:
+                found = {"checks": [], "problems": 0}
+            return {**found, "bot": bot}
+
+        self._run("play", check)
 
     @Slot()
     def pause(self) -> None:
@@ -568,6 +589,15 @@ class Studio(QObject):
             self._run("bots", lambda: self._client.call("bots.list") if self._client else [])
         elif what == "bots" and isinstance(result, list):
             self._set_bots(result)
+        elif what == "play" and isinstance(result, dict):
+            self._checks = result
+            self.checksChanged.emit()
+            if result.get("bot") != self._bot.get("path"):
+                return  # another bot is shown by now: Play was for that one
+            if result.get("problems"):
+                self.checksFound.emit()
+            else:
+                self.start()
         elif what == "checks" and isinstance(result, dict):
             self._checks = result
             self.checksChanged.emit()
