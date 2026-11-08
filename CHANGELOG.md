@@ -6,6 +6,10 @@
 
 - Closing the Studio to the tray or minimizing it while a bot is running or paused opens the run pill, as a bot starting does; it shows that bot, the shown one first. Showing the Studio again closes the pill
 
+### Changed
+
+- Quitting the Studio stops every running bot, cleanly through the service (letting go of every key), instead of leaving them with nothing to control them. **Bots go on after quitting** in darbit settings keeps them running. The tray's Quit says which: "Quit and stop fish-bot", "Quit and stop 2 bots" or "Quit (bots go on)"
+
 ## 1.0.0-alpha.6 - 2026-11-08
 
 ### Fixed

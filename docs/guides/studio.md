@@ -149,11 +149,12 @@ sight. A phone gets it too when `notify.toml` has a channel.
   **Start anyway**.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
   the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
-- **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), and the keys: click
+- **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), whether bots go on
+  after quitting, and the keys: click
   one and press the new keys (Esc leaves it, Delete turns it off, ↺ goes back). A key something else has is refused. A `theme.toml` in
   darbit's settings folder lays tokens over the theme (`base = "glass-dark"`, `accent = "#ff7ab6"`).
 
-Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray; the tray icon opens it again, and its menu quits. It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
+Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray; the tray icon opens it again, and its menu quits. Quitting stops every running bot first, cleanly through the service (it lets go of every key), as nothing would be left to control them; the menu says so ("Quit and stop fish-bot"). **Bots go on after quitting** in darbit settings leaves them running instead ("Quit (bots go on)"). It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
 
 The pages follow the mockups in `docs/ui/` and the tokens in [the design system](../style/ui/design-system.md); `darbit.studio.app.shot()` draws any page into a PNG with no screen, which the tests use for every page and theme.
 
