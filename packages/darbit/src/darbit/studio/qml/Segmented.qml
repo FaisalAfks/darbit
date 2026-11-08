@@ -1,5 +1,5 @@
-// A row of choices in a pill, with one highlight that glides to the chosen one.
-// model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
+// A row of choices in a pill, with one highlight that glides to the chosen one; `vertical` stacks them (a pill on a
+// side edge). model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
 import QtQuick
 
 Rectangle {
@@ -8,12 +8,14 @@ Rectangle {
     property string current: ""
     property int itemHeight: 36
     property bool strong: true  // the accent highlight; off: a quieter raised one
+    property bool vertical: false
+    property int columnWidth: 140  // each choice's width when stacked
     signal picked(string key)
     readonly property int speed: studio.effects ? 220 : 0
 
     implicitWidth: row.implicitWidth + 8
-    implicitHeight: itemHeight + 8
-    radius: height / 2
+    implicitHeight: vertical ? row.implicitHeight + 8 : itemHeight + 8
+    radius: vertical ? 18 : height / 2
     color: studio.colors.glass
     border.color: studio.colors.line
 
@@ -21,10 +23,10 @@ Rectangle {
         id: glide
         readonly property Item target: row.children.length > 0 ? row.chosen() : null
         x: target ? target.x + 4 : 4
-        y: 4
+        y: target ? target.y + 4 : 4
         width: target ? target.width : 0
         height: seg.itemHeight
-        radius: height / 2
+        radius: vertical ? 18 : height / 2
         visible: target !== null
         gradient: Gradient {
             orientation: Gradient.Horizontal
@@ -32,12 +34,14 @@ Rectangle {
             GradientStop { position: 1; color: seg.strong ? Qt.tint(studio.colors.accent, Qt.rgba(0.65, 0.55, 0.98, 0.35)) : studio.colors.raisedHover }
         }
         Behavior on x { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
         Behavior on width { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
     }
 
-    Row {
+    Grid {
         id: row
         x: 4; y: 4
+        columns: seg.vertical ? 1 : Math.max(1, seg.model.length)
         function chosen() {
             for (var index = 0; index < children.length; index++)
                 if (children[index].key === seg.current) return children[index]
@@ -50,11 +54,12 @@ Rectangle {
                 required property var modelData
                 readonly property string key: modelData.key
                 readonly property bool on: key === seg.current
-                width: label.implicitWidth + 30
+                width: seg.vertical ? seg.columnWidth : label.implicitWidth + 30
                 height: seg.itemHeight
                 Row {
                     id: label
-                    anchors.centerIn: parent
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: seg.vertical ? 14 : (parent.width - width) / 2
                     spacing: 7
                     Text {
                         visible: !!item.modelData.icon

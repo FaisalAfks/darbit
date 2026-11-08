@@ -71,7 +71,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | `Choice` | a setting that's on or off, with its label and help |
 | `Glass` | a card on a page, with an optional small caps title |
 | `Ring`, `Bar` | progress: a ring with its number, a thin bar |
-| `FloatingPill`, `PillWindow` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill) |
+| `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Highlight's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
 | `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
@@ -83,10 +83,15 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 |---|---|---|
 | Studio window | a normal window | the top bar holds the bot menu, the pages (Overview, Library, Results, Settings) and the run control; darbit settings can put the bots in a sidebar, which folds to their squares on a narrow window |
 | Sheets | over the Studio | things opened and closed: New bot, Record, the command palette |
-| Capture | full screen, over the frozen shot | its pill at the top; slides out of sight a few seconds after the mouse leaves it |
-| Highlight | over the screen, click-through | a box and score per match; its pill top centre, like the run pill |
-| Recorder pill | top centre | never takes focus from the game |
-| Run pill | top centre while a bot runs | the Studio hides; the pill slides up to a sliver a few seconds after the mouse leaves it |
+| Capture | full screen, over the frozen shot | its pill on an edge (top centre to start); slides out of sight a few seconds after the mouse leaves it |
+| Highlight | over the screen, click-through | a box and score per match; its pill on an edge, like the run pill |
+| Recorder pill | on an edge (top centre to start) | never takes focus from the game |
+| Run pill | on an edge while a bot runs | the Studio hides; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
+
+Every pill moves the same way (#384): dragged to any edge it snaps to the edge's centre, its corners or near the
+centre on either side, a row on the top and bottom and a labelled column on the sides; dragged past the dashed line
+into the middle it floats as a card with more detail and Dock, and never hides. Each keeps its place per pill. An edge
+one screen shares with another isn't used: the pill would slide onto the other screen and couldn't come back.
 | Ghost cursor | over the game, click-through | a ripple where the bot clicks and the keys it presses, for a moment each |
 
 Everything over a game is `solid`, never see-through. The bot never sees the run pill in its screenshots.
@@ -100,6 +105,7 @@ Everything over a game is `solid`, never see-through. The bot never sees the run
 | A menu opens | a 150 ms fade |
 | A toast | slides up from the bottom and fades |
 | A button is pressed | scales to 96% |
+| A pill is grabbed | tilts a little and shakes once, sways with each move, grows to 103%; it takes the shape of the edge it nears; let go, it glides to its place |
 | Progress | a ring sweeps and a bar grows to its share; no counting animations |
 
 ## Rules

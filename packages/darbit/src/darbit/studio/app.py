@@ -19,8 +19,9 @@ from ..server import ui_settings
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider, shot_of_failure
+from .docking import PillPlace
 from .ghost import Ghost
-from .hiding import HidingPill
+from .hiding import HidingPill, told_by_window
 from .highlight import Highlight
 from .recorder import Recorder
 from .window import PLACE, Door, fit, kept, screens
@@ -31,6 +32,7 @@ ICON = HERE / "darbit.ico"  # every size Windows asks for: taskbar, tray, Alt+Ta
 APP_ID = "darbit.studio"  # Windows' name for the Studio: its taskbar button is its own, not python.exe's
 SHOT_WAIT_MS = 1500  # time for the pages to get their data and draw before a shot
 HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture grabs it
+PILLS = ("run", "recorder", "highlight", "capture")  # every pill over the game: each keeps its own place (#384)
 
 
 def _client() -> Client:
@@ -52,9 +54,12 @@ def load(
     recorder_hiding: HidingPill | None = None,
     place: tuple[QRect | None, bool] = (None, False),
     highlight_hiding: HidingPill | None = None,
+    pill_places: dict[str, PillPlace] | None = None,
+    capture_hiding: HidingPill | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
-    RuntimeError if the QML doesn't load."""
+    RuntimeError if the QML doesn't load. `pill_places` are the pills' places by name (run, recorder, highlight,
+    capture), each made here when not given."""
     engine = QQmlApplicationEngine()
     if capture is None:
         capture = Capture(ShotProvider())
@@ -70,6 +75,12 @@ def load(
         recorder_hiding = HidingPill()
     if highlight_hiding is None:
         highlight_hiding = HidingPill()
+    if capture_hiding is None:
+        capture_hiding = HidingPill(watch=told_by_window)
+    places = dict(pill_places or {})
+    for name in PILLS:
+        if name not in places:
+            places[name] = PillPlace(name, in_window=name == "capture")
     engine.addImageProvider("capture", capture.provider)
     engine.rootContext().setContextProperty("studio", studio)
     engine.rootContext().setContextProperty("capture", capture)
@@ -79,6 +90,10 @@ def load(
     engine.rootContext().setContextProperty("runPill", run_pill)
     engine.rootContext().setContextProperty("recorderHiding", recorder_hiding)
     engine.rootContext().setContextProperty("highlightHiding", highlight_hiding)
+    engine.rootContext().setContextProperty("captureHiding", capture_hiding)
+    for name, pill_place in places.items():
+        engine.rootContext().setContextProperty(name + "Place", pill_place)
+        pill_place.setParent(engine)
     studio.setParent(engine)  # the engine outlives its windows, so these do too: no binding sees them gone
     capture.setParent(engine)
     recorder.setParent(engine)
@@ -87,7 +102,9 @@ def load(
     run_pill.setParent(engine)
     recorder_hiding.setParent(engine)
     highlight_hiding.setParent(engine)
+    capture_hiding.setParent(engine)
     _connect_highlight_hiding(highlight, highlight_hiding)
+    _connect_capture_hiding(capture, capture_hiding)
     _connect_recorder_hiding(
         recorder, capture, recorder_hiding
     )  # here, so the recorder's pill works wherever it's loaded
@@ -254,6 +271,18 @@ def _connect_highlight_hiding(highlight: Highlight, hiding: HidingPill) -> None:
             hiding.close()
 
     highlight.changed.connect(follow)
+
+
+def _connect_capture_hiding(capture: Capture, hiding: HidingPill) -> None:
+    """Capture's pill hides like the others while Capture is open; Capture's window tells it the mouse."""
+
+    def follow() -> None:
+        if capture.isOpen:
+            hiding.open()
+        else:
+            hiding.close()
+
+    capture.openChanged.connect(follow)
 
 
 def _connect_run_pill(studio: Studio, run_pill: HidingPill, window: object) -> None:

@@ -826,6 +826,53 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
     assert warnings == []
 
 
+def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_again(qt):
+    from PySide6.QtCore import QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.docking import GAP, PillPlace
+    from darbit.studio.hiding import HidingPill
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        hiding = HidingPill(watch=lambda on_move: lambda: None)
+        place = PillPlace("run")
+        studio = backend.Studio(FakeClient)
+        engine = app.load(studio, run_pill=hiding, pill_places={"run": place})
+        root = engine.rootObjects()[0]  # held, or Qt deletes it
+        studio.connect()
+        wait_until(lambda: studio.bot.get("name") == "ad-bot")
+        hiding.open()
+        window = root.findChild(QQuickWindow, "runPill")
+        wait_until(window.isVisible)
+        screen = window.screen().geometry()
+        wait_until(lambda: window.y() < 40)  # docked at the top centre, a row
+        assert abs(window.x() + window.width() / 2 - screen.center().x()) < 4 and window.width() > window.height()
+        place.begin(screen.center().x(), 30)
+        place.move(screen.left() + 20, screen.center().y())
+        assert window.property("form") == "column"  # it takes its edge's shape while it's dragged
+        place.end()
+        wait_until(lambda: window.height() > window.width())  # a column on the left edge
+        # the pill itself sits by the edge; its window's clear margin (room for the tilt) may run past it
+        wait_until(lambda: abs(window.x() + window.property("margin") - screen.left() - GAP) < 2)
+        assert place.edge == "left"
+        place.begin(screen.left() + 20, screen.center().y())
+        place.move(screen.center().x(), screen.center().y())
+        place.end()
+        card = window.findChild(QObject, "pillCard")
+        wait_until(lambda: card.property("visible"))
+        assert place.floating and not hiding.tucked
+        place.dock()  # the card's Dock
+        wait_until(lambda: not card.property("visible"))
+        assert place.edge == "left"
+        hiding.close()
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
+
+
 def test_the_window_opens_where_it_was_left_on_a_screen_still_there():
     from PySide6.QtCore import QRect
 
