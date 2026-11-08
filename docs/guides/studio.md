@@ -33,8 +33,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Highlight on screen**
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
-  **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on it in place;
-  click one for the side panel.
+  **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
+  place (a new shot of a screen starts it over); click one for the side panel.
 
   ![The Library](../ui/images/qt-studio-library.png)
 - **Kinds of target.** Each target's settings file names its kind: an **image** (searched in its region, the whole

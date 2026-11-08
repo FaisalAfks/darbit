@@ -10,6 +10,10 @@
 
 - darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
 
+### Fixed
+
+- A new shot of a screen in Capture no longer keeps other targets' boxes from older shots of it: `.darbit/screens/<Screen>.json` holds only the boxes taken on the shot saved beside it, so the Library's Screen view and `darbit bench --from-screens` don't place them where they no longer are
+
 ## 1.0.0-alpha.3 - 2026-11-08
 
 ### New
