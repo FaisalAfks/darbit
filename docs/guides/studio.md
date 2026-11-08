@@ -66,7 +66,10 @@ sight. A phone gets it too when `notify.toml` has a channel.
   later. Click a box to make it the active one: it's highlighted, its name field sits beside it, and the kind, the
   handles and the arrows act on it; **N** and **Shift+N** step through them. The name of the box under the mouse
   shows on it. **T** tests every image on the shot at once, each with its score and look-alikes on its box; **Enter**
-  saves them all, and **Ctrl+Z** undoes each change, a box removed included. A retake (from the Library, Results,
+  saves them all, and **Ctrl+Z** undoes each change, a box removed included. The pill lists them: the stack (how
+  many are on this shot) opens into tiles, each with its image, name, kind and Test's score; on the top or bottom
+  edge they're a row under the pill's buttons that scrolls sideways, on a side or floating two columns that scroll up
+  and down. Click a tile to make its target the active one, ✕ to drop it. A retake (from the Library, Results,
   the start check) and the setup guide take one target, as before.
 - **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves

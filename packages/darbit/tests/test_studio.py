@@ -1960,6 +1960,87 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
     del engine
 
 
+def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path, monkeypatch):
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QSize, Qt
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit import paths
+    from darbit.studio.capture import Capture, ShotProvider
+    from darbit.studio.docking import PillPlace
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    monkeypatch.setattr(paths, "config_dir", lambda: tmp_path)
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    place = PillPlace("capture", keep=False, in_window=True)
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture, pill_places={"capture": place})
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    wait_until(window.isVisible)
+    row = window.findChild(QObject, "tilesRow")
+    column = window.findChild(QObject, "tilesColumn")
+
+    def call(name, *values):
+        QMetaObject.invokeMethod(window, name, *[Q_ARG("QVariant", value) for value in values])
+
+    def value(key):
+        found = window.property(key)
+        return found.toVariant() if hasattr(found, "toVariant") else found
+
+    assert not row.property("visible")  # nothing taken yet: no tiles
+    for index, left in enumerate((100, 300, 500)):
+        if index:
+            call("newTarget")
+        call("setPart", "image", [left, 200, 120, 100])
+    QtCore.QCoreApplication.processEvents()
+    assert row.property("visible") and row.property("count") == 3  # top edge: one row of tiles, under the pill's row
+    assert not column.property("visible")
+    QMetaObject.invokeMethod(row, "picked", Q_ARG(int, 0))  # a tile makes its target the active one
+    assert value("image") == [100, 200, 120, 100] and value("active") == 0
+    QMetaObject.invokeMethod(row, "removed", Q_ARG(int, 1))  # ✕ drops it
+    QtCore.QCoreApplication.processEvents()
+    assert row.property("count") == 2
+    call("undo")
+    QtCore.QCoreApplication.processEvents()
+    assert row.property("count") == 3
+    window.setProperty("listOpen", False)  # the stack folds them away
+    QtCore.QCoreApplication.processEvents()
+    assert not row.property("visible")
+    window.setProperty("listOpen", True)
+    place.useArea(0, 0, window.width(), window.height())
+    place.begin(400, 10)
+    place.move(2, 300)  # to the left edge: a column, two tiles a row
+    place.end()
+    QtCore.QCoreApplication.processEvents()
+    assert column.property("visible") and not row.property("visible") and column.property("count") == 3
+    for left in range(10, 600, 100):  # more than fit: the tiles scroll
+        call("newTarget")
+        call("setPart", "image", [left, 400, 60, 50])
+    QtCore.QCoreApplication.processEvents()
+    call("activate", 0)
+    QtCore.QCoreApplication.processEvents()
+    end = column.property("contentHeight") - column.property("height")
+    assert end > 0
+    column.setProperty("contentY", end)
+    QTest.keyClick(window, Qt.Key_Right)  # a nudge updates its tile in place: the list stays where it was scrolled
+    QtCore.QCoreApplication.processEvents()
+    assert column.property("contentY") == end
+    QMetaObject.invokeMethod(window, "activate", Q_ARG("QVariant", 1))
+    wait_until(lambda: column.property("contentY") < end)  # the active one's tile comes into sight
+    # a tile's image is the shot's part under its box
+    tile = capture.provider.requestImage("shot1/100,200,120,100", QSize(), QSize())
+    assert (tile.width(), tile.height()) == (120, 100)
+    assert capture.provider.requestImage("shot1", QSize(), QSize()).width() == 800  # the control: the whole shot
+    capture.close()
+    del engine
+    QtCore.qInstallMessageHandler(None)
+    assert warnings == []  # nothing in Capture's window or its tiles warns
+
+
 def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt

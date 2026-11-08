@@ -46,20 +46,28 @@ Window {
     property var targets: [blank("")]
     property int active: 0
     property int hovered: -1             // the target under the mouse: its name shows
-    // what's on the shot, the active one as it is now: { index, name, kind, box, ... } for each with something made
+    // what's on the shot, the active one as it is now: { index, name, kind, box, ... } for each with something made,
+    // with what Test found (scoreText, scoreShort for a narrow tile, scoreTone; "" before Test)
     readonly property var shown: {
         var list = []
         for (var index = 0; index < targets.length; index++) {
             var target = index === active ? live() : targets[index]
-            if (hasParts(target)) list.push(Object.assign({ index: index, kind: kindOfTarget(target), box: mainBox(target) }, target))
+            if (!hasParts(target)) continue
+            var found = target.image ? verdict(target) : null
+            list.push(Object.assign({
+                index: index, kind: kindOfTarget(target), box: mainBox(target),
+                scoreText: found ? verdictText(found) : "", scoreShort: found ? verdictShort(found) : "", scoreTone: found ? verdictTone(found) : "plain"
+            }, target))
         }
         return list
     }
+    property bool listOpen: true         // the pill's tiles of the targets on this shot are open
     property string note: ""
     property bool noteBad: false
     // the pill slid out of sight past its edge (captureHiding, hiding.py; never while floating or dragged)
     readonly property bool tucked: captureHiding.tucked && !capturePlace.floating && !capturePlace.dragging
     readonly property bool stacked: pillZone.form !== "row"  // the pill is a column (a side edge) or floating
+    readonly property bool compact: capture.several && stacked  // several targets in a column: tiles, glyph rows
     property bool comparing: false       // C held: the saved image over the new one
     property bool gliding: false         // a click stepped to a bigger or smaller box: it glides there
     readonly property real scale: Math.min(width / Math.max(1, capture.shotWidth), height / Math.max(1, capture.shotHeight))
@@ -419,6 +427,11 @@ Window {
         if (found.alike.length) return found.best.toFixed(2) + " · " + found.alike.length + " alike"
         return found.score.toFixed(2) + " ✓"
     }
+    function verdictShort(found) {
+        if (found.strong === 0) return "none"
+        if (found.strong > 1) return found.strong + "×"
+        return (found.alike.length ? found.best : found.score).toFixed(2)
+    }
     function verdictTone(found) { return found.strong === 0 ? "danger" : found.strong > 1 || found.alike.length ? "warn" : "ok" }
     function showFoundAll() {
         var once = 0, others = [], close = [], ms = 0
@@ -501,6 +514,76 @@ Window {
         if (capture.items.length === 0) { studio.say(told); closing.restart() }
     }
     Timer { id: closing; interval: studio.effects ? 520 : 0; onTriggered: capture.close() }
+
+    // a key's name, for the pill's ‹ N › (the arrows beside it carry the tips)
+    component KeyCap: Rectangle {
+        property alias text: capLabel.text
+        implicitWidth: Math.max(22, capLabel.implicitWidth + 10); implicitHeight: 22
+        radius: 6
+        color: "transparent"; border.color: studio.colors.line
+        Layout.alignment: Qt.AlignVCenter
+        Text { id: capLabel; anchors.centerIn: parent; color: studio.colors.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+    }
+    // the targets on this shot as a stack: their first images fanned out, how many, and ▴ to fold the tiles away (▾ to
+    // open them)
+    component StackToggle: Rectangle {
+        id: stack
+        objectName: "targetStack"
+        readonly property int count: shotWindow.shown.length
+        implicitWidth: stackLine.implicitWidth + 20; implicitHeight: shotWindow.stacked ? 34 : 40
+        radius: height / 2
+        color: stackArea.containsMouse && count > 0 ? studio.colors.raisedHover : studio.colors.raised
+        border.color: studio.colors.line
+        Row {
+            id: stackLine
+            anchors.verticalCenter: parent.verticalCenter
+            x: shotWindow.stacked ? 12 : 10
+            spacing: 8
+            Item {  // up to four of their images, overlapping
+                visible: stack.count > 0
+                width: 22 + (Math.min(4, stack.count) - 1) * 12; height: 18
+                anchors.verticalCenter: parent.verticalCenter
+                Repeater {
+                    model: shotWindow.shown.slice(0, 4)
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+                        x: index * 12; width: 22; height: 18; radius: 5; clip: true
+                        color: "black"; border.color: shotWindow.inkOf(modelData.kind)
+                        Image {
+                            anchors.fill: parent; anchors.margins: 1
+                            source: capture.source ? capture.source + "/" + modelData.box.map(Math.round).join(",") : ""
+                            fillMode: Image.PreserveAspectCrop
+                        }
+                    }
+                }
+            }
+            Text {
+                text: (stack.count === 0 ? "None" : stack.count) + " on this shot"
+                color: stack.count > 0 ? studio.colors.text : studio.colors.faint
+                font.pixelSize: shotWindow.stacked ? 11 : 13; font.weight: Font.DemiBold
+                font.capitalization: shotWindow.stacked ? Font.AllUppercase : Font.MixedCase
+                font.letterSpacing: shotWindow.stacked ? 0.6 : 0
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                visible: stack.count > 0
+                text: shotWindow.listOpen ? "▴" : "▾"
+                color: studio.colors.muted; font.pixelSize: 12; font.family: studio.symbols
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        MouseArea {
+            id: stackArea
+            anchors.fill: parent; hoverEnabled: true
+            enabled: stack.count > 0
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { shotWindow.listOpen = !shotWindow.listOpen; stage.forceActiveFocus() }
+        }
+        ToolTip.visible: stackArea.containsMouse
+        ToolTip.text: shotWindow.listOpen ? "Fold the targets away" : "Show the targets on this shot"
+        ToolTip.delay: 400
+    }
 
     // ---- the pill's hiding, and its messages fading
     function showPill() { captureHiding.show() }
@@ -722,7 +805,6 @@ Window {
                 required property var modelData
                 readonly property bool isActive: modelData.index === shotWindow.active
                 readonly property color ink: shotWindow.inkOf(modelData.kind)
-                readonly property var found: modelData.image ? shotWindow.verdict(modelData) : null
                 x: modelData.box[0] * shotWindow.scale; y: modelData.box[1] * shotWindow.scale
                 width: modelData.box[2] * shotWindow.scale; height: modelData.box[3] * shotWindow.scale
                 Rectangle {  // an image's box
@@ -766,11 +848,11 @@ Window {
                     }
                 }
                 Chip {  // what Test found
-                    visible: !!other.found
+                    visible: other.modelData.scoreText !== ""
                     anchors { right: parent.right; bottom: parent.bottom; margins: 3 }
                     height: 20
-                    tone: other.found ? shotWindow.verdictTone(other.found) : "plain"
-                    text: other.found ? shotWindow.verdictText(other.found) : ""
+                    tone: other.modelData.scoreTone
+                    text: other.modelData.scoreText
                 }
             }
         }
@@ -1206,51 +1288,63 @@ Window {
                     onPicked: function (key) { shotWindow.searchOn(key); stage.forceActiveFocus() }
                 }
                 PillAction {
+                    visible: !shotWindow.compact
                     labelled: shotWindow.stacked
                     glyph: "⌫"; label: "Remove"; tip: "Remove the " + shotWindow.tool + " (Delete)"
                     enabled: !!shotWindow.partOf(shotWindow.tool)
                     onClicked: { shotWindow.drop(shotWindow.tool); stage.forceActiveFocus() }
                 }
                 Rectangle {
+                    visible: !shotWindow.compact
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
-                // the targets on this shot: a new one, and stepping through them
-                PillAction {
-                    visible: capture.several
-                    labelled: shotWindow.stacked
-                    glyph: "＋"; label: "New target"; tip: "A new target on this shot (A)"
-                    onClicked: shotWindow.addTarget()
+                // the targets on this shot: a stack that opens into their tiles (under the row on the top and bottom
+                // edges, here in the column on the sides and floating), and stepping through them
+                StackToggle { visible: capture.several; Layout.fillWidth: shotWindow.stacked }
+                ShotTargets {
+                    objectName: "tilesColumn"
+                    visible: shotWindow.compact && shotWindow.listOpen && shotWindow.shown.length > 0
+                    vertical: true
+                    Layout.preferredWidth: 182; Layout.preferredHeight: implicitHeight
+                    entries: shotWindow.shown
+                    active: shotWindow.active
+                    source: capture.source
+                    onPicked: function (index) { shotWindow.activate(index); stage.forceActiveFocus() }
+                    onRemoved: function (index) { shotWindow.removeTarget(index); stage.forceActiveFocus() }
                 }
-                PillAction {
-                    visible: capture.several
-                    labelled: shotWindow.stacked
-                    glyph: "‹"; label: "Previous"; tip: "The previous target (Shift+N)"
-                    enabled: shotWindow.shown.length > 0
-                    onClicked: shotWindow.step(-1)
-                }
-                Text {
-                    objectName: "targetCount"
-                    visible: capture.several
-                    text: shotWindow.shown.length + " on this shot"
-                    color: studio.colors.muted; font.pixelSize: 12; font.weight: Font.DemiBold
-                    Layout.alignment: Qt.AlignVCenter | (shotWindow.stacked ? Qt.AlignHCenter : 0)
-                }
-                PillAction {
-                    visible: capture.several
-                    labelled: shotWindow.stacked
-                    glyph: "›"; label: "Next"; tip: "The next target (N)"
-                    enabled: shotWindow.shown.length > 0
-                    onClicked: shotWindow.step(1)
-                }
+                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
+                KeyCap { visible: capture.several && !shotWindow.stacked; text: "N" }
+                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
+                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
                 Rectangle {
                     visible: capture.several
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
-                PillAction { labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
-                PillAction { labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
+                // several targets in a column: the small actions in two rows of glyphs, so the tiles get the room
+                RowLayout {
+                    visible: shotWindow.compact
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 6
+                    PillAction { glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"; enabled: !!shotWindow.partOf(shotWindow.tool); onClicked: { shotWindow.drop(shotWindow.tool); stage.forceActiveFocus() } }
+                    PillAction { glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
+                    PillAction { glyph: "↶"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
+                    PillAction { glyph: "↷"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
+                }
+                RowLayout {
+                    visible: shotWindow.compact
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 6
+                    PillAction { glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
+                    KeyCap { text: "N" }
+                    PillAction { glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
+                    PillAction { glyph: "✕"; tip: "Close (Esc)"; onClicked: capture.close() }
+                }
+                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
+                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
                 Rectangle {
+                    visible: !shotWindow.compact
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
@@ -1261,7 +1355,7 @@ Window {
                     enabled: capture.several ? shotWindow.shown.some(function (entry) { return !!entry.image }) : !!shotWindow.image
                     onClicked: shotWindow.test()
                 }
-                PillAction { labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
+                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
                 PillButton {
                     objectName: "saveButton"
                     kind: "primary"; small: true
@@ -1269,6 +1363,17 @@ Window {
                     Layout.fillWidth: shotWindow.stacked
                     onClicked: shotWindow.save()
                 }
+
+            drawer: ShotTargets {
+                objectName: "tilesRow"
+                visible: capture.several && !shotWindow.stacked && shotWindow.listOpen && shotWindow.shown.length > 0
+                width: parent ? parent.width : 0; height: implicitHeight
+                entries: shotWindow.shown
+                active: shotWindow.active
+                source: capture.source
+                onPicked: function (index) { shotWindow.activate(index); stage.forceActiveFocus() }
+                onRemoved: function (index) { shotWindow.removeTarget(index); stage.forceActiveFocus() }
+            }
 
             below: Column {
                 id: under
@@ -1332,9 +1437,17 @@ Window {
                     visible: shotWindow.note !== ""
                     anchors.horizontalCenter: parent.horizontalCenter
                     readonly property color ink: shotWindow.noteBad ? studio.colors.warn : studio.colors.ok
-                    width: noteText.implicitWidth + 24; height: 30; radius: 15
+                    // one line where there's room; beside a column or a card it wraps
+                    readonly property real widest: pillZone.besides || pillZone.floating ? 300 : 720
+                    width: Math.min(noteText.implicitWidth, widest - 24) + 24; height: noteText.height + 14; radius: 15
                     color: shotWindow.solid; border.color: ink
-                    Text { id: noteText; anchors.centerIn: parent; text: shotWindow.note; color: parent.ink; font.pixelSize: 12; font.weight: Font.DemiBold }
+                    Text {
+                        id: noteText
+                        anchors.centerIn: parent
+                        width: Math.min(implicitWidth, parent.widest - 24)
+                        wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter
+                        text: shotWindow.note; color: parent.ink; font.pixelSize: 12; font.weight: Font.DemiBold
+                    }
                 }
                 // after Test: the similarity a match needs; matches under it fade
                 Rectangle {
