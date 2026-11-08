@@ -1,7 +1,8 @@
 """Open darbit Studio: the window, darbit's icon, and the tray. `darbit app` calls `main()`.
 
-The Studio is a client of darbit's service (started in the background if it isn't running), so closing it
-stops nothing: running bots go on. `shot()` draws a page into a PNG with no screen, for docs and tests.
+The Studio is a client of darbit's service (started in the background if it isn't running), so closing it to the
+tray stops nothing; quitting stops the running bots unless darbit settings keep them going. `shot()` draws a page into
+a PNG with no screen, for docs and tests.
 """
 
 import sys
@@ -173,6 +174,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     _keep_in_tray(app, window, tray)
     _tell_from_tray(studio, tray, open_studio)
     code = app.exec()
+    _stop_bots_on_quit(studio, window, tray)
     door.close()
     scout.stop()
     ghost.stop()
@@ -523,7 +525,7 @@ def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callab
         tools.addAction("Record an action…", record)
         menu.addAction("darbit settings", lambda: open_page("studio"))
         menu.addSeparator()
-        menu.addAction("Quit darbit Studio (bots go on)", app.quit)
+        menu.addAction(quit_label(studio.running_names(), studio.keepBots), app.quit)
 
     menu.aboutToShow.connect(fill)
     fill()
@@ -532,6 +534,28 @@ def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callab
     if QSystemTrayIcon.isSystemTrayAvailable():
         tray.show()
     return tray
+
+
+def quit_label(running: list[str], keep: bool) -> str:
+    """The tray's Quit, saying what it does with the bots running (their names)."""
+    if not running:
+        return "Quit darbit Studio"
+    if keep:
+        return "Quit (bots go on)"
+    if len(running) == 1:
+        return f"Quit and stop {running[0]}"
+    return f"Quit and stop {len(running)} bots"
+
+
+def _stop_bots_on_quit(studio: Studio, window: object, tray: QSystemTrayIcon) -> None:
+    """Quitting stops every running bot, cleanly through the service, unless darbit settings keep them going: with
+    the Studio gone nothing would be left to control them. The window and the icon go first, so nothing hangs on
+    screen while they stop."""
+    if studio.keepBots:
+        return
+    window.hide()
+    tray.hide()
+    studio.stop_every_bot()
 
 
 TOLD = "studio.told_tray"  # ui setting: the tray message was shown once

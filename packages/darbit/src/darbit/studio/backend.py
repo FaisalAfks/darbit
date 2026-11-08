@@ -28,6 +28,8 @@ EFFECTS = "studio.effects"  # ui setting: smooth effects (motion and glass); off
 LAYOUT = "studio.layout"  # ui setting prefix: the person's own Overview layout for a bot, by the bot's folder
 GHOST = "studio.ghost"  # ui setting: the ghost cursor, what bots click and press shown over the game
 RUN_PILL = "studio.run_pill"  # ui setting: Play hides the Studio and shows the run pill
+KEEP_BOTS = "studio.keep_bots"  # ui setting: quitting the Studio leaves running bots running
+RUNNING = ("running", "paused")  # a bot's states while it runs
 
 
 class Studio(QObject):
@@ -98,6 +100,7 @@ class Studio(QObject):
         self._effects = bool(ui_settings.get(EFFECTS, True))
         self._ghost = bool(ui_settings.get(GHOST, True))
         self._run_pill = bool(ui_settings.get(RUN_PILL, True))
+        self._keep_bots = bool(ui_settings.get(KEEP_BOTS, False))
         # read once and when one changes: every shortcut in the window reads these
         self._keys = shortcuts.now()
         self._key_rows = shortcuts.rows()
@@ -190,6 +193,9 @@ class Studio(QObject):
     def _get_run_pill(self) -> bool:
         return self._run_pill
 
+    def _get_keep_bots(self) -> bool:
+        return self._keep_bots
+
     def _get_symbols(self) -> str:
         return symbol_font()
 
@@ -239,6 +245,7 @@ class Studio(QObject):
     effects = Property(bool, _get_effects, notify=lookChanged)
     ghost = Property(bool, _get_ghost, notify=lookChanged)
     runPill = Property(bool, _get_run_pill, notify=lookChanged)
+    keepBots = Property(bool, _get_keep_bots, notify=lookChanged)  # quitting leaves running bots running
     version = Property(str, _get_version, constant=True)
     desktopOrigin = Property(list, _get_desktop_origin, constant=True)  # [x, y], to place a match on a screenshot
     symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
@@ -482,6 +489,34 @@ class Studio(QObject):
         self._run_pill = bool(on)
         ui_settings.set_value(RUN_PILL, self._run_pill)
         self.lookChanged.emit()
+
+    @Slot(bool)
+    def setKeepBots(self, on: bool) -> None:
+        self._keep_bots = bool(on)
+        ui_settings.set_value(KEEP_BOTS, self._keep_bots)
+        self.lookChanged.emit()
+
+    def running_names(self) -> list[str]:
+        """The names of the bots running or paused, as last heard from the service."""
+        return [str(bot.get("name", "")) for bot in self._bots if bot.get("status") in RUNNING]
+
+    def stop_every_bot(self) -> None:
+        """Stop every bot running or paused, each cleanly through the service (it lets go of every key), and wait for
+        them: the Studio is quitting. One that can't be stopped doesn't keep the others going; a service that's gone
+        has nothing left to stop."""
+        if self._client is None:
+            return
+        try:
+            bots = self._client.call("bots.list")
+        except ServiceError:
+            return
+        for bot in bots:
+            if bot.get("status") not in RUNNING:
+                continue
+            try:
+                self._client.call("bot.stop", bot=bot["path"])
+            except ServiceError:
+                continue
 
     @Slot()
     def checkBot(self) -> None:

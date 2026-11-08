@@ -86,6 +86,13 @@ Flickable {
                     checked: studio.runPill
                     onToggled: function (on) { studio.setRunPill(on) }
                 }
+                Choice {
+                    width: parent.width
+                    label: "Bots go on after quitting"
+                    help: "Quitting the Studio leaves running bots running, with nothing on screen to control them. Off: quitting stops them first."
+                    checked: studio.keepBots
+                    onToggled: function (on) { studio.setKeepBots(on) }
+                }
             }
         }
 

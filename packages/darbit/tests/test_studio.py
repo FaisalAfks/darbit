@@ -2406,3 +2406,55 @@ def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_pat
     assert box()[2] > 110  # Ctrl held: it grows the same way
     capture.close()
     del engine
+
+
+def test_the_quit_item_says_what_happens_to_the_running_bots():
+    assert app.quit_label([], keep=False) == "Quit darbit Studio"  # control: no bot runs, nothing to say
+    assert app.quit_label(["ad-bot"], keep=False) == "Quit and stop ad-bot"
+    assert app.quit_label(["ad-bot", "watcher"], keep=False) == "Quit and stop 2 bots"
+    assert app.quit_label(["ad-bot"], keep=True) == "Quit (bots go on)"
+
+
+def test_quitting_stops_every_running_bot_unless_darbit_settings_keep_them(qt):
+    from darbit.server import ui_settings
+    from darbit.studio.backend import KEEP_BOTS
+
+    class Hides:
+        shown = True
+
+        def hide(self):
+            self.shown = False
+
+    client = FakeClient()  # ad-bot runs, "other" is stopped
+    studio = backend.Studio(lambda: client)
+    studio.connect()
+    wait_until(lambda: studio.bots)
+    assert not studio.keepBots and studio.running_names() == ["ad-bot"]
+    window, tray = Hides(), Hides()
+    app._stop_bots_on_quit(studio, window, tray)
+    stopped = [params["bot"] for method, params in client.asked if method == "bot.stop"]
+    assert stopped == ["/bots/ad-bot"]  # the stopped one isn't asked
+    assert not window.shown and not tray.shown
+
+    client.asked.clear()
+    studio.setKeepBots(True)
+    assert ui_settings.get(KEEP_BOTS) is True
+    app._stop_bots_on_quit(studio, Hides(), Hides())
+    assert not [method for method, params in client.asked if method == "bot.stop"]  # kept going
+    assert backend.Studio(FakeClient).keepBots  # kept for next time
+    studio.setKeepBots(False)  # the setting is shared by the tests that come after
+
+
+def test_quitting_with_the_service_gone_stops_nothing_and_doesnt_raise(qt):
+    from darbit.service.client import NotRunning
+
+    class Gone(FakeClient):
+        def call(self, method, **params):
+            if method == "bots.list" and self.asked:
+                raise NotRunning("the service went away")
+            return super().call(method, **params)
+
+    studio = backend.Studio(Gone)
+    studio.connect()
+    wait_until(lambda: studio.bots)
+    studio.stop_every_bot()
