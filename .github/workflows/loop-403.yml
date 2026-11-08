@@ -23,7 +23,7 @@ jobs:
         run: |
           pass=0; fail=0
           for i in $(seq 1 40); do
-            if uv run pytest -q -x packages/darbit/tests/test_studio.py::test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill > out.txt 2>&1; then pass=$((pass+1)); else fail=$((fail+1)); grep -E 'DBG|^E ' out.txt | tail -80; fi
+            if uv run pytest -q -s -x packages/darbit/tests/test_studio.py::test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill > out.txt 2>&1; then pass=$((pass+1)); grep -E 'oy [1-9]|w 0 ' out.txt | head -3; else fail=$((fail+1)); grep -E 'DBG|^E ' out.txt | tail -80; fi
           done
           echo "RESULT shard ${{ matrix.shard }}: $pass passed, $fail failed"
           test $fail -eq 0

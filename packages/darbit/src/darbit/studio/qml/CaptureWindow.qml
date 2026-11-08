@@ -1306,7 +1306,9 @@ Window {
                     objectName: "tilesColumn"
                     visible: shotWindow.compact && shotWindow.listOpen && shotWindow.shown.length > 0
                     vertical: true
-                    Layout.preferredWidth: 182; Layout.preferredHeight: implicitHeight
+                    // its width from the start, not only once the layout gets to it: tiles placed while it is still
+                    // 0 wide stack one a row, and the grid keeps that offset when they reflow into two (#403)
+                    implicitWidth: 182; Layout.preferredHeight: implicitHeight
                     entries: shotWindow.shown
                     active: shotWindow.active
                     source: capture.source
