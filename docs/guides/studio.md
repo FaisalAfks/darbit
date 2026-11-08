@@ -44,8 +44,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   is frozen, and it opens full screen. A target is an image, the region it's searched in and the location to click,
   made together. Pick what you're making in the pill (**Image**, **Region**, **Location**, or **1**, **2**, **3**,
   **Tab**): a click boxes the image or region around it (again for bigger, right-click for smaller), a drag draws
-  one, and with Location a click sets it. What's picked is what the handles, the arrow keys (Shift: 10 px, Ctrl: its
-  size), drag-to-move and **Delete** change; a ✓ marks each kind the target has. With Region picked, an image is searched on the **Whole screen**, in a **Shared** region (pick one, pointing at
+  one, and with Location a click sets it. What's picked is what the handles, the arrow keys (a press is 1 px, Shift:
+  10 px, Ctrl: its size; held for half a second, they speed up), drag-to-move and **Delete** change; a ✓ marks each kind the target has. With Region picked, an image is searched on the **Whole screen**, in a **Shared** region (pick one, pointing at
   it shows it on the screen, or share the region just drawn under a name of its own; every image in it moves with it)
   or in **Its own** region. A save closes Capture when nothing is left to take. Click a readout to type exact
   numbers; **Ctrl+Z** and **Ctrl+Y** undo and redo. The pill slides out of sight a few seconds after the mouse leaves

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- Capture's arrows and Ctrl+arrows speed up while held: a press still moves or resizes exactly 1 px (Shift: 10), and after about half a second of holding it goes faster, up to a top speed, until the key is let go
+
 ## 1.0.0-alpha.4 - 2026-11-08
 
 ### New
