@@ -2,7 +2,7 @@
 their own (`d.show`, `@d.block`); the person using it arranges them in darbit Studio, which keeps their layout.
 
 A block is {"kind", "shows", "title", "width"}: `kind` is how it's drawn, `shows` what it shows ("now", "round",
-"next", "failures", "watching", "activity", "screen", "progress:<label>", "gain:<name>", "block:<name>",
+"next", "failures", "watching", "activity", "screen", "recoveries", "progress:<label>", "gain:<name>", "block:<name>",
 "action:<name>") and `width` its share of a row of 12. `catalog` is every block a bot can have today, `data` what
 each `shows` holds now, `default_layout` the author's layout (or one made from the old `[studio] tiles`).
 """
@@ -15,7 +15,7 @@ from ..project.manifest import Project
 from . import dashboard, history, problems, results
 
 OVERVIEW = "overview.toml"
-KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "button")
+KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "button", "recoveries")
 WIDTHS = (3, 4, 6, 8, 12)
 WEEK = 7
 
@@ -38,6 +38,7 @@ def catalog(project: Project, events: list[dict], actions: list[str]) -> list[di
         _block("list", "watching", "Watching", 6),
         _block("list", "activity", "What happened", 6),
         _block("screen", "screen", "Last screen", 4),
+        _block("recoveries", "recoveries", "Recoveries", 4),
     ]
     for label in _named(events, "progress", "label"):
         found.append(_block("ring", f"progress:{label}", label, 4))
@@ -90,13 +91,17 @@ def default_layout(project: Project, blocks: list[dict]) -> list[dict]:
 
 
 def default_layout_without_file(project: Project, blocks: list[dict]) -> list[dict]:
-    """darbit's layout: the old `[studio] tiles` in order, or all of darbit's own blocks."""
+    """darbit's layout: the old `[studio] tiles` in order, or all of darbit's own blocks with the recoveries last."""
     wanted = project.tiles or dashboard.DEFAULT_TILES
     layout: list[dict] = []
     for name in wanted:
         kind, _, label = name.partition(":")
         for block in blocks:
             if _old_tile_wants(kind, label, block) and block not in layout:
+                layout.append(block)
+    if not project.tiles:
+        for block in blocks:
+            if block["kind"] == "recoveries":
                 layout.append(block)
     return layout
 

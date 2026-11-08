@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- darbit Studio's Overview has a Recoveries block: how often the bot recovered today, the most common reason and the last one, or that it hasn't had to; darbit's default layout ends with it, and `overview.toml` places it with `kind = "recoveries"`
+
 ## 1.0.0-alpha.3 - 2026-11-08
 
 ### New
