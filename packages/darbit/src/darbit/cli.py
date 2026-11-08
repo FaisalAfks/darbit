@@ -33,7 +33,7 @@ COMMANDS = {
     "history": "show what a bot did on a day",
     "notify": "send a test notification to the channels in notify.toml",
     "app": "open darbit Studio",
-    "doctor": "check a bot is ready to run: its pictures, display scaling, window and screen",
+    "doctor": "check a bot is ready to run: its targets, display scaling, window and screen",
     "kinds": "write each target's kind (image, region or location) into its settings file",
     "bench": "measure darbit's search on saved screens with known answers: right or wrong, and how fast",
 }
