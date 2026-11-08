@@ -8,6 +8,7 @@
 
 ### Changed
 
+- The tray icon opens a panel in darbit's look instead of Windows' menu, by the icon on whichever edge the taskbar is: every running bot with its state, Pause or Go on and Stop (the shown bot's Play when none runs), Capture, Scout and Record an action with their keys, Open darbit Studio, and Quit saying what it does with the running bots. A click outside or Esc closes it; a double click opens the Studio. The Go to submenu and darbit settings are no longer in the tray. `MenuLine` shows a line's keys
 - Quitting the Studio stops every running bot, cleanly through the service (letting go of every key), instead of leaving them with nothing to control them. **Bots go on after quitting** in darbit settings keeps them running. The tray's Quit says which: "Quit and stop fish-bot", "Quit and stop 2 bots" or "Quit (bots go on)"
 
 ## 1.0.0-alpha.6 - 2026-11-08

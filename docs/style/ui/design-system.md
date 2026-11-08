@@ -73,7 +73,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | `Ring`, `Bar` | progress: a ring with its number, a thin bar |
 | `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Scout's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
 | `ShotTargets` | the targets taken on one shot, as tiles in Capture's pill: a row that scrolls sideways, or two columns that scroll up and down |
-| `MenuPanel`, `MenuLine` | a menu that drops down, and its lines |
+| `MenuPanel`, `MenuLine` | a menu that drops down (and the tray panel), and its lines, with their keys on the right |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
 | `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
@@ -88,6 +88,7 @@ dropdown, slider or menu (QML's `TextField`, `Switch`, `ComboBox`, `Slider` or `
 | Scout | over the screen, click-through, its pill in three forms (a row with a strip of images, a column of groups, a card with a grid) | a box and score per match; its pill on an edge, like the run pill |
 | Recorder pill | on an edge (top centre to start) | never takes focus from the game |
 | Run pill | on an edge while a bot runs | the Studio hides; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
+| Tray panel | by the tray icon, on the taskbar's edge | darbit's menu (`MenuPanel`, `MenuLine`) in its own window; a click outside or Esc closes it |
 
 Every pill moves the same way (#384): dragged to any edge it snaps to the edge's centre, its corners or near the
 centre on either side, a row on the top and bottom and a labelled column on the sides; dragged past the dashed line

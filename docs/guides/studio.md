@@ -88,7 +88,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   screen shares with another, where it couldn't hide.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.
-- **Scout** (Ctrl+Alt+S with the game in front, Tools in the tray or the command palette, or Scout on screen in the
+- **Scout** (Ctrl+Alt+S with the game in front, the tray panel or the command palette, or Scout on screen in the
   Library's side panel to land on one image): a check of the whole library while the game's menus are gone through by
   hand. The Studio steps aside and every image of the bot is searched a couple of times a second; each one found gets
   its box and score over the game, one just under what it needs a faint one. Images found on the same spot are marked
@@ -154,7 +154,12 @@ sight. A phone gets it too when `notify.toml` has a channel.
   one and press the new keys (Esc leaves it, Delete turns it off, ↺ goes back). A key something else has is refused. A `theme.toml` in
   darbit's settings folder lays tokens over the theme (`base = "glass-dark"`, `accent = "#ff7ab6"`).
 
-Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray; the tray icon opens it again, and its menu quits. Quitting stops every running bot first, cleanly through the service (it lets go of every key), as nothing would be left to control them; the menu says so ("Quit and stop fish-bot"). **Bots go on after quitting** in darbit settings leaves them running instead ("Quit (bots go on)"). It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
+Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray. Quitting stops every running bot first, cleanly through the service (it lets go of every key), as nothing would be left to control them; the tray panel's Quit says so ("Quit and stop fish-bot"). **Bots go on after quitting** in darbit settings leaves them running instead ("Quit (bots go on)"). It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
+
+**The tray panel:** a click on darbit's tray icon opens a small panel by it, on whichever edge the taskbar is: **Bots**
+lists every running bot with its state and time, Pause (or Go on) and Stop; with none running, the shown bot and
+Play. **Tools** has Capture, Scout and Record an action, with their keys; then **Open darbit Studio** and Quit. A
+click anywhere else or Esc closes it; a double click on the icon opens the Studio.
 
 The pages follow the mockups in `docs/ui/` and the tokens in [the design system](../style/ui/design-system.md); `darbit.studio.app.shot()` draws any page into a PNG with no screen, which the tests use for every page and theme.
 

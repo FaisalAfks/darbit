@@ -2409,10 +2409,10 @@ def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_pat
 
 
 def test_the_quit_item_says_what_happens_to_the_running_bots():
-    assert app.quit_label([], keep=False) == "Quit darbit Studio"  # control: no bot runs, nothing to say
-    assert app.quit_label(["ad-bot"], keep=False) == "Quit and stop ad-bot"
-    assert app.quit_label(["ad-bot", "watcher"], keep=False) == "Quit and stop 2 bots"
-    assert app.quit_label(["ad-bot"], keep=True) == "Quit (bots go on)"
+    assert backend.quit_label([], keep=False) == "Quit darbit Studio"  # control: no bot runs, nothing to say
+    assert backend.quit_label(["ad-bot"], keep=False) == "Quit and stop ad-bot"
+    assert backend.quit_label(["ad-bot", "watcher"], keep=False) == "Quit and stop 2 bots"
+    assert backend.quit_label(["ad-bot"], keep=True) == "Quit (bots go on)"
 
 
 def test_quitting_stops_every_running_bot_unless_darbit_settings_keep_them(qt):
@@ -2458,3 +2458,81 @@ def test_quitting_with_the_service_gone_stops_nothing_and_doesnt_raise(qt):
     studio.connect()
     wait_until(lambda: studio.bots)
     studio.stop_every_bot()
+
+
+def test_the_tray_panel_opens_by_the_icon_on_every_taskbar_edge():
+    from PySide6.QtCore import QPoint, QRect, QSize
+
+    from darbit.studio.tray import GAP, panel_place, taskbar_edge
+
+    screen = QRect(0, 0, 1920, 1080)
+    size = QSize(336, 400)
+    bottom = QRect(0, 0, 1920, 1032)
+    assert taskbar_edge(QRect(1700, 1040, 24, 24), screen, bottom) == "bottom"
+    assert panel_place(QRect(1700, 1040, 24, 24), screen, bottom, size) == QPoint(1712 - 168, 1032 - GAP - 400)
+    top = QRect(0, 48, 1920, 1032)
+    assert panel_place(QRect(1700, 12, 24, 24), screen, top, size) == QPoint(1712 - 168, 48 + GAP)
+    left = QRect(60, 0, 1860, 1080)
+    assert panel_place(QRect(18, 900, 24, 24), screen, left, size) == QPoint(60 + GAP, 1080 - GAP - 400)  # kept on
+    right = QRect(0, 0, 1860, 1080)
+    assert panel_place(QRect(1878, 500, 24, 24), screen, right, size) == QPoint(1860 - GAP - 336, 312)
+    # a taskbar that hides itself leaves the whole screen free: the edge nearest the icon
+    assert taskbar_edge(QRect(1700, 1056, 24, 24), screen, screen) == "bottom"
+    assert taskbar_edge(QRect(4, 500, 24, 24), screen, screen) == "left"
+    # control: an icon in a corner still gets the whole panel on the screen
+    corner = panel_place(QRect(1900, 1040, 24, 24), screen, bottom, size)
+    assert corner.x() + 336 <= 1920 - GAP and corner.x() == 1920 - GAP - 336
+
+
+def test_the_tray_panel_lists_the_running_bots_and_says_what_quit_does(qt):
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.tray import TrayPanel
+
+    panel_actions = TrayPanel()
+    quits = []
+    panel_actions.quitWanted.connect(lambda: quits.append(True))
+    client = FakeClient()  # ad-bot runs, "other" is stopped
+    studio = backend.Studio(lambda: client)
+    engine = app.load(studio, tray_panel=panel_actions)
+    root = engine.rootObjects()[0]
+    studio.connect()
+    wait_until(lambda: studio.bots)
+    panel = root.findChild(QQuickWindow, "trayPanel")
+    assert [bot["name"] for bot in panel.property("running").toVariant()] == ["ad-bot"]  # the stopped one isn't listed
+    assert studio.quitLabel == "Quit and stop ad-bot"
+    studio.setKeepBots(True)
+    assert studio.quitLabel == "Quit (bots go on)"
+    studio.setKeepBots(False)
+    from PySide6.QtTest import QTest
+
+    panel.show()
+    panel.requestActivate()
+    wait_until(lambda: panel.isActive())
+    QTest.keyClick(panel, QtCore.Qt.Key_Escape)
+    assert not panel.isVisible()  # Esc closes it
+    panel.show()
+    panel.requestActivate()
+    wait_until(lambda: panel.isActive())
+    root.requestActivate()  # a click anywhere else
+    wait_until(lambda: not panel.isVisible())
+    panel.show()
+    wait_until(lambda: panel.isVisible())
+    quit_line = root.findChild(QtCore.QObject, "quitLine")
+    assert quit_line.property("text") == "Quit and stop ad-bot"
+    QMetaObject.invokeMethod(quit_line, "clicked")
+    assert quits == [True] and not panel.isVisible()  # Quit goes to app.py, and the panel closes
+    del engine
+
+
+def test_the_tray_panel_controls_each_running_bot_by_its_own_folder(qt):
+    client = FakeClient()
+    studio = backend.Studio(lambda: client, bot="/bots/other")
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "other")
+    studio.pauseBot("/bots/ad-bot")
+    studio.stopBot("/bots/ad-bot")
+    wait_until(lambda: ("bot.stop", {"bot": "/bots/ad-bot"}) in client.asked)
+    assert ("bot.pause", {"bot": "/bots/ad-bot"}) in client.asked
+    controls = [params["bot"] for method, params in client.asked if method in ("bot.pause", "bot.stop")]
+    assert controls == ["/bots/ad-bot", "/bots/ad-bot"]  # control: the shown bot isn't touched
