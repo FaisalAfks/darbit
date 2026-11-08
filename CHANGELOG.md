@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
+
 ## 1.0.0-alpha.3 - 2026-11-08
 
 ### New
@@ -10,10 +14,6 @@
 - Results' data: each problem has the last steps before its failure (clicks, looks, the steps inside it, moves between screens), and darbit Studio can retake an image on a failure's screenshot (`retakeOn`), cut to the main screen
 - The service's `bot.doctor`: darbit doctor's checks on a bot and how many are problems; darbit Studio asks for them (`checkBot`) for its Start
 - The Overview's data counts today's recoveries (`d.record.recovered`): how many, the most common reason, the last one and each way the bot recovered, for an Overview block
-
-### Changed
-
-- darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
 
 ### Fixed
 
