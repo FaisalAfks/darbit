@@ -221,6 +221,12 @@ def bots_running(data: dict) -> list[dict]:
     return found
 
 
+def inputs_running(data: dict) -> list[dict]:
+    """Everything sending input right now: the input bots running or paused, the action playing and the recording
+    on, as one-input-bot refusals list them (decision 0020)."""
+    return _input_bots_running(None)
+
+
 def _input_bots_running(but: Path | None) -> list[dict]:
     """The bots running or paused that send input, taken-over runs included, but `but`; then the action playing in
     the service and the recording the Studio's input worker has on, if any: each its bot's entry with `status`

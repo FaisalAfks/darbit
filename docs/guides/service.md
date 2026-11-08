@@ -46,7 +46,7 @@ An action played from the Studio (Play, Step through, breakpoints; `bot.action.p
 service, so it counts too: it's refused while a bot that sends input runs or is paused, its own bot included, and
 `replace: true` on `bot.action.play` stops that bot first. Starting a bot that sends input while an action plays (or
 waits at a breakpoint) is refused the same way, and `replace` stops the action. Recording an action is refused while
-a bot that sends input runs or is paused: stop it first. Starting a bot that sends input, or playing an action,
+a bot that sends input runs or is paused, or an action plays: stop it first. Starting a bot that sends input, or playing an action,
 during a recording is refused, and `replace` doesn't change that: finish or cancel the recording first.
 
 A bot started without the service (`uv run my-bot`, `darbit run`) can't be refused: the service doesn't know about
@@ -99,7 +99,7 @@ The service listens on 127.0.0.1 only. Its port and a token are in `service.json
 {"type": "event", "topic": "project.status", "data": {"path": "...", "status": "running"}}
 ```
 
-The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it (an action playing or being recorded is its bot's entry with `status` `"playing"` or `"recording"` and `action`, its name; a recording isn't stopped by `replace`). A client asks the person, then sends `bot.start` (or `bot.action.play`) again with `replace: true`. Fields a client doesn't know are skipped (from the release after 1.0.0-alpha.6; an older client can't read a refusal with a `code`). `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
+The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it (an action playing or being recorded is its bot's entry with `status` `"playing"` or `"recording"` and `action`, its name; a recording isn't stopped by `replace`). A client asks the person, then sends `bot.start` (or `bot.action.play`) again with `replace: true`. Fields a client doesn't know are skipped (from the release after 1.0.0-alpha.6; an older client can't read a refusal with a `code`). `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones; `inputs.running` lists everything sending input now, as a refusal's `detail.running` would: input bots running or paused, the action playing and the recording on. From Python:
 
 ```python
 from darbit.service.client import Client, ServiceError, ensure_running

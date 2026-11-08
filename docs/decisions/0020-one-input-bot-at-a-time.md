@@ -47,13 +47,15 @@ my-bot`, `darbit run`, a terminal) has no pid file and doesn't talk to the servi
   a breakpoint or a step included; `detail.running` has the action as its bot's entry with `status` `"playing"` and
   `action` (its name). `replace` stops the action and waits for it to let go of every key (10 s at most) before the
   bot starts. Both go under the start's lock.
-- **Recording is refused while an input bot runs or is paused.** The recorder leaves out input that was sent rather
+- **Recording is refused while an input bot runs or is paused, or an action plays** (#435). The recorder leaves out input that was sent rather
   than typed (Raw Input from `SendInput` has no device, `platform/win32/listener.py`), so a bot's clicks wouldn't
   end up in the action, but the bot would still move the cursor, take the focus and change the screen under the
   person recording, and the recorded places would be wrong. The recorder runs in the Studio's input worker, not the
-  service: before it starts, the worker asks the service (`bots.list`) and answers `record.start` with the same
-  refusal, its error ending "stop it to record ...". There is no replace: `record.start`'s `replace` already means
-  Re-record. No service answering means nothing to refuse.
+  service: before it starts, the worker asks the service what sends input now (`inputs.running`: the input bots
+  running or paused, the action playing as its bot's entry with `status` `"playing"`, the recording on) and answers
+  `record.start` with the same refusal, its error ending "stop it to record ...". There is no replace:
+  `record.start`'s `replace` already means Re-record. A service from before `inputs.running` is asked `bots.list`
+  instead, which has no actions. No service answering means nothing to refuse.
 - **An input bot's start and an action's play are refused during a recording** (#431). The worker writes
   `recording.json` in darbit's data folder (its pid, the bot's folder, the action's name) as a recording starts and
   takes it away as it stops; the service reads it under the start's lock. A file whose worker is gone (it crashed,

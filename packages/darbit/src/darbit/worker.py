@@ -3,7 +3,7 @@
 darbit Studio starts it (`python -m darbit.worker`) and talks to it over its stdin and stdout with darbit's messages
 (service/protocol.py): requests and replies, and `record.tick` events while recording. The work is
 server/record_api.py's. Bots play their tapes in their own process, which has nothing else running either.
-Recording is refused while the service runs a bot that sends input (decision 0020). See the rebuild plan, section 5.
+Recording is refused while the service runs a bot that sends input or plays an action (decision 0020). See the rebuild plan, section 5.
 """
 
 import sys
@@ -22,9 +22,9 @@ _area: list[tuple[int, int, int, int] | None] = [None]  # the recorder's pill on
 
 
 def _start(params: dict) -> object:
-    """Start recording, unless a bot is clicking and typing: the two would fight over the cursor and the focus."""
+    """Start recording, unless a bot or an action is clicking and typing: they'd fight over the cursor and the focus."""
     name = str(params["name"])
-    others = alongside.input_bots()
+    others = alongside.inputs_running()
     if others:
         raise InputBotRunning(f"record {name}", others, replace=False)
     return record_api.start(Path(str(params["path"])), name, bool(params.get("replace", False)))

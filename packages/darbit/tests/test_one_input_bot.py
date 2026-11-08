@@ -389,3 +389,38 @@ def test_the_recording_refusal_comes_over_the_socket(service, recording, runs): 
         assert refused.value.code == "input_bot_running"
         assert refused.value.detail["running"][0]["status"] == "recording"
         assert connection.call("bot.status", bot="tick-bot")["status"] == "stopped"
+
+
+# ---- recording while an action plays (#435)
+
+
+def test_recording_is_refused_while_an_action_plays(service, actions, runs):  # noqa: F811
+    from darbit import worker
+
+    quiet = _another(actions, "quiet-bot", sends_input=False)
+    hub.project_run({"path": str(quiet)})
+    assert alongside.inputs_running() == []  # the control: a bot without input is nothing in the way
+    hub.action_play({"path": str(actions), "name": "forever"})
+    assert _playing_soon()
+    found = alongside.inputs_running()
+    assert [(entry["name"], entry["status"], entry["action"]) for entry in found] == [
+        ("tick-bot", "playing", "forever")
+    ]
+    reply = worker._answer(protocol.Request(1, "record.start", {"path": str(actions), "name": "run"}))
+    assert reply.code == "input_bot_running"
+    assert reply.error == "tick-bot's action forever is running and uses the mouse and keys too: stop it to record run"
+    assert reply.detail["running"][0]["status"] == "playing"
+    assert worker.record_api._recording is None
+    assert actions_api.playing() is not None  # no replace: the action goes on
+
+
+def test_an_older_service_is_asked_for_its_input_bots(service, bot, runs, monkeypatch):  # noqa: F811
+    from darbit.service import methods
+
+    monkeypatch.delitem(methods.METHODS, "inputs.running")
+    hub.project_run({"path": str(bot)})
+    assert [found["name"] for found in alongside.inputs_running()] == ["tick-bot"]
+
+
+def test_inputs_running_is_quiet_without_a_service():
+    assert alongside.inputs_running() == []
