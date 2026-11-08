@@ -23,6 +23,7 @@
 ### Fixed
 
 - Studio tests no longer fail now and then: they run with effects off, so a pill sits where it ends up rather than where its slide happens to be, and no pill tucks away on the clock in a slow run. The resize test grabbed a region's edge under Capture's pill and its tiles, and only passed while the pill was still widening; the tests that only check the windows draw without a warning still run with effects on
+- Renaming a target in the Library renames it in the screens' saved boxes too (`.darbit/screens/<screen>.json`), so the Screen view and bench cases made from those screens keep its box
 
 ## 1.0.0-alpha.4 - 2026-11-08
 
