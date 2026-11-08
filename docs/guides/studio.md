@@ -30,7 +30,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; a region is a place of its own, which images name), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
   numbers and last scores (an image also says its region and location, the defaults included: the whole screen and
-  its centre), **Retake**, **Rename** (every line of code naming it changes too), **Delete**, **Scout on screen**
+  its centre), **Retake**, **Rename** (every line of code naming it changes too, and its box on the screens kept for the Screen view), **Delete**, **Scout on screen**
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in

@@ -350,11 +350,18 @@ def rename(project: Project, old: str, new: str) -> dict:
     for use in uses(project, old):
         if use.file not in originals:
             originals[use.file] = _read(use.file)
+    placed = _screens_placing(project, old)
+    for path in placed:
+        originals[path] = _read(path)
     moved: list[tuple[Path, Path]] = []
     written: list[Path] = []
     try:
         for path, text in originals.items():
-            path.write_bytes(pattern.sub(new, text).encode("utf-8"))
+            if path in placed:
+                after = _renamed_place(text, old, new)
+            else:
+                after = pattern.sub(new, text)
+            path.write_bytes(after.encode("utf-8"))
             written.append(path)
         for path in _asset_files(project, old):
             target = path.with_name(new + path.suffix)
@@ -367,6 +374,31 @@ def rename(project: Project, old: str, new: str) -> dict:
             after.rename(before)
         raise LibraryError(f"couldn't rename {old}: {error}; nothing was changed") from error
     return plan
+
+
+def _screens_placing(project: Project, name: str) -> list[Path]:
+    """The kept screens (`.darbit/screens/<screen>.json`) that place this asset on their shot."""
+    from ..capture.service import screens_folder
+
+    folder = screens_folder(project.folder)
+    if not folder.is_dir():
+        return []
+    found = []
+    for path in sorted(folder.glob("*.json")):
+        if name in _settings(path).get("assets", {}):
+            found.append(path)
+    return found
+
+
+def _renamed_place(text: str, old: str, new: str) -> str:
+    """A screen's places with one asset's box under its new name, in the same spot in the list. The box stays on the
+    shot it was taken on, even when the new name puts the asset under another screen."""
+    places = json.loads(text)
+    assets = {}
+    for name, place in places.get("assets", {}).items():
+        assets[new if name == old else name] = place
+    places["assets"] = assets
+    return json.dumps(places, indent=1)
 
 
 SCREEN_WIDTH = 1280  # px, the kept screen shots are sent at most this wide

@@ -101,6 +101,33 @@ def test_a_rename_changes_files_and_every_line(project):
     assert (project.folder / ".venv" / "lib" / "other.py").read_text(encoding="utf-8") == "Lobby.Play"
 
 
+def test_a_rename_moves_the_box_on_the_screen_it_was_taken_on(project):
+    from darbit.capture.service import screens_folder
+
+    screens = screens_folder(project.folder)
+    screens.mkdir(parents=True)
+    lobby = {
+        "w": 800,
+        "h": 600,
+        "shot": "a",
+        "assets": {
+            "Lobby.Play": {"kind": "image", "box": [1, 2, 3, 4]},
+            "Lobby.PlayButton": {"kind": "image", "box": [5, 6, 7, 8]},
+        },
+    }
+    fight = {"w": 800, "h": 600, "shot": "b", "assets": {"Fight.Slot": {"kind": "location", "box": [9, 9, 12, 12]}}}
+    (screens / "Lobby.json").write_text(json.dumps(lobby), encoding="utf-8")
+    (screens / "Fight.json").write_text(json.dumps(fight), encoding="utf-8")
+    library.rename(project, "Lobby.Play", "Lobby.Start")
+    kept = json.loads((screens / "Lobby.json").read_text(encoding="utf-8"))
+    assert list(kept["assets"]) == ["Lobby.Start", "Lobby.PlayButton"]  # the same place in the list
+    assert kept["assets"]["Lobby.Start"] == {"kind": "image", "box": [1, 2, 3, 4]}
+    assert kept["shot"] == "a"
+    assert json.loads((screens / "Fight.json").read_text(encoding="utf-8")) == fight  # the control: untouched
+    library.rename(project, "Fight.Slot", "Fight.Seat")  # the screens' places go with a rename of any kind
+    assert list(json.loads((screens / "Fight.json").read_text(encoding="utf-8"))["assets"]) == ["Fight.Seat"]
+
+
 @pytest.mark.parametrize(
     ("old", "new", "message"),
     [
