@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- A new shot of a screen in Capture no longer keeps other targets' boxes from older shots of it: `.darbit/screens/<Screen>.json` holds only the boxes taken on the shot saved beside it, so the Library's Screen view and `darbit bench --from-screens` don't place them where they no longer are
+
 ## 1.0.0-alpha.3 - 2026-11-08
 
 ### New
