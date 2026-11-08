@@ -130,10 +130,16 @@ class Recorder(QObject):
 
     @Slot(int, int, int, int)
     def setArea(self, x: int, y: int, width: int, height: int) -> None:
-        """Where the pill is on screen: clicks there aren't recorded."""
-        self._area = [x, y, width, height]
+        """Where the pill is on screen, in Qt's points: clicks there aren't recorded. The worker gets it in screen
+        pixels, as the clicks come."""
+        from .docking import Rect
+        from .hiding import screen_of, to_pixels
+
+        screen, ratio = screen_of(x + width / 2, y + height / 2)
+        box = to_pixels(Rect(x, y, width, height), screen, ratio)
+        self._area = [int(box.x), int(box.y), int(box.width), int(box.height)]
         if self.active:
-            self._call("record.area", area=[x, y, width, height])
+            self._call("record.area", area=self._area)
 
     def _call(self, method: str, **params: object) -> None:
         try:

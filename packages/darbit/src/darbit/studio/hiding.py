@@ -87,7 +87,7 @@ def to_pixels(box: Rect, screen: Rect, ratio: float) -> Rect:
     )
 
 
-def _screen_of(x: float, y: float) -> tuple[Rect, float]:
+def screen_of(x: float, y: float) -> tuple[Rect, float]:
     """The screen a point (Qt's points) is on, and its display scaling."""
     from PySide6.QtCore import QPoint
     from PySide6.QtGui import QGuiApplication
@@ -176,7 +176,7 @@ class HidingPill(QObject):
     @Slot(float, float, float, float, str)
     def setShown(self, x: float, y: float, width: float, height: float, edge: str) -> None:
         """Where the pill shows stretched to the edge it's docked on, in Qt's points; "float" when it floats."""
-        screen, ratio = _screen_of(x + width / 2, y + height / 2)
+        screen, ratio = screen_of(x + width / 2, y + height / 2)
         box = to_pixels(Rect(x, y, width, height), screen, ratio)
         with self._lock:
             self._peek.edge = edge if edge != "float" else "top"

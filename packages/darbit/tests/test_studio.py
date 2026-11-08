@@ -873,6 +873,29 @@ def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_aga
     assert warnings == []
 
 
+def test_dragging_the_recorders_pill_keeps_the_drag_out_of_the_recording(qt):
+    from darbit.studio.docking import PillPlace
+    from darbit.studio.hiding import HidingPill
+    from darbit.studio.recorder import Recorder
+
+    recorder, hiding, place = Recorder(), HidingPill(watch=lambda on_move: lambda: None), PillPlace("recorder")
+    engine = app.load(
+        backend.Studio(FakeClient), recorder=recorder, recorder_hiding=hiding, pill_places={"recorder": place}
+    )
+    root = engine.rootObjects()[0]  # held, or Qt deletes it
+    hiding.open()
+    screen = QGuiApplication.primaryScreen().geometry()
+    wait_until(lambda: 0 < recorder._area[3] < screen.height() / 4)  # docked: only the pill is left out
+    place.begin(screen.center().x(), 30)
+    wait_until(lambda: recorder._area == [screen.x(), screen.y(), screen.width(), screen.height()])
+    place.move(screen.center().x(), screen.bottom() - 10)  # the release lands anywhere on the screen: left out too
+    assert recorder._area[2] == screen.width()
+    place.end()
+    wait_until(lambda: 0 < recorder._area[3] < screen.height() / 4 and recorder._area[1] > screen.height() / 2)
+    hiding.close()
+    del root, engine
+
+
 def test_the_window_opens_where_it_was_left_on_a_screen_still_there():
     from PySide6.QtCore import QRect
 

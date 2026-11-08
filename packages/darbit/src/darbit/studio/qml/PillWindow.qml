@@ -21,8 +21,10 @@ Window {
     readonly property string form: body.form
     readonly property string side: place.edge
     readonly property var screenBox: place.screen
-    readonly property int margin: 28  // room for the pill's tilt while it's dragged
-    signal placed(int x, int y, int width, int height)  // where it is now, in the window's points
+    readonly property int margin: dragging ? 28 : 12  // room for the pill's tilt while it's dragged
+    // where it is now, in the window's points; while it's dragged, the whole screen it's on (the recorder leaves the
+    // drag's clicks out), and once more where it lands
+    signal placed(int x, int y, int width, int height)
     visible: hiding.isOpen
     transientParent: null  // its own window: it shows while the Studio is hidden
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowDoesNotAcceptFocus | Qt.Tool
@@ -68,8 +70,10 @@ Window {
         else if (side === "left") left = screen.x
         else if (side === "right") right = screen.x + screen.width
         hiding.setShown(left, top, right - left, bottom - top, side)
-        placed(x, y, width, height)
+        if (!dragging) placed(x, y, width, height)
     }
+    onDraggingChanged: if (dragging) placed(screenBox.x, screenBox.y, screenBox.width, screenBox.height); else report()
+    onScreenBoxChanged: if (dragging) placed(screenBox.x, screenBox.y, screenBox.width, screenBox.height)
     Connections {
         target: pillWindow.place
         function onChanged() { pillWindow.hiding.hold(pillWindow.place.floating || pillWindow.place.dragging); pillWindow.report() }

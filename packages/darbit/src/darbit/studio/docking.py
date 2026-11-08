@@ -17,17 +17,19 @@ SNAPS = (0.0, 0.3, 0.5, 0.7, 1.0)  # along an edge: the corners, near the centre
 GAP = 8  # points between a docked pill and its edge
 FLOAT_SHARE = 0.2  # past this share of the screen's smaller side from every edge, a dropped pill floats
 FLOAT_LEAST = 150  # points: the float line is never closer to the edge than this
+TOUCH = 2  # pixels: screens this close meet
 KEY = "studio.pill."  # ui setting per pill: studio.pill.run, studio.pill.capture, ...
 
 
 @dataclass
 class Rect:
-    """A screen or a pill, in Qt's points."""
+    """A screen or a pill, in Qt's points. A screen's `ratio` is its display scaling (1.5 at 150%)."""
 
     x: float
     y: float
     width: float
     height: float
+    ratio: float = 1.0
 
     @property
     def right(self) -> float:
@@ -56,19 +58,31 @@ class Place:
         return self.edge == FLOATING
 
 
+def in_pixels(screen: Rect) -> Rect:
+    """A screen as the system lays it out, in pixels. Qt keeps each screen's top-left corner where it is in pixels and
+    scales its size, so with different scaling screens that touch don't touch in Qt's points."""
+    return Rect(screen.x, screen.y, screen.width * screen.ratio, screen.height * screen.ratio)
+
+
+def touches(a: float, b: float) -> bool:
+    return abs(a - b) <= TOUCH
+
+
 def free_edges(screen: Rect, others: list[Rect]) -> list[str]:
     """The screen's edges a pill can dock on: not one another screen touches, where tucking away would slide the pill
     onto that screen and the mouse could never stop at the edge to bring it back."""
+    mine = in_pixels(screen)
     free = []
     for edge in EDGES:
         shared = False
-        for other in others:
+        for other_screen in others:
+            other = in_pixels(other_screen)
             if edge in ("top", "bottom"):
-                meets = other.bottom == screen.y if edge == "top" else other.y == screen.bottom
-                overlaps = other.x < screen.right and other.right > screen.x
+                meets = touches(other.bottom, mine.y) if edge == "top" else touches(other.y, mine.bottom)
+                overlaps = other.x < mine.right and other.right > mine.x
             else:
-                meets = other.right == screen.x if edge == "left" else other.x == screen.right
-                overlaps = other.y < screen.bottom and other.bottom > screen.y
+                meets = touches(other.right, mine.x) if edge == "left" else touches(other.x, mine.right)
+                overlaps = other.y < mine.bottom and other.bottom > mine.y
             if meets and overlaps:
                 shared = True
         if not shared:
@@ -201,7 +215,7 @@ def qt_screens() -> dict[str, Rect]:
         if screen is None:
             continue
         box = screen.geometry()
-        found[screen.name()] = Rect(box.x(), box.y(), box.width(), box.height())
+        found[screen.name()] = Rect(box.x(), box.y(), box.width(), box.height(), screen.devicePixelRatio())
     return found or {"": Rect(0, 0, 1920, 1080)}
 
 
@@ -251,7 +265,7 @@ class PillPlace(QObject):
 
     def _all(self) -> dict[str, Rect]:
         if self._in_window:
-            return {"": self._area}
+            return {"": self._area}  # one window: points only, nothing beside it
         return self._screens()
 
     def _screen(self, name: str) -> Rect:

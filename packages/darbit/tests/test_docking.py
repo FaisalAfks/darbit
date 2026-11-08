@@ -54,6 +54,21 @@ def test_an_edge_another_screen_touches_is_left_out():
     assert docking.drop(Place("main"), "main", SCREEN, edges, 1590, 450).edge != "right"
 
 
+def test_screens_with_different_scaling_meet_where_their_pixels_do():
+    # Qt keeps each screen's corner in pixels and scales its size: a 150% laptop 1920 pixels wide is 1280 points wide,
+    # and the monitor on its right starts at 1920
+    laptop = Rect(0, 0, 1280, 720, 1.5)
+    monitor = Rect(1920, 0, 2560, 1440, 1.0)
+    assert "right" not in docking.free_edges(laptop, [monitor])
+    assert "left" not in docking.free_edges(monitor, [laptop])
+    left_of = Rect(-1920, 0, 1280, 720, 1.5)  # the same laptop on the left of a 100% main screen
+    assert "left" not in docking.free_edges(Rect(0, 0, 2560, 1440), [left_of])
+    assert "right" not in docking.free_edges(left_of, [Rect(0, 0, 2560, 1440)])
+    # control: two screens at the same scaling, and a scaled one that doesn't reach
+    assert "right" not in docking.free_edges(SCREEN, [Rect(1600, 0, 1600, 900)])
+    assert docking.free_edges(laptop, [Rect(2200, 0, 1600, 900)]) == ALL
+
+
 def test_a_kept_place_comes_back_and_one_on_a_screen_now_gone_goes_to_the_top_centre():
     screens = {"main": SCREEN, "side": Rect(1600, 0, 1280, 720)}
     saved = {
