@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### New
+
+- `DARBIT_NO_REAL_INPUT=1` turns real input off: every click, key, mouse move, hold, scroll, drag, app open, close or focus and screen grab raises `RealInputOff` naming the call, instead of touching the PC. Read-only calls (the cursor, open windows, `App.running`, monitors) still work, and `darbit.testing.FakeGame`'s fakes are used first. A bot's tests turn it on with one line in their conftest.py, `pytest_plugins = ["darbit.testing.no_real_input"]`, whose `real_input` fixture turns it back on for one test. darbit's own tests run with it on, except the live tests
+
+### Changed
+
+- `darbit.testing` is a package; `from darbit.testing import FakeGame` is unchanged. FakeGame also stands in for the game's window: bringing `settings.window` to the front does nothing while it runs
+- `App.open` goes through the platform's Windows piece (`windows.launch`), like closing and focusing
+
 ## 1.0.0-alpha.5 - 2026-11-08
 
 ### New

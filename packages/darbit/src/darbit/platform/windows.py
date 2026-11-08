@@ -1,13 +1,23 @@
-"""Finding, focusing and closing top-level windows and their apps, through the system's Windows piece.
+"""Finding, focusing, opening and closing apps and their windows, through the system's Windows piece.
 
 An app is named by its window title ("Game") or by its program file ("chrome.exe", or a full path to it).
 """
 
 from ..core.geometry import Region
-from . import backend
+from . import backend, real
 from .backend import Window
 
-__all__ = ["Window", "bring_to_front", "close", "in_front", "keep_out_of_captures", "matching", "region", "windows"]
+__all__ = [
+    "Window",
+    "bring_to_front",
+    "close",
+    "in_front",
+    "keep_out_of_captures",
+    "launch",
+    "matching",
+    "region",
+    "windows",
+]
 
 
 def windows() -> list[Window]:
@@ -23,6 +33,7 @@ def in_front(handle: int) -> bool:
 
 
 def bring_to_front(handle: int) -> bool:
+    real.refuse("windows.bring_to_front")
     return backend.windows().bring_to_front(handle)
 
 
@@ -32,7 +43,14 @@ def region(handle: int) -> Region:
 
 
 def close(name: str, wait: float = 5.0) -> bool:
+    real.refuse("windows.close")
     return backend.windows().close(name, wait)
+
+
+def launch(path_or_url: str) -> None:
+    """Open a program, file or link the way double-clicking it would."""
+    real.refuse("windows.launch")
+    backend.windows().launch(path_or_url)
 
 
 def keep_out_of_captures(handle: int) -> bool:

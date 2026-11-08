@@ -4,8 +4,6 @@ An app is named by its window title ("Game") or by its program ("chrome.exe",
 or a full path to it). `App("Game")` keeps the name: `App("Game").window` is its window as a Region.
 """
 
-import os
-
 from ..platform import windows
 from .log import log
 from .region import Region
@@ -39,7 +37,7 @@ class App:
 
 def open(path_or_url: str) -> None:
     """Open a program, file or link the way double-clicking it would."""
-    os.startfile(path_or_url)
+    windows.launch(path_or_url)
     log(f"open {path_or_url}")
 
 

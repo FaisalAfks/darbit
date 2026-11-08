@@ -15,7 +15,7 @@ def elsewhere(monkeypatch):
     monkeypatch.setattr(backend.sys, "platform", "plan9")
 
 
-def test_another_system_is_told_plainly(elsewhere):
+def test_another_system_is_told_plainly(elsewhere, real_input):
     with pytest.raises(backend.NotSupported, match="Windows for now"):
         screen.grab()
     with pytest.raises(backend.NotSupported):

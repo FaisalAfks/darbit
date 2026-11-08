@@ -85,6 +85,10 @@ def close(name: str, wait: float = 5.0) -> bool:
     return False
 
 
+def launch(path_or_url: str) -> None:
+    return None
+
+
 # ---- listener and hotkeys: no real input
 
 

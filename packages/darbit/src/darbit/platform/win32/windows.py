@@ -1,4 +1,4 @@
-"""Finding, focusing and closing top-level windows and their apps.
+"""Finding, focusing, opening and closing top-level windows and their apps.
 
 An app is named by its window title ("Game") or by its program file
 ("chrome.exe", or a full path to it).
@@ -6,6 +6,7 @@ An app is named by its window title ("Game") or by its program file
 
 import ctypes
 import ntpath
+import os
 import time
 from ctypes import wintypes
 
@@ -171,3 +172,8 @@ def close(name: str, wait: float = 5.0) -> bool:
             _kernel32.TerminateProcess(process, 1)
             _kernel32.CloseHandle(process)
     return bool(found)
+
+
+def launch(path_or_url: str) -> None:
+    """Open a program, file or link the way double-clicking it would."""
+    os.startfile(path_or_url)

@@ -73,6 +73,12 @@ def target(pictures):
 
 
 @pytest.fixture(autouse=True)
+def real_input(monkeypatch):
+    """The live tests use the real desktop: real input back on (the other tests run with it off, conftest.py)."""
+    monkeypatch.delenv("DARBIT_NO_REAL_INPUT", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def darbit_settings(pictures, monkeypatch):
     import darbit as d
 
