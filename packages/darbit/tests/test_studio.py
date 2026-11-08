@@ -2228,11 +2228,13 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     call("activate", 0)
     QtCore.QCoreApplication.processEvents()
     end = column.property("contentHeight") - column.property("height")
+    print("DBG test end", end, column.property("contentHeight"), column.property("height"))
     assert end > 0
     column.setProperty("contentY", end)
     QTest.keyClick(window, Qt.Key_Right)  # a nudge updates its tile in place: the list stays where it was scrolled
     QtCore.QCoreApplication.processEvents()
     assert column.property("contentY") == end
+    print("DBG test activate 1")
     QMetaObject.invokeMethod(window, "activate", Q_ARG("QVariant", 1))
     wait_until(lambda: column.property("contentY") < end)  # the active one's tile comes into sight
     # a tile's image is the shot's part under its box
