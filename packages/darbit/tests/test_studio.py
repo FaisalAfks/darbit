@@ -1759,3 +1759,58 @@ def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path)
     assert box() == [210, 210, 150, 80]  # the image stays
     capture.close()
     del engine
+
+
+def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, Qt
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    wait_until(window.isVisible)
+    window.resize(800, 600)
+    QtCore.QCoreApplication.processEvents()
+    QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, QPoint(700, 500))  # the keys go to the shot, not the name
+    QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "image"), Q_ARG("QVariant", [100, 100, 50, 40]))
+
+    def box():
+        value = window.property("image")
+        value = value.toVariant() if hasattr(value, "toVariant") else value
+        return [round(number) for number in value]
+
+    def hold(key, seconds, modifier=Qt.NoModifier):
+        QTest.keyPress(window, key, modifier)
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            QtCore.QCoreApplication.processEvents()
+            time.sleep(0.005)
+        QTest.keyRelease(window, key, modifier)
+        QtCore.QCoreApplication.processEvents()
+
+    QTest.keyClick(window, Qt.Key_Right)
+    assert box() == [101, 100, 50, 40]  # a tap: exactly 1 px
+    hold(Qt.Key_Right, 0.3)
+    assert box() == [102, 100, 50, 40]  # under half a second it's still a tap
+    QTest.keyClick(window, Qt.Key_Down, Qt.ControlModifier)
+    assert box() == [102, 100, 50, 41]  # Ctrl: its size, 1 px
+    QTest.keyClick(window, Qt.Key_Left, Qt.ShiftModifier)
+    assert box() == [92, 100, 50, 41]  # Shift: 10 px
+    hold(Qt.Key_Right, 1.3)
+    moved = box()[0] - 92
+    assert moved > 60  # held: faster and faster
+    QtCore.QCoreApplication.processEvents()
+    time.sleep(0.1)
+    QtCore.QCoreApplication.processEvents()
+    assert box()[0] - 92 == moved  # and it stops when let go
+    hold(Qt.Key_Right, 1.3, Qt.ControlModifier)
+    assert box()[2] > 110  # Ctrl held: it grows the same way
+    capture.close()
+    del engine

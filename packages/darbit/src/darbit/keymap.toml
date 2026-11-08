@@ -36,9 +36,9 @@
 "snap.toggle"      = "s"                  # snapping on or off
 "zoom.toggle"      = "z"                  # pin the magnifier where it is, or let it follow the mouse
 "delete"           = "delete"             # remove the selected box or point
-"nudge"            = "arrows"             # move the selection 1 px
+"nudge"            = "arrows"             # move the selection 1 px a press; held past half a second, faster and faster
 "nudge.far"        = "shift+arrows"       # 10 px
-"resize"           = "ctrl+arrows"        # grow or shrink from the bottom-right; ctrl+shift for 10 px
+"resize"           = "ctrl+arrows"        # grow or shrink from the bottom-right; ctrl+shift for 10 px; held, faster too
 "retake.compare"   = "c"                  # held: show the saved image over the new one
 "next"             = "pagedown"           # next guide item
 "previous"         = "pageup"

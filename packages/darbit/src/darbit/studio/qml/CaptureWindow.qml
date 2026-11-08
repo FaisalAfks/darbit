@@ -55,7 +55,7 @@ Window {
     readonly property color locationInk: studio.colors.kindLocation
     readonly property color solid: studio.colors.solid
 
-    onVisibleChanged: if (visible) { shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
+    onVisibleChanged: if (visible) { stopHolding(); shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
     onCurrentChanged: if (current && visible) { nameField.text = current.name; tool = kindOf(current.kind) }
     onRegionChanged: if (!linking) regionName = ""
 
@@ -162,6 +162,42 @@ Window {
         if (boxes.length) { gliding = true; glideTimer.restart(); setPart(tool, boxes[chosen]) }
     }
     Timer { id: glideTimer; interval: 220; onTriggered: shotWindow.gliding = false }
+    // an arrow held: a press moves or resizes 1 px (Shift: 10) and stays exact; held for half a second, it speeds up
+    // to a top speed until let go
+    property var held: null              // the arrow held: its key, direction, step and when it went down
+    readonly property int holdDelay: 500     // ms before a held arrow speeds up
+    readonly property int holdRamp: 1500     // ms from its first speed to the top one
+    readonly property int holdTop: 900       // px a second
+    function pressArrow(key, dx, dy, step, grow) {
+        nudge(dx * step, dy * step, grow)
+        held = { key: key, dx: dx, dy: dy, step: step, grow: grow, since: Date.now(), last: Date.now(), carry: 0 }
+        holding.restart()
+    }
+    function releaseArrow(key) { if (held && held.key === key) stopHolding() }
+    function stopHolding() { held = null; holding.stop() }
+    // an arrow key's direction, or null for another key
+    function arrowOf(key) {
+        if (key === Qt.Key_Left) return [-1, 0]
+        if (key === Qt.Key_Right) return [1, 0]
+        if (key === Qt.Key_Up) return [0, -1]
+        if (key === Qt.Key_Down) return [0, 1]
+        return null
+    }
+    // px a second, `ms` after the arrow went down: none before the delay, then from 30 a step up to the top speed
+    function holdSpeed(ms, step) {
+        if (ms < holdDelay) return 0
+        var first = 30 * step
+        return Math.min(holdTop, first + (holdTop - first) * (ms - holdDelay) / holdRamp)
+    }
+    function keepNudging() {
+        if (!held) { holding.stop(); return }
+        var now = Date.now()
+        var moved = holdSpeed(now - held.since, held.step) * (now - held.last) / 1000 + held.carry
+        var whole = Math.floor(moved)
+        held.last = now; held.carry = moved - whole
+        if (whole > 0) nudge(held.dx * whole, held.dy * whole, held.grow)
+    }
+    Timer { id: holding; interval: 16; repeat: true; onTriggered: shotWindow.keepNudging() }
     // a box's corners and edges, clockwise from the top left, as fractions of its width and height
     readonly property var gripX: [0, 0.5, 1, 1, 1, 0.5, 0, 0]
     readonly property var gripY: [0, 0, 0, 0.5, 1, 1, 1, 0.5]
@@ -252,6 +288,7 @@ Window {
         Keys.onPressed: function (event) {
             var step = (event.modifiers & Qt.ShiftModifier) ? 10 : 1
             var control = (event.modifiers & Qt.ControlModifier) !== 0
+            var arrow = shotWindow.arrowOf(event.key)
             if (event.key === Qt.Key_Escape) { if (shotWindow.partOf(shotWindow.tool)) shotWindow.drop(shotWindow.tool); else capture.close() }
             else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) shotWindow.save()
             else if (control && event.key === Qt.Key_Z && (event.modifiers & Qt.ShiftModifier)) shotWindow.redo()
@@ -265,14 +302,16 @@ Window {
             else if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace) shotWindow.drop(shotWindow.tool)
             else if (event.key === Qt.Key_Z) magnifier.pinned = !magnifier.pinned
             else if (event.key === Qt.Key_C && !event.isAutoRepeat) shotWindow.comparing = true
-            else if (event.key === Qt.Key_Left) shotWindow.nudge(-step, 0, control)
-            else if (event.key === Qt.Key_Right) shotWindow.nudge(step, 0, control)
-            else if (event.key === Qt.Key_Up) shotWindow.nudge(0, -step, control)
-            else if (event.key === Qt.Key_Down) shotWindow.nudge(0, step, control)
+            else if (arrow) { if (!event.isAutoRepeat) shotWindow.pressArrow(event.key, arrow[0], arrow[1], step, control) }  // held: a timer moves it
             else return
             event.accepted = true
         }
-        Keys.onReleased: function (event) { if (event.key === Qt.Key_C && !event.isAutoRepeat) shotWindow.comparing = false }
+        Keys.onReleased: function (event) {
+            if (event.isAutoRepeat) return
+            if (event.key === Qt.Key_C) shotWindow.comparing = false
+            shotWindow.releaseArrow(event.key)
+        }
+        onActiveFocusChanged: if (!activeFocus) shotWindow.stopHolding()  // the arrow's release would go elsewhere
 
         Image {
             id: shot
