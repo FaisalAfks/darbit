@@ -12,7 +12,7 @@ give: `at = [x, y, w, h]`, or `absent = true`. A find with `option = "..."` only
 search goes through `d.exists`, with the screen grab and the scaling taken from the case, so it measures what a bot
 gets. A `[[read]]` reads text in a `region = [x, y, w, h]` or a named `target`, and expects `text = "..."`,
 `number = 4990000` or `time = 151` (seconds), through `d.read`, `d.read_number` or `d.read_time`; without the ocr
-extra it counts as "needs ocr". `--options lines` (or upscale, invert, threshold) turns on a reading option. Exits 1 when an answer is wrong, or when a search is over the baseline's speed by more
+extra it counts as "needs ocr", and fails the run when the baseline has a time for it. `--options lines` (or upscale, invert, threshold) turns on a reading option. Exits 1 when an answer is wrong, or when a search is over the baseline's speed by more
 than `--slower` times.
 """
 
@@ -246,6 +246,17 @@ def slower_than(results: list[Result], baseline: dict[str, float], times: float 
     return slow
 
 
+def not_run(results: list[Result], baseline: dict[str, float]) -> list[str]:
+    """The reads the baseline has times for that didn't run (no reader installed), as sentences: a gate that only
+    compared what ran would pass without them."""
+    missing = []
+    for result in results:
+        before = baseline.get(result.key)
+        if result.answer == "needs ocr" and before is not None:
+            missing.append(f"{result.key}: not run (it needs the ocr extra), was {before:.1f} ms")
+    return missing
+
+
 def baseline_of(results: list[Result]) -> dict[str, float]:
     """Each counted search's median time, keyed by case/target: what --baseline compares with."""
     return {result.key: round(result.median_ms, 2) for result in results if result.counted}
@@ -350,10 +361,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{len(needs_ocr)} read(s) not run: they need the ocr extra (pip install darbit[ocr])")
     slow = []
     if args.baseline:
-        slow = slower_than(results, json.loads(args.baseline.read_text(encoding="utf-8")), args.slower)
+        before = json.loads(args.baseline.read_text(encoding="utf-8"))
+        slow = slower_than(results, before, args.slower)
         print(f"{len(slow)} more than {args.slower:g} times slower than {args.baseline}")
         for sentence in slow:
             print(f"  {sentence}")
+        skipped = not_run(results, before)
+        for sentence in skipped:
+            print(f"  {sentence}")
+        slow.extend(skipped)
     if args.json:
         args.json.write_text(json.dumps([asdict(result) for result in results], indent=2), encoding="utf-8")
     if args.save_baseline:
