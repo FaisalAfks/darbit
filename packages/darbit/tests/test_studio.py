@@ -294,8 +294,8 @@ ANSWERS["bot.overview"] = _overview_answer()
 ANSWERS["bot.library.uses"] = []
 ANSWERS["bot.doctor"] = {
     "checks": [
-        {"name": "darbit.toml", "ok": True, "say": "ad-bot 1.0.0"},
-        {"name": "game window", "ok": False, "say": "no window called Roblox: open it first"},
+        {"name": "darbit.toml", "ok": True, "found": "ad-bot 1.0.0", "fix": "", "missing": []},
+        {"name": "game window", "ok": False, "found": "no window called Game", "fix": "open it first", "missing": []},
     ],
     "problems": 1,
 }
@@ -1241,7 +1241,7 @@ def test_the_studio_keeps_one_look():
 
     # a control drawn by hand is how the pages drift apart: the shared ones are in docs/style/ui/design-system.md
     shared_in = {"TextField": "Field", "Switch": "Switcher", "ComboBox": "Dropdown", "Slider": "ValueSlider"}
-    sheets = {"NewBotSheet", "RecordSheet"}  # whole sheets, not menus
+    sheets = {"NewBotSheet", "RecordSheet", "ChecksSheet"}  # whole sheets, not menus
     for page in (Path(app.__file__).parent / "qml").glob("*.qml"):
         source = page.read_text(encoding="utf-8")
         for control, home in shared_in.items():
@@ -1580,6 +1580,82 @@ def test_a_failure_with_no_image_waited_for_has_no_retake(qt, tmp_path, monkeypa
         if item.objectName() in ("retakeNow", "retakeOnShot"):
             texts.append(item.isVisible())
     assert texts and not any(texts)
+    del engine
+
+
+class Checking(FakeClient):
+    """The service, with darbit doctor's checks finding `problems` (None: a service that can't check)."""
+
+    def __init__(self, problems=0):
+        super().__init__()
+        self.problems = problems
+
+    def call(self, method, **params):
+        if method != "bot.doctor":
+            return super().call(method, **params)
+        self.asked.append((method, params))
+        if self.problems is None:
+            from darbit.service.client import ServiceError
+
+            raise ServiceError("no method bot.doctor")
+        checks = [{"name": "darbit.toml", "ok": True, "found": "ad-bot 1.0.0", "fix": "", "missing": []}]
+        if self.problems:
+            checks.append(
+                {
+                    "name": "targets",
+                    "ok": False,
+                    "found": "2 of 14 not taken: Bag.Equip, Lobby.Play",
+                    "fix": "take them with Capture in darbit Studio (darbit app)",
+                    "missing": ["Bag.Equip", "Lobby.Play"],
+                }
+            )
+        return {"checks": checks, "problems": self.problems}
+
+
+@pytest.mark.parametrize("problems", [0, None])
+def test_play_starts_at_once_when_the_checks_find_nothing(qt, problems):
+    client = Checking(problems)
+    studio = backend.Studio(lambda: client)
+    studio.connect()
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    found = []
+    studio.checksFound.connect(lambda: found.append(True))
+    studio.play()
+    wait_until(lambda: ("bot.start", {"bot": "/bots/ad-bot"}) in client.asked)
+    assert ("bot.doctor", {"bot": "/bots/ad-bot"}) in client.asked
+    assert found == []
+
+
+def test_play_shows_the_checks_when_they_find_a_problem_with_start_anyway(qt):
+    from PySide6.QtCore import QObject
+
+    client = Checking(1)
+    studio = backend.Studio(lambda: client)
+    engine = app.load(studio)
+    root = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    studio.play()
+    sheet = root.findChild(QObject, "checksSheet")
+    wait_until(lambda: sheet.property("opened"))
+    assert not any(method == "bot.start" for method, _ in client.asked)
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    def button(name):
+        return next(item for item in walk(sheet.property("contentItem")) if item.objectName() == name)
+
+    wanted = []
+    studio.captureWanted.connect(lambda *args: wanted.append(args))
+    QMetaObject.invokeMethod(button("takeThem"), "clicked")
+    assert wanted == [("/bots/ad-bot", "guide", "", "image")]  # the guide's targets not taken
+    sheet.setProperty("visible", True)
+    wait_until(lambda: sheet.property("opened"))
+    QMetaObject.invokeMethod(button("startAnyway"), "clicked")
+    wait_until(lambda: ("bot.start", {"bot": "/bots/ad-bot"}) in client.asked)
+    wait_until(lambda: not sheet.property("visible"))
     del engine
 
 
