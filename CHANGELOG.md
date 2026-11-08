@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.7 - 2026-11-08
+
 ### New
 
 - One bot that sends input runs at a time: bots on one desktop share one mouse and keyboard. The service refuses to start a bot while another one that sends input runs or is paused, with a reply naming it (`code` `input_bot_running`, `detail.running`), unless `bot.start` has `replace: true`, which stops that one cleanly first. `darbit start` says which bot is in the way and has `--replace`. A bot that never sends input says `[run] input = false` in its darbit.toml and runs alongside anything. A failed bot started again by `[run] restart` follows the same rule. `bots.list` and `bot.status` say each bot's `input`, and `bots.running` lists the running ones. A bot started without the service warns when the service runs another bot that sends input (decision 0020)
