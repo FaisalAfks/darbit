@@ -262,7 +262,7 @@ def _connect_recorder(studio: Studio, capture: Capture, recorder: Recorder, wind
 
     def picture(folder: str, gone: bool) -> None:
         wanted_gone[:] = [gone]
-        capture.start(Path(folder), "any")
+        capture.start(Path(folder), "any", several=False)  # the check waits for one image
 
     def saved(name: str) -> None:
         if recorder.active and wanted_gone:

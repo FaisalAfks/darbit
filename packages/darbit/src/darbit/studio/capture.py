@@ -99,6 +99,7 @@ class Capture(QObject):
         self._items: list[dict] = []
         self._size = (0, 0)
         self._shot_number = 0
+        self._several = False
         self._note = ""
 
     def _get_open(self) -> bool:
@@ -113,6 +114,9 @@ class Capture(QObject):
     def _get_height(self) -> int:
         return self._size[1]
 
+    def _get_several(self) -> bool:
+        return self._several
+
     def _get_source(self) -> str:
         return f"image://capture/shot{self._shot_number}" if self._open else ""
 
@@ -124,6 +128,7 @@ class Capture(QObject):
     shotWidth = Property(int, _get_width, notify=shotChanged)
     shotHeight = Property(int, _get_height, notify=shotChanged)
     source = Property(str, _get_source, notify=shotChanged)
+    several = Property(bool, _get_several, notify=openChanged)  # several new targets on this shot, not one
     shotNote = Property(str, _get_note, notify=shotChanged)  # what the shot is, when it isn't the screen now
 
     def start(
@@ -136,9 +141,11 @@ class Capture(QObject):
         origin: Region | None = None,
         lossy: bool = False,
         shot_id: str = "",
+        several: bool = True,
     ) -> None:
         """Open a session for the bot at `folder` on the screen now (or a saved `shot`, sitting at `origin` on the
-        desktop; `lossy` when it went through JPEG)."""
+        desktop; `lossy` when it went through JPEG). Taking new targets ("any") takes as many as are boxed on the shot,
+        unless `several` is off; a retake ("one") and the guide take one at a time."""
         project = load(folder)
         images = folder / (project.images[0] if project.images else "images")
         images.mkdir(parents=True, exist_ok=True)
@@ -154,6 +161,7 @@ class Capture(QObject):
         self._size = (pixels.shape[1], pixels.shape[0])
         self._shot_number += 1
         self._items = started["items"]
+        self._several = several and mode == "any"
         self._open = True
         self.shotChanged.emit()
         self.itemsChanged.emit()

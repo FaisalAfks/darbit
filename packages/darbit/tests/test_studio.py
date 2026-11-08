@@ -512,7 +512,7 @@ def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     assert capture.save("Lobby.Play", "image", box, None, None).get("error") is None
     assert (tmp_path / "images" / "Lobby.Play.png").is_file()
     assert capture.save("Lobby.Spot", "point", None, None, [10, 20]).get("error") is None
-    assert capture.save("", "image", box, None, None)["error"] == "Give it a name first, in the pill"
+    assert capture.save("", "image", box, None, None)["error"] == "Give it a name first, by its box"
     capture.close()
     assert not capture.isOpen
 
@@ -532,7 +532,7 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(qt, tm
         screen[200:240, 300:400] = (90, 200, 90)
         capture = Capture(ShotProvider())
         engine = app.load(backend.Studio(FakeClient), capture)
-        capture.start(tmp_path, shot=screen)
+        capture.start(tmp_path, shot=screen, several=False)  # one target: Test checks just it
         root = engine.rootObjects()[0]  # held: a temporary root lets PySide drop its child windows
         window = root.findChild(QQuickWindow, "captureWindow")
         scale = window.property("scale")
@@ -2042,6 +2042,86 @@ def test_the_magnifier_follows_the_mouse_after_a_click_and_ctrl_wheel_zooms_it(q
     )
     QtCore.QCoreApplication.sendEvent(window, wheel)
     wait_until(lambda: magnifier.property("zoom") > zoom)  # Ctrl+wheel: closer
+    capture.close()
+    del engine
+
+
+def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tmp_path):
+    import json
+
+    import numpy as np
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
+    from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    screen = np.full((600, 800, 3), 30, np.uint8)
+    noise = np.random.default_rng(7)
+    for left in (100, 300, 500):  # three cards, each its own
+        screen[200:300, left : left + 120] = noise.integers(0, 255, (100, 120, 3), dtype=np.uint8)
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    name = window.findChild(QObject, "nameField")
+
+    def value(key):
+        found = window.property(key)
+        return found.toVariant() if hasattr(found, "toVariant") else found
+
+    def drag(start, end):
+        QTest.mousePress(window, Qt.LeftButton, Qt.NoModifier, QPoint(*start))
+        QTest.mouseMove(window, QPoint((start[0] + end[0]) // 2, (start[1] + end[1]) // 2))
+        QTest.mouseMove(window, QPoint(*end))
+        QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, QPoint(*end))
+        QtCore.QCoreApplication.processEvents()
+
+    capture.start(tmp_path, shot=screen)
+    assert capture.several
+    wait_until(window.isVisible)
+    window.resize(800, 600)
+    QtCore.QCoreApplication.processEvents()
+    drag((100, 200), (220, 300))
+    first = name.property("text")
+    assert first.isdigit() and len(first) == 13  # a name to start with: the time, SikuliX's way
+    drag((420, 300), (300, 200))  # away from the first: another target, the first one kept (clear of its readout)
+    drag((620, 300), (500, 200))
+    shown = value("shown")
+    assert [entry["image"] for entry in shown] == [[100, 200, 120, 100], [300, 200, 120, 100], [500, 200, 120, 100]]
+    assert len({entry["name"] for entry in shown}) == 3
+    assert value("image") == [500, 200, 120, 100]  # the last one taken is the active one
+    QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, QPoint(150, 250))  # a click on a box makes it active
+    assert value("image") == [100, 200, 120, 100] and name.property("text") == first
+    QTest.keyClick(window, Qt.Key_Right)  # the arrows act on the active box
+    assert value("image") == [101, 200, 120, 100]
+    QTest.keyClick(window, Qt.Key_N)  # N: the next one
+    assert value("image") == [300, 200, 120, 100]
+    QTest.keyClick(window, Qt.Key_N, Qt.ShiftModifier)  # Shift+N: back
+    assert value("image") == [101, 200, 120, 100]
+    name.setProperty("text", "Shop.Aki")
+    QTest.keyClick(window, Qt.Key_N)
+    assert value("shown")[0]["name"] == "Shop.Aki"  # the name stays with its box
+    QMetaObject.invokeMethod(window, "removeTarget", Q_ARG("QVariant", 2))
+    assert len(value("shown")) == 2
+    QMetaObject.invokeMethod(window, "undo")  # undo works per change: the removed one comes back
+    assert len(value("shown")) == 3
+    QMetaObject.invokeMethod(window, "test")  # Test checks every box on the shot
+    wait_until(lambda: window.property("note").startswith("Test: 3 found once"))
+    QMetaObject.invokeMethod(window, "save")  # Save saves them all
+    images = sorted(path.stem for path in (tmp_path / "images").glob("*.json"))
+    assert len(images) == 3 and "Shop.Aki" in images
+    assert json.loads((tmp_path / "images" / "Shop.Aki.json").read_text(encoding="utf-8"))["kind"] == "image"
+    wait_until(lambda: not capture.isOpen)  # nothing left: it closes
+    # the control: a retake takes one; a box away from it replaces it, and no name is made up
+    capture.start(tmp_path, "one", "Shop.Aki", "image", shot=screen)
+    assert not capture.several
+    wait_until(window.isVisible)
+    drag((100, 200), (220, 300))
+    drag((420, 300), (300, 200))
+    assert len(value("shown")) == 1 and value("image") == [300, 200, 120, 100]
+    assert name.property("text") == "Shop.Aki"
     capture.close()
     del engine
 

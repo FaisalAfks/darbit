@@ -3,7 +3,9 @@
 // and arrows change: click to box an image or region (again for bigger, right-click smaller) or drag one, drag its edges
 // and corners to resize it, click the location. The pill is the shared one (PillBody): docked on an edge it slides
 // out of sight a few seconds after the mouse leaves it and the edge brings it back; it can be dragged to another edge
-// or into the middle to float. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves.
+// or into the middle to float. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves. Taking new targets
+// (capture.several), several are taken on the shot: a box away from the active one starts another, a click on one makes
+// it active, N / Shift+N step through them; Test and Save take them all.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -38,6 +40,21 @@ Window {
     property var matches: []
     property var waiting: null           // Test's answer while the scan sweeps the searched region
     property real similarity: 0.9        // after Test: matches under it fade
+    // the targets on this shot (several when taking new ones, capture.several): each { name, image, region,
+    // regionName, location, test }. The active one is edited through image, region, location and the name field;
+    // its entry here is brought up to date (sync) before the list is read or another one is made active
+    property var targets: [blank("")]
+    property int active: 0
+    property int hovered: -1             // the target under the mouse: its name shows
+    // what's on the shot, the active one as it is now: { index, name, kind, box, ... } for each with something made
+    readonly property var shown: {
+        var list = []
+        for (var index = 0; index < targets.length; index++) {
+            var target = index === active ? live() : targets[index]
+            if (hasParts(target)) list.push(Object.assign({ index: index, kind: kindOfTarget(target), box: mainBox(target) }, target))
+        }
+        return list
+    }
     property string note: ""
     property bool noteBad: false
     // the pill slid out of sight past its edge (captureHiding, hiding.py; never while floating or dragged)
@@ -58,18 +75,129 @@ Window {
     readonly property color locationInk: studio.colors.kindLocation
     readonly property color solid: studio.colors.solid
 
-    onVisibleChanged: if (visible) { stopHolding(); shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); nameField.forceActiveFocus(); showPill() }
+    onVisibleChanged: if (visible) { stopHolding(); shutter.flash(); reset(); nameField.text = current ? current.name : ""; takeSaved(nameField.text); stage.forceActiveFocus(); showPill() }
     onCurrentChanged: if (current && visible) { nameField.text = current.name; tool = kindOf(current.kind) }
     onRegionChanged: if (!linking) regionName = ""
 
     function kindOf(name) { return name === "region" ? "region" : name === "location" || name === "point" ? "location" : "image" }
     function inkOf(name) { return name === "region" ? regionInk : name === "location" ? locationInk : imageInk }
 
+    // ---- the targets on the shot
+    function blank(name) { return { name: name, image: null, region: null, regionName: "", location: null, test: null } }
+    function hasParts(target) { return !!target && (!!target.image || !!target.region || !!target.location) }
+    function kindOfTarget(target) { return target.image ? "image" : target.region ? "region" : target.location ? "location" : "" }
+    // the box a target is clicked by: its image, else its region, else a little square around its location
+    function mainBox(target) {
+        if (target.image) return target.image
+        if (target.region) return target.region
+        if (target.location) return [target.location[0] - 8, target.location[1] - 8, 16, 16]
+        return null
+    }
+    function within(box, at) { return !!box && at[0] >= box[0] && at[0] <= box[0] + box[2] && at[1] >= box[1] && at[1] <= box[1] + box[3] }
+    // the active target as it is now
+    function live() {
+        var kept = targets[active]
+        return { name: nameField.text.trim(), image: image, region: region, regionName: regionName, location: location, test: kept ? kept.test : null }
+    }
+    function sync() { var list = targets.slice(); list[active] = live(); targets = list }
+    function load(target) {
+        linking = true; image = target.image; region = target.region; regionName = target.regionName || ""; linking = false
+        location = target.location; nameField.text = target.name; matches = []
+    }
+    // a name to start with, the way SikuliX names a capture: the time, in ms (one more if a box here has it already)
+    function autoName() {
+        var taken = {}
+        for (var index = 0; index < targets.length; index++) taken[targets[index].name] = true
+        taken[nameField.text.trim()] = true
+        var stamp = Date.now()
+        while (taken[String(stamp)]) stamp++
+        return String(stamp)
+    }
+    function nameIfNew() { if (capture.several && !nameField.text.trim()) nameField.text = autoName() }
+    // the target under `at` (shot pixels) other than the active one, the smallest when they overlap; -1 for none
+    function targetAt(at) {
+        var found = -1, smallest = Infinity
+        for (var index = 0; index < shown.length; index++) {
+            var entry = shown[index]
+            if (entry.index === active || !within(entry.box, at)) continue
+            if (entry.box[2] * entry.box[3] < smallest) { smallest = entry.box[2] * entry.box[3]; found = entry.index }
+        }
+        return found
+    }
+    // a new box of `part` away from the active target starts another target when it would replace that target's own
+    // kind (an image's image), not when it adds to it (an image's region or location)
+    function startsNew(part, at) {
+        if (!capture.several) return false
+        var own = kindOfTarget(live())
+        if (!own || within(mainBox(live()), at)) return false
+        return part === own || (own === "region" && part === "location") || (own === "location" && part === "region")
+    }
+    // another target, empty, to make with the kind picked; the active one is kept if it has anything
+    function newTarget() {
+        sync()
+        var list = targets.slice()
+        if (!hasParts(list[active])) list.splice(active, 1)
+        list.push(blank(""))
+        targets = list; active = list.length - 1
+        load(list[active])
+        nameField.text = autoName()
+        boxes = []; lastClick = null
+    }
+    function addTarget() {
+        if (!capture.several) return
+        newTarget()
+        say("A new target: click or drag it on the screen", false)
+    }
+    // make the target at `index` the one edited: the name field, the kind, the handles and the arrows act on it
+    function activate(index) {
+        if (index === active || index < 0 || index >= targets.length) return
+        sync()
+        var list = targets.slice(), target = list[index]
+        if (!hasParts(list[active])) { list.splice(active, 1); if (index > active) index-- }
+        targets = list; active = index
+        load(target)
+        tool = kindOfTarget(target) || tool
+        boxes = []; lastClick = null; regionsOpen = false
+    }
+    // N and Shift+N: the next or the previous target on the shot
+    function step(by) {
+        var count = shown.length
+        if (count === 0) return
+        var at = -1
+        for (var index = 0; index < count; index++) if (shown[index].index === active) at = index
+        var next = at < 0 ? (by > 0 ? 0 : count - 1) : (at + by + count) % count
+        activate(shown[next].index)
+        stage.forceActiveFocus()
+    }
+    // drop the target at `index` from the shot (an undo step)
+    function removeTarget(index) {
+        if (index < 0 || index >= targets.length) return
+        remember()
+        sync()
+        var list = targets.slice()
+        list.splice(index, 1)
+        if (list.length === 0) list.push(blank(""))
+        var next = index === active ? Math.min(index, list.length - 1) : index < active ? active - 1 : active
+        targets = list; active = next
+        load(list[next])
+    }
+    // Esc with nothing picked: an empty new target goes back to the last one taken, else Capture closes
+    function back() {
+        if (partOf(tool)) { drop(tool); return }
+        if (capture.several && !hasParts(live()) && shown.length > 0) { activate(shown[shown.length - 1].index); return }
+        capture.close()
+    }
+
     // ---- the target and its history
-    function snapshot() { return { image: image, region: region, regionName: regionName, location: location } }
+    function snapshot() {
+        return { image: image, region: region, regionName: regionName, location: location, targets: targets, active: active, name: nameField.text }
+    }
     function restore(state) {
+        var moved = state.active !== active || state.targets.length !== targets.length
+        targets = state.targets; active = state.active
         linking = true; image = state.image; region = state.region; regionName = state.regionName || ""; linking = false
         location = state.location; matches = []
+        if (moved) nameField.text = state.name  // a name typed into the same target stays
     }
     // a region the bot has already: shared by name (moving it later moves every image in it), or another image's own
     function useRegion(entry) {
@@ -114,6 +242,11 @@ Window {
     }
     function setPart(part, value) {
         remember()
+        put(part, value)
+    }
+    // a part of the active target, without an undo step of its own
+    function put(part, value) {
+        if (value) nameIfNew()
         if (part === "image") {
             image = value
             // a retake keeps where it clicked, from the new image's centre
@@ -128,6 +261,7 @@ Window {
     function choose(name) { tool = name; if (name !== "region") regionsOpen = false; stage.forceActiveFocus() }
     function reset() {
         image = null; region = null; location = null; past = []; future = []; saved = ({})
+        targets = [blank("")]; active = 0; hovered = -1
         regionName = ""; previewRegion = null; regionsOpen = false
         boxes = []; matches = []; waiting = null; note = ""; lastClick = null
         tool = current ? kindOf(current.kind) : "image"
@@ -152,17 +286,22 @@ Window {
 
     // a click with the image or region tool: the box around it, or the next bigger (left) or smaller (right) one on a
     // click at the same spot; with the location tool, the location
+    // Taking new targets, a click away from the active one that would replace its own kind starts another target.
     function clicked(x, y, bigger) {
         var at = toShot(x, y)
-        if (tool === "location") { setPart("location", at); return }
         var same = lastClick && Math.abs(lastClick[0] - at[0]) < 4 && Math.abs(lastClick[1] - at[1]) < 4
+        var fresh = !same && startsNew(tool, at)
+        if (fresh) { remember(); newTarget() }
+        if (tool === "location") { if (fresh) put("location", at); else setPart("location", at); return }
         if (!same) {
             var found = capture.candidates(at[0], at[1], tool)
             boxes = found.boxes; chosen = found.start || 0; lastClick = at
         } else if (boxes.length) {
             chosen = Math.max(0, Math.min(boxes.length - 1, chosen + (bigger ? 1 : -1)))
         }
-        if (boxes.length) { gliding = true; glideTimer.restart(); setPart(tool, boxes[chosen]) }
+        if (!boxes.length) return
+        gliding = !fresh; glideTimer.restart()
+        if (fresh) put(tool, boxes[chosen]); else setPart(tool, boxes[chosen])
     }
     Timer { id: glideTimer; interval: 220; onTriggered: shotWindow.gliding = false }
     // an arrow held: a press moves or resizes 1 px (Shift: 10) and stays exact; held for half a second, it speeds up
@@ -228,6 +367,7 @@ Window {
     }
 
     function test() {
+        if (capture.several) { testAll(); return }
         if (!image) { say("Box an image first", true); return }
         var found = capture.test(image, region)
         if (found.error) { say(found.error, true); return }
@@ -238,10 +378,71 @@ Window {
         else showFound()
     }
     // what Test found: the image itself counts once; look-alikes are the other places, scoring under the line
+    // Test with several targets: every image on the shot, each in its own region; each keeps its matches (test)
+    function testAll() {
+        sync()
+        var list = targets.slice(), tested = 0
+        for (var index = 0; index < list.length; index++) {
+            var target = list[index]
+            if (!target.image) continue
+            var found = capture.test(target.image, target.region)
+            if (found.error) { say(found.error, true); return }
+            list[index] = Object.assign({}, target, { test: { image: target.image.join(), region: String(target.region), ms: found.ms, matches: found.matches || [] } })
+            tested++
+        }
+        if (!tested) { say("Box an image first", true); return }
+        targets = list
+        matches = []
+        note = ""
+        waiting = { all: true }
+        if (studio.effects) scan.sweep([0, 0, capture.shotWidth, capture.shotHeight])
+        else showFound()
+    }
+    // what Test found for a target, if it was tested as it is now: how many places score over the line, its own score
+    // and the look-alikes (the other places, under the line); null when it wasn't
+    function verdict(target) {
+        var test = target.test
+        if (!test || !target.image || test.image !== target.image.join() || test.region !== String(target.region)) return null
+        var own = null, others = [], alike = [], strong = 0
+        for (var index = 0; index < test.matches.length; index++) {
+            var match = test.matches[index]
+            if (match.score >= similarity) strong++
+            if (!own && Math.abs(match.x - target.image[0]) <= 3 && Math.abs(match.y - target.image[1]) <= 3) own = match
+            else { others.push(match); if (match.score < similarity) alike.push(match) }
+        }
+        return { strong: strong, score: own ? own.score : 0, others: others, alike: alike, best: alike.length ? alike[0].score : 0 }
+    }
+    // a verdict in a few words and its tone, for the chip on its box (and its tile)
+    function verdictText(found) {
+        if (found.strong === 0) return "not found"
+        if (found.strong > 1) return "found " + found.strong + "×"
+        if (found.alike.length) return found.best.toFixed(2) + " · " + found.alike.length + " alike"
+        return found.score.toFixed(2) + " ✓"
+    }
+    function verdictTone(found) { return found.strong === 0 ? "danger" : found.strong > 1 || found.alike.length ? "warn" : "ok" }
+    function showFoundAll() {
+        var once = 0, others = [], close = [], ms = 0
+        for (var index = 0; index < targets.length; index++) {
+            var target = index === active ? live() : targets[index]
+            var found = verdict(target)
+            if (!found) continue
+            ms += target.test.ms
+            if (found.strong === 1 && !found.alike.length) once++
+            else close.push(target.name)
+            others = others.concat(found.others)
+        }
+        matches = others  // the other places each was found, on the shot
+        var told = "Test: " + once + " found once"
+        if (close.length) told += " · " + (close.length > 2 ? close.slice(0, 2).join(", ") + " and " + (close.length - 2) + " more" : close.join(", ")) + (close.length === 1 ? " needs" : " need") + " a look"
+        var unscored = shown.filter(function (entry) { return !entry.image }).length
+        if (unscored) told += " · " + (unscored === 1 ? "a region or location has" : unscored + " regions and locations have") + " no score"
+        say(told + " · " + ms + " ms", close.length > 0)
+    }
     function showFound() {
         var found = waiting
         waiting = null
         if (!found) return
+        if (found.all) { showFoundAll(); return }
         matches = found.matches || []
         var strong = matches.filter(function (match) { return match.score >= shotWindow.similarity }).length
         var others = matches.length - strong
@@ -249,7 +450,43 @@ Window {
         var alike = others === 0 ? "nothing else close" : others === 1 ? "1 look-alike under the line" : others + " look-alikes under the line"
         say(where + " at " + shotWindow.similarity.toFixed(2) + (region ? " in its region" : " on the whole screen") + " · " + alike + " · " + found.ms + " ms", strong !== 1)
     }
+    // Save with several targets: every one on the shot, in the order taken. The first that can't be saved stops it,
+    // made active with the reason; the ones saved are gone from the shot
+    function saveAll() {
+        sync()
+        var names = {}
+        for (var index = 0; index < targets.length; index++) {
+            var target = targets[index]
+            if (!hasParts(target)) continue
+            if (!target.name) { activate(index); say("Give it a name first", true); nameField.forceActiveFocus(); return }
+            if (names[target.name]) { activate(index); say("Two targets are called " + target.name + ": rename one", true); nameField.forceActiveFocus(); return }
+            names[target.name] = true
+        }
+        var left = targets.slice(), count = 0, told = "", bad = false
+        while (left.length) {
+            target = left[0]
+            if (!hasParts(target)) { left.shift(); continue }
+            var result = capture.save(target.name, kindOfTarget(target), target.image, target.region, target.location, target.image && target.region ? target.regionName : "")
+            if (result.error) {
+                targets = left; active = 0; load(left[0]); tool = kindOfTarget(left[0]) || tool
+                say(result.error, true)
+                return
+            }
+            left.shift()
+            count++
+            savedPulse.show(mainBox(target))
+            if (result.risky) { told = result.said; bad = true }
+            else if (!bad) told = count === 1 ? result.said : "Saved " + count + " targets"
+        }
+        if (!count) { say("Make an image, a region or a location first", true); return }
+        if (!bad && count > 1) told = "Saved " + count + " targets"
+        reset()
+        nameField.text = ""
+        say(told, bad)
+        if (capture.items.length === 0) { studio.say(told); closing.restart() }
+    }
     function save() {
+        if (capture.several) { saveAll(); return }
         var name = nameField.text.trim()
         if (!kind) { say("Make an image, a region or a location first", true); return }
         var result = capture.save(name, kind, image, region, location, image && region ? regionName : "")
@@ -277,6 +514,7 @@ Window {
         // the hover handler and by the drawing area, which takes the mouse from it while pressed and after a click
         function follow(p) {
             captureHiding.moveTo(Math.round(p.x), Math.round(p.y))
+            shotWindow.hovered = capture.several ? shotWindow.targetAt(shotWindow.toShot(p.x, p.y)) : -1
             if (magnifier.pinned) return
             magnifier.hoverPoint = Qt.point(p.x, p.y)
             // the pixel the mouse is on, not the nearest corner
@@ -287,7 +525,7 @@ Window {
             var step = (event.modifiers & Qt.ShiftModifier) ? 10 : 1
             var control = (event.modifiers & Qt.ControlModifier) !== 0
             var arrow = shotWindow.arrowOf(event.key)
-            if (event.key === Qt.Key_Escape) { if (shotWindow.partOf(shotWindow.tool)) shotWindow.drop(shotWindow.tool); else capture.close() }
+            if (event.key === Qt.Key_Escape) shotWindow.back()
             else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) shotWindow.save()
             else if (control && event.key === Qt.Key_Z && (event.modifiers & Qt.ShiftModifier)) shotWindow.redo()
             else if (control && event.key === Qt.Key_Z) shotWindow.undo()
@@ -297,6 +535,8 @@ Window {
             else if (event.key === Qt.Key_3) shotWindow.choose("location")
             else if (event.key === Qt.Key_Tab) shotWindow.choose(shotWindow.kinds[(shotWindow.kinds.indexOf(shotWindow.tool) + 1) % 3])
             else if (event.key === Qt.Key_T) shotWindow.test()
+            else if (event.key === Qt.Key_N) shotWindow.step((event.modifiers & Qt.ShiftModifier) ? -1 : 1)
+            else if (event.key === Qt.Key_A) shotWindow.addTarget()
             else if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace) shotWindow.drop(shotWindow.tool)
             else if (event.key === Qt.Key_Z) magnifier.pinned = !magnifier.pinned
             else if (event.key === Qt.Key_C && !event.isAutoRepeat) shotWindow.comparing = true
@@ -340,10 +580,14 @@ Window {
             property var from: null
             property bool dragged: false
             property var moving: null  // the chosen box and the shot pixel the drag started at
+            property bool picked: false  // the press made another target active: no new box on release
             onPressed: function (mouse) {
                 from = [mouse.x, mouse.y]; dragged = false; moving = null; stage.forceActiveFocus()
-                var part = shotWindow.tool !== "location" ? shotWindow.partOf(shotWindow.tool) : null
                 var at = shotWindow.toShot(mouse.x, mouse.y)
+                var other = shotWindow.targetAt(at)
+                picked = other >= 0
+                if (picked) shotWindow.activate(other)
+                var part = shotWindow.tool !== "location" ? shotWindow.partOf(shotWindow.tool) : null
                 if (part && at[0] >= part[0] && at[0] <= part[0] + part[2] && at[1] >= part[1] && at[1] <= part[1] + part[3])
                     moving = { box: part.slice(), at: at }
             }
@@ -351,7 +595,12 @@ Window {
                 stage.follow(mapToItem(stage, mouse.x, mouse.y))
                 if (!from || mouse.buttons !== Qt.LeftButton) return
                 if (!dragged && Math.abs(mouse.x - from[0]) + Math.abs(mouse.y - from[1]) < 6) return
-                if (!dragged) shotWindow.remember()
+                if (!dragged) {
+                    shotWindow.remember()
+                    // a box drawn away from the active target, of its own kind: another target
+                    if (!moving && shotWindow.startsNew(shotWindow.tool, shotWindow.toShot(from[0], from[1]))) shotWindow.newTarget()
+                    if (!moving) shotWindow.nameIfNew()
+                }
                 dragged = true
                 shotWindow.matches = []
                 var at = shotWindow.toShot(mouse.x, mouse.y)
@@ -368,8 +617,8 @@ Window {
                 shotWindow.boxes = []; shotWindow.lastClick = null
             }
             onReleased: function (mouse) {
-                if (!dragged) shotWindow.clicked(mouse.x, mouse.y, mouse.button === Qt.LeftButton)
-                from = null; moving = null
+                if (!dragged && !picked) shotWindow.clicked(mouse.x, mouse.y, mouse.button === Qt.LeftButton)
+                from = null; moving = null; picked = false
             }
         }
 
@@ -463,6 +712,68 @@ Window {
             border.color: shotWindow.regionInk; border.width: 2; radius: 4
         }
         PartBox { id: imageBox; part: "image"; value: shotWindow.image }
+
+        // the other targets taken on this shot: their box in their kind's colour, quieter than the active one; a click
+        // makes one active. A name shows on the one under the mouse, and after Test what it found
+        Repeater {
+            model: shotWindow.shown
+            delegate: Item {
+                id: other
+                required property var modelData
+                readonly property bool isActive: modelData.index === shotWindow.active
+                readonly property color ink: shotWindow.inkOf(modelData.kind)
+                readonly property var found: modelData.image ? shotWindow.verdict(modelData) : null
+                x: modelData.box[0] * shotWindow.scale; y: modelData.box[1] * shotWindow.scale
+                width: modelData.box[2] * shotWindow.scale; height: modelData.box[3] * shotWindow.scale
+                Rectangle {  // an image's box
+                    visible: !other.isActive && other.modelData.kind === "image"
+                    anchors.fill: parent
+                    color: "transparent"; border.color: other.ink; border.width: shotWindow.hovered === other.modelData.index ? 2 : 1
+                    opacity: 0.75
+                }
+                Shape {  // a region's dashes
+                    visible: !other.isActive && other.modelData.kind === "region"
+                    anchors.fill: parent
+                    opacity: 0.75
+                    ShapePath {
+                        strokeColor: other.ink; strokeWidth: shotWindow.hovered === other.modelData.index ? 2 : 1; fillColor: "transparent"
+                        strokeStyle: ShapePath.DashLine; dashPattern: [5, 4]
+                        startX: 0; startY: 0
+                        PathLine { x: other.width; y: 0 }
+                        PathLine { x: other.width; y: other.height }
+                        PathLine { x: 0; y: other.height }
+                        PathLine { x: 0; y: 0 }
+                    }
+                }
+                Item {  // a location's crosshair
+                    visible: !other.isActive && other.modelData.kind === "location"
+                    anchors.centerIn: parent
+                    opacity: 0.75
+                    Rectangle { x: -1; y: -9; width: 2; height: 18; color: other.ink }
+                    Rectangle { x: -9; y: -1; width: 18; height: 2; color: other.ink }
+                }
+                Rectangle {  // its name, on the one under the mouse
+                    objectName: "boxName"
+                    visible: !other.isActive && shotWindow.hovered === other.modelData.index
+                    x: 0; y: -height - 4
+                    width: tagLine.implicitWidth + 16; height: 22; radius: 6
+                    color: shotWindow.solid; border.color: studio.colors.line
+                    Row {
+                        id: tagLine
+                        anchors.centerIn: parent; spacing: 6
+                        Rectangle { width: 7; height: 7; radius: 2; color: other.ink; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: other.modelData.name; color: studio.colors.text; font.family: "monospace"; font.pixelSize: 11 }
+                    }
+                }
+                Chip {  // what Test found
+                    visible: !!other.found
+                    anchors { right: parent.right; bottom: parent.bottom; margins: 3 }
+                    height: 20
+                    tone: other.found ? shotWindow.verdictTone(other.found) : "plain"
+                    text: other.found ? shotWindow.verdictText(other.found) : ""
+                }
+            }
+        }
 
         // faint guide lines through the mouse, across the whole screen
         Rectangle {
@@ -592,6 +903,47 @@ Window {
                 + (shotWindow.image ? (holds ? " · image inside ✓" : " · image outside ⚠") : "")
             value: shotWindow.region ? shotWindow.region.join(", ") : ""
             onEdited: function (numbers) { if (numbers.length === 4) shotWindow.setPart("region", shotWindow.clamp(numbers)) }
+        }
+
+        // the active target's name, by its box: to the right, or to the left near the screen's edge, under the image's
+        // readout. Enter saves; Esc goes back to the shot
+        Rectangle {
+            id: naming
+            objectName: "naming"
+            readonly property var b: shotWindow.mainBox(shotWindow.live())
+            readonly property real boxLeft: b ? b[0] * shotWindow.scale : 0
+            readonly property real boxRight: b ? (b[0] + b[2]) * shotWindow.scale : 0
+            readonly property real boxTop: b ? b[1] * shotWindow.scale : 0
+            readonly property real boxMiddle: b ? (b[1] + b[3] / 2) * shotWindow.scale : 0
+            readonly property bool flipped: boxRight + 12 + width > stage.width - 8
+            visible: !!b
+            x: flipped ? Math.max(8, boxLeft - 12 - width) : boxRight + 12
+            y: Math.max(8, Math.min(stage.height - height - 8, flipped ? boxMiddle - height / 2 : Math.max(boxTop + 32, boxMiddle - height / 2)))
+            width: 290; height: 40; radius: 20
+            color: shotWindow.solid
+            border.color: nameField.activeFocus ? shotWindow.inkOf(shotWindow.kind) : studio.colors.line
+            Chip {
+                id: namingKind
+                x: 8; anchors.verticalCenter: parent.verticalCenter
+                height: 24
+                tone: "plain"
+                text: shotWindow.kind ? shotWindow.kind.charAt(0).toUpperCase() + shotWindow.kind.slice(1) : ""
+            }
+            Field {
+                id: nameField
+                objectName: "nameField"
+                quiet: true
+                x: namingKind.x + namingKind.width + 4; width: parent.width - x - 8
+                anchors.verticalCenter: parent.verticalCenter
+                placeholderText: "Name, e.g. Menu.Start"
+                font.family: "monospace"; font.pixelSize: 13
+                ink: shotWindow.inkOf(shotWindow.kind)
+                onAccepted: shotWindow.save()
+                onTextEdited: shotWindow.showPill()
+                // the name of a target there already: its region and location come back (only where none is made yet)
+                onEditingFinished: shotWindow.takeSaved(text.trim())
+                Keys.onEscapePressed: stage.forceActiveFocus()
+            }
         }
 
         // Test's scan: a line sweeps the searched region, then the matches show
@@ -828,20 +1180,6 @@ Window {
                 Item { Layout.fillWidth: true }
             ]
 
-                Field {
-                    id: nameField
-                    objectName: "nameField"
-                    round: true
-                    placeholderText: "Name, e.g. Menu.Start"
-                    Layout.preferredWidth: shotWindow.stacked ? 190 : 210; Layout.preferredHeight: 40
-                    leftPadding: 16
-                    font.pixelSize: 14; font.weight: Font.DemiBold
-                    onAccepted: shotWindow.save()
-                    onTextEdited: shotWindow.showPill()
-                    // the name of a target there already: its region and location come back (only where none is made yet)
-                    onEditingFinished: shotWindow.takeSaved(text.trim())
-                    Keys.onEscapePressed: capture.close()
-                }
                 // the kind being made: a ✓ on each the target has
                 Segmented {
                     itemHeight: 32
@@ -877,15 +1215,60 @@ Window {
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
+                // the targets on this shot: a new one, and stepping through them
+                PillAction {
+                    visible: capture.several
+                    labelled: shotWindow.stacked
+                    glyph: "＋"; label: "New target"; tip: "A new target on this shot (A)"
+                    onClicked: shotWindow.addTarget()
+                }
+                PillAction {
+                    visible: capture.several
+                    labelled: shotWindow.stacked
+                    glyph: "‹"; label: "Previous"; tip: "The previous target (Shift+N)"
+                    enabled: shotWindow.shown.length > 0
+                    onClicked: shotWindow.step(-1)
+                }
+                Text {
+                    objectName: "targetCount"
+                    visible: capture.several
+                    text: shotWindow.shown.length + " on this shot"
+                    color: studio.colors.muted; font.pixelSize: 12; font.weight: Font.DemiBold
+                    Layout.alignment: Qt.AlignVCenter | (shotWindow.stacked ? Qt.AlignHCenter : 0)
+                }
+                PillAction {
+                    visible: capture.several
+                    labelled: shotWindow.stacked
+                    glyph: "›"; label: "Next"; tip: "The next target (N)"
+                    enabled: shotWindow.shown.length > 0
+                    onClicked: shotWindow.step(1)
+                }
+                Rectangle {
+                    visible: capture.several
+                    Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
+                    color: studio.colors.line
+                }
                 PillAction { labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
                 PillAction { labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
                 Rectangle {
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
-                PillButton { small: true; icon: "⌕"; text: "Test"; Layout.fillWidth: shotWindow.stacked; enabled: !!shotWindow.image; onClicked: shotWindow.test() }
+                PillButton {
+                    small: true; icon: "⌕"
+                    text: capture.several ? "Test all" : "Test"
+                    Layout.fillWidth: shotWindow.stacked
+                    enabled: capture.several ? shotWindow.shown.some(function (entry) { return !!entry.image }) : !!shotWindow.image
+                    onClicked: shotWindow.test()
+                }
                 PillAction { labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
-                PillButton { kind: "primary"; small: true; text: "Save"; Layout.fillWidth: shotWindow.stacked; onClicked: shotWindow.save() }
+                PillButton {
+                    objectName: "saveButton"
+                    kind: "primary"; small: true
+                    text: capture.several && shotWindow.shown.length > 1 ? "Save " + shotWindow.shown.length : "Save"
+                    Layout.fillWidth: shotWindow.stacked
+                    onClicked: shotWindow.save()
+                }
 
             below: Column {
                 id: under
