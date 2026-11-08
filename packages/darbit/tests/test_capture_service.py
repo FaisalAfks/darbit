@@ -156,6 +156,7 @@ def test_saving_keeps_the_screen_with_its_assets(frozen, tmp_path):
     assert listed[0]["screen"] == "Bag"
     assert listed[0]["picture"].startswith("data:image/jpeg;base64,")
     assert set(listed[0]["assets"]) == {"Bag.Equip", "Bag.Slot"}
+    assert listed[0]["shot"] == str(screens / "Bag.jpg")  # the full-size file, for a retake on it
 
 
 def test_a_new_shot_of_a_screen_drops_the_boxes_of_older_shots(frozen, tmp_path):
@@ -169,6 +170,26 @@ def test_a_new_shot_of_a_screen_drops_the_boxes_of_older_shots(frozen, tmp_path)
     service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)
     places = json.loads((service.screens_folder(tmp_path) / "Bag.json").read_text(encoding="utf-8"))
     assert set(places["assets"]) == {"Bag.Equip"}
+
+
+def test_a_retake_on_a_screens_own_shot_keeps_the_other_boxes_and_the_shot(frozen, tmp_path):
+    import cv2
+
+    from darbit.studio.capture import saved_shot
+
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)
+    service.save("Bag.Slot", "point", None, None, [100, 120])
+    picture = service.screens_folder(tmp_path) / "Bag.jpg"
+    written = picture.stat().st_mtime_ns
+    found = saved_shot(picture)  # the Library's Screen view: Retake on this shot
+    assert found.shot_id
+    service.use_shot(found.pixels, found.origin, found.shot_id)
+    service.save("Bag.Equip", "image", [505, 400, 150, 50], None, None)
+    places = json.loads((service.screens_folder(tmp_path) / "Bag.json").read_text(encoding="utf-8"))
+    assert set(places["assets"]) == {"Bag.Equip", "Bag.Slot"}  # the other boxes stay
+    assert places["assets"]["Bag.Equip"]["box"] == [505, 400, 150, 50]
+    assert picture.stat().st_mtime_ns == written  # and the shot isn't made softer by encoding it again
+    assert cv2.imread(str(picture)) is not None
 
 
 def test_a_saved_picture_is_tested_in_its_own_region(frozen):

@@ -34,7 +34,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
-  place (a new shot of a screen starts it over); click one for the side panel.
+  place (a new shot of a screen starts it over); click one for the side panel, where **Retake on this shot** opens
+  Capture on that shot instead of the screen now.
 
   ![The Library](../ui/images/qt-studio-library.png)
 - **Kinds of target.** Each target's settings file names its kind: an **image** (searched in its region, the whole
@@ -55,6 +56,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
   how many look-alikes score under the line, with each match's score and a slider for the similarity it needs.
   **Enter** saves; **Esc** removes what's picked, then closes. With a setup guide, the next one to take is shown.
+  A retake can also open on a saved screenshot (a failure's on Results, a screen's last shot in the Library): the
+  image is cut from it at its own pixels, and Capture says so; saved shots are JPEG, so it's a little softer than one
+  from the screen now.
 
   Taking new targets (the Library's Capture or Ctrl+Alt+C), several can be taken on the same shot: a box made away
   from the active target, of its own kind, starts another one (**A** starts one too, for a Region or Location on its
