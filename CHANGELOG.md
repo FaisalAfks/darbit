@@ -15,6 +15,7 @@
 
 ### Changed
 
+- The bench baseline has CI's times for the reads, so a slower read fails CI, and so does a read in the baseline that didn't run because the `ocr` extra is missing
 - A retake in Capture keeps what a target's .json says besides its place: its similarity, matching options and, for a Region, its `text` and reading options
 
 - Highlight is Scout: it searches every image of the bot while the game is played by hand and keeps a record for the session of each one, seen (when, best score, on which screen), weak (found under what it needs, or with a look-alike) or not seen yet, with the latest shot of each screen it saw for a retake on it. Its pill says "Scout: 31 of 40 seen"; floating, it has Reset the session. Its key is Ctrl+Alt+S (`scout.toggle`); a key set for `highlight.toggle` still works. The Library's and Results' Highlight buttons are Scout and land on their image
