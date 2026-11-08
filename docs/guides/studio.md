@@ -20,11 +20,12 @@ sight. A phone gets it too when `notify.toml` has a channel.
   folder you have) and **darbit settings**. darbit settings can put the bots in a sidebar instead, which folds to their
   squares on a narrow window. The Studio opens on the bot shown last.
 - **Overview** (Ctrl+1): a line for anything that needs you (a locked screen, setup images not taken yet, an image
-  that may have stopped matching, with Retake, the last problem), then the bot's blocks in rows: what it's doing now, its round, rings for its progress, numbers and week
-  charts for its gains, what's next, its last screen, blocks of the bot's own and buttons for its actions. The bot's
-  author lays out the default (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one
-  wider or narrower, take one off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to
-  the bot's.
+  that may have stopped matching, with Retake, the last problem), then the bot's blocks in rows: what it's doing now,
+  its round, rings for its progress, numbers and week charts for its gains, what's next, its last screen,
+  **Recoveries** (how often it got itself going again today with `d.record.recovered`, the most common reason and the
+  last one), blocks of the bot's own and buttons for its actions. The bot's author lays out the default
+  (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one wider or narrower, take one
+  off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to the bot's.
 - **Library** (Ctrl+2): the bot's actions first, then every image, region and location, with an image's last score
   against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; a region is a place of its own, which images name), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its

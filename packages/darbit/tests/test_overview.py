@@ -78,6 +78,16 @@ def test_without_overview_toml_the_old_tiles_order_it(project):
     layout = overview.default_layout(project, blocks)
     assert layout[0]["shows"] == "now"
     assert any(block["shows"] == "progress:Weekly catch" for block in layout)
+    assert layout[-1]["kind"] == "recoveries"  # how often it got going again: an all-day bot's health
+
+
+def test_the_recoveries_block_can_be_placed_in_overview_toml(project):
+    shown = [(block["kind"], block["shows"]) for block in overview.catalog(project, [], [])]
+    assert ("recoveries", "recoveries") in shown  # on offer before the bot has recovered at all
+    (project.folder / "overview.toml").write_text('[[block]]\nkind = "recoveries"\n', encoding="utf-8")
+    assert overview.default_layout(project, []) == [
+        {"kind": "recoveries", "shows": "recoveries", "title": "recoveries", "width": 4, "origin": "bot"}
+    ]
 
 
 def test_the_data_holds_each_blocks_value(project, tmp_path):

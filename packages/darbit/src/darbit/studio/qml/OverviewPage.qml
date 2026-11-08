@@ -249,7 +249,7 @@ Flickable {
                         required property var modelData
                         width: choices.width
                         icon: modelData.kind === "ring" ? "◔" : modelData.kind === "chart" ? "▁▃▅" : modelData.kind === "list" ? "≡" : modelData.kind === "button" ? "▶"
-                            : modelData.kind === "screen" ? "▢" : modelData.kind === "number" ? "#" : "◆"
+                            : modelData.kind === "screen" ? "▢" : modelData.kind === "number" ? "#" : modelData.kind === "recoveries" ? "↻" : "◆"
                         iconColor: modelData.origin && modelData.origin !== "darbit" ? studio.colors.slotBot : studio.colors.accent
                         text: modelData.title
                         detail: modelData.kind + (modelData.origin && modelData.origin !== "darbit" ? " · from " + modelData.origin : "")
