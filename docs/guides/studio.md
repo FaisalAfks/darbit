@@ -100,7 +100,10 @@ sight. A phone gets it too when `notify.toml` has a channel.
   saves). On a wide window a panel explains the setting under the mouse: what it does, its value, default, range and
   key.
 - **The run control** (top right): ✎ opens the bot's folder (in VS Code if it's installed), Play (F5); while running,
-  its time with Pause and Stop.
+  its time with Pause and Stop. Play (also from the command palette and the tray) first runs darbit doctor's checks,
+  in a second or two: with nothing wrong the bot just starts; otherwise a sheet lists every check with what it found
+  and how to fix it (**Take them** opens Capture on the targets not taken yet), with **Cancel**, **Check again** and
+  **Start anyway**.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
   the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), and the keys: click

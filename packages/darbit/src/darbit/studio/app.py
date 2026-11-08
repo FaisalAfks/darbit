@@ -150,6 +150,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
         _bring_forward(window)
 
     tray = _tray(app, studio, window, open_studio)
+    studio.checksFound.connect(open_studio)  # Play from the tray with the Studio hidden: its checks show in it
     door.knocked.connect(open_studio)
     _keep_in_tray(app, window, tray)
     _tell_from_tray(studio, tray, open_studio)
@@ -398,7 +399,7 @@ def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callab
                 menu.addAction("Go on" if state == "paused" else "Pause", studio.pause)
                 menu.addAction("Stop", studio.stop)
             else:
-                menu.addAction("Play", studio.start)
+                menu.addAction("Play", studio.play)
             menu.addSeparator()
         menu.addAction("Open darbit Studio", open_studio)
         pages = menu.addMenu("Go to")

@@ -43,7 +43,7 @@ MenuPanel {
                 found.unshift({ group: "Bot", label: "Stop " + studio.bot.name, icon: "■", hint: "", run: function () { studio.stop() } })
                 found.unshift({ group: "Bot", label: (studio.bot.status === "paused" ? "Go on with " : "Pause ") + studio.bot.name, icon: "❚❚", hint: "", run: function () { studio.pause() } })
             } else {
-                found.unshift({ group: "Bot", label: "Play " + studio.bot.name, icon: "▶", hint: key("run.toggle"), run: function () { studio.start() } })
+                found.unshift({ group: "Bot", label: "Play " + studio.bot.name, icon: "▶", hint: key("run.toggle"), run: function () { studio.play() } })
             }
         }
         var themes = [["glass-dark", "Glass dark"], ["glass-light", "Glass light"], ["midnight", "Midnight"], ["high-contrast", "High contrast"]]
