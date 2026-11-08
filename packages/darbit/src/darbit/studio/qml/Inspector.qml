@@ -10,6 +10,7 @@ Rectangle {
     property var score: null
     property real needs: 0.7
     property string kindLabel: ""
+    property string savedShot: ""  // the saved shot it was taken on, shown in the Library's Screen view
     property bool renaming: false
     property bool confirming: false
     signal closed()
@@ -148,7 +149,14 @@ Rectangle {
                 visible: panel.asset !== null
                 Layout.fillWidth: true
                 columns: 2; columnSpacing: 8; rowSpacing: 8
-                PillButton { Layout.fillWidth: true; icon: "▣"; text: "Retake"; onClicked: studio.retake(panel.asset.name, panel.asset.kind) }
+                PillButton {
+                    objectName: "retakeOnSavedShot"
+                    visible: panel.savedShot !== ""
+                    Layout.fillWidth: true; Layout.columnSpan: 2
+                    kind: "primary"; icon: "▣"; text: "Retake on this shot"
+                    onClicked: studio.retakeOn(panel.asset.name, panel.asset.kind, panel.savedShot)
+                }
+                PillButton { Layout.fillWidth: true; icon: "▣"; text: panel.savedShot !== "" ? "Retake now" : "Retake"; onClicked: studio.retake(panel.asset.name, panel.asset.kind) }
                 PillButton { Layout.fillWidth: true; icon: "✎"; text: "Rename"; onClicked: { panel.renaming = true; nameField.text = panel.asset.name; nameField.forceActiveFocus() } }
                 PillButton {
                     visible: panel.asset !== null && panel.asset.kind === "image" && !panel.asset.missing

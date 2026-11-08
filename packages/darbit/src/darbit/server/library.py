@@ -395,7 +395,14 @@ def screens(project: Project) -> list[dict]:
             continue
         picture = "data:image/jpeg;base64," + base64.b64encode(data.tobytes()).decode("ascii")
         found.append(
-            {"screen": path.stem, "picture": picture, "w": width, "h": height, "assets": places.get("assets", {})}
+            {
+                "screen": path.stem,
+                "picture": picture,
+                "shot": str(path),  # the full-size file, for a retake on it
+                "w": width,
+                "h": height,
+                "assets": places.get("assets", {}),
+            }
         )
     return found
 

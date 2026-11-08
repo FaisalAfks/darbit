@@ -156,6 +156,7 @@ def test_saving_keeps_the_screen_with_its_assets(frozen, tmp_path):
     assert listed[0]["screen"] == "Bag"
     assert listed[0]["picture"].startswith("data:image/jpeg;base64,")
     assert set(listed[0]["assets"]) == {"Bag.Equip", "Bag.Slot"}
+    assert listed[0]["shot"] == str(screens / "Bag.jpg")  # the full-size file, for a retake on it
 
 
 def test_a_new_shot_of_a_screen_drops_the_boxes_of_older_shots(frozen, tmp_path):

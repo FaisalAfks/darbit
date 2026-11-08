@@ -18,7 +18,7 @@ from ..platform import system
 from ..server import ui_settings
 from ..service.client import Client
 from .backend import Studio
-from .capture import Capture, ShotProvider, shot_of_failure
+from .capture import Capture, ShotProvider, saved_shot
 from .docking import PillPlace
 from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
@@ -191,12 +191,12 @@ def _connect_capture(studio: Studio, capture: Capture, recorder: Recorder, windo
         QTimer.singleShot(HIDE_WAIT_MS, lambda: capture.start(Path(folder), mode, name, kind))
 
     def wanted_on_shot(folder: str, name: str, kind: str, screenshot: str) -> None:
-        found = shot_of_failure(Path(screenshot))
+        found = saved_shot(Path(screenshot))
         if found is None:
             studio.say("That screenshot can't be used: the screens are laid out differently now")
             return
         window.hide()
-        capture.start(Path(folder), "one", name, kind, shot=found[0], origin=found[1])
+        capture.start(Path(folder), "one", name, kind, shot=found.pixels, origin=found.origin, lossy=found.lossy)
 
     def closed() -> None:
         if not capture.isOpen and not recorder.active:  # while recording, the recorder comes back instead
