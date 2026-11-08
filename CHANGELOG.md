@@ -9,6 +9,10 @@
 - Capture resizes the image or region picked by dragging any of its edges or corners, like cropping: the cursor shows which way, the readouts and the magnifier follow, and Ctrl+Z takes a drag back
 - Capture can retake a target on a saved screenshot instead of the screen now: a failure's on Results, and a screen's last shot in the Library's Screen view (Retake on this shot). The image is cut from that shot at its own pixels; a lossless copy beside a JPEG is used first, and Capture says when the shot is JPEG and so a little softer. A retake on a screen's own shot keeps the other targets placed on it, and the shot isn't encoded again
 
+### Changed
+
+- Highlight is Scout: it searches every image of the bot while the game is played by hand and keeps a record for the session of each one, seen (when, best score, on which screen), weak (found under what it needs, or with a look-alike) or not seen yet, with the latest shot of each screen it saw for a retake on it. Its pill says "Scout: 31 of 40 seen"; floating, it has Reset the session. Its key is Ctrl+Alt+S (`scout.toggle`); a key set for `highlight.toggle` still works. The Library's and Results' Highlight buttons are Scout and land on their image
+
 ## 1.0.0-alpha.4 - 2026-11-08
 
 ### New

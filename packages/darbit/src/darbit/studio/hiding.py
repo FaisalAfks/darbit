@@ -1,4 +1,4 @@
-"""A floating pill that hides over the game (#245): the run pill while a bot runs, Highlight's and the recorder's.
+"""A floating pill that hides over the game (#245): the run pill while a bot runs, Scout's and the recorder's.
 
 Open, it shows; a few seconds after the real mouse leaves it, it slides out of sight past the screen edge it's docked
 on (#384). A real mouse move to that edge beside it brings it back: the listener leaves out input a program sends, so

@@ -52,3 +52,17 @@ def test_a_users_keymap_overrides_the_defaults(tmp_path, monkeypatch):
     assert keys["global"]["capture.freeze"] == "ctrl+alt+x"
     assert keys["global"]["run.stop"] == "ctrl+alt+s"
     assert keys["global"]["record.toggle"] == "ctrl+alt+r"
+
+
+def test_a_keymap_setting_highlights_old_name_sets_scouts_key(tmp_path, monkeypatch):
+    def config_dir():
+        return tmp_path / "darbit"
+
+    monkeypatch.setattr(keymap.paths, "config_dir", config_dir)
+    (tmp_path / "darbit").mkdir()
+    (tmp_path / "darbit" / "keymap.toml").write_text('[global]\n"highlight.toggle" = "ctrl+alt+j"\n')
+    assert keymap.combo("scout.toggle") == "ctrl+alt+j"  # Highlight is Scout now; a key set before still works
+    keymap.reset_key("scout.toggle")
+    assert keymap.combo("scout.toggle") == "ctrl+alt+s"
+    keymap.set_key("scout.toggle", "ctrl+alt+u")
+    assert keymap.combo("scout.toggle") == "ctrl+alt+u"

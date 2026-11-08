@@ -1,20 +1,20 @@
-// Highlight: what's found on screen right now, over the game. Each picture found gets its box and score; one just
-// under what it needs gets a faint one. Clicks go through to the game. Ctrl+Alt+H (or Esc in the Studio) hides it;
-// HighlightPill says what's found.
+// Scout's boxes: what's found on screen right now, over the game. Each image found gets its box and score; one just
+// under what it needs gets a faint one. Clicks go through to the game. Scout's key hides it; ScoutPill says what's
+// been seen.
 import QtQuick
 import QtQuick.Window
 
 Window {
     id: overlay
-    visibility: highlight.isOn ? Window.FullScreen : Window.Hidden
+    visibility: scout.isOn ? Window.FullScreen : Window.Hidden
     transientParent: null  // its own window: it shows while the Studio is hidden (Windows hides a hidden window's tool windows too)
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.Tool
     color: "transparent"
-    title: "darbit Highlight"
+    title: "darbit Scout"
     readonly property real ratio: Screen.devicePixelRatio  // screen pixels to Qt's (1.5 at 150% scaling)
 
     Repeater {
-        model: highlight.boxes.filter(function (box) { return box.shown || (!box.found && box.w && box.score >= box.needs - 0.15) })
+        model: scout.boxes.filter(function (box) { return box.shown || (!box.found && box.w && box.score >= box.needs - 0.15) })
         delegate: Item {
             required property var modelData
             // boxes come in screen pixels; the window counts in Qt's, which Windows' display scaling makes bigger

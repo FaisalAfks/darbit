@@ -200,8 +200,8 @@ Rectangle {
                     width: parent.width; spacing: 8
                     PillButton {
                         visible: !!group.problem.target
-                        small: true; kind: "quiet"; icon: "◎"; text: "Highlight " + group.problem.target
-                        onClicked: studio.highlightOne(group.problem.target)
+                        small: true; kind: "quiet"; icon: "◎"; text: "Scout " + group.problem.target
+                        onClicked: studio.scoutOne(group.problem.target)
                     }
                     PillButton {
                         visible: (group.problem.screenshots || []).length > 1

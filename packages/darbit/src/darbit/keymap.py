@@ -13,6 +13,7 @@ from . import paths
 
 DEFAULTS = Path(__file__).with_name("keymap.toml")
 Keymap = dict[str, dict[str, str]]  # scope -> action -> keys
+RENAMED = {"highlight.toggle": "scout.toggle"}  # old names a keymap may still set
 
 
 def defaults() -> Keymap:
@@ -35,8 +36,20 @@ def load(project: Path | None = None) -> Keymap:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
         data = data.get("keys", {}) if path.name == "darbit.toml" else data
         for scope, actions in data.items():
-            keys.setdefault(scope, {}).update(actions)
+            keys.setdefault(scope, {}).update(renamed(actions))
     return keys
+
+
+def renamed(actions: dict[str, str]) -> dict[str, str]:
+    """A layer's keys with old action names under their new ones (a new name set in the same layer wins)."""
+    found = {}
+    for action, keys in actions.items():
+        new = RENAMED.get(action)
+        if new is None:
+            found[action] = keys
+        elif new not in actions:
+            found[new] = keys
+    return found
 
 
 def _scope_of(action: str) -> str:
@@ -75,7 +88,11 @@ def set_key(action: str, keys: str) -> None:
 def reset_key(action: str) -> None:
     """Back to the default keys for an action."""
     data = _read_user()
-    data.get(_scope_of(action), {}).pop(action, None)
+    scope = data.get(_scope_of(action), {})
+    scope.pop(action, None)
+    for old, new in RENAMED.items():
+        if new == action:
+            scope.pop(old, None)  # or the old name would set it again
     _write_user(data)
 
 
