@@ -59,6 +59,15 @@ sight. A phone gets it too when `notify.toml` has a channel.
   A retake can also open on a saved screenshot (a failure's on Results, a screen's last shot in the Library): the
   image is cut from it at its own pixels, and Capture says so; saved shots are JPEG, so it's a little softer than one
   from the screen now.
+
+  Taking new targets (the Library's Capture or Ctrl+Alt+C), several can be taken on the same shot: a box made away
+  from the active target, of its own kind, starts another one (**A** starts one too, for a Region or Location on its
+  own). Each starts with a name made from the time it was taken (as SikuliX does), so a batch can be saved and renamed
+  later. Click a box to make it the active one: it's highlighted, its name field sits beside it, and the kind, the
+  handles and the arrows act on it; **N** and **Shift+N** step through them. The name of the box under the mouse
+  shows on it. **T** tests every image on the shot at once, each with its score and look-alikes on its box; **Enter**
+  saves them all, and **Ctrl+Z** undoes each change, a box removed included. A retake (from the Library, Results,
+  the start check) and the setup guide take one target, as before.
 - **Run pill** (darbit settings, on by default): the bot starting (Play, the tray, the command line or the service) hides the Studio, and a pill at the top of the screen shows the
   bot, where it is and for how long, with Pause, Stop and ⤢ to open the Studio. A few seconds after the mouse leaves
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
