@@ -100,6 +100,10 @@ from .project import manifest as _manifest
 
 _project = _manifest.setup(settings, __version__)  # layer 2 of the settings: the bot's darbit.toml, if it has one
 
+from .service import alongside as _alongside
+
+_alongside.start(_project)  # started without the service: warn if it runs another bot that uses the mouse and keys
+
 __all__ = [
     "App",
     "Counter",

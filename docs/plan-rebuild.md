@@ -215,7 +215,7 @@ Each is a small interface with one class per system, picked when darbit starts:
 - **Between them:** one local socket on 127.0.0.1 with typed JSON messages, defined once in Python. Any language can connect, so a phone bridge, the VS Code extension or MCP can use the same channel later.
 - **The input worker** is a Python process running the Raw Input listener and tape playback, so nothing else in darbit can slow it down.
 - **Stopping a bot** asks it first (its next darbit call stops cleanly, keys let go), then ends its whole process tree.
-- **Several bots at once:** the service runs any number of bots, each with its own window (or account, or monitor) to work on. Two bots never share a window.
+- **Several bots at once:** the service runs any number of bots, each with its own window (or account, or monitor) to work on. Two bots never share a window. They do share the mouse and keyboard, so only one bot that sends input runs at a time; a bot with `[run] input = false` runs alongside ([decision 0020](decisions/0020-one-input-bot-at-a-time.md)).
 
 ## 6. Files
 
@@ -312,7 +312,7 @@ what's being worked on. Milestones 1 and 3 are done; 2 waits on #158; 4, 5 and 6
 - **The live bot stays untouched:** it keeps running on its pinned release (v0.3.0, then v0.4.0) until ad-bot runs a full day on the new core (milestone 2). The new darbit is a new major version, so nothing moves by accident.
 
 ### Several bots, monitors and a locked PC
-- **Several bots at once,** each on its own window, account or monitor (section 5).
+- **Several bots at once,** each on its own window, account or monitor (section 5), with one of them sending input at a time (decision 0020).
 - **Monitors:** a bot names its monitor (or follows its window's). Display scaling is read per monitor, not once for the whole desktop.
 - **A locked screen, remote desktop or a virtual machine:** screen capture and input stop working when Windows is locked or a remote session is minimised. darbit detects it, pauses the bot, says why, and goes on when the screen is back. A `doctor` check warns before a run.
 

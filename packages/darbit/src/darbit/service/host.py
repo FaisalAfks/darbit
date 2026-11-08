@@ -14,6 +14,7 @@ import threading
 from pathlib import Path
 
 from .. import events, paths
+from ..server.hub import InputBotRunning
 from . import methods
 from .notify import Notifier
 from .protocol import HOST, VERSION, Event, Hello, ProtocolError, Reply, Request, decode, encode
@@ -74,6 +75,8 @@ class Service:
             return Reply(request.id, {"stopping": True})
         try:
             return Reply(request.id, methods.call(request.method, request.params))
+        except InputBotRunning as error:
+            return Reply(request.id, error=str(error), code=error.code, detail=error.detail())
         except (ValueError, KeyError, OSError) as error:
             return Reply(request.id, error=str(error) or type(error).__name__)
 

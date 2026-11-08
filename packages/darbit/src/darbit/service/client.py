@@ -26,7 +26,13 @@ START_WAIT = 10.0  # seconds for a service started in the background to answer
 
 
 class ServiceError(RuntimeError):
-    """The service refused a request, or couldn't be reached."""
+    """The service refused a request, or couldn't be reached. `code` and `detail` say more when the service gave
+    them, e.g. code "input_bot_running" with detail {"running": [...]}."""
+
+    def __init__(self, message: str, code: str | None = None, detail: dict | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+        self.detail = detail or {}
 
 
 class NotRunning(ServiceError):
@@ -42,7 +48,8 @@ class _Waiting:
 class Client:
     """One connection to the service."""
 
-    def __init__(self, name: str = "darbit", address: Path | None = None) -> None:
+    def __init__(self, name: str = "darbit", address: Path | None = None, wait: float = REPLY_WAIT) -> None:
+        self.wait = wait  # seconds for each answer
         port, token = _read_address(address or address_file())
         try:
             self.socket = socket.create_connection((HOST, port), timeout=CONNECT_WAIT)
@@ -75,13 +82,13 @@ class Client:
             waiting = _Waiting()
             self.waiting[request_id] = waiting
         self._send(Request(request_id, method, dict(params)))
-        if not waiting.done.wait(REPLY_WAIT):
-            raise ServiceError(f"no answer to {method} in {REPLY_WAIT:.0f} s")
+        if not waiting.done.wait(self.wait):
+            raise ServiceError(f"no answer to {method} in {self.wait:.0f} s")
         reply = waiting.reply
         if reply is None:
             raise NotRunning("the service went away")
         if reply.error:
-            raise ServiceError(reply.error)
+            raise ServiceError(reply.error, reply.code, reply.detail)
         return reply.result
 
     def on_event(self, listener: Callable[[str, dict], None]) -> None:

@@ -105,11 +105,15 @@ def _bot_status(params: dict) -> object:
 
 METHODS: dict[str, Method] = {
     "bots.list": Method(hub.projects_list, "every bot: installed ones and added project folders", one_bot=False),
+    "bots.running": Method(hub.bots_running, "the bots running or paused, each with `input`", one_bot=False),
     "bots.add": Method(_bots_add, "add a project folder (`path`)", one_bot=False),
     "bots.new": Method(_bots_new, "make a bot from the template (`name`, `where`)", one_bot=False),
     "bots.install": Method(_bots_install, "install a bot from its git link (`url`)", one_bot=False),
     "bot.status": Method(_bot_status, "one bot: name, version, running, paused or stopped"),
-    "bot.start": Method(hub.project_run, "start a bot in its own process"),
+    "bot.start": Method(
+        hub.project_run,
+        "start a bot in its own process; refused (input_bot_running) while another input bot runs, unless `replace`",
+    ),
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),
     "bot.doctor": Method(hub.project_doctor, "darbit doctor's checks: is the bot ready to start"),
     "bot.stop": Method(hub.project_stop, "stop a bot (it lets go of every key); end it if it doesn't stop in time"),

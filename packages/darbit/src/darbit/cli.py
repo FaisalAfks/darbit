@@ -217,12 +217,37 @@ def _bots(argv: list[str]) -> int:
 def _bot(command: str, argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog=f"darbit {command}", description=COMMANDS[command] + ".")
     parser.add_argument("bot", help="the bot's name, or its folder")
+    if command == "start":
+        parser.add_argument(
+            "--replace", action="store_true", help="stop the bot that's using the mouse and keys, then start this one"
+        )
     args = parser.parse_args(argv)
-    result = _ask(BOT_COMMANDS[command], bot=args.bot)
+    if command == "start":
+        result = _start(args.bot, args.replace)
+    else:
+        result = _ask(BOT_COMMANDS[command], bot=args.bot)
     if result is None:
         return 1
     print(f"{args.bot}: {result.get('status', result)}")
     return 0
+
+
+def _start(bot: str, replace: bool) -> dict | None:
+    """Start a bot through the service; None after saying why it didn't, naming the bot in the way."""
+    from .service import client
+
+    try:
+        client.ensure_running()
+        with client.Client("darbit cli") as service:
+            return service.call("bot.start", bot=bot, replace=replace)
+    except client.ServiceError as error:
+        if error.code != "input_bot_running":
+            print(error)
+            return None
+        names = ", ".join(running["name"] for running in error.detail.get("running", []))
+        print(f"{names} is running and uses the mouse and keys: one such bot runs at a time.")
+        print(f"darbit start {bot} --replace stops it and starts {bot}.")
+        return None
 
 
 def _history(argv: list[str]) -> int:

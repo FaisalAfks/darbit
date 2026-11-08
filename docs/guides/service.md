@@ -8,6 +8,7 @@ Started from the Studio or the CLI, the service runs on its own: closing the ter
 darbit bots                    # every bot it knows (starts the service in the background if it isn't running)
 darbit bots --add ../my-bot    # add a project folder
 darbit start my-bot            # by name, or by folder
+darbit start my-bot --replace  # stop the bot using the mouse and keys first
 darbit pause my-bot            # pause; again to go on
 darbit stop my-bot             # it lets go of every key; ended if it doesn't stop within 10 s
 darbit status my-bot
@@ -17,6 +18,34 @@ darbit serve --stop            # stop the one running in the background
 ```
 
 Stopping the service leaves its bots running; the next one takes them over.
+
+## One bot that sends input at a time
+
+Bots on one desktop share one mouse and keyboard: two that both click break each other. The service runs any
+number of bots, but only one that sends input (decision 0020). A bot that never does says so in its darbit.toml:
+
+```toml
+[run]
+input = false     # true by default
+```
+
+Starting a bot that sends input while another one runs (or is paused) is refused, naming the running one:
+
+```text
+$ darbit start other-bot
+my-bot is running and uses the mouse and keys: one such bot runs at a time.
+darbit start other-bot --replace stops it and starts other-bot.
+```
+
+`--replace` (`replace: true` on `bot.start`) stops the running one cleanly, as Stop does, then starts the new one.
+A bot with `input = false` starts alongside anything, and anything starts alongside it. The rule sits in the
+service's start, so every way of starting a bot keeps it: the Studio, the CLI, and the service itself starting a
+failed bot again (`[run] restart`): a restart that would collide is told as a failure, with the reason.
+
+A bot started without the service (`uv run my-bot`, `darbit run`) can't be refused: the service doesn't know about
+it, and won't stop a bot started after it. As it starts, such a bot asks the service whether a bot that sends input
+is running and warns (in its log and on the terminal) when one is. Start bots through the service to have them kept
+apart.
 
 ## Notifications
 
@@ -59,18 +88,23 @@ The service listens on 127.0.0.1 only. Its port and a token are in `service.json
 {"type": "hello", "token": "...", "client": "my tool", "version": 1}
 {"type": "request", "id": 1, "method": "bot.start", "params": {"bot": "my-bot"}}
 {"type": "reply", "id": 1, "result": {"status": "running"}}
+{"type": "reply", "id": 2, "error": "my-bot is running and uses the mouse and keys too: ...", "code": "input_bot_running", "detail": {"running": [{"name": "my-bot", "path": "...", "status": "running", "input": true}]}}
 {"type": "event", "topic": "project.status", "data": {"path": "...", "status": "running"}}
 ```
 
-The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. From Python:
+The first message is `hello` with the token; every request gets a reply with its id, with `result` or `error`; events come as things happen. A refusal a client can act on also has a `code` and a `detail`; the only one so far is `input_bot_running`, whose `detail.running` lists the bots in the way, each as `bots.list` shows it. A client asks the person, then sends `bot.start` again with `replace: true`. Fields a client doesn't know are skipped. `bots.list` and `bot.status` say each bot's `input`; `bots.running` lists only the running and paused ones. From Python:
 
 ```python
-from darbit.service.client import Client, ensure_running
+from darbit.service.client import Client, ServiceError, ensure_running
 
 ensure_running()
 with Client("my tool") as service:
     service.on_event(print)
-    service.call("bot.start", bot="my-bot")
+    try:
+        service.call("bot.start", bot="my-bot")
+    except ServiceError as error:
+        if error.code == "input_bot_running":
+            print("in the way:", [bot["name"] for bot in error.detail["running"]])
 ```
 
 `service.ping` lists every method; `service/methods.py` says what each does.

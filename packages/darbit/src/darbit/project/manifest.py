@@ -20,7 +20,7 @@ TABLES = {"bot", "settings", "images", "keys", "studio", "run"}
 BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
-RUN_KEYS = {"restart", "keep_days"}
+RUN_KEYS = {"restart", "keep_days", "input"}
 # the tiles darbit Studio can show on a bot's Overview (decision 0011); "progress:<label>" picks one progress
 TILES = ("now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup")
 
@@ -76,6 +76,7 @@ class Project:
     tiles: list[str] = field(default_factory=list)  # the Overview's tiles in order; empty: the defaults
     restart: int = 0  # [run] restart: times an hour the service starts the bot again after it failed
     keep_days: int = 30  # [run] keep_days: days of run history, reports and logs the service keeps
+    input: bool = True  # [run] input: whether the bot sends mouse and keys; one such bot runs at a time (0020)
 
 
 def find(start: Path) -> Path | None:
@@ -123,6 +124,9 @@ def load(folder: Path) -> Project:
     keep_days = run.get("keep_days", 30)
     if not isinstance(keep_days, int) or isinstance(keep_days, bool) or keep_days < 1:
         raise ProjectError(f"{MANIFEST} [run]: keep_days is how many days of history to keep, e.g. 30")
+    sends_input = run.get("input", True)
+    if not isinstance(sends_input, bool):
+        raise ProjectError(f"{MANIFEST} [run]: input is true or false: whether the bot uses the mouse and keys")
 
     return Project(
         folder=folder,
@@ -140,6 +144,7 @@ def load(folder: Path) -> Project:
         tiles=tiles,
         restart=restart,
         keep_days=keep_days,
+        input=sends_input,
     )
 
 
