@@ -24,7 +24,7 @@ from ..runs.flowfile import Step, statement, to_dict
 from ..runs.recorder import RawEvent, Recorder, key_name
 from ..runtime import tape
 from ..settings import settings
-from . import actions_api
+from . import actions_api, recording_mark
 from .events import publish
 
 TICK = 0.25  # seconds between record.tick events
@@ -151,6 +151,7 @@ def start(project: Path, name: str, replace: bool = False) -> dict:
     recording.stop_hooks = hooks.start(_on_event, moves=True)  # the cursor's place goes with each mouse packet
     _health(restart=True)
     recording.running.set()
+    recording_mark.write(project, name)  # the service refuses an input bot while it's on (decision 0020)
     threading.Thread(target=_tick, args=(recording,), name="darbit-record-tick", daemon=True).start()
     return status()
 
@@ -267,6 +268,7 @@ def stop(keep: bool = True) -> dict:
     global _recording
     recording = _current()
     _recording = None
+    recording_mark.clear()
     recording.running.clear()
     recording.health = _health()
     if recording.stop_hooks is not None:
