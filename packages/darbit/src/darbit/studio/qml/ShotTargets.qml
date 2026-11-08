@@ -33,6 +33,7 @@ GridView {
     onCountChanged: if (vertical) console.warn("DBG count ->", count)
     function showActive() {
         if (vertical) console.warn("DBG showActive active", active, "cy", contentY, "h", height, "ch", contentHeight, "count", count, "len", entries.length, "vis", visible, "idx", JSON.stringify(entries.map(function (e) { return e.index })))
+        forceLayout()
         for (var at = 0; at < entries.length; at++) {
             if (entries[at].index === active) { positionViewAtIndex(at, GridView.Contain); break }
         }
