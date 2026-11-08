@@ -1898,8 +1898,9 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
 
 def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path, monkeypatch):
     import numpy as np
-    from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QSize
+    from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QSize, Qt
     from PySide6.QtQuick import QQuickWindow
+    from PySide6.QtTest import QTest
 
     from darbit import paths
     from darbit.studio.capture import Capture, ShotProvider
@@ -1952,6 +1953,20 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     place.end()
     QtCore.QCoreApplication.processEvents()
     assert column.property("visible") and not row.property("visible") and column.property("count") == 3
+    for left in range(10, 600, 100):  # more than fit: the tiles scroll
+        call("newTarget")
+        call("setPart", "image", [left, 400, 60, 50])
+    QtCore.QCoreApplication.processEvents()
+    call("activate", 0)
+    QtCore.QCoreApplication.processEvents()
+    end = column.property("contentHeight") - column.property("height")
+    assert end > 0
+    column.setProperty("contentY", end)
+    QTest.keyClick(window, Qt.Key_Right)  # a nudge updates its tile in place: the list stays where it was scrolled
+    QtCore.QCoreApplication.processEvents()
+    assert column.property("contentY") == end
+    QMetaObject.invokeMethod(window, "activate", Q_ARG("QVariant", 1))
+    wait_until(lambda: column.property("contentY") < end)  # the active one's tile comes into sight
     # a tile's image is the shot's part under its box
     tile = capture.provider.requestImage("shot1/100,200,120,100", QSize(), QSize())
     assert (tile.width(), tile.height()) == (120, 100)

@@ -1307,7 +1307,7 @@ Window {
                     visible: shotWindow.compact && shotWindow.listOpen && shotWindow.shown.length > 0
                     vertical: true
                     Layout.preferredWidth: 182; Layout.preferredHeight: implicitHeight
-                    model: shotWindow.shown
+                    entries: shotWindow.shown
                     active: shotWindow.active
                     source: capture.source
                     onPicked: function (index) { shotWindow.activate(index); stage.forceActiveFocus() }
@@ -1368,7 +1368,7 @@ Window {
                 objectName: "tilesRow"
                 visible: capture.several && !shotWindow.stacked && shotWindow.listOpen && shotWindow.shown.length > 0
                 width: parent ? parent.width : 0; height: implicitHeight
-                model: shotWindow.shown
+                entries: shotWindow.shown
                 active: shotWindow.active
                 source: capture.source
                 onPicked: function (index) { shotWindow.activate(index); stage.forceActiveFocus() }
