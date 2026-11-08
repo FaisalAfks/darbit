@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- Capture resizes the image or region picked by dragging any of its edges or corners, like cropping: the cursor shows which way, the readouts and the magnifier follow, and Ctrl+Z takes a drag back
+
 ## 1.0.0-alpha.4 - 2026-11-08
 
 ### New

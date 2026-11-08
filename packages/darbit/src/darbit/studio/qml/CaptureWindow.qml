@@ -1,8 +1,8 @@
 // Capture: the frozen screen, full screen. A target is an image, the region it's searched in and the location to
 // click, made together. The kind chosen in the pill (1, 2, 3 or Tab) is what a click or drag makes and what the handles
-// and arrows change: click to box an image or region (again for bigger, right-click smaller) or drag one, click the
-// location. The pill sits at the top and slides out of sight a few seconds after the mouse leaves it; the top edge
-// brings it back. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves.
+// and arrows change: click to box an image or region (again for bigger, right-click smaller) or drag one, drag its edges
+// and corners to resize it, click the location. The pill sits at the top and slides out of sight a few seconds after
+// the mouse leaves it; the top edge brings it back. Ctrl+Z / Ctrl+Y undo and redo; T tests; Enter saves.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -162,6 +162,19 @@ Window {
         if (boxes.length) { gliding = true; glideTimer.restart(); setPart(tool, boxes[chosen]) }
     }
     Timer { id: glideTimer; interval: 220; onTriggered: shotWindow.gliding = false }
+    // a box's corners and edges, clockwise from the top left, as fractions of its width and height
+    readonly property var gripX: [0, 0.5, 1, 1, 1, 0.5, 0, 0]
+    readonly property var gripY: [0, 0, 0, 0.5, 1, 1, 1, 0.5]
+    // `box` with the corner or edge at (fx, fy) dragged to the shot pixel `p`: the other sides stay, and it keeps 1 px
+    function resized(box, fx, fy, p) {
+        var left = box[0], top = box[1], right = box[0] + box[2], bottom = box[1] + box[3]
+        if (fx === 0) left = Math.min(p[0], right - 1)
+        if (fx === 1) right = Math.max(p[0], left + 1)
+        if (fy === 0) top = Math.min(p[1], bottom - 1)
+        if (fy === 1) bottom = Math.max(p[1], top + 1)
+        left = Math.max(0, left); top = Math.max(0, top)
+        return clamp([left, top, right - left, bottom - top])
+    }
     function nudge(dx, dy, grow) {
         var part = partOf(tool)
         if (!part) return
@@ -356,31 +369,49 @@ Window {
                     PathLine { x: 0; y: 0 }
                 }
             }
+            // the handles: a square on each corner and edge's middle
             Repeater {
                 model: partBox.chosen ? 8 : 0
                 delegate: Rectangle {
                     required property int index
-                    readonly property real fx: [0, 0.5, 1, 1, 1, 0.5, 0, 0][index]
-                    readonly property real fy: [0, 0, 0, 0.5, 1, 1, 1, 0.5][index]
-                    x: partBox.width * fx - 5; y: partBox.height * fy - 5
+                    x: partBox.width * shotWindow.gripX[index] - 5; y: partBox.height * shotWindow.gripY[index] - 5
                     width: 10; height: 10; radius: 2
                     color: "white"; border.color: partBox.ink
-                    MouseArea {
-                        anchors.fill: parent; anchors.margins: -4
-                        cursorShape: (index % 4 === 1) ? Qt.SizeVerCursor : (index % 4 === 3) ? Qt.SizeHorCursor : (index === 0 || index === 4) ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor
-                        onPressed: shotWindow.remember()
-                        onPositionChanged: function (mouse) {
-                            if (!pressed) return
-                            var at = mapToItem(shot, mouse.x, mouse.y), p = shotWindow.toShot(at.x, at.y), b = partBox.b
-                            var left = b[0], top = b[1], right = b[0] + b[2], bottom = b[1] + b[3]
-                            if (fx === 0) left = Math.min(p[0], right - 1)
-                            if (fx === 1) right = Math.max(p[0], left + 1)
-                            if (fy === 0) top = Math.min(p[1], bottom - 1)
-                            if (fy === 1) bottom = Math.max(p[1], top + 1)
-                            var next = shotWindow.clamp([left, top, right - left, bottom - top])
-                            if (partBox.part === "image") shotWindow.image = next; else shotWindow.region = next
-                            shotWindow.matches = []
-                        }
+                }
+            }
+            // its edges and corners, dragged to resize it like cropping; the cursor shows which way. The magnifier and
+            // the readouts follow, and one drag is one undo step
+            Repeater {
+                model: partBox.chosen ? 8 : 0
+                delegate: MouseArea {
+                    id: grip
+                    objectName: "grip" + index
+                    required property int index
+                    readonly property real fx: shotWindow.gripX[index]
+                    readonly property real fy: shotWindow.gripY[index]
+                    readonly property int outer: 7   // how far it reaches outside the box, and inside it
+                    readonly property int inner: 4
+                    property var from: null        // the box when the drag started
+                    property bool changed: false
+                    // an edge runs between the corners
+                    x: fx === 0.5 ? inner : partBox.width * fx - (fx === 0 ? outer : inner)
+                    y: fy === 0.5 ? inner : partBox.height * fy - (fy === 0 ? outer : inner)
+                    width: fx === 0.5 ? Math.max(0, partBox.width - 2 * inner) : outer + inner
+                    height: fy === 0.5 ? Math.max(0, partBox.height - 2 * inner) : outer + inner
+                    hoverEnabled: true
+                    cursorShape: fx === 0.5 ? Qt.SizeVerCursor : fy === 0.5 ? Qt.SizeHorCursor : fx === fy ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor
+                    onPressed: { from = partBox.b.slice(); changed = false; stage.forceActiveFocus() }
+                    onReleased: from = null
+                    onPositionChanged: function (mouse) {
+                        stage.follow(mapToItem(stage, mouse.x, mouse.y))
+                        if (!pressed || !from) return
+                        var at = mapToItem(shot, mouse.x, mouse.y)
+                        var next = shotWindow.resized(from, fx, fy, shotWindow.toShot(at.x, at.y))
+                        if (next.join() === partBox.b.join()) return
+                        if (!changed) shotWindow.remember()
+                        changed = true
+                        if (partBox.part === "image") shotWindow.image = next; else shotWindow.region = next
+                        shotWindow.matches = []
                     }
                 }
             }
