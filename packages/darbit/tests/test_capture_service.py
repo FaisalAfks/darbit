@@ -158,6 +158,19 @@ def test_saving_keeps_the_screen_with_its_assets(frozen, tmp_path):
     assert set(listed[0]["assets"]) == {"Bag.Equip", "Bag.Slot"}
 
 
+def test_a_new_shot_of_a_screen_drops_the_boxes_of_older_shots(frozen, tmp_path):
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)
+    service.freeze()  # the screen again: a list scrolled, a grid sorted, so Bag.Equip may sit elsewhere now
+    service.save("Bag.Slot", "point", None, None, [100, 120])
+    service.save("Bag.Menu", "region", None, [50, 50, 400, 300], None)  # the same shot: both kept
+    places = json.loads((service.screens_folder(tmp_path) / "Bag.json").read_text(encoding="utf-8"))
+    assert set(places["assets"]) == {"Bag.Slot", "Bag.Menu"}
+    service.use_shot(fake_screen())  # a failure's screenshot is a new shot too
+    service.save("Bag.Equip", "image", [500, 400, 150, 50], None, None)
+    places = json.loads((service.screens_folder(tmp_path) / "Bag.json").read_text(encoding="utf-8"))
+    assert set(places["assets"]) == {"Bag.Equip"}
+
+
 def test_a_saved_picture_is_tested_in_its_own_region(frozen):
     service.save("Bag.Equip", "image", [500, 400, 150, 50], [450, 350, 300, 150], None)
     result = service.test(None, "Bag.Equip", None, 0.9)

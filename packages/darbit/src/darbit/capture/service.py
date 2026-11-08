@@ -13,6 +13,7 @@ the server. See docs/archive/tasks/T09-capture-overlay.md.
 
 import json
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -51,6 +52,7 @@ class Session:
     origin: Region | None = None
     prepared: Prepared | None = None
     test: str | None = None  # opened to test this saved picture
+    shot_id: str = ""  # a new one for each shot, so a screen's saved boxes all come from the same shot
 
 
 _session: Session | None = None
@@ -90,6 +92,7 @@ def freeze() -> tuple[np.ndarray, Region]:
     session.shot = shot
     session.origin = origin
     session.prepared = prepare(shot)
+    session.shot_id = uuid.uuid4().hex
     return shot, origin
 
 
@@ -99,6 +102,7 @@ def use_shot(shot: np.ndarray, origin: Region | None = None) -> None:
     session.shot = shot
     session.origin = origin or Region(0, 0, shot.shape[1], shot.shape[0])
     session.prepared = prepare(shot)
+    session.shot_id = uuid.uuid4().hex
 
 
 def _frozen() -> tuple[Session, np.ndarray, Region, Prepared]:
@@ -293,7 +297,7 @@ def save(
         result.region_name = region_name
     item = Item(name, capture_kind)
     saved = save_result(session.images, item, result, shot, origin, None)
-    remember_screen(session.project, name, capture_kind, shot, image, region, point)
+    remember_screen(session.project, name, capture_kind, shot, image, region, point, session.shot_id)
     remaining = []
     for waiting in session.items:
         if waiting.name != name:
@@ -325,9 +329,11 @@ def remember_screen(
     image: list[int] | None,
     region: list[int] | None,
     point: list[float] | None,
+    shot_id: str = "",
 ) -> None:
     """Keep the shot an asset was taken on, and where the asset sits in it, under the asset's screen
-    ("Menu" for "Menu.Start"). Other assets already placed on that screen keep their places."""
+    ("Menu" for "Menu.Start"). Other assets placed on that screen keep their places only when they were taken on the
+    same shot (`shot_id`): on a newer shot a list may have scrolled or a grid sorted, so their boxes would be wrong."""
     group = name.split(".")[0] if "." in name else "Other"
     folder = screens_folder(project)
     folder.mkdir(parents=True, exist_ok=True)
@@ -340,12 +346,14 @@ def remember_screen(
         except (OSError, ValueError):
             places = {}
     boxes = places.get("assets", {})
+    if not shot_id or places.get("shot") != shot_id:
+        boxes = {}
     box = image or region
     if kind == "location" and point is not None:
         box = [round(point[0]) - 6, round(point[1]) - 6, 12, 12]
     if box is not None:
         boxes[name] = {"kind": kind, "box": [int(value) for value in box]}
-    places = {"w": int(shot.shape[1]), "h": int(shot.shape[0]), "assets": boxes}
+    places = {"w": int(shot.shape[1]), "h": int(shot.shape[0]), "shot": shot_id, "assets": boxes}
     places_file.write_text(json.dumps(places, indent=1), encoding="utf-8")
 
 
