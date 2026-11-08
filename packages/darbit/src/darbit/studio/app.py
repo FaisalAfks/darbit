@@ -6,14 +6,15 @@ a PNG with no screen, for docs and tests.
 """
 
 import sys
+import time
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, Qt, QTimer, QUrl, Signal
-from PySide6.QtGui import QGuiApplication, QIcon, QWindow
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QRect, QSize, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QCursor, QGuiApplication, QIcon, QWindow
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from ..platform import system
 from ..server import ui_settings
@@ -25,6 +26,7 @@ from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
 from .recorder import Recorder
 from .scout import Scout, ShotsProvider
+from .tray import TrayPanel, panel_place
 from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
@@ -57,6 +59,7 @@ def load(
     scout_hiding: HidingPill | None = None,
     pill_places: dict[str, PillPlace] | None = None,
     capture_hiding: HidingPill | None = None,
+    tray_panel: TrayPanel | None = None,
 ) -> QQmlApplicationEngine:
     """The QML engine with the Studio's window loaded and shown (at `place`: where, and maximized or not);
     RuntimeError if the QML doesn't load. `pill_places` are the pills' places by name (run, recorder, scout,
@@ -78,6 +81,8 @@ def load(
         scout_hiding = HidingPill()
     if capture_hiding is None:
         capture_hiding = HidingPill(watch=told_by_window)
+    if tray_panel is None:
+        tray_panel = TrayPanel()
     places = dict(pill_places or {})
     for name in PILLS:
         if name not in places:
@@ -93,6 +98,7 @@ def load(
     engine.rootContext().setContextProperty("recorderHiding", recorder_hiding)
     engine.rootContext().setContextProperty("scoutHiding", scout_hiding)
     engine.rootContext().setContextProperty("captureHiding", capture_hiding)
+    engine.rootContext().setContextProperty("trayPanel", tray_panel)
     for name, pill_place in places.items():
         engine.rootContext().setContextProperty(name + "Place", pill_place)
         pill_place.setParent(engine)
@@ -105,6 +111,7 @@ def load(
     recorder_hiding.setParent(engine)
     scout_hiding.setParent(engine)
     capture_hiding.setParent(engine)
+    tray_panel.setParent(engine)
     _connect_scout_hiding(scout, scout_hiding)
     _connect_capture_hiding(capture, capture_hiding)
     _connect_recorder_hiding(
@@ -151,7 +158,8 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
     run_pill = HidingPill()
     recorder_hiding = HidingPill()
     place = fit(ui_settings.get(PLACE), screens())
-    engine = load(studio, capture, recorder, scout, ghost, run_pill, recorder_hiding, place)
+    tray_panel = TrayPanel()
+    engine = load(studio, capture, recorder, scout, ghost, run_pill, recorder_hiding, place, tray_panel=tray_panel)
     _connect_ghost(studio, ghost)
     window = engine.rootObjects()[0]
     _connect_scout(studio, scout, window)
@@ -168,7 +176,7 @@ def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client)
         run_pill.close()  # the Studio comes back in its place
         _bring_forward(window)
 
-    tray = _tray(app, studio, window, open_studio)
+    tray = _tray(app, studio, window, open_studio, tray_panel)
     studio.checksFound.connect(open_studio)  # Play from the tray with the Studio hidden: its checks show in it
     door.knocked.connect(open_studio)
     _keep_in_tray(app, window, tray)
@@ -484,67 +492,59 @@ class _GlobalKeys:
         self.kept = []
 
 
-PAGES = [("overview", "Overview"), ("library", "Library"), ("results", "Results"), ("settings", "Settings")]
-
-
-def _tray(app: QApplication, studio: Studio, window: object, open_studio: Callable[[], None]) -> QSystemTrayIcon:
-    """darbit in the tray: a click opens the Studio; the menu holds the shown bot's controls, its pages and the tools."""
+def _tray(
+    app: QApplication, studio: Studio, window: object, open_studio: Callable[[], None], panel: TrayPanel
+) -> QSystemTrayIcon:
+    """darbit in the tray: a click on the icon opens the tray panel by it (the running bots, the tools, Open darbit
+    Studio and Quit), a double click the Studio."""
     tray = QSystemTrayIcon(QIcon(str(ICON)), app)
     tray.setToolTip("darbit Studio")
-    menu = QMenu()
+    shown = window.findChild(QQuickWindow, "trayPanel")
+    hidden_at = [0.0]  # when the panel last went away: a click on the icon that closed it doesn't open it again
 
-    def open_page(name: str) -> None:
-        open_studio()
-        QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", name))
+    def place() -> None:
+        icon = tray.geometry()
+        if not icon.isValid() or icon.isEmpty():
+            icon = QRect(QCursor.pos(), QSize(1, 1))
+        screen = QGuiApplication.screenAt(icon.center()) or QGuiApplication.primaryScreen()
+        size = QSize(shown.width(), shown.height())
+        shown.setPosition(panel_place(icon, screen.geometry(), screen.availableGeometry(), size))
+
+    def open_panel() -> None:
+        if shown.isVisible() or time.monotonic() - hidden_at[0] < REOPEN_S:
+            return
+        place()
+        shown.show()
+        shown.raise_()
+        shown.requestActivate()
+
+    def visible(on: bool) -> None:
+        if not on:
+            hidden_at[0] = time.monotonic()
 
     def record() -> None:
-        open_page("library")
+        open_studio()
+        QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "library"))
         QMetaObject.invokeMethod(window, "recordAction", Q_ARG("QVariant", ""))
 
-    def fill() -> None:
-        """The menu as things are now: built each time it opens, so the bot's state is never stale."""
-        menu.clear()
-        bot = studio.bot
-        state = str(bot.get("status") or "stopped")
-        running = state in ("running", "paused")
-        if bot.get("name"):
-            menu.addAction(f"{bot['name']}: {state}").setEnabled(False)
-            if running:
-                menu.addAction("Go on" if state == "paused" else "Pause", studio.pause)
-                menu.addAction("Stop", studio.stop)
-            else:
-                menu.addAction("Play", studio.play)
-            menu.addSeparator()
-        menu.addAction("Open darbit Studio", open_studio)
-        pages = menu.addMenu("Go to")
-        for name, label in PAGES:
-            pages.addAction(label, lambda name=name: open_page(name))
-        tools = menu.addMenu("Tools")
-        tools.addAction("Capture (Ctrl+Alt+C)", lambda: studio.openCapture("any"))
-        tools.addAction("Scout (Ctrl+Alt+S)", studio.toggleScout)
-        tools.addAction("Record an action…", record)
-        menu.addAction("darbit settings", lambda: open_page("studio"))
-        menu.addSeparator()
-        menu.addAction(quit_label(studio.running_names(), studio.keepBots), app.quit)
+    def activated(reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.DoubleClick:
+            open_studio()
+        elif reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.Context):
+            open_panel()
 
-    menu.aboutToShow.connect(fill)
-    fill()
-    tray.setContextMenu(menu)
-    tray.activated.connect(lambda reason: open_studio() if reason == QSystemTrayIcon.Trigger else None)
+    shown.visibleChanged.connect(visible)
+    shown.heightChanged.connect(lambda height: place() if shown.isVisible() else None)  # grows from the taskbar
+    panel.studioWanted.connect(open_studio)
+    panel.recordWanted.connect(record)
+    panel.quitWanted.connect(app.quit)
+    tray.activated.connect(activated)
     if QSystemTrayIcon.isSystemTrayAvailable():
         tray.show()
     return tray
 
 
-def quit_label(running: list[str], keep: bool) -> str:
-    """The tray's Quit, saying what it does with the bots running (their names)."""
-    if not running:
-        return "Quit darbit Studio"
-    if keep:
-        return "Quit (bots go on)"
-    if len(running) == 1:
-        return f"Quit and stop {running[0]}"
-    return f"Quit and stop {len(running)} bots"
+REOPEN_S = 0.3  # a click on the icon this soon after the panel closed was the click that closed it
 
 
 def _stop_bots_on_quit(studio: Studio, window: object, tray: QSystemTrayIcon) -> None:

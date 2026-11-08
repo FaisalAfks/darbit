@@ -79,6 +79,7 @@ ApplicationWindow {
     ScoutPill { objectName: "scoutPill" }
     GhostWindow { objectName: "ghostWindow" }
     RunPill { objectName: "runPill" }
+    TrayPanel { objectName: "trayPanel" }
 
     function go(name) {
         page = name

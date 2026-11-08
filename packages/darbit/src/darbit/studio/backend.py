@@ -51,6 +51,7 @@ class Studio(QObject):
     themeChanged = Signal()
     clockChanged = Signal()
     usesChanged = Signal()
+    quitChanged = Signal()  # what quitting does with the running bots changed (the tray panel's Quit)
     keysChanged = Signal()  # a key changed: app.py registers the global ones again
     lookChanged = Signal()
     started = Signal()  # the bot started from Play: app.py hides the Studio behind the run pill
@@ -196,6 +197,9 @@ class Studio(QObject):
     def _get_keep_bots(self) -> bool:
         return self._keep_bots
 
+    def _get_quit_label(self) -> str:
+        return quit_label(self.running_names(), self._keep_bots)
+
     def _get_symbols(self) -> str:
         return symbol_font()
 
@@ -246,6 +250,7 @@ class Studio(QObject):
     ghost = Property(bool, _get_ghost, notify=lookChanged)
     runPill = Property(bool, _get_run_pill, notify=lookChanged)
     keepBots = Property(bool, _get_keep_bots, notify=lookChanged)  # quitting leaves running bots running
+    quitLabel = Property(str, _get_quit_label, notify=quitChanged)  # Quit, saying what it does with running bots
     version = Property(str, _get_version, constant=True)
     desktopOrigin = Property(list, _get_desktop_origin, constant=True)  # [x, y], to place a match on a screenshot
     symbols = Property(str, _get_symbols, constant=True)  # the font for the icons drawn from symbols (◎ ● ▣ ⇅ ⌕)
@@ -299,6 +304,15 @@ class Studio(QObject):
     @Slot()
     def stop(self) -> None:
         self._ask("status", "bot.stop")
+
+    @Slot(str)
+    def pauseBot(self, path: str) -> None:
+        """Pause a running bot, or let a paused one go on: any bot, not only the shown one (the tray panel)."""
+        self._ask_about(path, "bot.pause")
+
+    @Slot(str)
+    def stopBot(self, path: str) -> None:
+        self._ask_about(path, "bot.stop")
 
     @Slot()
     def editBot(self) -> None:
@@ -495,6 +509,7 @@ class Studio(QObject):
         self._keep_bots = bool(on)
         ui_settings.set_value(KEEP_BOTS, self._keep_bots)
         self.lookChanged.emit()
+        self.quitChanged.emit()
 
     def running_names(self) -> list[str]:
         """The names of the bots running or paused, as last heard from the service."""
@@ -602,6 +617,13 @@ class Studio(QObject):
         bot = self._bot["path"]
         self._run(what, lambda: client.call(method, bot=bot, **params))
 
+    def _ask_about(self, bot: str, method: str) -> None:
+        """A request about one bot, by its folder."""
+        client = self._client
+        if client is None or not bot:
+            return
+        self._run("status", lambda: client.call(method, bot=bot))
+
     def _everyone(self, what: str, method: str, **params: object) -> None:
         """A request about no bot in particular (making one)."""
         client = self._client
@@ -703,6 +725,7 @@ class Studio(QObject):
     def _set_bots(self, found: list) -> None:
         self._bots = found
         self.botsChanged.emit()
+        self.quitChanged.emit()
         chosen = None
         wanted = self._bot.get("path") or self._wanted
         for candidate in found:
@@ -741,6 +764,17 @@ class Studio(QObject):
                 self.said.emit(
                     f"{data.get('action', 'The action')} stopped: {data.get('reason') or data.get('status')}"
                 )
+
+
+def quit_label(running: list[str], keep: bool) -> str:
+    """Quit, saying what it does with the bots running (their names)."""
+    if not running:
+        return "Quit darbit Studio"
+    if keep:
+        return "Quit (bots go on)"
+    if len(running) == 1:
+        return f"Quit and stop {running[0]}"
+    return f"Quit and stop {len(running)} bots"
 
 
 def symbol_font() -> str:
