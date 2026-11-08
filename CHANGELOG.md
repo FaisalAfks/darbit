@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- darbit Studio's Results shows a failure opened as the screen when it stopped, with the closest match of the image it waited for boxed and scored, beside that image (best against what it needs) and the steps before it; under the screen, Retake on that screen or on the screen now
+
 ### Changed
 
 - darbit doctor's checks carry their fix apart from what they found (`found`, `fix`), and the targets not taken as a list (`missing`), in its output and the service's `bot.doctor`; the `pictures` check is `targets` and its words say image
