@@ -2175,11 +2175,7 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     from darbit.studio.docking import PillPlace
 
     warnings = []
-    QtCore.qInstallMessageHandler(
-        lambda kind, context, text: (
-            print(text) if "DBG" in text else (warnings.append(text) if ".qml" in text else None)
-        )
-    )
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
     monkeypatch.setattr(paths, "config_dir", lambda: tmp_path)
     (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
     place = PillPlace("capture", keep=False, in_window=True)
@@ -2232,13 +2228,11 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     call("activate", 0)
     QtCore.QCoreApplication.processEvents()
     end = column.property("contentHeight") - column.property("height")
-    print("DBG test end", end, column.property("contentHeight"), column.property("height"))
     assert end > 0
     column.setProperty("contentY", end)
     QTest.keyClick(window, Qt.Key_Right)  # a nudge updates its tile in place: the list stays where it was scrolled
     QtCore.QCoreApplication.processEvents()
     assert column.property("contentY") == end
-    print("DBG test activate 1")
     QMetaObject.invokeMethod(window, "activate", Q_ARG("QVariant", 1))
     wait_until(lambda: column.property("contentY") < end)  # the active one's tile comes into sight
     # a tile's image is the shot's part under its box
