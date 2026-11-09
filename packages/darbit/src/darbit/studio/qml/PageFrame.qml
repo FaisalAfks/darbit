@@ -16,7 +16,9 @@ Item {
     onBlurringChanged: if (blurring && blurLayer === null) blurLayer = Qt.createComponent("BlurLayer.qml")
     visible: shown || leaving.running
     enabled: shown  // the page leaving takes no clicks
+    property bool ready: false  // made: before that, the page the Studio opens on just shows
     onShownChanged: {
+        if (!ready) { visited = visited || shown; return }
         if (shown) {
             visited = true
             leaving.stop()
@@ -27,8 +29,11 @@ Item {
             leaving.restart()
         }
     }
+    // the page the Studio opens on just shows: nothing rises as the window first appears, which keeps its start
+    // quick and light (every frame drawn then stays in its memory for a while)
     Component.onCompleted: {
-        if (shown) { visited = true; Motion.pageShown() }
+        ready = true
+        if (shown) visited = true
         if (blurring) blurLayer = Qt.createComponent("BlurLayer.qml")
     }
 

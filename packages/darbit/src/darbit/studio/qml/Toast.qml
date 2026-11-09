@@ -10,8 +10,10 @@ Rectangle {
     property bool shown: false
     readonly property bool away: !shown && opacity === 0  // gone: it waits below the window, out of sight
     anchors.horizontalCenter: parent.horizontalCenter
-    y: parent.height - (away ? -10 : height + 28)
-    Behavior on y { NumberAnimation { duration: studio.motion.toast; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
+    property real drop: 0  // how far below its place it still is, springing in
+    y: parent.height - (away ? -10 : height + 28) + drop
+    onShownChanged: if (shown && studio.motion.on) { drop = 38; dropping.restart() }
+    NumberAnimation { id: dropping; target: toast; property: "drop"; to: 0; duration: studio.motion.toast; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring }
     opacity: shown ? 1 : 0
     Behavior on opacity { NumberAnimation { duration: studio.motion.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.ease } }
     width: Math.min(label.implicitWidth + 62, parent.width - 80); height: Math.max(46, label.height + 24); radius: 23
