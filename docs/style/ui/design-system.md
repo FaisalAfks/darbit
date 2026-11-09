@@ -114,7 +114,7 @@ The Studio's motion is style B "Lively" of design round 2026-11-09, with C's mou
 
 | What | How |
 |---|---|
-| A page is shown | fades in (220 ms) and slides up 10 px (320 ms), eased out; the page left fades out and down under it |
+| A page is shown | fades in (220 ms) and slides up 10 px (320 ms), eased out; the page left fades out and down under it. The page the Studio opens on shows at once: frames drawn at the start stay in its memory for a while |
 | A page's cards | fade in and rise 14 px, one after another 45 ms apart, with a little spring (500 ms); again each time the page shows. No scale or turn: Qt draws text a little differently after it has been scaled |
 | The selection light | the page light and the sidebar's chosen bot spring to the new choice (380 ms), glowing while they move |
 | A card under the mouse | lifts 3 px with a soft shadow, an accent glow and edge (spring, 250 ms); a soft accent light follows the mouse over it |
