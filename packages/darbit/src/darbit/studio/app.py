@@ -21,12 +21,12 @@ from ..server import ui_settings
 from ..service.client import Client
 from .backend import Studio
 from .capture import Capture, ShotProvider, saved_shot
-from .docking import PillPlace
+from .docking import PillPlace, qt_screens, work_of
 from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
 from .recorder import Recorder
 from .scout import Scout, ShotsProvider
-from .tray import TrayPanel, panel_place
+from .tray import TrayPanel, as_qrect, icon_in_points, panel_place, screen_with
 from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
@@ -518,15 +518,19 @@ def _tray(
         icon = tray.geometry()
         if not icon.isValid() or icon.isEmpty():
             icon = QRect(QCursor.pos(), QSize(1, 1))
-        screen = QGuiApplication.screenAt(icon.center()) or QGuiApplication.primaryScreen()
+        found = list(qt_screens().values())
+        icon = icon_in_points(icon, found)
+        screen = screen_with(icon, found)
         size = QSize(shown.width(), shown.height())
-        shown.setPosition(panel_place(icon, screen.geometry(), screen.availableGeometry(), size))
+        # the work area the pills use: above the taskbar on any side, one that hides itself too
+        shown.setPosition(panel_place(icon, as_qrect(screen), as_qrect(work_of(screen)), size))
 
     def open_panel() -> None:
         if shown.isVisible() or time.monotonic() - hidden_at[0] < REOPEN_S:
             return
         place()
         shown.show()
+        place()  # once more with the size it took when it opened
         shown.raise_()
         shown.requestActivate()
 
@@ -547,6 +551,7 @@ def _tray(
 
     shown.visibleChanged.connect(visible)
     shown.heightChanged.connect(lambda height: place() if shown.isVisible() else None)  # grows from the taskbar
+    shown.widthChanged.connect(lambda width: place() if shown.isVisible() else None)
     panel.studioWanted.connect(open_studio)
     panel.recordWanted.connect(record)
     panel.quitWanted.connect(app.quit)

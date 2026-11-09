@@ -2548,6 +2548,35 @@ def test_the_tray_panel_opens_by_the_icon_on_every_taskbar_edge():
     assert corner.x() + 336 <= 1920 - GAP and corner.x() == 1920 - GAP - 336
 
 
+def test_the_tray_panel_opens_above_the_taskbar_in_the_pills_work_area():
+    from PySide6.QtCore import QRect, QSize
+
+    from darbit.platform.system import HiddenTaskbar
+    from darbit.studio.docking import Rect, less_taskbars, work_of
+    from darbit.studio.tray import GAP, as_qrect, icon_in_points, panel_place, screen_with
+
+    # 2560 x 1600 pixels at 150%: 1707 x 1067 points, a 72-pixel taskbar along the bottom (work area 1019 high)
+    laptop = Rect(0, 0, 1707, 1067, 1.5, work=Rect(0, 0, 1707, 1019))
+    side = Rect(2560, 0, 1920, 1080)  # a 100% screen on its right, starting where the laptop's pixels end
+    screens = [laptop, side]
+    size = QSize(336, 324)
+    # Windows tells the icon's place in its pixels; in points it is on the taskbar, under the work area
+    icon = icon_in_points(QRect(2183, 1528, 48, 72), screens)
+    assert icon == QRect(1455, 1019, 32, 48)
+    assert screen_with(icon, screens) is laptop
+    spot = panel_place(icon, as_qrect(laptop), as_qrect(work_of(laptop)), size)
+    assert spot.y() + size.height() == 1019 - GAP  # its bottom above the taskbar, by the icon
+    assert abs(spot.x() + 168 - (1455 + 16)) <= 1
+    # a taskbar that hides itself still gets its room: Windows counts the whole screen free
+    hiding = Rect(0, 0, 1707, 1067, 1.5)
+    hiding.work = less_taskbars(hiding, Rect(0, 0, 1707, 1067), [HiddenTaskbar("bottom", 72)])
+    spot = panel_place(QRect(1455, 1040, 32, 24), as_qrect(hiding), as_qrect(work_of(hiding)), size)
+    assert spot.y() + size.height() == 1019 - GAP
+    # control: an icon already in points, on the second screen, is left as it is
+    assert icon_in_points(QRect(3000, 1040, 24, 24), screens) == QRect(3000, 1040, 24, 24)
+    assert screen_with(QRect(3000, 1040, 24, 24), screens) is side
+
+
 def test_the_tray_panel_lists_the_running_bots_and_says_what_quit_does(qt):
     from PySide6.QtQuick import QQuickWindow
 
