@@ -127,6 +127,31 @@ def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[tuple[
     return found
 
 
+FLYOUT_CLASSES = (
+    "TopLevelWindowForOverflowXamlIsland",  # Windows 11's hidden-icons flyout
+    "NotifyIconOverflowWindow",  # Windows 10's
+)
+
+
+def tray_flyout() -> tuple[int, int, int, int] | None:
+    """The taskbar's hidden-icons flyout (the ^ arrow) while it's open, as (left, top, right, bottom) in pixels; None
+    while it's closed. Only looks the window up."""
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    user32.FindWindowW.restype = wintypes.HWND
+    user32.FindWindowW.argtypes = (wintypes.LPCWSTR, wintypes.LPCWSTR)
+    for name in FLYOUT_CLASSES:
+        handle = user32.FindWindowW(name, None)
+        if not handle or not user32.IsWindowVisible(handle):
+            continue
+        box = wintypes.RECT()
+        if not user32.GetWindowRect(handle, ctypes.byref(box)) or box.right <= box.left or box.bottom <= box.top:
+            continue
+        return box.left, box.top, box.right, box.bottom
+    return None
+
+
 def process_alive(pid: int) -> bool:
     kernel32 = ctypes.windll.kernel32
     handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
