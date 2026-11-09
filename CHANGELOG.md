@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.8 - 2026-11-09
+
 ### New
 
 - The Studio moves (#441): a page fades in and slides up 10 px while its cards rise one after another with a little spring, and the page left fades out under it; the page and sidebar lights spring to the new choice, glowing while they move; cards and tiles lift 3 px under the mouse with a soft shadow, an accent edge and a light that follows the mouse; numbers count up, rings sweep and the week's bars grow from the bottom; the live dot pulses while a bot runs; toasts spring in and fade out. Nothing changes at rest, nothing moves while the window is hidden or minimized, and only the live dot moves on its own. **Smooth effects** off turns all of it off. Timings and curves are motion tokens in `theme.py` (`studio.motion`); `CardMotion`, `MouseLight`, `CountUp` and `LiveDot` are the shared pieces
