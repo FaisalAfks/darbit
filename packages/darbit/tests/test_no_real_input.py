@@ -155,6 +155,26 @@ def test_fake_game_still_works_with_real_input_off(pieces, monkeypatch, tmp_path
         d.click(d.Location(10, 20))
 
 
+def test_fake_game_answers_the_window_lookup_itself(monkeypatch, tmp_path):
+    def no_system():
+        raise AssertionError("the system's windows were asked")
+
+    monkeypatch.setattr(backend, "windows", no_system)
+    monkeypatch.setattr(d.settings, "log", False)
+    monkeypatch.setattr(d.settings, "window", "Game")
+    menu = np.full((200, 300, 3), (40, 40, 40), np.uint8)
+    real_matching = windows.matching
+    with FakeGame({"Menu": menu}, start="Menu") as game:
+        found = windows.matching("Game")
+        assert [window.title for window in found] == ["Game"]
+        assert windows.in_front(found[0].handle)
+        assert windows.region(found[0].handle) == Region(0, 0, 0, 0)  # window-space targets stay where taken
+        assert windows.matching("gam", loose=True) == found and windows.matching("gam") == []
+        assert windows.matching("Other") == []
+        assert d.click(d.Location(10, 20)) and game.clicks == [(10, 20)]
+    assert windows.matching is real_matching
+
+
 def run_bot_tests(folder, conftest: str) -> subprocess.CompletedProcess:
     """Run pytest on a bot's tests in their own process, with the switch not set to start with."""
     (folder / "conftest.py").write_text(conftest, encoding="utf-8")

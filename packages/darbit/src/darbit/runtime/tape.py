@@ -322,6 +322,8 @@ def _window_now() -> list[int] | None:
     if not found:
         return None
     area = windows.region(found[0].handle)
+    if area.w <= 0 or area.h <= 0:
+        return None  # minimised: the tape plays where it was recorded
     return [area.x, area.y, area.w, area.h]
 
 

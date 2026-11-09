@@ -50,7 +50,9 @@ def test_the_shop_is_reached_past_the_ad():
         assert d.go("Shop") and game.showing == "Shop"
 ```
 
-The screens darbit Studio saves when you capture (`.darbit/screens`) make good stand-ins.
+The screens darbit Studio saves when you capture (`.darbit/screens`) make good stand-ins. With `window` set, FakeGame
+stands in for that window too: looking it up finds a fake one, always in front. Its area is empty, as a minimised
+window's, so targets taken in window space stay where they were taken on the saved screens.
 
 ### Real input off
 

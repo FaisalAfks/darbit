@@ -6,7 +6,7 @@
         assert my_map.go("Bag") and game.showing == "Bag"
 
 darbit's screen grabs come from the screen showing, its clicks and key presses go to the fake game instead of
-the PC, and bringing the game's window to the front (settings.window) does nothing: nothing real is touched. Bots' saved screens (.darbit/screens) make good stand-ins. See the rebuild plan,
+the PC, and the game's window (settings.window) is a fake one, always in front: nothing real is touched. Bots' saved screens (.darbit/screens) make good stand-ins. See the rebuild plan,
 section 8 (offline tests).
 
 A call a test forgot to fake would still reach the real PC. One line in a bot's conftest.py turns real input off
@@ -27,10 +27,13 @@ from ..core.geometry import Region
 from ..core.targets import load
 from ..platform import input as device
 from ..platform import screen, windows
+from ..platform.backend import Window
 from ..platform.real import RealInputOff
 from ..settings import settings
 
 __all__ = ["FakeGame", "RealInputOff"]
+
+FAKE_WINDOW = 1  # the handle of the fake game's window
 
 
 @dataclass
@@ -80,12 +83,18 @@ class FakeGame:
             "tap": device.tap,
             "move": device.move,
             "bring_to_front": windows.bring_to_front,
+            "matching": windows.matching,
+            "in_front": windows.in_front,
+            "region": windows.region,
         }
         screen.grab = self._grab
         device.click = self._click
         device.tap = self._tap
         device.move = self._move
         windows.bring_to_front = self._bring_to_front
+        windows.matching = self._matching
+        windows.in_front = self._in_front
+        windows.region = self._region
         return self
 
     def __exit__(self, *args: object) -> None:
@@ -94,6 +103,9 @@ class FakeGame:
         device.tap = self._real["tap"]
         device.move = self._real["move"]
         windows.bring_to_front = self._real["bring_to_front"]
+        windows.matching = self._real["matching"]
+        windows.in_front = self._real["in_front"]
+        windows.region = self._real["region"]
 
     def _grab(self, region: Region | None = None) -> tuple[np.ndarray, Region]:
         pixels = self._pixels[self.showing]
@@ -127,6 +139,22 @@ class FakeGame:
 
     def _bring_to_front(self, handle: int) -> bool:
         return True  # the fake game is always in front
+
+    def _matching(self, name: str, loose: bool = False) -> list[Window]:
+        """The game's own window when `name` is settings.window (or part of it, `loose`); no other window is open."""
+        title = settings.window.lower()
+        wanted = name.lower()
+        same = wanted == title or (loose and wanted != "" and wanted in title)
+        if not settings.window or not same:
+            return []
+        return [Window(FAKE_WINDOW, settings.window, "", 0)]
+
+    def _in_front(self, handle: int) -> bool:
+        return handle == FAKE_WINDOW
+
+    def _region(self, handle: int) -> Region:
+        # empty, as a minimised window's: targets taken in window space stay where they were taken on the saved screens
+        return Region(0, 0, 0, 0)
 
     def _inside(self, picture: str, x: int, y: int) -> bool:
         """Whether (x, y) is on `picture` where it is on the screen showing."""
