@@ -125,7 +125,7 @@ The Studio's motion is style B "Lively" of design round 2026-11-09, with C's mou
 | A menu opens | a 150 ms fade |
 | A button is pressed | scales to 96% |
 | A pill is grabbed | tilts a little and shakes once, sways with each move, grows to 103%; it takes the shape of the edge it nears; let go, it glides to its place |
-| Blur-through pages (a setting, off at first) | pages blur out and in from 96%, cards tilt in 70 ms apart |
+| Blur-through pages (a setting, off at first) | pages blur out and in from 96%, cards tilt in 70 ms apart; the scale and turn leave text drawn a little differently |
 | Aurora (a setting, off at first) | the glass themes' background light drifts slowly back and forth (18 s each way, stepped 10 times a second); never on battery |
 
 ## Rules

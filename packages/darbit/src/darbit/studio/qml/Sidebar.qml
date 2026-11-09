@@ -51,17 +51,21 @@ Rectangle {
             lights: false
             onClicked: studio.selectBot(modelData.path)
         }
-        // the chosen bot's light: it springs to the bot chosen next, glowing while it moves
-        currentIndex: {
+        // the chosen bot's light: it springs to the bot chosen next, glowing while it moves. Placed from the chosen
+        // bot's place in the list (each row is as tall as the next), not the list's current item, which a new list
+        // of bots would reset
+        readonly property int chosen: {
             for (var index = 0; index < studio.bots.length; index++)
                 if (studio.bots[index].path === studio.bot.path) return index
             return -1
         }
-        highlightFollowsCurrentItem: false
-        highlight: Rectangle {
-            visible: list.currentItem !== null
-            width: list.width; height: list.currentItem ? list.currentItem.height : 0
-            y: list.currentItem ? list.currentItem.y : 0
+        readonly property real rowHeight: side.folded ? 48 : 52
+        Rectangle {
+            parent: list.contentItem
+            z: -1  // under the rows
+            visible: list.chosen >= 0
+            width: list.width; height: list.rowHeight
+            y: Math.max(0, list.chosen) * (list.rowHeight + list.spacing)
             radius: 12
             color: studio.colors.raisedHover
             Behavior on y { NumberAnimation { id: springing; duration: studio.motion.glide; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
