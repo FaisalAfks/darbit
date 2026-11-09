@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Card thumbnails are decoded at the size they're drawn, in the screen's pixels (#230): the Library's cards, Scout's tiles and lines, and the pictures in Results' search rows (`Thumbnail.qml`). Qt decoded a picture given both sides of `sourceSize` to cover that size at the screen's scale, a 160 px thumbnail at up to 1344×336 px. They look a little softer. The Library's inspector shows the image's whole file instead of its thumbnail (`file` in `bot.library`). On a real GPU at 150% with a 175-image bot, the Studio on the Library went from about 276 MB to 225 MB (private working set)
+
 ## 1.0.0-alpha.9 - 2026-11-10
 
 ### New

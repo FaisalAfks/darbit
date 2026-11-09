@@ -32,10 +32,9 @@ Rectangle {
         border.color: line.ink; border.width: line.image.state === "not" ? 1 : 2
         opacity: line.image.state === "not" ? 0.7 : 1
         clip: true
-        Image {
+        Thumbnail {
             anchors.fill: parent; anchors.margins: 2
             source: line.image.file
-            fillMode: Image.PreserveAspectFit; asynchronous: true; sourceSize.width: 80
         }
     }
     Column {

@@ -152,6 +152,12 @@ def test_one_asset_and_only_the_thumbnails_that_changed(project):
     assert [entry["name"] for entry in only] == ["Lobby.Close", "Lobby.Play"]
 
 
+def test_an_image_comes_with_its_whole_file_named_by_its_version(project):
+    entry = by_name(library.assets(project))["Lobby.Play"]
+    path = project.folder / "assets" / "images" / "Lobby.Play.png"
+    assert entry["file"] == f"{path.as_uri()}?v={entry['version']}"  # the Inspector shows this, not the thumbnail
+
+
 def test_deleting_an_asset_takes_its_files(project):
     found = library.delete(project, "Lobby.Play")
     assert sorted(found["files"]) == ["assets/images/Lobby.Play.json", "assets/images/Lobby.Play.png"]

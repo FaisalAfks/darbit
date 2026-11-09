@@ -30,12 +30,9 @@ Rectangle {
         border.width: tile.image.state === "not" ? 1 : 2
         opacity: tile.image.state === "not" ? 0.7 : 1
         clip: true
-        Image {
+        Thumbnail {
             anchors.fill: parent; anchors.margins: 3
             source: tile.image.file
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true; smooth: true
-            sourceSize.width: 160
         }
     }
     Text {

@@ -32,14 +32,11 @@ Rectangle {
         x: 10; y: 10; width: card.width - 20; height: 112; radius: 11
         color: studio.colors.bg
         clip: true
-        Image {
+        Thumbnail {
             anchors.fill: parent; anchors.margins: 6
             visible: !!card.asset.thumbnail && !card.asset.missing
             source: card.asset.thumbnail || ""
-            sourceSize: Qt.size(320, 224)
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true
-            cache: true
+            pictureSize: card.asset.size || null
         }
         Text {
             visible: !card.asset.thumbnail || card.asset.missing

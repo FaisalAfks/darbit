@@ -145,6 +145,7 @@ def assets(project: Project, names: set[str] | None = None, have: dict[str, str]
                     "kind": kind_of(settings, True),
                     "group": group_of(name),
                     "thumbnail": thumbnail,
+                    "file": f"{path.as_uri()}?v={version}",  # the whole picture; a new version is a new URL to Qt
                     "version": version,
                     "same": same,
                     "size": size,

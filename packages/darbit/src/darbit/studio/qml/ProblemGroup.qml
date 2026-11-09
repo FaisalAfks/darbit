@@ -155,7 +155,7 @@ Rectangle {
                         width: parent.width; spacing: 12
                         Rectangle {
                             Layout.preferredWidth: 116; Layout.preferredHeight: 30; radius: 4; color: studio.colors.bg; clip: true
-                            Image { anchors.fill: parent; source: modelData.picture || ""; fillMode: Image.PreserveAspectFit; asynchronous: true }
+                            Thumbnail { anchors.fill: parent; source: modelData.picture || "" }
                         }
                         Column {
                             Layout.fillWidth: true
