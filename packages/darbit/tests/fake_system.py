@@ -135,6 +135,10 @@ def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[tuple[
     return []
 
 
+def tray_flyout() -> tuple[int, int, int, int] | None:
+    return None
+
+
 def process_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)

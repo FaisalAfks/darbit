@@ -2680,6 +2680,77 @@ def test_the_tray_panel_opens_above_the_taskbar_in_the_pills_work_area():
     assert screen_with(QRect(3000, 1040, 24, 24), screens) is side
 
 
+def test_the_tray_panel_opens_outside_the_hidden_icons_flyout_above_a_bottom_taskbar():
+    from PySide6.QtCore import QRect, QSize
+
+    from darbit.studio.docking import Rect, work_of
+    from darbit.studio.tray import GAP, as_qrect, flyout_taken, icon_in_points, panel_place
+
+    # 2560 x 1600 pixels at 150%, a 72-pixel taskbar along the bottom; the flyout as Windows 11 tells it, in pixels
+    laptop = Rect(0, 0, 1707, 1067, 1.5, work=Rect(0, 0, 1707, 1019))
+    screens = [laptop, Rect(2560, 0, 1920, 1080)]
+    flyout = QRect(2032, 1357, 351, 171)
+    icon = QRect(2183, 1400, 48, 48)  # in the flyout
+    taken = flyout_taken(icon, flyout, screens)
+    assert taken == QRect(1355, 905, 234, 114)
+    work = as_qrect(work_of(laptop))
+    size = QSize(336, 324)
+    spot = panel_place(icon_in_points(icon, screens), as_qrect(laptop), work, size, taken)
+    panel = QRect(spot, size)
+    assert panel.bottom() + 1 == 905 - GAP  # above the flyout, lined up with the icon
+    assert work.contains(panel) and not panel.intersects(taken)
+    # no room above a tall flyout: beside it, on the side with more room, still above the taskbar
+    tall = QRect(1355, 200, 234, 819)
+    spot = panel_place(icon_in_points(icon, screens), as_qrect(laptop), work, size, tall)
+    panel = QRect(spot, size)
+    assert panel.right() + 1 == 1355 - GAP and panel.bottom() + 1 == 1019 - GAP
+    assert work.contains(panel) and not panel.intersects(tall)
+    # control: an icon on the taskbar itself, with the flyout open, opens where it always did
+    pinned = QRect(1900, 1540, 48, 48)
+    assert flyout_taken(pinned, flyout, screens) is None
+    by_icon = icon_in_points(pinned, screens)
+    assert panel_place(by_icon, as_qrect(laptop), work, size, None) == panel_place(
+        by_icon, as_qrect(laptop), work, size
+    )
+    # control: no flyout open
+    assert flyout_taken(icon, None, screens) is None
+
+
+def test_the_tray_panel_leaves_the_flyout_free_on_every_taskbar_edge():
+    from PySide6.QtCore import QRect, QSize
+
+    from darbit.studio.tray import GAP, panel_place
+
+    screen = QRect(0, 0, 1920, 1080)
+    size = QSize(336, 324)
+    # the taskbar on top: the flyout under it, the panel under the flyout
+    work = QRect(0, 48, 1920, 1032)
+    taken = QRect(1600, 56, 240, 120)
+    spot = panel_place(QRect(1700, 80, 24, 24), screen, work, size, taken)
+    assert spot.y() == 176 + GAP and work.contains(QRect(spot, size))
+    # on the left: the panel to the right of the flyout
+    work = QRect(48, 0, 1872, 1080)
+    taken = QRect(56, 800, 120, 240)
+    spot = panel_place(QRect(80, 900, 24, 24), screen, work, size, taken)
+    assert spot.x() == 176 + GAP and work.contains(QRect(spot, size))
+    # on the right: to the left of it
+    work = QRect(0, 0, 1872, 1080)
+    taken = QRect(1744, 800, 120, 240)
+    spot = panel_place(QRect(1800, 900, 24, 24), screen, work, size, taken)
+    panel = QRect(spot, size)
+    assert panel.right() + 1 == 1744 - GAP and work.contains(panel) and not panel.intersects(taken)
+
+
+def test_the_tray_flyout_is_none_where_the_system_has_none(monkeypatch):
+    from darbit.platform import backend, system
+
+    def none_here():
+        raise backend.NotSupported("no tray here")
+
+    monkeypatch.setattr(backend, "system", none_here)
+    assert system.tray_flyout() is None
+
+
 def test_the_tray_panel_lists_the_running_bots_and_says_what_quit_does(qt):
     from PySide6.QtQuick import QQuickWindow
 

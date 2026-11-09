@@ -1,5 +1,5 @@
-"""Staying awake, the state of keys, the processes darbit starts and taskbars that hide themselves, through the
-system's System piece."""
+"""Staying awake, the state of keys, the processes darbit starts, taskbars that hide themselves and the tray's
+hidden-icons flyout, through the system's System piece."""
 
 import subprocess
 import sys
@@ -75,6 +75,15 @@ def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[Hidden
     except backend.NotSupported:
         return []
     return [HiddenTaskbar(edge, size) for edge, size in found]
+
+
+def tray_flyout() -> tuple[int, int, int, int] | None:
+    """The taskbar's hidden-icons flyout while it's open, as (left, top, right, bottom) in pixels; None while it's
+    closed or where there's none."""
+    try:
+        return backend.system().tray_flyout()
+    except backend.NotSupported:
+        return None
 
 
 def process_alive(pid: int) -> bool:

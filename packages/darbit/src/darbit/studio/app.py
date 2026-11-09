@@ -26,7 +26,7 @@ from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
 from .recorder import Recorder
 from .scout import Scout, ShotsProvider
-from .tray import TrayPanel, as_qrect, icon_in_points, panel_place, screen_with
+from .tray import TrayPanel, as_qrect, flyout_taken, icon_in_points, panel_place, screen_with
 from .window import PLACE, Door, fit, kept, screens
 
 HERE = Path(__file__).parent
@@ -513,21 +513,26 @@ def _tray(
     tray.setToolTip("darbit Studio")
     shown = window.findChild(QQuickWindow, "trayPanel")
     hidden_at = [0.0]  # when the panel last went away: a click on the icon that closed it doesn't open it again
+    # the hidden-icons flyout as the panel opened: it may close once the panel takes the focus, and the panel stays put
+    flyout: list[QRect | None] = [None]
 
     def place() -> None:
         icon = tray.geometry()
         if not icon.isValid() or icon.isEmpty():
             icon = QRect(QCursor.pos(), QSize(1, 1))
         found = list(qt_screens().values())
+        taken = flyout_taken(icon, flyout[0], found)
         icon = icon_in_points(icon, found)
         screen = screen_with(icon, found)
         size = QSize(shown.width(), shown.height())
         # the work area the pills use: above the taskbar on any side, one that hides itself too
-        shown.setPosition(panel_place(icon, as_qrect(screen), as_qrect(work_of(screen)), size))
+        shown.setPosition(panel_place(icon, as_qrect(screen), as_qrect(work_of(screen)), size, taken))
 
     def open_panel() -> None:
         if shown.isVisible() or time.monotonic() - hidden_at[0] < REOPEN_S:
             return
+        box = system.tray_flyout()
+        flyout[0] = QRect(box[0], box[1], box[2] - box[0], box[3] - box[1]) if box else None
         place()
         shown.show()
         place()  # once more with the size it took when it opened

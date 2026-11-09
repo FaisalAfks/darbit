@@ -98,7 +98,7 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | Scout | over the screen, click-through, its pill in three forms (a row with a strip of images, a column of groups, a card with a grid) | a box and score per match; its pill on an edge, like the run pill |
 | Recorder pill | on an edge (top centre to start) | never takes focus from the game |
 | Run pill | on an edge while a bot runs | the Studio hides; a line for each other bot running, with its own controls; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
-| Tray panel | by the tray icon, above the taskbar in the work area the pills use | darbit's menu (`MenuPanel`, `MenuLine`) in its own window; a click outside or Esc closes it |
+| Tray panel | by the tray icon, above the taskbar in the work area the pills use, outside the hidden-icons flyout | darbit's menu (`MenuPanel`, `MenuLine`) in its own window; a click outside or Esc closes it |
 
 Every pill moves the same way (#384, #449): dragged to any edge it stays where it's let go along it (pulled onto the
 edge's centre or a corner only within 24 points of one), a row on the top and bottom and a labelled column on the
