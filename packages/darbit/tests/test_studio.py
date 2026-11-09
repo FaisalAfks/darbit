@@ -438,7 +438,9 @@ class Changing(FakeClient):
 
 
 def test_a_delete_or_rename_in_the_library_is_taken_back_from_the_toast(qt):
+    from PySide6.QtCore import QPointF, Qt
     from PySide6.QtQuick import QQuickItem
+    from PySide6.QtTest import QTest
 
     client = Changing()
     studio = backend.Studio(lambda: client)
@@ -450,7 +452,9 @@ def test_a_delete_or_rename_in_the_library_is_taken_back_from_the_toast(qt):
     studio.deleteAsset("Bag.Equip")
     wait_until(lambda: undo.isVisible())  # "Deleted Bag.Equip", with Undo
     studio.selectBot("/bots/other")  # taken back on the bot it was done to, even with another shown
-    QMetaObject.invokeMethod(undo, "clicked")
+    root.grabWindow()  # a frame: the toast's row lays out its parts
+    middle = undo.mapToScene(QPointF(undo.width() / 2, undo.height() / 2)).toPoint()
+    QTest.mouseClick(root, Qt.LeftButton, Qt.NoModifier, middle)  # on Undo, not the toast under it
     wait_until(lambda: ("bot.library.undelete", {"bot": "/bots/ad-bot"}) in client.asked)
     assert not undo.isVisible()
     studio.selectBot("/bots/ad-bot")
@@ -649,8 +653,13 @@ def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
     QTest.keyClick(window, Qt.Key_Backtab)  # back one, and on again
     assert window.activeFocusItem() is seen[-1]
     QTest.keyClick(window, Qt.Key_Tab)
+    QTest.keyClick(window, Qt.Key_Tab)  # past Save: round to the name
+    assert window.activeFocusItem() is name
+    QTest.keyClick(window, Qt.Key_Backtab)  # and back from the name to Save
+    assert window.activeFocusItem().objectName() == "saveButton"
+    assert window.property("tool") == "image"  # Tab never fell through to the next kind
     QTest.keyClick(window, Qt.Key_Escape)  # back to the shot, nothing dropped
-    assert window.activeFocusItem() is not None and window.activeFocusItem().objectName() != "saveButton"
+    assert window.activeFocusItem().objectName() == "stage"
     assert window.property("image") is not None
     name.forceActiveFocus()
     QTest.keyClick(window, Qt.Key_Tab)

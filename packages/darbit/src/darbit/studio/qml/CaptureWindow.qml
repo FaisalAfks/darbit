@@ -598,6 +598,7 @@ Window {
 
     Item {
         id: stage
+        objectName: "stage"
         anchors.fill: parent
         focus: true
         // the mouse at `p` (stage pixels): the magnifier follows it, and the pill comes back at its edge. Called by

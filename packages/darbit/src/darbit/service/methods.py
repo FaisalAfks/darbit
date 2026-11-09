@@ -129,7 +129,7 @@ METHODS: dict[str, Method] = {
     "bot.library.rename_plan": Method(hub.library_rename_plan, "what renaming a picture would change"),
     "bot.library.rename": Method(hub.library_rename, "rename a picture (`name`, `to`) and every use"),
     "bot.library.delete": Method(hub.library_delete, "delete a picture (`name`)"),
-    "bot.library.undelete": Method(hub.library_undelete, "put back the picture or action deleted last"),
+    "bot.library.undelete": Method(hub.library_undelete, "put back the asset or action deleted last"),
     "bot.actions": Method(_actions, "the bot's actions: steps, sections and which actions use each"),
     "bot.action.read": Method(_action_read, "an action's sections and steps, each with its line (`name`)"),
     "bot.action.save": Method(_action_save, "write an action from its `sections` (`name`); its lines come back new"),
