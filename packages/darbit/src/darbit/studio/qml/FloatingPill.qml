@@ -14,6 +14,7 @@ Rectangle {
     property bool vertical: false
     property bool bare: false  // inside a floating card: no fill or border of its own, and no grip
     property bool movable: false  // a pill over the game (PillBody): its grip shows
+    property bool easeWidth: true  // off while it's dragged: a new form eases in whole (PillBody), at its own size
     // the panel colour, made solid
     readonly property color solid: studio.colors.solid
     // the drawer's height, from what shows in it
@@ -31,7 +32,7 @@ Rectangle {
     color: bare ? "transparent" : solid
     border.color: ink
     border.width: bare ? 0 : 1
-    Behavior on width { enabled: !pill.vertical; NumberAnimation { duration: studio.effects ? 180 : 0; easing.type: Easing.OutCubic } }
+    Behavior on width { enabled: !pill.vertical && pill.easeWidth; NumberAnimation { duration: studio.effects ? 180 : 0; easing.type: Easing.OutCubic } }
     GridLayout {
         id: grid
         x: pill.vertical ? 10 : 8

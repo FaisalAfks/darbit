@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Pills over the game (#449) sit in the screen's work area, never under the taskbar, on whichever side it is and at any size; a taskbar that hides itself keeps its room too (`system.hidden_taskbars()`). Kept places stay inside the work area when the taskbar or the screen changes. A pill stays where it's let go along its edge, and a floating card where it's let go; only a drop within 24 points of an edge's centre or a corner lands on it. Dragged, the pill's window keeps one size, so a new form eases in without a jump; let go, it glides to its place with a little spring (`studio.pillMotion`). The guide's edge light fades between edges, its corner and centre circles glide, and a filled circle follows the mouse to where the pill lands.
+
 ### Fixed
 
 - `darbit.testing.FakeGame` fakes looking up the game's window too (`windows.matching`, `in_front`, `region`): with `window` set in a bot's settings, its tests on saved screens no longer reach the system's windows before every click and key. Looking up `settings.window` finds a fake window, always in front, with an empty area so window-space targets stay where they were taken; no other window is open

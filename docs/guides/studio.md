@@ -82,11 +82,12 @@ sight. A phone gets it too when `notify.toml` has a channel.
   showing it closes the pill.
 - **Moving a pill:** every pill over the game (the run pill, Capture's, Scout's and the recorder's) starts at the
   top centre and can be dragged by its grip (⠿) or any empty part of it. On the top and bottom edges it's a row, on the
-  left and right a column with its buttons labelled; it snaps to an edge's centre, its corners or near the centre on
-  either side. While it's dragged it tilts and sways a little, takes the shape it will have, and the nearest edge lights
-  up with a circle at each snap place (filled: where it goes). Dragged past the dashed line into the middle, it floats:
-  a small card with more detail, always shown, with **Dock** to put it back on its edge (dragging it to an edge docks it
-  too). Each pill keeps its place for next time. With several screens it can go on any of them, but not on an edge one
+  left and right a column with its buttons labelled; it stays where it's let go along its edge, and lands on an edge's
+  centre or a corner only when let go very close to one. Pills stay above the taskbar, on whichever side it is (one
+  that hides itself too). While it's dragged it tilts and sways a little, eases into the shape it will have, and the
+  nearest edge lights up with a circle at its corners and centre and a filled one following the mouse to where it
+  lands. Dragged past the dashed line into the middle, it floats: a small card with more detail, always shown, exactly
+  where it's let go, with **Dock** to put it back on its edge (dragging it to an edge docks it too). Each pill keeps its place for next time. With several screens it can go on any of them, but not on an edge one
   screen shares with another, where it couldn't hide.
 - **Ghost cursor** (darbit settings, on by default): a ripple where a running bot clicks and keycaps for the keys it
   presses, over the game, for a moment each. Clicks go through it, and it shows only while there's something to show.

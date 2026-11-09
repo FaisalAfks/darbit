@@ -1,7 +1,9 @@
-"""Staying awake, the state of keys, and the processes darbit starts, through the system's System piece."""
+"""Staying awake, the state of keys, the processes darbit starts and taskbars that hide themselves, through the
+system's System piece."""
 
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 from . import backend
@@ -55,6 +57,24 @@ def on_battery() -> bool:
         return backend.system().on_battery()
     except backend.NotSupported:
         return False
+
+
+@dataclass
+class HiddenTaskbar:
+    """A taskbar that hides itself, on a screen's `edge` (top, bottom, left, right), `size` pixels thick when shown."""
+
+    edge: str
+    size: int
+
+
+def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[HiddenTaskbar]:
+    """The taskbars set to hide themselves on the screen at these pixels; none where there are none or it can't be
+    told. The screen's work area leaves them out, though they slide out over its edge."""
+    try:
+        found = backend.system().hidden_taskbars(left, top, right, bottom)
+    except backend.NotSupported:
+        return []
+    return [HiddenTaskbar(edge, size) for edge, size in found]
 
 
 def process_alive(pid: int) -> bool:

@@ -100,9 +100,11 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | Run pill | on an edge while a bot runs | the Studio hides; a line for each other bot running, with its own controls; the pill slides out of sight past its edge a few seconds after the mouse leaves it |
 | Tray panel | by the tray icon, on the taskbar's edge | darbit's menu (`MenuPanel`, `MenuLine`) in its own window; a click outside or Esc closes it |
 
-Every pill moves the same way (#384): dragged to any edge it snaps to the edge's centre, its corners or near the
-centre on either side, a row on the top and bottom and a labelled column on the sides; dragged past the dashed line
-into the middle it floats as a card with more detail and Dock, and never hides. Each keeps its place per pill. An edge
+Every pill moves the same way (#384, #449): dragged to any edge it stays where it's let go along it (pulled onto the
+edge's centre or a corner only within 24 points of one), a row on the top and bottom and a labelled column on the
+sides, always inside the screen's work area (never under the taskbar); dragged past the dashed line into the middle it
+floats as a card with more detail and Dock where it's let go, and never hides. It lands with the pill motion tokens'
+spring and eases into a new form while dragged. Each keeps its place per pill. An edge
 one screen shares with another isn't used: the pill would slide onto the other screen and couldn't come back.
 | Ghost cursor | over the game, click-through | a ripple where the bot clicks and the keys it presses, for a moment each |
 

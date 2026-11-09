@@ -131,6 +131,10 @@ def on_battery() -> bool:
     return False
 
 
+def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[tuple[str, int]]:
+    return []
+
+
 def process_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
