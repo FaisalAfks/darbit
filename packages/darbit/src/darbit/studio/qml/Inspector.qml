@@ -43,8 +43,7 @@ Rectangle {
                 radius: 12; color: studio.colors.bg
                 Image {
                     anchors.fill: parent; anchors.margins: 10
-                    source: panel.asset && panel.asset.thumbnail ? panel.asset.thumbnail : ""
-                    sourceSize: Qt.size(600, 340)
+                    source: panel.asset && panel.asset.file ? panel.asset.file : ""  // the whole picture, not its thumbnail
                     fillMode: Image.PreserveAspectFit; asynchronous: true
                 }
                 PillButton {

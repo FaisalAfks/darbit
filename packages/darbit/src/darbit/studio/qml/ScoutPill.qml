@@ -218,10 +218,9 @@ PillWindow {
                     color: studio.colors.bg
                     border.color: Scout.ink(studio.colors, scoutPill.landedImage); border.width: 2
                     clip: true
-                    Image {
+                    Thumbnail {
                         anchors.fill: parent; anchors.margins: 2
                         source: scoutPill.landedImage ? scoutPill.landedImage.file : ""
-                        fillMode: Image.PreserveAspectFit; asynchronous: true; sourceSize.width: 80
                     }
                 }
                 Column {

@@ -1095,6 +1095,31 @@ def test_pictures_found_on_the_same_spot_are_look_alikes():
     assert not named["D"]["shown"]
 
 
+@pytest.mark.parametrize("known", [True, False])
+@pytest.mark.parametrize("shape", [(40, 160), (160, 100)])  # (height, width): a wide and a tall 160 px file
+def test_a_thumbnail_is_decoded_at_the_size_it_is_drawn(qt, tmp_path, known, shape):
+    import cv2
+    import numpy as np
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    picture = tmp_path / "picture.png"
+    cv2.imwrite(str(picture), np.full((*shape, 3), 128, np.uint8))
+    size = f"pictureSize: [{shape[1]}, {shape[0]}];" if known else ""
+    folder = (Path(app.__file__).parent / "qml").as_uri()
+    engine = QQmlEngine()
+    component = QQmlComponent(engine)
+    qml = f'import QtQuick\nimport "{folder}"\nThumbnail {{ width: 170; height: 100; {size} source: "{picture.as_uri()}" }}'
+    component.setData(qml.encode(), QtCore.QUrl())
+    thumbnail = component.create()
+    assert thumbnail is not None, component.errors()
+    # Qt's default with both sides given covers the box (a 160x40 picture became 400x100); this fits inside it
+    wait_until(lambda: thumbnail.property("paintedWidth") > 0 and thumbnail.property("implicitWidth") <= 171)
+    wait_until(lambda: thumbnail.property("implicitHeight") <= 101)
+    drawn = (thumbnail.property("paintedWidth"), thumbnail.property("paintedHeight"))
+    decoded = (thumbnail.property("implicitWidth"), thumbnail.property("implicitHeight"))
+    assert max(abs(a - b) for a, b in zip(drawn, decoded)) <= 1
+
+
 def test_the_library_keeps_its_columns_when_the_inspector_opens(qt):
     from PySide6.QtQuick import QQuickItem
 
