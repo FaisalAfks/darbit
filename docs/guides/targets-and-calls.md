@@ -116,7 +116,7 @@ d.settings.lag = 1.5  # a slow game or PC: every search's wait and every d.sleep
 d.settings.window = "Game"  # bring this window to the front before any input
 d.settings.missing_images = "skip"  # treat a missing image file as never found, instead of an error
 d.settings.screenshot_after = 20  # save a screenshot when a wait this long runs out
-d.settings.keep_days = 14  # days of run reports and daily logs kept before today; older ones are deleted
+# keep_days (days of reports, logs and history kept) goes in darbit.toml's [settings]: the service reads it there
 d.settings.read_confidence = 0.5  # lowest confidence a read needs to count (Reading text)
 d.settings.read = {"upscale": 2}  # how text is read everywhere; read_threads, reader: Reading text
 d.stop_key("ctrl+alt+q")  # the stop hotkey
