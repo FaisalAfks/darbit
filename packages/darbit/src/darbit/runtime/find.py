@@ -15,7 +15,7 @@ from ..core.targets import Match, Pattern, Target, find_file, load
 from ..errors import TargetError
 from ..platform import safety, screen, windows
 from ..settings import settings
-from . import matchers
+from . import matchers, sees
 from .log import log, record, screenshot
 
 What = str | Path | Target | Pattern
@@ -81,14 +81,16 @@ def _union(areas: list[Region | None]) -> Region | None:
     return Region(left, top, right - left, bottom - top)
 
 
-def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Match | None]:
+def _look(chosen: list[Target], region: Region | None, kind: str = "") -> tuple[Match | None, Match | None]:
     """One screen capture covering every target's area, then each target searched in its own part of it.
-    Returns what was found, and the closest spot even when nothing scored high enough."""
+    Returns what was found, and the closest spot even when nothing scored high enough. `kind` (exists, wait,
+    vanish) names the look for "What the bot sees"."""
     areas = [region if region is not None else one.region for one in chosen]
     pixels, origin = screen.grab(_union(areas))
     closest: Match | None = None
     if pixels.size == 0:
         return None, None
+    tried: list[Match] = []  # each target's best spot, for "What the bot sees"
     for one, area in zip(chosen, areas, strict=True):
         part, part_origin = pixels, origin
         if area is not None:
@@ -99,10 +101,14 @@ def _look(chosen: list[Target], region: Region | None) -> tuple[Match | None, Ma
             part, part_origin = pixels[y : y + inside.h, x : x + inside.w], inside
         similarity = one.similarity if one.similarity is not None else settings.similarity
         best = matchers.current().closest(one, part, part_origin, similarity, matchers.options_for(one))
+        if best is not None:
+            tried.append(best)
         if best is not None and best.score >= similarity:
+            sees.look(kind, chosen, tried, best, pixels, origin)
             return best, best
         if best is not None and (closest is None or best.score > closest.score):
             closest = best
+    sees.look(kind, chosen, tried, None, pixels, origin)
     return None, closest
 
 
@@ -137,7 +143,7 @@ def _loaded(whats: tuple[What, ...]) -> list[Target]:
 _closest = threading.local()  # the closest spot of the last search that found nothing, for the report
 
 
-def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> Match | None:
+def _search(whats: tuple[What, ...], timeout: float, region: Region | None, kind: str = "") -> Match | None:
     _closest.match = None
     timeout = timeout * settings.lag
     loaded = _loaded(whats)
@@ -155,7 +161,7 @@ def _search(whats: tuple[What, ...], timeout: float, region: Region | None) -> M
     while True:
         safety.check()
         started = time.monotonic()
-        found, closest = _look(chosen, region)
+        found, closest = _look(chosen, region, kind)
         if found is not None:
             return found
         if closest is not None and (_closest.match is None or closest.score > _closest.match.score):
@@ -199,7 +205,7 @@ def _nearby_sizes(loaded: list[Target], now: Place, region: Region | None) -> Ma
 
 def exists(what: What, timeout: float = 0, region: Region | None = None) -> Match | None:
     """The target if it's on screen, looking for up to `timeout` seconds (0: one look)."""
-    found = _search((what,), timeout, region)
+    found = _search((what,), timeout, region, "exists")
     _report("exists", (what,), timeout, found)
     return found
 
@@ -212,7 +218,7 @@ def find(what: What, timeout: float | None = None, region: Region | None = None)
 def wait(*whats: What, timeout: float | None = None, region: Region | None = None) -> Match | None:
     """Wait for a target, or the first of several (`match.name` says which). None if time runs out."""
     timeout = settings.timeout if timeout is None else timeout
-    found = _search(whats, timeout, region)
+    found = _search(whats, timeout, region, "wait")
     _report("wait", whats, timeout, found)
     return found
 
@@ -222,7 +228,7 @@ def vanish(what: What, timeout: float | None = None, region: Region | None = Non
     timeout = settings.timeout if timeout is None else timeout
     deadline = time.monotonic() + timeout * settings.lag
     while True:
-        if _search((what,), 0, region) is None:
+        if _search((what,), 0, region, "vanish") is None:
             log(f"vanish {_names((what,))}: gone")
             return True
         if time.monotonic() >= deadline:

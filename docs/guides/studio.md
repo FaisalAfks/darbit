@@ -23,7 +23,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   that may have stopped matching, with Retake, the last problem), then the bot's blocks in rows: what it's doing now,
   its round, rings for its progress, numbers and week charts for its gains, what's next, its last screen,
   **Recoveries** (how often it got itself going again today with `d.record.recovered`, the most common reason and the
-  last one), blocks of the bot's own and buttons for its actions. The bot's author lays out the default
+  last one), **What the bot sees** (the screen at its last look with what it looked for boxed, live while the block is in
+  sight; off until added), blocks of the bot's own and buttons for its actions. The bot's author lays out the default
   (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one wider or narrower, take one
   off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to the bot's. While the bot is
   stopped, hovering a mode in **Today's round** shows ▶, which runs only that mode (for the modes its darbit.toml

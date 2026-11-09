@@ -107,13 +107,18 @@ default layout is `overview.toml` beside `darbit.toml`, read from top to bottom 
 
 ```toml
 [[block]]
-kind = "now"           # now, round, list, number, ring, chart, text, screen, button or recoveries
+kind = "now"           # now, round, list, number, ring, chart, text, screen, sees, button or recoveries
 width = 8              # 3, 4, 6, 8 or 12
 
 [[block]]
 kind = "ring"
-shows = "progress:Quests this week"   # now, round, next, failures, watching, activity, screen, recoveries,
+shows = "progress:Quests this week"   # now, round, next, failures, watching, activity, screen, sees, recoveries,
 width = 4                                 # progress:<label>, gain:<name>, block:<name>, action:<name>
+
+[[block]]
+kind = "sees"          # What the bot sees: its last look, with what it looked for boxed
+title = "What the bot sees"
+width = 8
 
 [[block]]
 kind = "chart"
@@ -121,6 +126,12 @@ shows = "gain:Coins"
 title = "Coins this week"
 width = 6
 ```
+
+`sees` shows the screen at the bot's last look (`exists`, `wait`, `vanish`) with what it looked for boxed: found
+ones solid with their name and score, the others dashed at their closest spot. It costs the bot a small picture a
+second (made on a thread of its own, about 10 ms, plus one more grab when the look searched only part of the screen),
+and only while the block is in sight in darbit Studio; otherwise nothing. It's never in darbit's own default layout:
+place it here, or add it in Customize.
 
 Without `overview.toml`, the older `[studio] tiles` order the default:
 

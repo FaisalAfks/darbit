@@ -3288,3 +3288,56 @@ def test_a_round_rows_play_runs_that_mode_alone_while_the_bot_is_stopped(qt):
     wait_until(lambda: studio.bot.get("status") == "running")
     wait_until(lambda: not any(row.property("runnable") for row in rows().values()))
     del engine
+
+
+def test_what_the_bot_sees_boxes_its_last_look_and_is_followed_only_in_sight(qt, monkeypatch, tmp_path):
+    import cv2
+    import numpy as np
+
+    from darbit import paths
+    from darbit.runtime import sees
+
+    monkeypatch.setattr(paths, "data_dir", lambda: tmp_path / "data")
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    cv2.imwrite(str(logs / "sees-1.jpg"), np.zeros((360, 640, 3), np.uint8))
+    look = {
+        "time": "2026-11-09T08:00:14.250",
+        "kind": "wait",
+        "targets": ["Play.Raid.png", "Dim.Tab.Create.png"],
+        "found": "Play.Raid.png",
+        "picture": "sees-1.jpg",
+        "w": 640,
+        "h": 360,
+        "boxes": [
+            {"name": "Dim.Tab.Create.png", "x": 600, "y": 10, "w": 20, "h": 20, "score": 0.41, "found": False},
+            {"name": "Play.Raid.png", "x": 180, "y": 60, "w": 90, "h": 200, "score": 1.0, "found": True},
+        ],
+    }
+    (logs / sees.LOOK).write_text(json.dumps(look), encoding="utf-8")
+    answer = _overview_answer()
+    answer["layout"] = [{"kind": "sees", "shows": "sees", "title": "What the bot sees", "width": 8, "origin": "darbit"}]
+    answer["data"]["sees"] = {"look": str(logs / sees.LOOK), "logs": str(logs)}
+    monkeypatch.setitem(ANSWERS, "bot.overview", answer)
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    def texts():
+        return [item.property("text") for item in walk(window.contentItem()) if item.property("text")]
+
+    wait_until(lambda: "Play.Raid 1.00" in texts())  # found: its name and score on its box
+    assert "live · 08:00:14" in texts()
+    assert "Play.Raid, Dim.Tab.Create → found Play.Raid" in texts()
+    dashed = [item for item in walk(window.contentItem()) if item.metaObject().className().startswith("Dashed")]
+    assert len([item for item in dashed if item.isVisible()]) == 1  # not found: dashed at its closest spot
+    assert json.loads(sees.watching_file().read_text(encoding="utf-8")) == {"logs": str(logs)}
+    studio.setShown(False)  # hidden or minimized: the bot stops keeping pictures
+    QtCore.QCoreApplication.processEvents()
+    assert not sees.watching_file().exists()
+    del engine

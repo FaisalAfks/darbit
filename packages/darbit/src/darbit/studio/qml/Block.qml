@@ -18,7 +18,7 @@ Glass {
     readonly property string kind: spec.kind || "text"
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     title: kind === "now" ? "" : (spec.title || spec.shows || "")
-    note: spec.origin && spec.origin !== "darbit" && !editing ? spec.origin : ""
+    note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin : ""
     lift: !editing
     implicitHeight: (title !== "" ? 64 : 44) + (shown.item ? shown.item.implicitHeight : 0)
     border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55)
@@ -31,7 +31,25 @@ Glass {
             : block.kind === "now" ? nowView : block.kind === "round" ? roundView : block.kind === "ring" ? ringView
             : block.kind === "number" ? numberView : block.kind === "chart" ? chartView : block.kind === "list" ? listView
             : block.kind === "screen" ? screenView : block.kind === "button" ? buttonView
-            : block.kind === "recoveries" ? recoveriesView : textView
+            : block.kind === "recoveries" ? recoveriesView : block.kind === "sees" ? seesView : textView
+    }
+
+    // What the bot sees: live while the bot runs, with the time of its last look
+    Row {
+        readonly property string time: sees.frame.time ? String(sees.frame.time).slice(11, 19) : ""
+        visible: block.kind === "sees" && !block.editing && time !== ""
+        anchors { right: parent.right; rightMargin: block.padding; top: parent.top; topMargin: block.padding - 2 }
+        spacing: 6
+        LiveDot {
+            visible: block.running
+            width: 7; height: 7; anchors.verticalCenter: parent.verticalCenter
+            color: studio.colors.ok
+        }
+        Text {
+            text: (block.running ? "live · " : "") + parent.time
+            color: block.running ? studio.colors.ok : studio.colors.faint
+            font.pixelSize: 11; font.weight: Font.DemiBold
+        }
     }
 
     // ---- Customize: the grip, ✕ and the corner
@@ -322,6 +340,7 @@ Glass {
             }
         }
     }
+    Component { id: seesView; SeesView { info: block.info } }
     Component {
         id: buttonView
         Row {

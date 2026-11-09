@@ -90,6 +90,22 @@ def test_the_recoveries_block_can_be_placed_in_overview_toml(project):
     ]
 
 
+def test_what_the_bot_sees_is_on_offer_but_off_until_added(project, tmp_path):
+    blocks = overview.catalog(project, events(), [])
+    assert {"kind": "sees", "shows": "sees", "title": "What the bot sees", "width": 8, "origin": "darbit"} in blocks
+    assert all(block["kind"] != "sees" for block in overview.default_layout(project, blocks))
+    (project.folder / "overview.toml").write_text('[[block]]\nkind = "sees"\nwidth = 6\n', encoding="utf-8")
+    assert overview.default_layout(project, blocks)[0] == {
+        "kind": "sees",
+        "shows": "sees",
+        "title": "sees",
+        "width": 6,
+        "origin": "bot",
+    }
+    found = overview.data(project, [], "2026-11-02", datetime(2026, 11, 2, 11), tmp_path / "logs")
+    assert found["sees"] == {"look": str(tmp_path / "logs" / "sees.json"), "logs": str(tmp_path / "logs")}
+
+
 def test_the_data_holds_each_blocks_value(project, tmp_path):
     shot = tmp_path / "logs" / "screenshots"
     shot.mkdir(parents=True)

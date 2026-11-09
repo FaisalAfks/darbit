@@ -2,9 +2,9 @@
 their own (`d.show`, `@d.block`); the person using it arranges them in darbit Studio, which keeps their layout.
 
 A block is {"kind", "shows", "title", "width"}: `kind` is how it's drawn, `shows` what it shows ("now", "round",
-"next", "failures", "watching", "activity", "screen", "recoveries", "progress:<label>", "gain:<name>", "block:<name>",
-"action:<name>") and `width` its share of a row of 12. `catalog` is every block a bot can have today, `data` what
-each `shows` holds now, `default_layout` the author's layout (or one made from the old `[studio] tiles`).
+"next", "failures", "watching", "activity", "screen", "sees", "recoveries", "progress:<label>", "gain:<name>",
+"block:<name>", "action:<name>") and `width` its share of a row of 12. `catalog` is every block a bot can have today,
+`data` what each `shows` holds now, `default_layout` the author's layout (or one made from the old `[studio] tiles`).
 """
 
 import tomllib
@@ -12,10 +12,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from ..project.manifest import Project
+from ..runtime import sees
 from . import dashboard, history, problems, results
 
 OVERVIEW = "overview.toml"
-KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "button", "recoveries")
+KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "sees", "button", "recoveries")
 WIDTHS = (3, 4, 6, 8, 12)
 WEEK = 7
 
@@ -39,6 +40,7 @@ def catalog(project: Project, events: list[dict], actions: list[str]) -> list[di
         _block("list", "activity", "What happened", 6),
         _block("screen", "screen", "Last screen", 4),
         _block("recoveries", "recoveries", "Recoveries", 4),
+        _block("sees", "sees", "What the bot sees", 8),  # off until added: it costs the bot a picture a second
     ]
     for label in _named(events, "progress", "label"):
         found.append(_block("ring", f"progress:{label}", label, 4))
@@ -150,6 +152,7 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
     found["watching"] = _tile_data(dashboard.watching_tile(events))
     found["activity"] = _tile_data(dashboard.activity_tile(events))
     found["screen"] = {"picture": _last_screen(logs)}
+    found["sees"] = {"look": str(logs / sees.LOOK), "logs": str(logs)}  # the Studio follows the file while shown
     found["setup"] = _tile_data(dashboard.setup_tile(project))
     found["problems"] = problems.explain(project, events, logs)
     found["failing"] = problems.failing(project, events)  # an image that may have stopped matching

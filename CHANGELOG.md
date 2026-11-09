@@ -4,6 +4,7 @@
 
 ### New
 
+- **What the bot sees**, an Overview block (#316): the screen at the bot's last look with what it looked for boxed, solid in the accent with its name and score where found, dashed red at the closest spot where not, the look under it and a live time. Off until added in Customize, or placed with `kind = "sees"` in `overview.toml`. While the block is in sight the Studio keeps `watching.json` fresh and the bot keeps a 640 px JPEG of its look at most once a second (`logs/sees.json`), made on its own thread; out of sight, a look costs the bot a clock read and nothing is grabbed or decoded
 - Undo for Delete and Rename in the Library, in the message at the bottom (#319). A deleted asset's files, or an action with its tape and breakpoints, are kept in the bot's `.darbit/deleted` until the next delete, and `bot.library.undelete` puts them back; a rename is taken back by renaming it back, on the bot it was done to, and the inspector follows it
 - A name too long for its card shows whole on hover: Library cards, Scout's tiles, Capture's target tiles and the bot rows (#319)
 - Capture's pill by keyboard (#319): from the target's name, Tab and Shift+Tab go through the pill's buttons, Enter or Space presses one, Esc goes back to the shot. A button with the focus looks as it does under the mouse; nothing changes until Tab reaches one
