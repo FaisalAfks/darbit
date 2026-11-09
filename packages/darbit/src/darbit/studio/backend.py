@@ -21,6 +21,7 @@ from ..platform import system
 from ..server import ui_settings
 from ..service.client import Client, ServiceError
 from . import shortcuts, theme
+from .pictures import Pictures
 
 CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
@@ -113,6 +114,7 @@ class Studio(QObject):
         self._only: dict | None = None  # the mode or step Play was asked to run alone, through its checks
         self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
+        self.pictures = Pictures()  # the Library's thumbnails and screens, as files for QML
         self._screens: list[
             dict
         ] = []  # each screen's last shot with its targets in place, for the Library's Screen view
@@ -925,11 +927,11 @@ class Studio(QObject):
         elif what == "overview" and isinstance(result, dict):
             self._take_overview(result)
         elif what == "library" and isinstance(result, list):
-            self._library = result
+            self._library = self.pictures.take(result, "thumbnail", "thumbnail")
             self._library_bot = str(self._bot.get("path", ""))
             self.libraryChanged.emit()
         elif what == "screens" and isinstance(result, list):
-            self._screens = result
+            self._screens = self.pictures.take(result, "picture", "screen")
             self.screensChanged.emit()
         elif what == "days" and isinstance(result, list):
             self._days = result

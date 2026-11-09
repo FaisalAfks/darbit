@@ -122,6 +122,11 @@ def _grown(region: Region, size: float) -> Region:
 _resized: dict[tuple[int, float], tuple[np.ndarray, np.ndarray]] = {}
 
 
+def forget_resized() -> None:
+    """Drop every resized image kept."""
+    _resized.clear()
+
+
 def resized(pixels: np.ndarray, size: float) -> np.ndarray:
     """The image `size` times bigger (or smaller), kept for the next time it's asked for."""
     key = (id(pixels), round(size, 4))

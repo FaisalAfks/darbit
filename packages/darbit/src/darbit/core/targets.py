@@ -297,8 +297,9 @@ def load(what: str | Path | Target | Pattern, folders: list[Path]) -> Target:
 
 
 def forget() -> None:
-    """Drop every loaded target, so the next search reads the files again."""
+    """Drop every loaded target and every image file's pixels, so the next search reads the files again."""
     _loaded.clear()
+    _images.clear()
 
 
 def _files(name: str | Path, folders: list[Path]) -> tuple:
