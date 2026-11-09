@@ -42,6 +42,6 @@ About nine report lines in ten are image looks: of 327,541 history rows, 302,014
 - On a copy of the same bot's `.darbit`: history.db 95.5 MB to 4.1 MB (307,294 rows out, 1.3 s with the `VACUUM`);
   the copy had 15 days, so `keep_days` deleted nothing yet; a day later it drops the oldest (2.5 MB of files).
 - The Results page shows the same problems; a day's start and end, from its first and last event, can move by under
-  a second, and its run time by a few seconds, now that looks aren't among them. Opening a day is about twice as
+  a second, and its run time by up to 10 s, now that looks aren't among them. Opening a day is about twice as
   fast.
 - A bot that sets `keep_days` in `[settings]` needs a darbit that knows it: an older one refuses the darbit.toml.
