@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- The tray panel opens above the taskbar, inside the work area the pills use (#452): on whichever side the taskbar is, one that hides itself included, with the icon's place Windows gives in its own pixels brought into Qt's points under display scaling. It's placed again once it has opened at its size
 - `darbit.testing.FakeGame` fakes looking up the game's window too (`windows.matching`, `in_front`, `region`): with `window` set in a bot's settings, its tests on saved screens no longer reach the system's windows before every click and key. Looking up `settings.window` finds a fake window, always in front, with an empty area so window-space targets stay where they were taken; no other window is open
 - A tape played while its window is minimised (an empty area) plays where it was recorded, instead of every place squashed into the window's corner
 

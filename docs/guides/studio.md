@@ -168,7 +168,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
 
 Closing the Studio stops nothing: bots run in the service, which keeps going (see [the service](service.md)). Closing the window keeps darbit in the tray. Quitting stops every running bot first, cleanly through the service (it lets go of every key), as nothing would be left to control them; the tray panel's Quit says so ("Quit and stop fish-bot"). **Bots go on after quitting** in darbit settings leaves them running instead ("Quit (bots go on)"). It opens where it was left, at the same size. Starting `darbit app` again brings the open Studio forward instead of opening a second one.
 
-**The tray panel:** a click on darbit's tray icon opens a small panel by it, on whichever edge the taskbar is: **Bots**
+**The tray panel:** a click on darbit's tray icon opens a small panel by it, above the taskbar on whichever edge it is (inside the work area, as the pills): **Bots**
 lists every running bot with its state and time (alongside for one that sends no input), Pause (or Go on) and Stop; with none running, the shown bot and
 Play. **Tools** has Capture, Scout and Record an action, with their keys; then **Open darbit Studio** and Quit. A
 click anywhere else or Esc closes it; a double click on the icon opens the Studio.

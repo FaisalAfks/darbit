@@ -1,9 +1,12 @@
 """The panel darbit's tray icon opens (TrayPanel.qml): the running bots with their controls, the tools, Open darbit
 Studio and Quit. `TrayPanel` carries what only app.py can do (open the Studio, record, quit); `panel_place` puts the
-panel by the icon on whichever edge of the screen the taskbar is.
+panel by the icon on whichever edge of the screen the taskbar is, inside the work area the pills use (docking.py),
+never over the taskbar.
 """
 
 from PySide6.QtCore import QObject, QPoint, QRect, QSize, Signal, Slot
+
+from .docking import Rect, in_pixels
 
 GAP = 8  # px between the panel and the taskbar
 
@@ -47,6 +50,41 @@ def taskbar_edge(icon: QRect, screen: QRect, available: QRect) -> str:
         "right": screen.right() - centre.x(),
     }
     return min(away, key=lambda edge: away[edge])
+
+
+def as_qrect(rect: Rect) -> QRect:
+    return QRect(round(rect.x), round(rect.y), round(rect.width), round(rect.height))
+
+
+def holds(rect: Rect, x: float, y: float) -> bool:
+    return rect.x <= x < rect.right and rect.y <= y < rect.bottom
+
+
+def icon_in_points(icon: QRect, screens: list[Rect]) -> QRect:
+    """The tray icon's place in Qt's points. Windows tells it in its own pixels, which with display scaling lie past
+    every screen in points (150%: the icon at pixel 1528 is at point 1018); those are brought back from the corner of
+    the screen they're on, as Qt lays screens out."""
+    centre = icon.center()
+    for screen in screens:
+        if holds(screen, centre.x(), centre.y()):
+            return icon
+    for screen in screens:
+        if holds(in_pixels(screen), centre.x(), centre.y()):
+            left = screen.x + (icon.x() - screen.x) / screen.ratio
+            top = screen.y + (icon.y() - screen.y) / screen.ratio
+            return QRect(
+                round(left), round(top), round(icon.width() / screen.ratio), round(icon.height() / screen.ratio)
+            )
+    return icon
+
+
+def screen_with(icon: QRect, screens: list[Rect]) -> Rect:
+    """The screen the icon (in points) is on, or the first."""
+    centre = icon.center()
+    for screen in screens:
+        if holds(screen, centre.x(), centre.y()):
+            return screen
+    return screens[0]
 
 
 def panel_place(icon: QRect, screen: QRect, available: QRect, size: QSize) -> QPoint:
