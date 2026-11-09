@@ -41,6 +41,7 @@ class Settings:
     logs: Path = field(default_factory=_default_logs)
     state: Path = field(default_factory=_default_state)  # where d.State files are kept
     log: bool = True  # write a log file per day into `logs`
+    keep_days: int = 14  # run reports, daily logs and history older than this many days are deleted
     missing_images: str = "error"  # "error", or "skip" to treat a missing image as never found
     screenshot_after: float = 20.0  # save a screenshot when a wait this long (or longer) runs out
     match: dict = field(default_factory=dict)  # matching options for every target, e.g. {"fast": True}

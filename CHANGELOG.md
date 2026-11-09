@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Run reports, daily logs and history are kept for 14 days by default, set with `keep_days` in `[settings]` (`[run] keep_days` still works). The bot deletes its own old reports and logs when it starts writing and each new day; the service deletes old history when it starts, when it starts a bot and every six hours. Days go by the bot's `day_starts`, and today's and yesterday's are never deleted. History leaves out image looks (`exists`, `wait`, `vanish`, `find`): the Results page's problems read them from the day's report instead. An existing history loses its looks once and shrinks; on two weeks of a real bot, history.db went from 95.5 MB to 4.1 MB (decision 0021)
+
 ### Fixed
 
 - The service spent about a third of a core while a bot ran: every Overview refresh read the last 7 days of every event from the history to total the gains. It now reads only the gains (0.57 s down to 0.004 s per refresh on a week of a real bot's history)

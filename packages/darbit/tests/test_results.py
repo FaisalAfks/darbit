@@ -181,3 +181,22 @@ def test_a_day_past_midnight_runs_on_past_24_hours():
     assert results.seconds_of("2026-11-01T22:00:00", "2026-11-01") == 22 * 3600
     assert results.seconds_of("2026-11-02T01:00:00", "2026-11-01") == 25 * 3600
     assert results.seconds_of("2026-11-02T01:00:00") == 3600  # without a day, since its own midnight
+
+
+def test_problems_still_have_their_image_looks_from_the_report(project):
+    from darbit.server import history
+
+    day = "2026-10-23"
+    write_day(
+        project,
+        day,
+        [
+            {"time": at(day, "12:00:00"), "event": "step", "step": "Fish", "state": "started"},
+            {"time": at(day, "12:00:40"), "event": "wait", "targets": "Rod.png", "timeout": 40, "closest": 0.3},
+            {"time": at(day, "12:00:41"), "event": "step", "step": "Fish", "state": "failed", "reason": "no rod"},
+        ],
+    )
+    page = results.day(project, day)
+    assert history.counts(project, day) == {"step": 2}  # the look is left out of history
+    assert page["problems"][0]["target"] == "Rod"
+    assert page["problems"][0]["searches"][0]["seconds"] == 40

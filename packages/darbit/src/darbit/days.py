@@ -5,7 +5,7 @@ Overview and Results, and the daily summary.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 MIDNIGHT = "00:00"
 
@@ -45,6 +45,11 @@ def day_of(moment: datetime, start: DayStart) -> str:
 def today(start: DayStart, now: datetime | None = None) -> str:
     """The day it is now."""
     return day_of(now or datetime.now(), start)
+
+
+def first_kept(today: str, keep_days: int) -> str:
+    """The oldest day kept ("2026-10-26") when keeping `keep_days` days before `today`; yesterday is always kept."""
+    return (date.fromisoformat(today) - timedelta(days=max(keep_days, 1))).isoformat()
 
 
 def of(settings: dict) -> DayStart:

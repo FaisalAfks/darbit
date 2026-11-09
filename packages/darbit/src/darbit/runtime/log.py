@@ -2,7 +2,7 @@
 
 The log (logs/<day>.log) is for reading. The run report (logs/report-<day>.jsonl) has
 one JSON line per event (searches, clicks, steps) for tools to summarise:
-python -m darbit.tools.report.
+python -m darbit.tools.report. Both are kept for `settings.keep_days` days (decision 0021).
 """
 
 import json
@@ -21,7 +21,10 @@ from ..settings import settings
 
 logger = logging.getLogger("darbit")
 _day = ""
+_tidied: tuple[Path, str] | None = None  # the folder and day old logs and reports were last deleted for
 _KEEP_SHOTS = 200
+REPORT_PREFIX = "report-"
+REPORT_SUFFIX = ".jsonl"
 _waiting: list[str] = []  # lines kept by `later` until the run writes something of its own
 _waiting_lock = threading.Lock()
 
@@ -36,6 +39,7 @@ def _handler() -> None:
     today = _today()
     if today == _day:
         return
+    _forget_old(today)
     for old in list(logger.handlers):
         if getattr(old, "_darbit", False):
             logger.removeHandler(old)
@@ -100,11 +104,45 @@ def record(event: str, **fields: object) -> None:
     if not settings.log:
         return
     try:
+        today = _today()
+        _forget_old(today)
         settings.logs.mkdir(parents=True, exist_ok=True)
-        with _report_lock, (settings.logs / f"report-{_today()}.jsonl").open("a", encoding="utf-8") as f:
+        with _report_lock, (settings.logs / f"{REPORT_PREFIX}{today}{REPORT_SUFFIX}").open("a", encoding="utf-8") as f:
             f.write(json.dumps(line, default=str) + "\n")
     except OSError:
         pass
+
+
+def _forget_old(today: str) -> None:
+    """Delete the logs and reports older than keep_days, once a day: when the bot starts writing, and each new day."""
+    global _tidied
+    if _tidied == (settings.logs, today):
+        return
+    _tidied = (settings.logs, today)
+    forget_files_before(settings.logs, days.first_kept(today, settings.keep_days))
+
+
+def forget_files_before(folder: Path, day: str) -> int:
+    """Delete the run reports and daily logs in `folder` from before `day` ("2026-10-26"); how many went."""
+    if not folder.is_dir():
+        return 0
+    gone = 0
+    for path in [*folder.glob(f"{REPORT_PREFIX}*{REPORT_SUFFIX}"), *folder.glob("????-??-??.log")]:
+        if day_of_file(path) >= day:
+            continue
+        try:
+            path.unlink()
+            gone += 1
+        except OSError:
+            continue  # open on Windows (a reader has it): next time
+    return gone
+
+
+def day_of_file(path: Path) -> str:
+    """The day a run report or daily log is for: "2026-10-26" from report-2026-10-26.jsonl or 2026-10-26.log."""
+    if path.name.startswith(REPORT_PREFIX) and path.name.endswith(REPORT_SUFFIX):
+        return path.name[len(REPORT_PREFIX) : -len(REPORT_SUFFIX)]
+    return path.stem
 
 
 def screenshot(label: str) -> str | None:
