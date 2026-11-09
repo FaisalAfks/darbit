@@ -200,3 +200,9 @@ def test_the_cli_starts_one_mode_or_step(service, bot, runs, capsys):  # noqa: F
     assert "no mode called Shop" in capsys.readouterr().out
     with pytest.raises(SystemExit):
         cli.main(["start", "tick-bot", "--step", "open the list"])
+    _another(bot, "other-bot")
+    assert cli.main(["start", "other-bot"]) == 0
+    capsys.readouterr()
+    assert cli.main(["start", "tick-bot", "--only", "Speed Raid", "--step", "open the list"]) == 1
+    said = 'darbit start tick-bot --only "Speed Raid" --step "open the list" --replace'
+    assert said in capsys.readouterr().out  # the line to copy keeps the step

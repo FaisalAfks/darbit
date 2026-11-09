@@ -262,7 +262,12 @@ def _start(bot: str, replace: bool, only: dict | None = None) -> dict | None:
             return None
         names = ", ".join(running["name"] for running in error.detail.get("running", []))
         print(f"{names} is running and uses the mouse and keys: one such bot runs at a time.")
-        print(f"darbit start {bot} --replace stops it and starts {bot}.")
+        again = f"darbit start {bot}"
+        if only is not None:
+            again += f' --only "{only["mode"]}"'
+        if only is not None and "step" in only:
+            again += f' --step "{only["step"]}"'
+        print(f"{again} --replace stops it and starts {bot}.")
         return None
 
 
