@@ -1146,6 +1146,70 @@ def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_aga
     assert warnings == []
 
 
+@pytest.mark.parametrize("moving", [False, True])
+def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_the_taskbar(qt, tmp_path, moving):
+    from PySide6.QtCore import QObject
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.docking import GAP, PillPlace, Rect
+    from darbit.studio.hiding import HidingPill
+
+    _keep_effects(tmp_path, moving)  # with effects on it lands on the clock; off, at once
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        box = QtCore.QRect(0, 0, 2400, 1200)  # room for the row to move along its edge
+        work = Rect(box.x(), box.y(), box.width(), box.height() - 48)  # a taskbar along the bottom
+        screens = {"main": Rect(box.x(), box.y(), box.width(), box.height(), work=work)}
+        hiding = HidingPill(watch=lambda on_move: lambda: None)
+        place = PillPlace("run", screens=lambda: screens, keep=False)
+        studio = backend.Studio(FakeClient)
+        engine = app.load(studio, run_pill=hiding, pill_places={"run": place})
+        root = engine.rootObjects()[0]  # held, or Qt deletes it
+        studio.connect()
+        wait_until(lambda: studio.bot.get("name") == "ad-bot")
+        hiding.open()
+        window = root.findChild(QQuickWindow, "runPill")
+        wait_until(window.isVisible)
+        face = window.findChild(QObject, "pillFace")
+        row = _steady_width(face)  # laid out with the bot's line, done easing to its width
+        place.begin(box.center().x(), 30)
+        wait_until(lambda: window.property("roomy"))
+        held = (window.width(), window.height())
+        assert held[0] > 2 * face.property("width") and held[1] > 2 * face.property("height")  # room for any form
+        place.move(box.left() + 20, box.center().y())
+        assert window.property("form") == "column"
+        assert (window.width(), window.height()) == held  # a new form redraws inside it: the window only moves
+        place.move(box.center().x() + 100, box.bottom() - 60)
+        # held there a moment, as a hand does: the row lays itself out at its own size
+        wait_until(lambda: place.sizeOf("row")["width"] == face.property("width") == row)
+        place.end()
+        wait_until(lambda: not window.property("roomy"))
+        wait_until(lambda: window.height() < window.width())  # a row again, its own size
+        margin = window.property("margin")
+        bottom = window.y() + margin + face.property("height")
+        assert abs(bottom - (work.bottom - GAP)) < 2  # above the taskbar, not under it
+        middle = window.x() + margin + face.property("width") / 2
+        assert abs(middle - (box.center().x() + 100)) < 2  # where it was let go, with no slide after it lands
+        hiding.close()
+        del root, engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
+
+
+def _steady_width(item, checks=8):
+    """An item's width once it has stopped changing (an animation runs on its frames, 16 ms apart)."""
+    seen = []
+
+    def steady():
+        seen.append(item.property("width"))
+        return len(seen) >= checks and len(set(seen[-checks:])) == 1
+
+    wait_until(steady)
+    return seen[-1]
+
+
 def test_dragging_the_recorders_pill_keeps_the_drag_out_of_the_recording(qt):
     from darbit.studio.docking import PillPlace
     from darbit.studio.hiding import HidingPill

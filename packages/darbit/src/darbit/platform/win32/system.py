@@ -89,6 +89,44 @@ def on_battery() -> bool:
     return status.ACLineStatus == AC_OFFLINE
 
 
+ABM_GETAUTOHIDEBAREX = 0x0B  # SHAppBarMessage: the taskbar that hides itself on one edge of one monitor
+APPBAR_EDGES = {0: "left", 1: "top", 2: "right", 3: "bottom"}  # ABE_LEFT, ABE_TOP, ABE_RIGHT, ABE_BOTTOM
+
+
+def hidden_taskbars(left: int, top: int, right: int, bottom: int) -> list[tuple[str, int]]:
+    """Each taskbar set to hide itself on the monitor at these pixels, as (edge, thickness in pixels)."""
+    from ctypes import wintypes
+
+    class AppBarData(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", wintypes.DWORD),
+            ("hWnd", wintypes.HWND),
+            ("uCallbackMessage", wintypes.UINT),
+            ("uEdge", wintypes.UINT),
+            ("rc", wintypes.RECT),
+            ("lParam", wintypes.LPARAM),
+        ]
+
+    shell32 = ctypes.windll.shell32
+    shell32.SHAppBarMessage.restype = ctypes.c_size_t
+    shell32.SHAppBarMessage.argtypes = (wintypes.DWORD, ctypes.POINTER(AppBarData))
+    found = []
+    for code, edge in APPBAR_EDGES.items():
+        data = AppBarData()
+        data.cbSize = ctypes.sizeof(data)
+        data.uEdge = code
+        data.rc = wintypes.RECT(left, top, right, bottom)
+        bar = shell32.SHAppBarMessage(ABM_GETAUTOHIDEBAREX, ctypes.byref(data))
+        if not bar:
+            continue
+        box = wintypes.RECT()
+        if not ctypes.windll.user32.GetWindowRect(wintypes.HWND(bar), ctypes.byref(box)):
+            continue
+        across = edge in ("top", "bottom")
+        found.append((edge, box.bottom - box.top if across else box.right - box.left))
+    return found
+
+
 def process_alive(pid: int) -> bool:
     kernel32 = ctypes.windll.kernel32
     handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)

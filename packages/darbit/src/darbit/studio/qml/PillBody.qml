@@ -1,7 +1,8 @@
-// What every pill over the game is made of (#384): the pill itself in its form (a row on the top and bottom edges, a
-// labelled column on the sides, a card floating), the panels that open beside it, and dragging it. Grabbed, it tilts
-// and shakes a little and sways as it moves; let go, its window (PillWindow, or Capture's) puts it on the snap place
-// or floats it. `place` (docking.py) says where it is and its form.
+// What every pill over the game is made of (#384, #449): the pill itself in its form (a row on the top and bottom
+// edges, a labelled column on the sides, a card floating), the panels that open beside it, and dragging it. Grabbed,
+// it tilts and shakes a little and sways as it moves, and eases into a new form when it changes edge; let go, its
+// window (PillWindow, or Capture's) lands it where it was dropped on its edge, or floats it. `place` (docking.py)
+// says where it is and its form.
 import QtQuick
 import QtQuick.Layouts
 
@@ -21,6 +22,7 @@ Item {
     readonly property bool vertical: form === "column"
     readonly property bool floating: form === "card"
     readonly property bool held: place.dragging && dragArea.moving
+    readonly property var tokens: studio.pillMotion
     // a pill without card detail of its own floats as its column, in the card
     property bool cardless: true
     Component.onCompleted: {
@@ -80,13 +82,20 @@ Item {
     }
     onHeldChanged: if (held && studio.effects) grabShake.restart()
 
+    // a new form (another edge, or floating) eases in from a little smaller and fainter, instead of jumping
+    property real morph: 0
+    onFormChanged: if (tokens.on) { morph = 1; easeIn.restart() }
+    NumberAnimation { id: easeIn; target: body; property: "morph"; to: 0; duration: body.tokens.slow; easing.type: Easing.BezierSpline; easing.bezierCurve: body.tokens.ease }
+
     Item {
         id: tilt
         x: body.faceX; y: body.faceY
         width: body.face.width; height: body.face.height
         rotation: body.held && studio.effects ? -1.5 + body.sway + body.shake : 0
-        scale: body.held && studio.effects ? 1.03 : 1
-        Behavior on scale { NumberAnimation { duration: studio.effects ? 120 : 0 } }
+        scale: (body.held && studio.effects ? lift : 1) - 0.06 * body.morph
+        opacity: 1 - 0.35 * body.morph
+        property real lift: 1.03
+        Behavior on scale { enabled: body.morph === 0; NumberAnimation { duration: body.tokens.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: body.tokens.ease } }
         Behavior on rotation { enabled: !body.held; NumberAnimation { duration: studio.effects ? 160 : 0; easing.type: Easing.OutBack } }
 
         // a press on any empty part of the pill: past a few points it's a drag
@@ -103,6 +112,9 @@ Item {
                 var at = body.place.cursor()
                 if (!moving && Math.abs(at.x - from.x) + Math.abs(at.y - from.y) > 6) {
                     moving = true
+                    // where it's held, so it lands where it's let go, held there
+                    var on = body.face.mapFromGlobal(at.x, at.y)
+                    body.place.holdAt(on.x / Math.max(1, body.face.width), on.y / Math.max(1, body.face.height))
                     body.grabbed(at.x, at.y)
                 } else if (moving) {
                     body.nudge(at.x - last.x)
@@ -122,6 +134,7 @@ Item {
             vertical: body.vertical || body.floating
             bare: body.floating
             movable: true
+            easeWidth: !body.place.dragging
         }
 
         // floating: a small window with the fuller detail, and Dock
