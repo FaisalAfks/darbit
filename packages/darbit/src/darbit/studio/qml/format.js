@@ -117,3 +117,9 @@ function setting(value) {
     if (value === false) return "off"
     return String(value)
 }
+
+function only(asked) {
+    // a run started for one mode or step: {mode, step} -> "only Daily quest", "only Daily quest › claim it"
+    if (!asked || !asked.mode) return ""
+    return "only " + asked.mode + (asked.step ? " › " + asked.step : "")
+}

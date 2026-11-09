@@ -1,4 +1,4 @@
-"""darbit.toml: a bot's name, version, entry, game window, accent, and its darbit settings.
+"""darbit.toml: a bot's name, version, entry, game window, accent, its modes and steps, and its darbit settings.
 See docs/archive/tasks/T17-projects.md.
 
 `find` walks up from a folder to the nearest darbit.toml, `load` reads and checks it, and `apply` puts its
@@ -16,7 +16,7 @@ from ..runtime import log
 from ..settings import Settings, script_folder
 
 MANIFEST = "darbit.toml"
-TABLES = {"bot", "settings", "images", "keys", "studio", "run"}
+TABLES = {"bot", "settings", "images", "keys", "studio", "run", "modes"}
 BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
@@ -78,6 +78,7 @@ class Project:
     restart: int = 0  # [run] restart: times an hour the service starts the bot again after it failed
     keep_days: int = 14  # [settings] keep_days (or the older [run] keep_days): days of reports, logs and history kept
     input: bool = True  # [run] input: whether the bot sends mouse and keys; one such bot runs at a time (0020)
+    modes: dict[str, list[str]] = field(default_factory=dict)  # [modes]: each mode with its steps, to run one (0022)
 
 
 def find(start: Path) -> Path | None:
@@ -130,6 +131,7 @@ def load(folder: Path) -> Project:
     sends_input = run.get("input", True)
     if not isinstance(sends_input, bool):
         raise ProjectError(f"{MANIFEST} [run]: input is true or false: whether the bot uses the mouse and keys")
+    modes = _check_modes(data.get("modes", {}))
 
     return Project(
         folder=folder,
@@ -148,7 +150,21 @@ def load(folder: Path) -> Project:
         restart=restart,
         keep_days=keep_days,
         input=sends_input,
+        modes=modes,
     )
+
+
+def _check_modes(modes: dict) -> dict[str, list[str]]:
+    """[modes]: each mode's name with the names of its steps, e.g. "Daily quest" = ["pick a quest", "claim it"]."""
+    found: dict[str, list[str]] = {}
+    for mode, steps in modes.items():
+        named = isinstance(steps, list) and all(isinstance(step, str) and step for step in steps)
+        if not mode or not named:
+            raise ProjectError(
+                f'{MANIFEST} [modes]: each mode lists the names of its steps, e.g. "{mode}" = ["a step"]'
+            )
+        found[mode] = list(steps)
+    return found
 
 
 def _check_tiles(tiles: object) -> None:

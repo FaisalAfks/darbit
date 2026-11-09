@@ -53,6 +53,7 @@ from .runtime.config import config
 from .runtime.find import check, exists, find, find_all, vanish, wait
 from .runtime.log import log, screenshot
 from .runtime.observe import Observer, observe, observers, stop_observing
+from .runtime.only import Only, only, wants
 from .runtime.read import read, read_number, read_time
 from .runtime.region import Region, Screen, area, point
 from .runtime.retry import keep_trying
@@ -115,6 +116,7 @@ __all__ = [
     "Map",
     "Match",
     "Observer",
+    "Only",
     "Pattern",
     "Region",
     "Screen",
@@ -148,6 +150,7 @@ __all__ = [
     "no_interrupts",
     "observe",
     "observers",
+    "only",
     "plan",
     "point",
     "press",
@@ -170,5 +173,6 @@ __all__ = [
     "stop_observing",
     "vanish",
     "wait",
+    "wants",
     "write",
 ]

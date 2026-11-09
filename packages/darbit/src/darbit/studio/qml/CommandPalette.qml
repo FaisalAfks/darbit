@@ -1,5 +1,6 @@
 // The command palette: type to find anything the Studio can do, Enter to do it. Pages, the bot's controls, the tools,
-// themes, other bots, the bot's actions and its targets. Each command says its key when it has one.
+// themes, other bots, the bot's modes and steps to run alone, its actions and its targets. Each command says its key
+// when it has one.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -44,6 +45,14 @@ MenuPanel {
                 found.unshift({ group: "Bot", label: (studio.bot.status === "paused" ? "Go on with " : "Pause ") + studio.bot.name, icon: "❚❚", hint: "", run: function () { studio.pause() } })
             } else {
                 found.unshift({ group: "Bot", label: "Play " + studio.bot.name, icon: "▶", hint: key("run.toggle"), run: function () { studio.play() } })
+                // each mode and step the bot declares, to run alone (#318)
+                var modes = studio.bot.modes || []
+                modes.forEach(function (mode) {
+                    found.push({ group: "Bot", label: "Run only " + mode.name, icon: "▶", hint: "", run: function () { studio.playOnly(mode.name, "") } })
+                    mode.steps.forEach(function (step) {
+                        found.push({ group: "Bot", label: "Run step: " + mode.name + " · " + step, icon: "▶", hint: "", run: function () { studio.playOnly(mode.name, step) } })
+                    })
+                })
             }
         }
         var themes = [["glass-dark", "Glass dark"], ["glass-light", "Glass light"], ["midnight", "Midnight"], ["high-contrast", "High contrast"]]

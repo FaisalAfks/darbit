@@ -63,6 +63,8 @@ def test_installed_bots_are_listed(bot):
             "status": "stopped",
             "since": None,
             "input": True,
+            "modes": [],
+            "only": None,
         }
     ]
 

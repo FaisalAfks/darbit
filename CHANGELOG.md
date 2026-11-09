@@ -7,6 +7,7 @@
 - Undo for Delete and Rename in the Library, in the message at the bottom (#319). A deleted asset's files, or an action with its tape and breakpoints, are kept in the bot's `.darbit/deleted` until the next delete, and `bot.library.undelete` puts them back; a rename is taken back by renaming it back, on the bot it was done to, and the inspector follows it
 - A name too long for its card shows whole on hover: Library cards, Scout's tiles, Capture's target tiles and the bot rows (#319)
 - Capture's pill by keyboard (#319): from the target's name, Tab and Shift+Tab go through the pill's buttons, Enter or Space presses one, Esc goes back to the shot. A button with the focus looks as it does under the mouse; nothing changes until Tab reaches one
+- Run one mode or one step of a bot instead of its round (#318). A bot lists its modes and their steps in `[modes]` in its darbit.toml; `bot.start` takes `only` (`{"mode", "step"}`), `darbit start` takes `--only MODE --step STEP`, and the bot gets it as `DARBIT_ONLY`, read with `d.only()` and `d.wants(mode, step)`. In the Studio, a mode in the Overview's Today's round shows ▶ on hover, and the command palette lists `Run only <mode>` and `Run step: <mode> · <step>`; the run pill and the run control say `only <mode>` while it runs. Play's checks and the stop-and-start question work as for a round; a failed run of one mode isn't started again by `[run] restart` (decision 0022)
 
 ### Changed
 

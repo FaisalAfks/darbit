@@ -3166,3 +3166,125 @@ def test_the_pages_draw_with_blur_through_and_the_aurora_without_a_qml_warning(e
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+MODES = [{"name": "Speed Raid", "steps": ["open the list", "pick a character"]}, {"name": "Raid", "steps": []}]
+
+
+class WithModes(OneAtATime):
+    """other declares modes; a bot started for one says so in bots.list, as the service does."""
+
+    def __init__(self):
+        super().__init__()
+        self.bots["/bots/other"]["modes"] = MODES
+
+    def start(self, path, replace):
+        answer = super().start(path, replace)
+        self.bots[path]["only"] = self.asked[-1][1].get("only")
+        return answer
+
+
+def _palette_labels(palette):
+    found = palette.property("shown")
+    found = found.toVariant() if hasattr(found, "toVariant") else found
+    return [one["label"] for one in found]
+
+
+def test_the_palette_lists_each_mode_and_step_the_bot_declares_to_run_alone(qt):
+    from PySide6.QtCore import QObject
+
+    client = WithModes()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    palette = root.findChild(QObject, "commandPalette")
+    QMetaObject.invokeMethod(palette, "open")
+    wait_until(lambda: palette.property("visible"))
+    search = root.findChild(QObject, "paletteSearch")
+    search.setProperty("text", "run")
+    wait_until(
+        lambda: (
+            _palette_labels(palette)
+            == [
+                "Run only Speed Raid",
+                "Run step: Speed Raid · open the list",
+                "Run step: Speed Raid · pick a character",
+                "Run only Raid",
+            ]
+        )
+    )
+    search.setProperty("text", "run step pick")
+    wait_until(lambda: _palette_labels(palette) == ["Run step: Speed Raid · pick a character"])
+    QMetaObject.invokeMethod(palette, "runAt", Q_ARG("QVariant", 0))
+    checks = root.findChild(QObject, "checksSheet")
+    wait_until(lambda: checks.property("opened"))  # Play's checks first, as for a round
+    QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    only = {"mode": "Speed Raid", "step": "pick a character"}
+    wait_until(lambda: ("bot.start", {"bot": "/bots/other", "only": only}) in client.asked)
+    studio.selectBot("/bots/ad-bot")  # running, and declares nothing: nothing to run alone
+    QMetaObject.invokeMethod(palette, "open")
+    search.setProperty("text", "run")
+    wait_until(lambda: palette.property("visible"))
+    assert not any(label.startswith("Run ") for label in _palette_labels(palette))
+    del engine
+
+
+def test_one_mode_asks_to_stop_the_bot_in_the_way_and_shows_only_while_it_runs(qt):
+    from PySide6.QtCore import QObject
+
+    client = WithModes()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    checks = root.findChild(QObject, "checksSheet")
+    question = root.findChild(QObject, "stopAndStartSheet")
+    label = root.findChild(QObject, "runOnlyLabel")
+    studio.playOnly("Speed Raid", "")
+    wait_until(lambda: checks.property("opened"))
+    QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    wait_until(lambda: question.property("opened"))  # ad-bot runs and sends input (decision 0020)
+    QMetaObject.invokeMethod(_sheet_button(question, "stopAndStart"), "clicked")
+    only = {"mode": "Speed Raid"}
+    wait_until(lambda: ("bot.start", {"bot": "/bots/other", "only": only, "replace": True}) in client.asked)
+    wait_until(lambda: studio.bot.get("status") == "running")
+    assert client.bots["/bots/ad-bot"]["status"] == "stopped"
+    wait_until(lambda: label.property("visible"))
+    assert label.property("text") == "only Speed Raid"
+    del engine
+
+
+def test_a_round_rows_play_runs_that_mode_alone_while_the_bot_is_stopped(qt):
+    from PySide6.QtCore import QObject
+
+    client = WithModes()
+    studio, engine, root = _studio_showing(client, "/bots/other")
+    root.resize(1400, 880)
+    studio.loadOverview()
+
+    def buttons():
+        return [item for item in _walk(root.contentItem()) if item.objectName() == "runOnly"]
+
+    def rows():
+        found = {}
+        for button in buttons():
+            row = button.parentItem().parentItem()
+            step = row.property("modelData")
+            step = step.toVariant() if hasattr(step, "toVariant") else step
+            found[step["name"]] = row
+        return found
+
+    wait_until(lambda: len(buttons()) == 3)
+    # ▶ shows on hover only for a mode the bot declares (Raid, Speed Raid), not for AFK, and never at rest
+    assert {name: row.property("runnable") for name, row in rows().items()} == {
+        "Raid": True,
+        "Speed Raid": True,
+        "AFK": False,
+    }
+    assert not any(button.property("visible") for button in buttons())
+    speed_raid = next(button for button in buttons() if button.parentItem().parentItem() == rows()["Speed Raid"])
+    QMetaObject.invokeMethod(speed_raid, "clicked")
+    checks = root.findChild(QObject, "checksSheet")
+    wait_until(lambda: checks.property("opened"))  # Play's checks first, as for a round
+    QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    wait_until(lambda: any(params.get("only") == {"mode": "Speed Raid"} for _, params in client.asked))
+    client.bots["/bots/other"]["status"] = "running"
+    studio.connect()  # bots.list again: other runs now
+    wait_until(lambda: studio.bot.get("status") == "running")
+    wait_until(lambda: not any(row.property("runnable") for row in rows().values()))
+    del engine

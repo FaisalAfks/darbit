@@ -25,7 +25,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   **Recoveries** (how often it got itself going again today with `d.record.recovered`, the most common reason and the
   last one), blocks of the bot's own and buttons for its actions. The bot's author lays out the default
   (`overview.toml`); **Customize** lets you drag blocks around, drag a corner to make one wider or narrower, take one
-  off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to the bot's.
+  off (✕) and add any from the gallery. Your layout is kept for that bot; ↺ goes back to the bot's. While the bot is
+  stopped, hovering a mode in **Today's round** shows ▶, which runs only that mode (for the modes its darbit.toml
+  declares, [Bot projects](projects.md#modes-and-steps)).
 - **Library** (Ctrl+2): the bot's actions first, then every image, region and location, with an image's last score
   against the similarity it needs. Search (Ctrl+F), filter by kind (Images, Regions, Locations, Actions; a region is a place of its own, which images name), Missing or
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
@@ -80,7 +82,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   it, it slides out of sight past its edge; move the mouse to that edge beside it to bring it back (the bot's own moves
   don't). Floating, it shows where the bot is, today's round so far and the last step that ended. Every other bot
   running or paused gets a line of its own under it (in a column, a block of its own), with its state, its time and
-  its own Pause and Stop; one with `[run] input = false` says **alongside**. The
+  its own Pause and Stop; one with `[run] input = false` says **alongside**; a run of one mode or step says so
+  ("only Daily quest"). The
   bot never sees it in its screenshots. Closing the Studio to the tray or minimizing it while a bot is running or
   paused opens the pill too, with that bot. The Studio comes back when the bot stops or fails, or from the tray, and
   showing it closes the pill.
@@ -150,7 +153,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   saves). On a wide window a panel explains the setting under the mouse: what it does, its value, default, range and
   key.
 - **The run control** (top right): ✎ opens the bot's folder (in VS Code if it's installed), Play (F5); while running,
-  its time with Pause and Stop. Play (also from the command palette and the tray) first runs darbit doctor's checks,
+  its time (and "only Daily quest" for a run of one mode or step) with Pause and Stop. Play (also from the command palette and the tray) first runs darbit doctor's checks,
   in a second or two: with nothing wrong the bot just starts; otherwise a sheet lists every check with what it found
   and how to fix it (**Take them** opens Capture on the targets not taken yet), with **Cancel**, **Check again** and
   **Start anyway**. One bot that sends input runs at a time ([the service](service.md)): Play (any of them, Start
@@ -160,7 +163,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   `[run] input = false` never asks, and starts alongside. Record while a bot that sends input runs says why it can't
   start, and the Studio comes back.
 - **Command palette** (Ctrl+K): type to find anything: pages, Play, Pause and Stop, the tools, themes, other bots,
-  the bot's actions to play or open, and its targets to retake. Up, Down and Enter.
+  the bot's actions to play or open, its targets to retake, and, while it's stopped, **Run only** each mode and
+  **Run step:** each step the bot declares (**Run step: Daily quest · claim it**). Up, Down and Enter.
 - **darbit settings** (Ctrl+,): the theme, the bot sidebar, smooth effects (off for a slower PC), whether bots go on
   after quitting, and the keys: click
   one and press the new keys (Esc leaves it, Delete turns it off, ↺ goes back). A key something else has is refused. A `theme.toml` in
