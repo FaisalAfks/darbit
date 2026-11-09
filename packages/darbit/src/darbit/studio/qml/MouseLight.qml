@@ -17,7 +17,6 @@ Item {
         anchors.fill: parent
         active: light.opacity > 0
         sourceComponent: Shape {
-            preferredRendererType: Shape.CurveRenderer
             ShapePath {
                 strokeWidth: -1
                 fillGradient: RadialGradient {
