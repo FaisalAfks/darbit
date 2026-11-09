@@ -3,7 +3,7 @@ small JPEG of the app window with what it looked for boxed, at most once a secon
 
 The Studio says it's watching by keeping data_dir/watching.json fresh, naming the logs folder of the bot it shows.
 The bot reads that file at most once a second, so a look while nobody watches costs a clock read and nothing more.
-A picture is made on a thread of its own, so a look never waits for it.
+A frame is made on a thread of its own, so a look never waits for it.
 """
 
 import json
@@ -24,22 +24,22 @@ from ..settings import settings
 from .log import log
 
 WATCHING = "watching.json"  # in data_dir: written by the Studio while the block is in sight
-LOOK = "sees.json"  # in the bot's logs folder: the last look, naming its picture
+LOOK = "sees.json"  # in the bot's logs folder: the last look, naming its frame
 FRESH = 5.0  # seconds a watching file stays good without being written again (a Studio that ended stops it)
 CHECK_EVERY = 1.0  # seconds between reads of the watching file
-FRAME_EVERY = 1.0  # seconds between pictures
-CHANGED_EVERY = 0.25  # seconds between pictures when a look finds something the last picture didn't
-WIDTH = 640  # the picture's width at most, in pixels
-QUALITY = 70  # JPEG quality: about 30 KB for a 640 px picture
+FRAME_EVERY = 1.0  # seconds between frames
+CHANGED_EVERY = 0.25  # seconds between frames when a look finds something the last frame didn't
+WIDTH = 640  # the frame's width at most, in pixels
+QUALITY = 70  # JPEG quality: about 30 KB for a 640 px frame
 
 _lock = threading.Condition()
 _checked = [-CHECK_EVERY]
 _watched = [False]
 _last = {"at": -FRAME_EVERY, "found": None, "slot": 0}
-_waiting: list[tuple] = []  # the look to make a picture of, at most one: a newer one takes its place
-_busy = [False]  # the picture thread is making one
+_waiting: list[tuple] = []  # the look to make a frame of, at most one: a newer one takes its place
+_busy = [False]  # the frame thread is making one
 _thread: list[threading.Thread | None] = [None]
-_said: set[str] = set()  # why pictures couldn't be made, each logged once
+_said: set[str] = set()  # why frames couldn't be made, each logged once
 
 
 def watching_file() -> Path:
@@ -73,8 +73,8 @@ def _same_folder(one: Path, other: Path) -> bool:
 def look(
     kind: str, chosen: list[Target], tried: list[Match], found: Match | None, pixels: np.ndarray, origin: Region
 ) -> None:
-    """Keep this look as the picture of what the bot sees, if the Studio is watching and one is due. Never raises,
-    and never waits: the picture is made on its own thread (the look's pixels aren't changed after it, so they're
+    """Keep this look as the frame of what the bot sees, if the Studio is watching and one is due. Never raises,
+    and never waits: the frame is made on its own thread (the look's pixels aren't changed after it, so they're
     handed over as they are). `chosen` is what was looked for, `tried` the best spot of each target searched."""
     if not kind or not watched():
         return
@@ -89,12 +89,12 @@ def look(
         _last["slot"] = 1 - _last["slot"]
         _waiting[:] = [(kind, list(chosen), list(tried), found, pixels, origin, _last["slot"])]
         if _thread[0] is None or not _thread[0].is_alive():
-            _thread[0] = threading.Thread(target=_make_pictures, name="darbit-sees", daemon=True)
+            _thread[0] = threading.Thread(target=_make_frames, name="darbit-sees", daemon=True)
             _thread[0].start()
         _lock.notify_all()
 
 
-def _make_pictures() -> None:
+def _make_frames() -> None:
     while True:
         with _lock:
             while not _waiting:
@@ -103,8 +103,8 @@ def _make_pictures() -> None:
             _busy[0] = True
         try:
             _write(*one)
-        except Exception as error:  # noqa: BLE001 - a picture that can't be made is skipped; the bot goes on
-            _say_once(f"What the bot sees: no picture ({error})")
+        except Exception as error:  # noqa: BLE001 - a frame that can't be made is skipped; the bot goes on
+            _say_once(f"What the bot sees: no frame ({error})")
         finally:
             with _lock:
                 _busy[0] = False
@@ -118,7 +118,7 @@ def _say_once(message: str) -> None:
 
 
 def settled(timeout: float = 5.0) -> bool:
-    """Wait until the picture asked for last is written (for tests and probes)."""
+    """Wait until the frame asked for last is written (for tests and probes)."""
     with _lock:
         return _lock.wait_for(lambda: not _waiting and not _busy[0], timeout)
 
@@ -145,8 +145,8 @@ def _write(
         return
     folder = settings.logs
     folder.mkdir(parents=True, exist_ok=True)
-    picture = f"sees-{slot}.jpg"  # two in turn: the one the Studio is showing is never written over
-    _replace(folder / picture, data.tobytes())
+    name = f"sees-{slot}.jpg"  # two in turn: the one the Studio is showing is never written over
+    _replace(folder / name, data.tobytes())
     boxes = []
     for match in tried:
         box = _box_of(match, area, shrink, found)
@@ -161,7 +161,7 @@ def _write(
         "kind": kind,
         "targets": names,
         "found": found.name if found is not None else None,
-        "picture": picture,
+        "file": name,
         "w": frame.shape[1],
         "h": frame.shape[0],
         "boxes": boxes,
@@ -170,7 +170,7 @@ def _write(
 
 
 def _frame_area(origin: Region) -> Region:
-    """What the picture shows: the app window, else the monitor the look was on."""
+    """What the frame shows: the app window, else the monitor the look was on."""
     if settings.window:
         found = windows.matching(settings.window, loose=True)
         if found:
@@ -195,7 +195,7 @@ def _pixels_of(area: Region, pixels: np.ndarray, origin: Region) -> np.ndarray:
 
 
 def _box_of(match: Match, area: Region, shrink: float, found: Match | None) -> dict | None:
-    """A box on the picture, in its pixels: found, or the closest spot of a target that wasn't."""
+    """A box on the frame, in its pixels: found, or the closest spot of a target that wasn't."""
     if match.region.intersect(area) is None:
         return None
     return {
@@ -217,7 +217,7 @@ def _replace(path: Path, data: bytes) -> None:
 
 
 def forget() -> None:
-    """Read the watching file again at the next look, and make the next picture (for tests)."""
+    """Read the watching file again at the next look, and make the next frame (for tests)."""
     settled()
     _checked[0] = -CHECK_EVERY
     _last["at"] = -FRAME_EVERY

@@ -1,8 +1,8 @@
 """The Studio's end of "What the bot sees" (#316): while the block is in sight, it keeps the watching file fresh so
-the shown bot keeps a picture of its looks (runtime/sees.py), and reads the bot's last look once a second for the block.
+the shown bot keeps a frame of its looks (runtime/sees.py), and reads the bot's last look once a second for the block.
 
 Out of sight (another page, the window hidden or minimized) it stops: the watching file goes, nothing is read, and the
-block's picture doesn't change, so nothing is decoded either.
+block's frame doesn't change, so nothing is decoded either.
 """
 
 import json
@@ -37,7 +37,7 @@ class Sees(QObject):
     def _get_frame(self) -> dict:
         return self._frame
 
-    # the last look: {time, kind, targets, found, picture (a file URL), w, h, boxes: [{name, x, y, w, h, score, found}]}
+    # the last look: {time, kind, targets, found, file (a file URL), w, h, boxes: [{name, x, y, w, h, score, found}]}
     frame = Property(dict, _get_frame, notify=changed)
 
     @Slot(str, str)
@@ -80,12 +80,12 @@ class Sees(QObject):
             look = json.loads(place.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return  # half written on another system: the next read gets it
-        if not isinstance(look, dict) or not look.get("picture"):
+        if not isinstance(look, dict) or not look.get("file"):
             return
         self._stamp = stamp
-        picture = place.with_name(str(look["picture"]))
-        # a new address for each picture: the block's Image loads it again instead of keeping the one it had
-        self._frame = {**look, "picture": f"{picture.as_uri()}?{stamp}"}
+        shot = place.with_name(str(look["file"]))
+        # a new address for each frame: the block's Image loads it again instead of keeping the one it had
+        self._frame = {**look, "file": f"{shot.as_uri()}?{stamp}"}
         self.changed.emit()
 
     def _tell(self) -> None:

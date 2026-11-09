@@ -40,7 +40,7 @@ def catalog(project: Project, events: list[dict], actions: list[str]) -> list[di
         _block("list", "activity", "What happened", 6),
         _block("screen", "screen", "Last screen", 4),
         _block("recoveries", "recoveries", "Recoveries", 4),
-        _block("sees", "sees", "What the bot sees", 8),  # off until added: it costs the bot a picture a second
+        _block("sees", "sees", "What the bot sees", 8),  # off until added: it costs the bot a frame a second
     ]
     for label in _named(events, "progress", "label"):
         found.append(_block("ring", f"progress:{label}", label, 4))

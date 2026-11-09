@@ -1,4 +1,4 @@
-"""What the bot sees (#316): a look kept as a small picture with its boxes, only while the Studio watches."""
+"""What the bot sees (#316): a look kept as a small frame with its boxes, only while the Studio watches."""
 
 import json
 import os
@@ -46,7 +46,9 @@ def bot(tmp_path, monkeypatch):
     def show_button(x, y):
         shown["pixels"][y : y + 40, x : x + 60] = button
 
-    return {"show": show_button, "grabs": grabs, "button": button, "images": images, "logs": tmp_path / "logs"}
+    yield {"show": show_button, "grabs": grabs, "button": button, "images": images, "logs": tmp_path / "logs"}
+    sees.settled()
+    sees._watched[0] = False  # the next test file starts with nobody watching
 
 
 def watch(logs, age=0.0):
@@ -84,7 +86,7 @@ def test_a_watching_file_for_another_bot_or_gone_stale_keeps_nothing(bot, tmp_pa
     assert not (bot["logs"] / sees.LOOK).exists()
 
 
-def test_a_found_target_is_boxed_on_a_small_picture(bot):
+def test_a_found_target_is_boxed_on_a_small_frame(bot):
     watch(bot["logs"])
     bot["show"](640, 360)
     assert d.wait("Gui.Play.png", timeout=0) is not None
@@ -94,8 +96,8 @@ def test_a_found_target_is_boxed_on_a_small_picture(bot):
     assert look["boxes"] == [
         {"name": "Gui.Play.png", "x": 320, "y": 180, "w": 30, "h": 20, "score": 1.0, "found": True}
     ]
-    picture = cv2.imread(str(bot["logs"] / look["picture"]))
-    assert picture.shape == (360, 640, 3)
+    frame = cv2.imread(str(bot["logs"] / look["file"]))
+    assert frame.shape == (360, 640, 3)
     assert len(bot["grabs"]) == 1  # the look covered the whole screen: its own pixels were used
 
 
@@ -113,16 +115,16 @@ def test_a_target_not_found_is_boxed_at_its_closest_spot(bot):
     assert box["score"] < d.settings.similarity
 
 
-def test_a_search_region_still_gives_a_picture_of_the_whole_screen(bot):
+def test_a_search_region_still_gives_a_frame_of_the_whole_screen(bot):
     save(bot["images"] / "Gui.Corner", bot["button"], region=[600, 300, 200, 200])
     bot["show"](640, 360)
     watch(bot["logs"])
     assert d.exists("Gui.Corner.png") is not None
     assert last_look(bot["logs"])["boxes"][0]["x"] == 320
-    assert bot["grabs"] == [Region(600, 300, 200, 200), SCREEN]  # the look's, then once more for the picture
+    assert bot["grabs"] == [Region(600, 300, 200, 200), SCREEN]  # the look's, then once more for the frame
 
 
-def test_pictures_come_at_most_once_a_second_unless_what_was_found_changes(bot):
+def test_frames_come_at_most_once_a_second_unless_what_was_found_changes(bot):
     watch(bot["logs"])
     d.exists("Gui.Play.png")
     first = last_look(bot["logs"])["time"]
@@ -134,7 +136,7 @@ def test_pictures_come_at_most_once_a_second_unless_what_was_found_changes(bot):
     assert last_look(bot["logs"])["found"] == "Gui.Play.png"  # found now: shown without waiting the full second
 
 
-def test_a_picture_that_cant_be_written_never_stops_a_look(bot, monkeypatch):
+def test_a_frame_that_cant_be_written_never_stops_a_look(bot, monkeypatch):
     watch(bot["logs"])
     bot["show"](0, 0)
 

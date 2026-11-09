@@ -3306,7 +3306,7 @@ def test_what_the_bot_sees_boxes_its_last_look_and_is_followed_only_in_sight(qt,
         "kind": "wait",
         "targets": ["Play.Raid.png", "Dim.Tab.Create.png"],
         "found": "Play.Raid.png",
-        "picture": "sees-1.jpg",
+        "file": "sees-1.jpg",
         "w": 640,
         "h": 360,
         "boxes": [

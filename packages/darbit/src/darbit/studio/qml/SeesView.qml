@@ -1,7 +1,7 @@
 // What the bot sees (#316): the screen at the bot's last look, with what it looked for boxed (found: solid in the
 // accent with its name and score; not found: dashed red at its closest spot), and the look under it. It follows the
 // bot's look file only while it's in sight (studio/sees.py): on another page, or with the window hidden or minimized,
-// nothing is read and the picture stays as it was.
+// nothing is read and the frame stays as it was.
 import QtQuick
 import QtQuick.Shapes
 
@@ -9,7 +9,7 @@ Column {
     id: seen
     property var info: ({})  // the block's data: {look, logs} (server/overview.py)
     readonly property var frame: sees.frame || ({})
-    readonly property bool has: !!frame.picture
+    readonly property bool has: !!frame.file
     readonly property bool inSight: visible && studio.shown
     width: parent ? parent.width : 0
     spacing: 12
@@ -40,16 +40,16 @@ Column {
         width: parent.width; height: Math.round(width * 9 / 16)
         radius: 10; color: studio.colors.bg; clip: true
         Image {
-            id: picture
+            id: shot
             anchors.fill: parent
-            source: seen.has ? seen.frame.picture : ""
+            source: seen.has ? seen.frame.file : ""
             fillMode: Image.PreserveAspectFit
             cache: false
             asynchronous: false  // a small JPEG: loaded at once, the last one stays until the new one is in
         }
-        Item {  // the picture as drawn, its boxes on it
-            x: (parent.width - picture.paintedWidth) / 2; y: (parent.height - picture.paintedHeight) / 2
-            width: picture.paintedWidth; height: picture.paintedHeight
+        Item {  // the frame as drawn, its boxes on it
+            x: (parent.width - shot.paintedWidth) / 2; y: (parent.height - shot.paintedHeight) / 2
+            width: shot.paintedWidth; height: shot.paintedHeight
             readonly property real fit: seen.frame.w ? width / seen.frame.w : 1
             Repeater {
                 model: seen.frame.boxes || []
