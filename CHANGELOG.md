@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- The service spent about a third of a core while a bot ran: every Overview refresh read the last 7 days of every event from the history to total the gains. It now reads only the gains (0.57 s down to 0.004 s per refresh on a week of a real bot's history)
+
 ## 1.0.0-alpha.7 - 2026-11-08
 
 ### New

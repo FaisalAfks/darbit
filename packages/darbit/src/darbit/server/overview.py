@@ -221,11 +221,11 @@ def _week_of_gains(project: Project, day: str) -> dict[str, list[float]]:
     found: dict[str, list[float]] = {}
     for index, name in enumerate(days):
         try:
-            events = history.events(project, name)
+            events = history.events(project, name, kinds=("gain",))  # a week of every event is tens of MB of JSON
         except (OSError, ValueError):
             continue
         for event in events:
-            if event.get("event") != "gain" or not isinstance(event.get("amount"), (int, float)):
+            if not isinstance(event.get("amount"), (int, float)):
                 continue
             row = found.setdefault(str(event.get("name")), [0] * WEEK)
             row[index] += event["amount"]
