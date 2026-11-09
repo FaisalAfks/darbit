@@ -213,9 +213,9 @@ def test_not_found_at_any_size_is_tried_again_a_minute_later(draw, tmp_path, mon
     looks = []
     real_look = find._look
 
-    def counted(chosen, region):
+    def counted(chosen, region, kind=""):
         looks.append(1)
-        return real_look(chosen, region)
+        return real_look(chosen, region, kind)
 
     clock = [1000.0]
 

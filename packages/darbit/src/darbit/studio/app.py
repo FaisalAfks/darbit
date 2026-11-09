@@ -26,6 +26,7 @@ from .ghost import Ghost
 from .hiding import HidingPill, told_by_window
 from .recorder import Recorder
 from .scout import Scout, ShotsProvider
+from .sees import Sees
 from .tray import TrayPanel, as_qrect, flyout_taken, icon_in_points, panel_place, screen_with
 from .window import PLACE, Door, fit, kept, screens
 
@@ -99,6 +100,9 @@ def load(
     engine.rootContext().setContextProperty("scoutHiding", scout_hiding)
     engine.rootContext().setContextProperty("captureHiding", capture_hiding)
     engine.rootContext().setContextProperty("trayPanel", tray_panel)
+    sees = Sees()  # "What the bot sees": the bot's last look, followed while its block is in sight
+    engine.rootContext().setContextProperty("sees", sees)
+    sees.setParent(engine)
     for name, pill_place in places.items():
         engine.rootContext().setContextProperty(name + "Place", pill_place)
         pill_place.setParent(engine)
