@@ -2,6 +2,7 @@
 // best score or where it belongs. `on` is the one landed on. A click lands on it; `compact` is the floating card's grid,
 // with the picture only.
 import QtQuick
+import QtQuick.Controls.Basic
 import "scout.js" as Scout
 
 Rectangle {
@@ -38,6 +39,7 @@ Rectangle {
         }
     }
     Text {
+        id: nameText
         visible: !tile.compact
         x: 8; anchors.top: frame.bottom; anchors.topMargin: 5
         width: parent.width - 14
@@ -66,4 +68,8 @@ Rectangle {
         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
         onClicked: tile.picked()
     }
+    // a name too long for the tile: whole on hover
+    ToolTip.visible: area.containsMouse && nameText.visible && nameText.truncated
+    ToolTip.text: nameText.text
+    ToolTip.delay: 400
 }

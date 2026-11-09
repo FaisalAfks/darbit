@@ -160,6 +160,38 @@ def test_deleting_an_asset_takes_its_files(project):
         library.delete(project, "Lobby.Play")
 
 
+def test_undo_puts_the_last_deleted_asset_back(project):
+    from darbit.server import deleted
+
+    images = project.folder / "assets" / "images"
+    before = (images / "Lobby.Play.png").read_bytes()
+    library.delete(project, "Lobby.Play")
+    assert deleted.take_back(project.folder) == {
+        "kind": "asset",
+        "name": "Lobby.Play",
+        "files": [str(images / "Lobby.Play.png"), str(images / "Lobby.Play.json")],
+    }
+    assert (images / "Lobby.Play.png").read_bytes() == before
+    assert json.loads((images / "Lobby.Play.json").read_text(encoding="utf-8")) == {"similarity": 0.85}
+    with pytest.raises(ValueError, match="nothing deleted"):  # put back once
+        deleted.take_back(project.folder)
+
+
+def test_only_the_last_delete_is_kept_and_a_name_taken_again_stays(project):
+    from darbit.server import deleted
+
+    images = project.folder / "assets" / "images"
+    library.delete(project, "Lobby.Play")
+    library.delete(project, "Lobby.Menu")
+    assert deleted.take_back(project.folder)["name"] == "Lobby.Menu"
+    assert not (images / "Lobby.Play.png").exists()  # the one before is gone for good
+    library.delete(project, "Fight.Slot")
+    (images / "Fight.Slot.json").write_text("{}", encoding="utf-8")  # taken again since
+    with pytest.raises(ValueError, match="there again"):
+        deleted.take_back(project.folder)
+    assert (images / "Fight.Slot.json").read_text(encoding="utf-8") == "{}"
+
+
 def test_a_target_names_its_kind_and_old_files_get_it_written(project):
     import json
 

@@ -427,6 +427,56 @@ def test_a_refused_request_shows_its_reason(qt):
     wait_until(lambda: studio.message == "ad-bot is already running")
 
 
+class Changing(FakeClient):
+    """The service, also answering the Library's deletes, renames and undo."""
+
+    def call(self, method, **params):
+        if method.startswith("bot.library.") and method != "bot.library":
+            self.asked.append((method, params))
+            return {}
+        return super().call(method, **params)
+
+
+def test_a_delete_or_rename_in_the_library_is_taken_back_from_the_toast(qt):
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtQuick import QQuickItem
+    from PySide6.QtTest import QTest
+
+    client = Changing()
+    studio = backend.Studio(lambda: client)
+    engine = app.load(studio)
+    root = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    undo = root.findChild(QQuickItem, "toastUndo")
+    assert not undo.isVisible()
+    studio.deleteAsset("Bag.Equip")
+    wait_until(lambda: undo.isVisible())  # "Deleted Bag.Equip", with Undo
+    studio.selectBot("/bots/other")  # taken back on the bot it was done to, even with another shown
+    root.grabWindow()  # a frame: the toast's row lays out its parts
+    middle = undo.mapToScene(QPointF(undo.width() / 2, undo.height() / 2)).toPoint()
+    QTest.mouseClick(root, Qt.LeftButton, Qt.NoModifier, middle)  # on Undo, not the toast under it
+    wait_until(lambda: ("bot.library.undelete", {"bot": "/bots/ad-bot"}) in client.asked)
+    assert not undo.isVisible()
+    studio.selectBot("/bots/ad-bot")
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    undone = []
+    studio.undone.connect(lambda was, now: undone.append((was, now)))
+    studio.renameAsset("Bag.Equip", "Bag.Wear")
+    wait_until(lambda: undo.isVisible())
+    studio.undoLast()
+    back = ("bot.library.rename", {"bot": "/bots/ad-bot", "name": "Bag.Wear", "to": "Bag.Equip"})
+    wait_until(lambda: back in client.asked)
+    wait_until(lambda: ("Bag.Wear", "Bag.Equip") in undone)  # the inspector follows it back
+    studio.renameAction("dim_run", "dim_go")  # actions too, through their own requests
+    wait_until(lambda: studio._undo is not None and studio._undo.method == "bot.action.rename")
+    studio.undoLast()
+    wait_until(
+        lambda: ("bot.action.rename", {"bot": "/bots/ad-bot", "name": "dim_go", "to": "dim_run"}) in client.asked
+    )
+    studio.undoLast()  # once only
+    del engine
+
+
 @pytest.mark.parametrize("theme_name", ["glass-dark", "high-contrast"])
 @pytest.mark.parametrize("page", ["overview", "library", "results", "settings", "studio", "action"])
 def test_every_page_draws_without_a_qml_warning(effects, tmp_path, page, theme_name):
@@ -567,6 +617,59 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(effect
     finally:
         QtCore.qInstallMessageHandler(None)
     assert warnings == []
+
+
+def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import Qt
+    from PySide6.QtQuick import QQuickItem, QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    screen = np.full((400, 600, 3), 30, np.uint8)
+    screen[200:240, 300:400] = (90, 200, 90)
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    capture.start(tmp_path, shot=screen, several=False)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+    scale = window.property("scale")
+    QMetaObject.invokeMethod(
+        window, "clicked", Q_ARG("QVariant", 350 * scale), Q_ARG("QVariant", 220 * scale), Q_ARG("QVariant", True)
+    )
+    name = window.findChild(QQuickItem, "nameField")
+    name.setProperty("text", "Menu.Play")
+    name.forceActiveFocus()
+    QTest.keyClick(window, Qt.Key_Tab)  # from the name into the pill, not the next kind
+    assert window.property("tool") == "image"
+    assert window.activeFocusItem() is not name
+    seen = []
+    while window.activeFocusItem().objectName() != "saveButton" and len(seen) < 12:
+        seen.append(window.activeFocusItem())
+        QTest.keyClick(window, Qt.Key_Tab)
+    assert window.activeFocusItem().objectName() == "saveButton"
+    QTest.keyClick(window, Qt.Key_Backtab)  # back one, and on again
+    assert window.activeFocusItem() is seen[-1]
+    QTest.keyClick(window, Qt.Key_Tab)
+    QTest.keyClick(window, Qt.Key_Tab)  # past Save: round to the name
+    assert window.activeFocusItem() is name
+    QTest.keyClick(window, Qt.Key_Backtab)  # and back from the name to Save
+    assert window.activeFocusItem().objectName() == "saveButton"
+    assert window.property("tool") == "image"  # Tab never fell through to the next kind
+    QTest.keyClick(window, Qt.Key_Escape)  # back to the shot, nothing dropped
+    assert window.activeFocusItem().objectName() == "stage"
+    assert window.property("image") is not None
+    name.forceActiveFocus()
+    QTest.keyClick(window, Qt.Key_Tab)
+    while window.activeFocusItem().objectName() != "saveButton":
+        QTest.keyClick(window, Qt.Key_Tab)
+    QTest.keyClick(window, Qt.Key_Return)  # Enter on Save saves
+    wait_until(lambda: (tmp_path / "images" / "Menu.Play.png").is_file())
+    capture.close()
+    QtCore.QCoreApplication.processEvents()
+    del engine
 
 
 def test_the_theme_chosen_is_used_next_time(qt):

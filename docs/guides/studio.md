@@ -31,7 +31,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   Weak, sort by name, weakest or most used, and group by name or kind if you like. Click one for the inspector: its
   numbers and last scores (an image also says its region and location, the defaults included: the whole screen and
   its centre), **Retake**, **Rename** (every line of code naming it changes too, and its box on the screens kept for the Screen view), **Delete**, **Scout on screen**
-  for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**.
+  for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**. After a
+  Delete or a Rename, **Undo** in the message at the bottom takes it back (only the last delete is kept, in the bot's
+  `.darbit/deleted`). A name too long for its card shows whole on hover.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
   place (a new shot of a screen starts it over); click one for the side panel, where **Retake on this shot** opens
@@ -55,7 +57,9 @@ sight. A phone gets it too when `notify.toml` has a channel.
   2× to 24×), the target's parts and the place and colour of the pixel under it; **Z** pins it. **T** tests the image
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
   how many look-alikes score under the line, with each match's score and a slider for the similarity it needs.
-  **Enter** saves; **Esc** removes what's picked, then closes. With a setup guide, the next one to take is shown.
+  **Enter** saves; **Esc** removes what's picked, then closes. From the name, **Tab** and **Shift+Tab** go through the
+  pill's buttons, **Enter** or **Space** presses one and **Esc** goes back to the shot. With a setup guide, the next one
+  to take is shown.
   A retake can also open on a saved screenshot (a failure's on Results, a screen's last shot in the Library): the
   image is cut from it at its own pixels, and Capture says so; saved shots are JPEG, so it's a little softer than one
   from the screen now.
