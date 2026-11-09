@@ -396,6 +396,33 @@ def _cpu_and_memory(pid: int) -> tuple[float, int]:
     return cpu, counters.WorkingSetSize
 
 
+def test_zz_studio_memory_with_effects_off_diagnosis():
+    import json
+    import subprocess
+    import sys
+
+    from darbit import paths
+    from darbit.server import ui_settings
+
+    for effects in (True, False):
+        config = paths.config_dir()
+        config.mkdir(parents=True, exist_ok=True)
+        ui_settings.set_value("studio.effects", effects)
+        studio = subprocess.Popen([sys.executable, "-m", "darbit", "app"])
+        try:
+            time.sleep(10)
+            found = system_windows.matching("darbit Studio")
+            pid = found[0].pid
+            _, memory = _cpu_and_memory(pid)
+            time.sleep(10)
+            _, later = _cpu_and_memory(pid)
+            print(f"DIAG effects={effects}: {memory / 2**20:.1f} MB at 10 s, {later / 2**20:.1f} MB at 20 s")
+        finally:
+            studio.terminate()
+            studio.wait(10)
+    print("DIAG ui.json:", json.dumps(ui_settings.read_all()) if hasattr(ui_settings, "read_all") else "")
+
+
 def test_the_studio_meets_its_speed_goals_on_windows():
     """darbit app, left alone: under 2% of one core and under 200 MB (the plan's goals for the Studio, idle)."""
     import subprocess
