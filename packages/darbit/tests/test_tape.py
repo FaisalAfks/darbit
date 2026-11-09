@@ -134,6 +134,18 @@ def test_places_follow_the_game_window():
     assert tape.Placing(None, [0, 0, 10, 10]).spot(5, 6) == (5, 6)
 
 
+def test_a_minimised_window_plays_the_tape_where_it_was_recorded(monkeypatch):
+    from darbit.core.geometry import Region
+    from darbit.platform import windows
+    from darbit.platform.backend import Window
+    from darbit.settings import settings
+
+    monkeypatch.setattr(settings, "window", "Game")
+    monkeypatch.setattr(windows, "matching", lambda name, loose=False: [Window(1, "Game", "game.exe", 1)])
+    monkeypatch.setattr(windows, "region", lambda handle: Region(0, 0, 0, 0))
+    assert tape._window_now() is None
+
+
 def test_stop_ends_a_tape(tmp_path, sent):
     tape.save(tape.path_for(tmp_path / "run.py"), Tape([Event(5.0, "key", "a")]))
     tape.stopping.set()
