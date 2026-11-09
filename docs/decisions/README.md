@@ -24,5 +24,6 @@ Architecture decision records: one short file per decision, with its context, th
 | [0018](0018-darbit-and-its-bots.md) | What belongs in darbit, and what in a bot | 2026-11-05 |
 | [0019](0019-reading-text.md) | Reading text: RapidOCR as an optional extra, one line straight to the recogniser | 2026-11-08 |
 | [0020](0020-one-input-bot-at-a-time.md) | One bot that sends input at a time | 2026-11-08 |
+| [0021](0021-keeping-history-small.md) | 14 days of reports, logs and history; no image looks in history | 2026-11-09 |
 
 0001 to 0014 came from the [2026-10-25 plan](../archive/plan-2026-10-25.md); 0015 and later from the [rebuild plan](../plan-rebuild.md).

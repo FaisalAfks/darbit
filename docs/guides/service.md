@@ -85,7 +85,14 @@ when it starts.
 Each bot's run report lines are copied into `.darbit/history.db` (SQLite) as the bot writes them, and again whenever
 history is asked for, so a bot on any darbit version has one. The Results page and `darbit history` query it
 instead of reading a day's report again. The tables are `events` (`day`, `time`, `kind`, and the report `line` as
-written) and `reports` (how far each report has been copied); `server/history.py` has the queries.
+written), `reports` (how far each report has been copied) and `forgotten` (the day history was last dropped
+before); `server/history.py` has the queries.
+
+Image looks (`exists`, `wait`, `vanish`, `find`), about nine lines in ten of a report, are left out of history. The
+Results page's problems need them, and read them from the day's report, which keeps every line. A history from an
+older darbit loses its looks once, a day at a time, and the file is then given back with `VACUUM` (left for the
+next tidy if another connection is busy). History is kept for the bot's `keep_days`
+([decision 0021](../decisions/0021-keeping-history-small.md)).
 
 ## Talking to it
 

@@ -48,6 +48,7 @@ SETTING_KINDS = {
     "space": "text",  # "screen" (the default) or "window"
     "day_starts": "text",  # when the bot's day starts: "03:00", or "00:00 UTC"
     "polite": "number",  # polite mode: seconds of quiet before the bot goes on after the person used the mouse
+    "keep_days": "number of days (1 or more)",  # days of run reports, daily logs and history kept (decision 0021)
 }
 
 
@@ -75,7 +76,7 @@ class Project:
     summary: str = ""  # one line under the bot's name in the Studio
     tiles: list[str] = field(default_factory=list)  # the Overview's tiles in order; empty: the defaults
     restart: int = 0  # [run] restart: times an hour the service starts the bot again after it failed
-    keep_days: int = 30  # [run] keep_days: days of run history, reports and logs the service keeps
+    keep_days: int = 14  # [settings] keep_days (or the older [run] keep_days): days of reports, logs and history kept
     input: bool = True  # [run] input: whether the bot sends mouse and keys; one such bot runs at a time (0020)
 
 
@@ -121,9 +122,11 @@ def load(folder: Path) -> Project:
     restart = run.get("restart", 0)
     if not isinstance(restart, int) or isinstance(restart, bool) or restart < 0:
         raise ProjectError(f"{MANIFEST} [run]: restart is how many times an hour to start the bot again, e.g. 3")
-    keep_days = run.get("keep_days", 30)
-    if not isinstance(keep_days, int) or isinstance(keep_days, bool) or keep_days < 1:
-        raise ProjectError(f"{MANIFEST} [run]: keep_days is how many days of history to keep, e.g. 30")
+    if "keep_days" in run:  # where it was before it became a setting: still read
+        if not _whole_number(run["keep_days"]):
+            raise ProjectError(f"{MANIFEST} [run]: keep_days is how many days of history to keep, e.g. 14")
+        settings.setdefault("keep_days", run["keep_days"])
+    keep_days = settings.get("keep_days", 14)
     sends_input = run.get("input", True)
     if not isinstance(sends_input, bool):
         raise ProjectError(f"{MANIFEST} [run]: input is true or false: whether the bot uses the mouse and keys")
@@ -171,6 +174,8 @@ def _check_setting(key: str, value: object) -> None:
         ok = isinstance(value, bool)
     elif kind == "table":
         ok = isinstance(value, dict)
+    elif kind == "number of days (1 or more)":
+        ok = _whole_number(value)
     else:
         ok = isinstance(value, str)
     if not ok:
@@ -184,6 +189,11 @@ def _check_setting(key: str, value: object) -> None:
             days.parse(value)
         except ValueError as error:
             raise ProjectError(f"{MANIFEST} [settings]: {error}") from None
+
+
+def _whole_number(value: object) -> bool:
+    """A whole number, 1 or more."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
 
 
 def apply(project: Project, settings: Settings) -> list[str]:

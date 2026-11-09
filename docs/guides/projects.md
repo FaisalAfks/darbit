@@ -98,7 +98,6 @@ says which:
 ```toml
 [run]
 restart = 3     # 0 (the default) leaves a failed bot stopped
-keep_days = 30  # days of run history, run reports and daily logs kept (30 by default); older ones are deleted
 input = true    # the bot uses the mouse and keys (the default); false for one that only watches or reads
 ```
 
@@ -106,7 +105,18 @@ Bots on one desktop share one mouse and keyboard, so the service runs one bot wi
 with `input = false` runs alongside anything. See [the service](service.md#one-bot-that-sends-input-at-a-time). Each
 `[run]` key is checked, so a bot that sets `input` needs a darbit newer than 1.0.0-alpha.6.
 
-The service tidies when it starts and every six hours. Screenshots keep the newest few hundred whatever their age.
+How long a bot's run reports, daily logs and history are kept is the `keep_days` setting, in `[settings]`:
+
+```toml
+[settings]
+keep_days = 14  # days kept before today (14 by default); older ones are deleted, today's and yesterday's never
+```
+
+The bot deletes its own old reports and logs when it starts writing and as each new day starts. The service deletes
+the history (and the files of a bot on an older darbit) when it starts, when it starts a bot, and every six hours.
+Days go by the bot's `day_starts`. Screenshots keep the newest few hundred whatever their age. An older darbit.toml
+with `keep_days` in `[run]` still works; a bot that sets it in `[settings]` needs a darbit newer than 1.0.0-alpha.7. See
+[decision 0021](../decisions/0021-keeping-history-small.md).
 
 For a failure the bot can get past itself, go back to a known screen and try again in its own code (`d.go`, see the
 screen map guide); `restart` is for when the bot itself ended.

@@ -1,4 +1,4 @@
-"""Screenshots in the log folder: saved as JPEG, and only the newest kept (old PNGs included)."""
+"""The log folder: screenshots saved as JPEG with only the newest kept, and logs and reports kept keep_days."""
 
 import os
 
@@ -26,3 +26,27 @@ def test_screenshots_are_jpeg_and_the_newest_are_kept(tmp_path, monkeypatch):
     assert first.endswith(".jpg") and second.endswith(".jpg")
     assert not old.exists()  # trimmed with the JPEGs
     assert sorted(p.suffix for p in folder.iterdir()) == [".jpg", ".jpg"]
+
+
+def test_old_logs_and_reports_go_when_the_bot_starts_writing(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "logs", tmp_path)
+    monkeypatch.setattr(settings, "log", True)
+    monkeypatch.setattr(settings, "keep_days", 1)
+    monkeypatch.setattr(log, "_tidied", None)
+    monkeypatch.setattr(log, "_today", lambda: "2026-11-09")
+    for day in ("2026-11-07", "2026-11-08"):
+        (tmp_path / f"report-{day}.jsonl").write_text("{}\n", encoding="utf-8")
+        (tmp_path / f"{day}.log").write_text("a line\n", encoding="utf-8")
+    (tmp_path / "studio-output.log").write_text("output\n", encoding="utf-8")
+
+    log.record("gain", name="Fish", amount=1)
+
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "2026-11-08.log",  # yesterday's stays
+        "report-2026-11-08.jsonl",
+        "report-2026-11-09.jsonl",
+        "studio-output.log",  # not a day's file
+    ]
+    (tmp_path / "report-2026-11-01.jsonl").write_text("{}\n", encoding="utf-8")
+    log.record("gain", name="Fish", amount=1)
+    assert (tmp_path / "report-2026-11-01.jsonl").exists()  # once a day, not on every line

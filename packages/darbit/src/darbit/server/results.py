@@ -4,10 +4,11 @@
 `day(project, "2026-10-26")` is one day in full: when it ran, its gains (today, each of the last 7 days, the
 last total), progress, how many top-level steps finished, the time lost to failures, the problems grouped by
 cause, and the timeline lanes. All of it comes from the run report (`d.record.gain`, `d.progress` and steps), through the run history in SQLite
-(history.py).
+(history.py); the problems' image looks, which history leaves out, come from the day's report itself.
 """
 
 from datetime import date, timedelta
+from pathlib import Path
 
 from ..project.manifest import Project
 from . import dashboard, history, problems
@@ -147,6 +148,7 @@ def day(project: Project, day_name: str) -> dict:
     """One day of the Results page."""
     history.catch_up(project)
     events = history.events(project, day_name)
+    report = dashboard.report_file(project, day_name)
     times = []
     for event in events:
         at = seconds_of(event.get("time"), day_name)
@@ -202,10 +204,24 @@ def day(project: Project, day_name: str) -> dict:
         "progress": _progress(events),
         "finished": {"done": finished, "total": ended},
         "lost_seconds": round(lost),
-        "problems": problems.explain(project, events, dashboard.report_file(project, day_name).parent),
+        "problems": problems.explain(project, _with_looks(report, events), report.parent),
         "recoveries": recoveries_of(events),
         "lanes": lane_list,
     }
+
+
+def _with_looks(report: Path, events: list[dict]) -> list[dict]:
+    """The day's events with its image looks, which history leaves out and problems need: from the day's report,
+    only on a day with a failed step. Without the report (deleted, or the bot logs elsewhere), the history's own."""
+    failed = False
+    for event in events:
+        if event.get("event") == "step" and event.get("state") == "failed":
+            failed = True
+            break
+    if not failed:
+        return events
+    whole = dashboard.read_events(report)
+    return whole or events
 
 
 def recoveries_of(events: list[dict]) -> list[dict]:

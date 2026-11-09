@@ -417,7 +417,8 @@ def _start_again(folder: Path) -> None:
 
 
 def _watch(run: Run) -> None:
-    """Tell the windows when the bot's report changes, and when it ends."""
+    """Tell the windows when the bot's report changes, and when it ends. Tidies its history first (decision 0021)."""
+    _tidy_history(run.folder)
     last_change = 0.0
     while run.process.poll() is None:
         changed = _report_time(run.folder)
@@ -458,6 +459,14 @@ def _keep_history(folder: Path) -> None:
         history.catch_up(load(folder))
     except (ProjectError, OSError, sqlite3.Error):
         pass  # the history catches up on the next look, or when it's asked for
+
+
+def _tidy_history(folder: Path) -> None:
+    """Drop the bot's history older than its keep_days, and the image looks an older history still has."""
+    try:
+        history.tidy(load(folder))
+    except (ProjectError, OSError, sqlite3.Error):
+        pass  # the service's own tidy tries again in a few hours
 
 
 def _report_time(folder: Path) -> float | None:
