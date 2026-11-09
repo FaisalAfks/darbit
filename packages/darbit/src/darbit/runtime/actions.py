@@ -1,5 +1,6 @@
 """Mouse and keyboard actions on targets, matches and locations."""
 
+import math
 import threading
 import time
 
@@ -47,10 +48,41 @@ def _mouse(kind: str, what: Spot, timeout: float | None, region: Region | None, 
         record(kind, target=_label(what), done=False)
         return False
     front.before_input()
+    _approach(point)
     device.click(*point, _glide(), button, times)
     log(f"{kind} {_label(what)} at {point[0]},{point[1]}")
     record(kind, target=_label(what), done=True, at=list(point))
     return True
+
+
+# where the mouse steps back to, in order: on away from the target if it's beside it, else up, left, right, down
+STEPS_BACK = ((0, -1), (-1, 0), (1, 0), (0, 1))
+
+
+def _approach(point: tuple[int, int]) -> None:
+    """With settings.approach on and the mouse on or near `point`, step it back that far first, so the click glides
+    in: a game that sees a button's hover only when the mouse moves onto it gets one, every retry too."""
+    distance = settings.approach
+    if distance <= 0:
+        return
+    x, y = device.position()
+    if math.hypot(x - point[0], y - point[1]) >= distance:
+        return
+    device.move(*_step_back(point, (x, y), distance), 0)
+
+
+def _step_back(point: tuple[int, int], mouse: tuple[int, int], distance: float) -> tuple[int, int]:
+    """A spot `distance` from `point` that's on the desktop."""
+    left, top, width, height = device.desktop()
+    directions = list(STEPS_BACK)
+    away = math.hypot(mouse[0] - point[0], mouse[1] - point[1])
+    if away > 0:
+        directions.insert(0, ((mouse[0] - point[0]) / away, (mouse[1] - point[1]) / away))
+    spots = [(round(point[0] + dx * distance), round(point[1] + dy * distance)) for dx, dy in directions]
+    for spot in spots:
+        if left <= spot[0] < left + width and top <= spot[1] < top + height:
+            return spot
+    return spots[0]
 
 
 def click(what: Spot, timeout: float | None = None, region: Region | None = None) -> bool:

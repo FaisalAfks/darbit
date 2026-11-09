@@ -30,6 +30,7 @@ SETTING_KINDS = {
     "timeout": "number",
     "similarity": "number",
     "glide": "number",
+    "approach": "number",  # pixels a click steps back first when the mouse is already that close
     "scan_rate": "number",
     "lag": "number",  # every wait this many times longer
     "screenshot_after": "number",
