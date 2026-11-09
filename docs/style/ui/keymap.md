@@ -48,6 +48,9 @@ them while Scout is on)
 | `Delete` | remove the selected box |
 | `PgUp` / `PgDn` | previous / next guide item |
 
+In the target's name, `Tab` / `Shift+Tab` go on through the pill's buttons instead of to the next kind; on a button,
+`Enter` or `Space` presses it and `Esc` goes back to the shot.
+
 ## Run panel
 
 `F5` continue · `Shift+F5` stop · `F10` step · `F9` breakpoint · `F2` edit step · `Insert` add step

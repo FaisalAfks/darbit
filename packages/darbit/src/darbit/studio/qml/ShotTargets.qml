@@ -4,6 +4,7 @@
 // entries: Capture's `shown` ({ index, name, kind, box, image, region, location, scoreText, scoreShort, scoreTone }).
 // The view's model is only their count, so a box nudged or renamed updates its tile in place and the scroll stays.
 import QtQuick
+import QtQuick.Controls.Basic
 
 GridView {
     id: tiles
@@ -60,6 +61,10 @@ GridView {
             cursorShape: Qt.PointingHandCursor
             onClicked: tiles.picked(tile.entry.index)
         }
+        // a name too long for the tile: whole on hover
+        ToolTip.visible: area.containsMouse && nameLine.truncated
+        ToolTip.text: nameLine.text
+        ToolTip.delay: 400
         Rectangle {  // its image, cut from the shot
             id: thumb
             x: 6; y: 6; width: parent.width - 12; height: tiles.vertical ? 46 : 58

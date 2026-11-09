@@ -22,7 +22,7 @@ from ..platform import system
 from ..project import bots
 from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
-from . import dashboard, history, library, recording_mark, refusal, results, ui_settings
+from . import dashboard, deleted, history, library, recording_mark, refusal, results, ui_settings
 from .events import publish
 from .refusal import InputBotRunning
 
@@ -601,6 +601,17 @@ def library_rename_plan(data: dict) -> dict:
 def library_delete(data: dict) -> dict:
     """Delete an asset's files."""
     return library.delete(load(_folder(data)), str(data.get("name", "")))
+
+
+def library_undelete(data: dict) -> dict:
+    """Put back the asset or action deleted last: {name, kind} ("asset" or "action")."""
+    from . import actions_api
+
+    project = _folder(data)
+    note = deleted.take_back(project)
+    if note.get("kind") == "action":
+        actions_api.put_back(project, note)
+    return {"name": note.get("name", ""), "kind": note.get("kind", "")}
 
 
 def library_rename(data: dict) -> dict:

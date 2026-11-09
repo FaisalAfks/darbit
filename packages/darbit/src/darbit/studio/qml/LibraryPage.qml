@@ -290,6 +290,11 @@ Item {
             page.chosen = ""
         }
     }
+    // a rename taken back from the toast: the inspector follows it to its old name
+    Connections {
+        target: studio
+        function onUndone(was, now) { if (was !== "" && page.chosen === was) page.chosen = now }
+    }
     Shortcut { sequence: "Esc"; enabled: page.chosen !== "" && page.visible; onActivated: page.chosen = "" }
     Shortcut { sequence: window.keyOf("search"); enabled: page.visible; onActivated: search.forceActiveFocus() }
 }

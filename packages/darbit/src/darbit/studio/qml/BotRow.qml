@@ -38,7 +38,7 @@ Rectangle {
     Column {
         visible: !row.folded
         anchors { left: square.right; leftMargin: 12; right: dot.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-        Text { width: parent.width; text: row.bot.name || ""; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
+        Text { id: nameText; width: parent.width; text: row.bot.name || ""; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
         Text {
             width: parent.width; elide: Text.ElideRight
             text: row.bot.error ? "can't load: see its darbit.toml" : row.state === "stopped" ? (row.bot.summary || "stopped") : row.state
@@ -55,7 +55,8 @@ Rectangle {
             : row.state === "failed" ? studio.colors.danger : studio.colors.faint
     }
     MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: row.clicked() }
-    ToolTip.visible: row.folded && area.containsMouse
-    ToolTip.text: (bot.name || "") + " · " + row.state
+    // folded: its name and state; a name too long for the row: whole
+    ToolTip.visible: area.containsMouse && (row.folded || nameText.truncated)
+    ToolTip.text: row.folded ? (bot.name || "") + " · " + row.state : nameText.text
     ToolTip.delay: 300
 }

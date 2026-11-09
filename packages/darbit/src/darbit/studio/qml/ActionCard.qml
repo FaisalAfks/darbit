@@ -1,5 +1,6 @@
 // One action: its name, how many steps and sections it has, which actions call it, and Play.
 import QtQuick
+import QtQuick.Controls.Basic
 
 Rectangle {
     id: card
@@ -53,6 +54,7 @@ Rectangle {
         }
     }
     Text {
+        id: nameText
         x: 12; y: 130; width: card.width - 24
         text: card.action.name || ""
         color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold
@@ -70,4 +72,8 @@ Rectangle {
         font.pixelSize: card.action.used_by && card.action.used_by.length ? 12 : 10; font.weight: Font.DemiBold
         font.letterSpacing: card.action.used_by && card.action.used_by.length ? 0 : 0.6
     }
+    // a name too long for the card: whole on hover
+    ToolTip.visible: area.containsMouse && nameText.truncated
+    ToolTip.text: nameText.text
+    ToolTip.delay: 400
 }

@@ -167,8 +167,15 @@ def test_actions_are_listed_renamed_and_deleted(service, bot):  # noqa: F811
         assert [(found["name"], found["steps"]) for found in listed] == [("open_bag", 2)]
         connection.call("bot.action.rename", bot="tick-bot", name="open_bag", to="bag_open")
         assert [found["name"] for found in connection.call("bot.actions", bot="tick-bot")] == ["bag_open"]
+        connection.call("bot.action.breakpoints", bot="tick-bot", name="bag_open", lines=[2])
         connection.call("bot.action.delete", bot="tick-bot", name="bag_open")
         assert connection.call("bot.actions", bot="tick-bot") == []
+        back = connection.call("bot.library.undelete", bot="tick-bot")
+        assert back == {"name": "bag_open", "kind": "action"}
+        assert [found["name"] for found in connection.call("bot.actions", bot="tick-bot")] == ["bag_open"]
+        assert actions_api.breakpoints(bot) == {"bag_open": [2]}
+        with pytest.raises(client.ServiceError, match="nothing deleted"):
+            connection.call("bot.library.undelete", bot="tick-bot")
 
 
 def test_an_action_is_read_edited_and_saved_back(service, bot):  # noqa: F811

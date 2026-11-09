@@ -19,6 +19,7 @@ from ..runs.flowfile import Section
 from ..runs.player import Player
 from ..runtime import tape
 from ..settings import settings
+from . import deleted
 from .events import publish
 
 _player: Player | None = None
@@ -197,7 +198,8 @@ def rename(project: Path, name: str, to: str) -> dict:
 
 
 def delete(project: Path, name: str) -> dict:
-    """Delete an action, its tape and its breakpoints. An action other actions still play can't be deleted."""
+    """Delete an action, its tape and its breakpoints, kept aside until the next delete so Undo can put them back
+    (deleted.py). An action other actions still play can't be deleted."""
     folder = _folder(project)
     path = folder / f"{name}.py"
     if not path.exists():
@@ -208,15 +210,22 @@ def delete(project: Path, name: str) -> dict:
             callers.append(other.stem)
     if callers:
         raise ValueError(f"{', '.join(sorted(callers))} still plays {name}: take it out there first")
-    path.unlink()
+    files = [path]
     recorded = tape.path_for(path)
     if recorded.exists():
-        recorded.unlink()
+        files.append(recorded)
     found = breakpoints(project)
-    if name in found:
-        del found[name]
+    lines = found.pop(name, [])
+    deleted.keep(project, files, {"kind": "action", "name": name, "breakpoints": lines})
+    if lines:
         _breakpoints_file(project).write_text(json.dumps(found, indent=2), encoding="utf-8")
     return {"deleted": name}
+
+
+def put_back(project: Path, note: dict) -> None:
+    """An action Undo put back gets its breakpoints again."""
+    if note.get("breakpoints"):
+        set_breakpoints(project, str(note.get("name", "")), list(note["breakpoints"]))
 
 
 def _rename_calls(path: Path, name: str, to: str) -> None:

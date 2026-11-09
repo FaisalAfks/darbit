@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### New
+
+- Undo for Delete and Rename in the Library, in the message at the bottom (#319). A deleted asset's files, or an action with its tape and breakpoints, are kept in the bot's `.darbit/deleted` until the next delete, and `bot.library.undelete` puts them back; a rename is taken back by renaming it back, on the bot it was done to, and the inspector follows it
+- A name too long for its card shows whole on hover: Library cards, Scout's tiles, Capture's target tiles and the bot rows (#319)
+- Capture's pill by keyboard (#319): from the target's name, Tab and Shift+Tab go through the pill's buttons, Enter or Space presses one, Esc goes back to the shot. A button with the focus looks as it does under the mouse; nothing changes until Tab reaches one
+
 ### Changed
 
 - Pills over the game (#449) sit in the screen's work area, never under the taskbar, on whichever side it is and at any size; a taskbar that hides itself keeps its room too (`system.hidden_taskbars()`). Kept places stay inside the work area when the taskbar or the screen changes. A pill stays where it's let go along its edge, and a floating card where it's let go; only a drop within 24 points of an edge's centre or a corner lands on it. Dragged, the pill's window keeps one size, so a new form eases in without a jump; let go, it glides to its place with a little spring (`studio.pillMotion`). The guide's edge light fades between edges, its corner and centre circles glide, and a filled circle follows the mouse to where the pill lands.

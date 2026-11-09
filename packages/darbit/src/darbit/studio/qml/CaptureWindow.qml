@@ -587,6 +587,13 @@ Window {
 
     // ---- the pill's hiding, and its messages fading
     function showPill() { captureHiding.show() }
+    // the next (or the one before) of the name and the pill's buttons, by Tab: the pill shows while one has the focus
+    function tabFrom(item, forward) {
+        var next = item ? item.nextItemInFocusChain(forward) : null
+        if (!next) return
+        next.forceActiveFocus(forward ? Qt.TabFocusReason : Qt.BacktabFocusReason)
+        showPill()
+    }
     Timer { id: noteTimer; interval: 5000; onTriggered: shotWindow.note = "" }
 
     Item {
@@ -1025,6 +1032,9 @@ Window {
                 // the name of a target there already: its region and location come back (only where none is made yet)
                 onEditingFinished: shotWindow.takeSaved(text.trim())
                 Keys.onEscapePressed: stage.forceActiveFocus()
+                // Tab goes on into the pill's buttons (on the shot it's the next kind)
+                Keys.onTabPressed: shotWindow.tabFrom(nameField, true)
+                Keys.onBacktabPressed: shotWindow.tabFrom(nameField, false)
             }
         }
 
@@ -1246,6 +1256,15 @@ Window {
                 function onChanged() { captureHiding.hold(capturePlace.floating || capturePlace.dragging); pillZone.report() }
             }
             onPressed: shotWindow.showPill()
+            // its buttons by keyboard, reached by Tab from the name: Tab and Shift+Tab go from one to the next, Enter
+            // or Space presses one, Esc goes back to the shot
+            Keys.onPressed: function (event) {
+                if (event.key === Qt.Key_Escape) stage.forceActiveFocus()
+                else if (event.key === Qt.Key_Tab) shotWindow.tabFrom(shotWindow.activeFocusItem, true)
+                else if (event.key === Qt.Key_Backtab) shotWindow.tabFrom(shotWindow.activeFocusItem, false)
+                else return
+                event.accepted = true
+            }
             onGrabbed: function (gx, gy) {
                 var at = face.mapFromGlobal(gx, gy)
                 grabX = Math.max(0, Math.min(1, at.x / face.width))
@@ -1290,6 +1309,7 @@ Window {
                     onPicked: function (key) { shotWindow.searchOn(key); stage.forceActiveFocus() }
                 }
                 PillAction {
+                    activeFocusOnTab: true
                     visible: !shotWindow.compact
                     labelled: shotWindow.stacked
                     glyph: "⌫"; label: "Remove"; tip: "Remove the " + shotWindow.tool + " (Delete)"
@@ -1317,10 +1337,10 @@ Window {
                     onPicked: function (index) { shotWindow.activate(index); stage.forceActiveFocus() }
                     onRemoved: function (index) { shotWindow.removeTarget(index); stage.forceActiveFocus() }
                 }
-                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
+                PillAction { activeFocusOnTab: true; visible: capture.several && !shotWindow.stacked; glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
                 KeyCap { visible: capture.several && !shotWindow.stacked; text: "N" }
-                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
-                PillAction { visible: capture.several && !shotWindow.stacked; glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
+                PillAction { activeFocusOnTab: true; visible: capture.several && !shotWindow.stacked; glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
+                PillAction { activeFocusOnTab: true; visible: capture.several && !shotWindow.stacked; glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
                 Rectangle {
                     visible: capture.several
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
@@ -1331,36 +1351,38 @@ Window {
                     visible: shotWindow.compact
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 6
-                    PillAction { glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"; enabled: !!shotWindow.partOf(shotWindow.tool); onClicked: { shotWindow.drop(shotWindow.tool); stage.forceActiveFocus() } }
-                    PillAction { glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
-                    PillAction { glyph: "↶"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
-                    PillAction { glyph: "↷"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
+                    PillAction { activeFocusOnTab: true; glyph: "⌫"; tip: "Remove the " + shotWindow.tool + " (Delete)"; enabled: !!shotWindow.partOf(shotWindow.tool); onClicked: { shotWindow.drop(shotWindow.tool); stage.forceActiveFocus() } }
+                    PillAction { activeFocusOnTab: true; glyph: "＋"; tip: "A new target on this shot (A)"; onClicked: shotWindow.addTarget() }
+                    PillAction { activeFocusOnTab: true; glyph: "↶"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
+                    PillAction { activeFocusOnTab: true; glyph: "↷"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
                 }
                 RowLayout {
                     visible: shotWindow.compact
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 6
-                    PillAction { glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
+                    PillAction { activeFocusOnTab: true; glyph: "‹"; tip: "The previous target (Shift+N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(-1) }
                     KeyCap { text: "N" }
-                    PillAction { glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
-                    PillAction { glyph: "✕"; tip: "Close (Esc)"; onClicked: capture.close() }
+                    PillAction { activeFocusOnTab: true; glyph: "›"; tip: "The next target (N)"; enabled: shotWindow.shown.length > 0; onClicked: shotWindow.step(1) }
+                    PillAction { activeFocusOnTab: true; glyph: "✕"; tip: "Close (Esc)"; onClicked: capture.close() }
                 }
-                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
-                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
+                PillAction { activeFocusOnTab: true; visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↶"; label: "Undo"; tip: "Undo (Ctrl+Z)"; enabled: shotWindow.past.length > 0; onClicked: shotWindow.undo() }
+                PillAction { activeFocusOnTab: true; visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "↷"; label: "Redo"; tip: "Redo (Ctrl+Y)"; enabled: shotWindow.future.length > 0; onClicked: shotWindow.redo() }
                 Rectangle {
                     visible: !shotWindow.compact
                     Layout.preferredWidth: shotWindow.stacked ? 182 : 1; Layout.preferredHeight: shotWindow.stacked ? 1 : 24
                     color: studio.colors.line
                 }
                 PillButton {
+                    activeFocusOnTab: true
                     small: true; icon: "⌕"
                     text: capture.several ? "Test all" : "Test"
                     Layout.fillWidth: shotWindow.stacked
                     enabled: capture.several ? shotWindow.shown.some(function (entry) { return !!entry.image }) : !!shotWindow.image
                     onClicked: shotWindow.test()
                 }
-                PillAction { visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
+                PillAction { activeFocusOnTab: true; visible: !shotWindow.compact; labelled: shotWindow.stacked; glyph: "✕"; label: "Close"; tip: "Close (Esc)"; onClicked: capture.close() }
                 PillButton {
+                    activeFocusOnTab: true
                     objectName: "saveButton"
                     kind: "primary"; small: true
                     text: capture.several && shotWindow.shown.length > 1 ? "Save " + shotWindow.shown.length : "Save"

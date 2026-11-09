@@ -10,6 +10,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QTimer, QUrl, Signal, Slot
@@ -33,6 +34,26 @@ BLUR_THROUGH = "studio.blur_through"  # ui setting: pages blur through and cards
 AURORA = "studio.aurora"  # ui setting: a slow colour drift behind the glass, never on battery
 BATTERY_EVERY_MS = 60_000  # how often the aurora asks whether the PC runs on its battery
 RUNNING = ("running", "paused")  # a bot's states while it runs
+
+
+@dataclass
+class Undo:
+    """How to take back a delete or rename: the request, and what the Library reads again after it."""
+
+    method: str
+    params: dict
+    then: str  # "changed" (the assets) or "actionsChanged"
+    was: str  # the name it has until it's taken back ("" for a delete)
+    now: str  # the name it has again
+    bot: str = ""  # the bot's folder it was done to
+
+
+@dataclass
+class Offer:
+    """A change done, what the toast says about it, and its Undo."""
+
+    said: str
+    undo: Undo
 
 
 class Studio(QObject):
@@ -68,6 +89,8 @@ class Studio(QObject):
     actionChanged = Signal()  # the action open in the editor
     playingChanged = Signal()  # the action playing and its line, as the service plays it
     said = Signal(str)  # something done, for the toast
+    offered = Signal(str)  # something done that Undo takes back (undoLast), for the toast with its Undo
+    undone = Signal(str, str)  # (the name it had, the name it has again): a rename taken back, for the Library
     scoutWanted = Signal(str, str)  # (the bot's folder, an image to land on or ""): Scout on or off, for app.py
     recordWanted = Signal(str, str, bool)  # (the bot's folder, the action's name, record it again), for app.py
 
@@ -101,6 +124,7 @@ class Studio(QObject):
         self._action: dict = {}
         self._playing = {"action": "", "line": 0, "status": ""}
         self._message = ""
+        self._undo: Undo | None = None  # the last delete or rename, while the toast offers to take it back
         self._busy = 0
         self._wanted = bot or str(ui_settings.get(CHOSEN, ""))  # a bot's path or name to show first
         self._theme_name = theme_name or str(ui_settings.get(THEME, theme.DEFAULT))
@@ -491,11 +515,13 @@ class Studio(QObject):
 
     @Slot(str, str)
     def renameAction(self, name: str, to: str) -> None:
-        self._ask("actionsChanged", "bot.action.rename", name=name, to=to)
+        back = Undo("bot.action.rename", {"name": to, "to": name}, "actionsChanged", to, name)
+        self._ask_undoable(f"Renamed {name} to {to}", back, "bot.action.rename", name=name, to=to)
 
     @Slot(str)
     def deleteAction(self, name: str) -> None:
-        self._ask("actionsChanged", "bot.action.delete", name=name)
+        back = Undo("bot.library.undelete", {}, "actionsChanged", "", name)
+        self._ask_undoable(f"Deleted {name}", back, "bot.action.delete", name=name)
 
     @Slot(str, bool)
     def record(self, name: str, again: bool) -> None:
@@ -564,11 +590,48 @@ class Studio(QObject):
 
     @Slot(str, str)
     def renameAsset(self, name: str, to: str) -> None:
-        self._ask("changed", "bot.library.rename", name=name, to=to)
+        back = Undo("bot.library.rename", {"name": to, "to": name}, "changed", to, name)
+        self._ask_undoable(f"Renamed {name} to {to}", back, "bot.library.rename", name=name, to=to)
 
     @Slot(str)
     def deleteAsset(self, name: str) -> None:
-        self._ask("changed", "bot.library.delete", name=name)
+        back = Undo("bot.library.undelete", {}, "changed", "", name)
+        self._ask_undoable(f"Deleted {name}", back, "bot.library.delete", name=name)
+
+    @Slot()
+    def undoLast(self) -> None:
+        """Take back the last delete or rename offered with Undo, on the bot it was done to."""
+        back = self._undo
+        self._undo = None
+        if back is None or self._client is None:
+            return
+        client = self._client
+
+        def work() -> object:
+            client.call(back.method, bot=back.bot, **back.params)
+            return back
+
+        self._run("undone", work)
+
+    def _reload(self, what: str) -> None:
+        """The Library's assets ("changed") or its actions ("actionsChanged") read again."""
+        if what == "changed":
+            self.loadLibrary()
+        else:
+            self.loadActions()
+
+    def _ask_undoable(self, said: str, back: Undo, method: str, **params: object) -> None:
+        """A change to the shown bot that the toast then offers to take back."""
+        if not self._bot or self._client is None:
+            return
+        client = self._client
+        back.bot = self._bot["path"]
+
+        def work() -> object:
+            client.call(method, bot=back.bot, **params)
+            return Offer(said, back)
+
+        self._run("offered", work)
 
     @Slot(str)
     def newBot(self, name: str) -> None:
@@ -869,6 +932,13 @@ class Studio(QObject):
             self.usesChanged.emit()
         elif what == "changed":
             self.loadLibrary()
+        elif what == "offered" and isinstance(result, Offer):
+            self._undo = result.undo
+            self._reload(result.undo.then)
+            self.offered.emit(result.said)
+        elif what == "undone" and isinstance(result, Undo):
+            self._reload(result.then)
+            self.undone.emit(result.was, result.now)
         elif what == "action" and isinstance(result, dict):
             self._action = result
             self.actionChanged.emit()

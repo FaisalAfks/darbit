@@ -19,6 +19,7 @@ import numpy as np
 from .. import paths
 from ..core.targets import kind_of
 from ..project.manifest import Project
+from . import deleted
 from .problems import DEFAULT_SIMILARITY
 
 THUMB = 160  # px, the longer side of a card's thumbnail
@@ -302,14 +303,13 @@ def _asset_files(project: Project, name: str) -> list[Path]:
 
 
 def delete(project: Project, name: str) -> dict:
-    """Delete an asset's files (its picture and its settings). Lines that use it stay, and the Library shows them."""
+    """Delete an asset's files (its picture and its settings), kept aside until the next delete so Undo can put them
+    back (deleted.py). Lines that use it stay, and the Library shows them."""
     files = _asset_files(project, name)
     if not files:
         raise LibraryError(f"there's no asset called {name}")
-    removed = []
-    for path in files:
-        path.unlink()
-        removed.append(path.relative_to(project.folder).as_posix())
+    removed = [path.relative_to(project.folder).as_posix() for path in files]
+    deleted.keep(project.folder, files, {"kind": "asset", "name": name})
     return {"deleted": name, "files": removed}
 
 

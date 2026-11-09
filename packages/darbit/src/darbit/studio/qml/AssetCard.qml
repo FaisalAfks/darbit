@@ -1,6 +1,7 @@
 // One asset: its thumbnail (or what it is, for a point or a missing picture), its whole name, its last score against
 // the similarity it needs (the white tick), and how often the code uses it. The chosen card glows; the rest dim.
 import QtQuick
+import QtQuick.Controls.Basic
 
 Rectangle {
     id: card
@@ -64,6 +65,7 @@ Rectangle {
         }
     }
     Text {
+        id: nameText
         x: 12; y: 130; width: card.width - 24
         text: card.asset.name || ""
         color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold
@@ -108,4 +110,8 @@ Rectangle {
         onClicked: card.clicked()
         onPositionChanged: function (mouse) { light.at = Qt.point(mouse.x, mouse.y) }
     }
+    // a name too long for the card: whole on hover
+    ToolTip.visible: area.containsMouse && nameText.truncated
+    ToolTip.text: nameText.text
+    ToolTip.delay: 400
 }

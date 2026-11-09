@@ -8,6 +8,11 @@ Rectangle {
     property string kind: "plain"
     property bool small: false
     signal clicked()
+    // lit under the mouse, or with the keyboard's focus where a window lets Tab reach it (activeFocusOnTab)
+    readonly property bool lit: hover.containsMouse || activeFocus
+    Keys.onReturnPressed: if (enabled) clicked()
+    Keys.onEnterPressed: if (enabled) clicked()
+    Keys.onSpacePressed: if (enabled) clicked()
     implicitWidth: row.implicitWidth + (small ? 22 : 30)
     implicitHeight: small ? 32 : 40
     radius: height / 2
@@ -15,15 +20,15 @@ Rectangle {
     scale: hover.pressed ? 0.96 : 1
     Behavior on scale { NumberAnimation { duration: studio.effects ? 90 : 0 } }
     color: kind === "primary" ? studio.colors.accent
-        : kind === "danger" ? Qt.rgba(studio.colors.danger.r, studio.colors.danger.g, studio.colors.danger.b, hover.containsMouse ? 0.24 : 0.14)
-        : kind === "quiet" ? (hover.containsMouse ? studio.colors.raised : "transparent")
-        : hover.containsMouse ? studio.colors.raisedHover : studio.colors.raised
+        : kind === "danger" ? Qt.rgba(studio.colors.danger.r, studio.colors.danger.g, studio.colors.danger.b, button.lit ? 0.24 : 0.14)
+        : kind === "quiet" ? (button.lit ? studio.colors.raised : "transparent")
+        : button.lit ? studio.colors.raisedHover : studio.colors.raised
     Behavior on color { ColorAnimation { duration: studio.effects ? 120 : 0 } }
     gradient: kind === "primary" ? accentFill : null
     Gradient {
         id: accentFill
         orientation: Gradient.Horizontal
-        GradientStop { position: 0; color: hover.containsMouse ? Qt.lighter(studio.colors.accent, 1.08) : studio.colors.accent }
+        GradientStop { position: 0; color: button.lit ? Qt.lighter(studio.colors.accent, 1.08) : studio.colors.accent }
         GradientStop { position: 1; color: Qt.tint(studio.colors.accent, Qt.rgba(0.65, 0.55, 0.98, 0.45)) }
     }
     Row {

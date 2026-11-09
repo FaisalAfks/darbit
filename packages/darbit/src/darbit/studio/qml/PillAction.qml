@@ -20,7 +20,12 @@ Rectangle {
     opacity: enabled ? 1 : 0.35
     scale: area.pressed ? 0.96 : 1
     Behavior on scale { NumberAnimation { duration: studio.effects ? 90 : 0 } }
-    color: area.containsMouse && enabled ? studio.colors.raisedHover : labelled ? studio.colors.raised : "transparent"
+    // lit under the mouse, or with the keyboard's focus where a window lets Tab reach it (activeFocusOnTab)
+    readonly property bool lit: area.containsMouse || activeFocus
+    color: lit && enabled ? studio.colors.raisedHover : labelled ? studio.colors.raised : "transparent"
+    Keys.onReturnPressed: if (enabled) clicked()
+    Keys.onEnterPressed: if (enabled) clicked()
+    Keys.onSpacePressed: if (enabled) clicked()
     Row {
         id: line
         anchors.verticalCenter: parent.verticalCenter
@@ -43,7 +48,7 @@ Rectangle {
         cursorShape: action.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: if (action.enabled) action.clicked()
     }
-    ToolTip.visible: area.containsMouse && tip !== "" && (!labelled || tip !== label)
+    ToolTip.visible: lit && tip !== "" && (!labelled || tip !== label)
     ToolTip.text: tip
     ToolTip.delay: 400
 }
