@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.9 - 2026-11-10
+
 ### New
 
 - `approach` (#458), a setting in pixels, 0 (off) at first: a click with the mouse already closer than that to its spot steps back that far first (on away from the spot, or up, left, right or down, staying on the desktop), then glides in. A game that sees a button's hover only when the mouse moves onto it misses a click whose mouse is already there; a retry steps back again
