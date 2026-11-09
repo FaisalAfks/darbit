@@ -67,6 +67,28 @@ def screen_usable() -> bool:
         user32.CloseDesktop(desktop)
 
 
+class _PowerStatus(ctypes.Structure):
+    _fields_ = [
+        ("ACLineStatus", ctypes.c_ubyte),
+        ("BatteryFlag", ctypes.c_ubyte),
+        ("BatteryLifePercent", ctypes.c_ubyte),
+        ("SystemStatusFlag", ctypes.c_ubyte),
+        ("BatteryLifeTime", ctypes.c_ulong),
+        ("BatteryFullLifeTime", ctypes.c_ulong),
+    ]
+
+
+AC_OFFLINE = 0  # GetSystemPowerStatus: unplugged (1 is plugged in, 255 unknown)
+
+
+def on_battery() -> bool:
+    """Whether Windows runs on the battery now (GetSystemPowerStatus); False when plugged in or unknown."""
+    status = _PowerStatus()
+    if not ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(status)):
+        return False
+    return status.ACLineStatus == AC_OFFLINE
+
+
 def process_alive(pid: int) -> bool:
     kernel32 = ctypes.windll.kernel32
     handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)

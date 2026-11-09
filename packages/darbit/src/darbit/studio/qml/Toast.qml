@@ -1,4 +1,5 @@
-// A short message at the bottom: what just happened, or what went wrong (darbit's service's reasons).
+// A short message at the bottom: what just happened, or what went wrong (darbit's service's reasons). It springs into
+// place, and fades where it is when it goes.
 import QtQuick
 
 Rectangle {
@@ -7,11 +8,12 @@ Rectangle {
     property bool bad: false
     function show(message, wrong) { text = message; bad = !!wrong; shown = true; hide.interval = Math.max(wrong ? 10000 : 4500, message.length * 70); hide.restart() }
     property bool shown: false
+    readonly property bool away: !shown && opacity === 0  // gone: it waits below the window, out of sight
     anchors.horizontalCenter: parent.horizontalCenter
-    y: parent.height - (shown ? height + 28 : -10)
-    Behavior on y { NumberAnimation { duration: studio.effects ? 260 : 0; easing.type: Easing.OutCubic } }
+    y: parent.height - (away ? -10 : height + 28)
+    Behavior on y { NumberAnimation { duration: studio.motion.toast; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
     opacity: shown ? 1 : 0
-    Behavior on opacity { NumberAnimation { duration: studio.effects ? 200 : 0 } }
+    Behavior on opacity { NumberAnimation { duration: studio.motion.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.ease } }
     width: Math.min(label.implicitWidth + 62, parent.width - 80); height: Math.max(46, label.height + 24); radius: 23
     color: studio.colors.solid
     border.color: bad ? studio.colors.danger : studio.colors.line

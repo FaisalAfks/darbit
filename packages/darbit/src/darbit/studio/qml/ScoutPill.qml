@@ -50,7 +50,7 @@ PillWindow {
     // ---- docked on the top or bottom: the row
     Ring {
         visible: !scoutPill.column
-        width: 30; height: 30; thickness: 3; small: true
+        width: 30; height: 30; thickness: 3; small: true; tokens: studio.pillMotion
         done: scout.seen; total: Math.max(1, scout.total)
         Layout.leftMargin: 2
     }
@@ -66,6 +66,7 @@ PillWindow {
     Rectangle { visible: scoutPill.row; Layout.preferredWidth: 1; Layout.preferredHeight: 24; color: studio.colors.line }
     Segmented {
         objectName: "scoutGroups"
+        tokens: studio.pillMotion
         visible: scoutPill.row
         strong: true; itemHeight: 30
         current: scout.group
@@ -84,7 +85,7 @@ PillWindow {
         spacing: 8
         RowLayout {
             width: parent.width; spacing: 10
-            Ring { width: 44; height: 44; thickness: 4; small: true; done: scout.seen; total: Math.max(1, scout.total) }
+            Ring { width: 44; height: 44; thickness: 4; small: true; tokens: studio.pillMotion; done: scout.seen; total: Math.max(1, scout.total) }
             Column {
                 Layout.fillWidth: true
                 Text { text: scoutPill.seen; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold }
@@ -260,7 +261,7 @@ PillWindow {
 
     // ---- floating: every image in a grid; one clicked, in full
     heading: [
-        Ring { width: 30; height: 30; thickness: 3; small: true; done: scout.seen; total: Math.max(1, scout.total) },
+        Ring { width: 30; height: 30; thickness: 3; small: true; tokens: studio.pillMotion; done: scout.seen; total: Math.max(1, scout.total) },
         Text { text: scoutPill.seen; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold },
         Chip { visible: scout.weak > 0; height: 22; tone: "warn"; text: scout.weak + " weak" },
         Chip { visible: scout.notSeen > 0; height: 22; text: scout.notSeen + " not yet" },

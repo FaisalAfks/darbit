@@ -146,7 +146,6 @@ Item {
                         height: rows.height + 64
                         title: modelData.label
                         note: page.changesIn(modelData) ? page.changesIn(modelData) + " changed" : ""
-                        delay: index * 40
                         content: Column {
                             id: rows
                             width: parent.width

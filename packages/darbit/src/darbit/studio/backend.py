@@ -12,7 +12,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .. import keymap, paths
@@ -29,6 +29,9 @@ LAYOUT = "studio.layout"  # ui setting prefix: the person's own Overview layout 
 GHOST = "studio.ghost"  # ui setting: the ghost cursor, what bots click and press shown over the game
 RUN_PILL = "studio.run_pill"  # ui setting: Play hides the Studio and shows the run pill
 KEEP_BOTS = "studio.keep_bots"  # ui setting: quitting the Studio leaves running bots running
+BLUR_THROUGH = "studio.blur_through"  # ui setting: pages blur through and cards tilt in as a page changes
+AURORA = "studio.aurora"  # ui setting: a slow colour drift behind the glass, never on battery
+BATTERY_EVERY_MS = 60_000  # how often the aurora asks whether the PC runs on its battery
 RUNNING = ("running", "paused")  # a bot's states while it runs
 
 
@@ -56,6 +59,9 @@ class Studio(QObject):
     quitChanged = Signal()  # what quitting does with the running bots changed (the tray panel's Quit)
     keysChanged = Signal()  # a key changed: app.py registers the global ones again
     lookChanged = Signal()
+    motionChanged = Signal()  # effects turned on or off, or the window came into sight or left it
+    batteryChanged = Signal()
+    liveChanged = Signal()
     started = Signal()  # the bot started from Play: app.py hides the Studio behind the run pill
     madeBot = Signal(str)  # a bot made, installed or added: its name
     actionsChanged = Signal()
@@ -105,6 +111,16 @@ class Studio(QObject):
         self._ghost = bool(ui_settings.get(GHOST, True))
         self._run_pill = bool(ui_settings.get(RUN_PILL, True))
         self._keep_bots = bool(ui_settings.get(KEEP_BOTS, False))
+        self._blur_through = bool(ui_settings.get(BLUR_THROUGH, False))
+        self._aurora = bool(ui_settings.get(AURORA, False))
+        self._shown = True  # the Studio's window on screen: not hidden, not minimized
+        self._motion = theme.motion(self._effects)
+        self._live: dict = {}  # where the bot is and its round, from the latest Overview: the run pill shows these
+        self._waiting: dict | None = None  # an Overview that came while the window was out of sight
+        self._battery = False
+        self._battery_check = QTimer(self)
+        self._battery_check.setInterval(BATTERY_EVERY_MS)
+        self._battery_check.timeout.connect(self._check_battery)
         # read once and when one changes: every shortcut in the window reads these
         self._keys = shortcuts.now()
         self._key_rows = shortcuts.rows()
@@ -200,6 +216,27 @@ class Studio(QObject):
     def _get_ghost(self) -> bool:
         return self._ghost
 
+    def _get_motion(self) -> dict:
+        return self._motion
+
+    def _get_pill_motion(self) -> dict:
+        return theme.motion(self._effects)
+
+    def _get_blur_through(self) -> bool:
+        return self._blur_through
+
+    def _get_aurora(self) -> bool:
+        return self._aurora
+
+    def _get_battery(self) -> bool:
+        return self._battery
+
+    def _get_shown(self) -> bool:
+        return self._shown
+
+    def _get_live(self) -> dict:
+        return self._live
+
     def _get_run_pill(self) -> bool:
         return self._run_pill
 
@@ -261,6 +298,15 @@ class Studio(QObject):
     sidebar = Property(bool, _get_sidebar, notify=lookChanged)
     effects = Property(bool, _get_effects, notify=lookChanged)
     ghost = Property(bool, _get_ghost, notify=lookChanged)
+    # the Studio window's motion tokens (theme.motion): every duration 0 while effects are off or the window is out of
+    # sight, so nothing animates then
+    motion = Property(dict, _get_motion, notify=motionChanged)
+    pillMotion = Property(dict, _get_pill_motion, notify=lookChanged)  # the pills': they show while the Studio hides
+    blurThrough = Property(bool, _get_blur_through, notify=lookChanged)
+    aurora = Property(bool, _get_aurora, notify=lookChanged)
+    onBattery = Property(bool, _get_battery, notify=batteryChanged)  # asked only while the aurora is on
+    shown = Property(bool, _get_shown, notify=motionChanged)
+    live = Property(dict, _get_live, notify=liveChanged)  # {now, round}: where the bot is, for the run pill
     runPill = Property(bool, _get_run_pill, notify=lookChanged)
     keepBots = Property(bool, _get_keep_bots, notify=lookChanged)  # quitting leaves running bots running
     quitLabel = Property(str, _get_quit_label, notify=quitChanged)  # Quit, saying what it does with running bots
@@ -469,6 +515,30 @@ class Studio(QObject):
         if self._bot.get("path"):
             self.scoutWanted.emit(self._bot["path"], name)
 
+    def _take_overview(self, result: dict) -> None:
+        """A new Overview. The run pill's line and the tray's warning need it even while the window is out of sight;
+        the Overview page waits until the window is back (drawing it again then would be for nothing)."""
+        data = result.get("data") if isinstance(result.get("data"), dict) else {}
+        self._live = {"now": data.get("now"), "round": data.get("round")}
+        self.liveChanged.emit()
+        self._tell_failing(data.get("failing"))
+        if not self._shown:
+            self._waiting = result
+            return
+        self._waiting = None
+        self._show_overview(result)
+
+    def _show_overview(self, result: dict) -> None:
+        mine = ui_settings.get(f"{LAYOUT}:{self._bot.get('path', '')}")
+        bot_layout = list(result.get("layout", []))
+        self._overview = {
+            **result,
+            "botLayout": bot_layout,
+            "layout": mine if isinstance(mine, list) else bot_layout,
+            "custom": isinstance(mine, list),
+        }
+        self.overviewChanged.emit()
+
     def _tell_failing(self, failing: object) -> None:
         """Say once (per image and since when) that an image may have stopped matching."""
         if not isinstance(failing, dict) or not failing.get("target"):
@@ -544,6 +614,52 @@ class Studio(QObject):
         self._effects = bool(on)
         ui_settings.set_value(EFFECTS, self._effects)
         self.lookChanged.emit()
+        self._motion_changed()
+
+    @Slot(bool)
+    def setBlurThrough(self, on: bool) -> None:
+        self._blur_through = bool(on)
+        ui_settings.set_value(BLUR_THROUGH, self._blur_through)
+        self.lookChanged.emit()
+
+    @Slot(bool)
+    def setAurora(self, on: bool) -> None:
+        self._aurora = bool(on)
+        ui_settings.set_value(AURORA, self._aurora)
+        self.lookChanged.emit()
+        self._follow_battery()
+
+    @Slot(bool)
+    def setShown(self, shown: bool) -> None:
+        """The window came into sight (shown, restored) or left it (hidden, minimized). Out of sight nothing moves
+        and the Overview waits; back in sight it shows the latest one."""
+        if bool(shown) == self._shown:
+            return
+        self._shown = bool(shown)
+        self._motion_changed()
+        self._follow_battery()
+        if self._shown and self._waiting is not None:
+            waiting = self._waiting
+            self._waiting = None
+            self._show_overview(waiting)
+
+    def _motion_changed(self) -> None:
+        self._motion = theme.motion(self._effects and self._shown)
+        self.motionChanged.emit()
+
+    def _follow_battery(self) -> None:
+        """Ask about the battery now and then, only while the aurora could show."""
+        if self._aurora and self._shown:
+            self._check_battery()
+            self._battery_check.start()
+        else:
+            self._battery_check.stop()
+
+    def _check_battery(self) -> None:
+        on_battery = system.on_battery()
+        if on_battery != self._battery:
+            self._battery = on_battery
+            self.batteryChanged.emit()
 
     @Slot(bool)
     def setGhost(self, on: bool) -> None:
@@ -728,16 +844,7 @@ class Studio(QObject):
             self._checks = result
             self.checksChanged.emit()
         elif what == "overview" and isinstance(result, dict):
-            mine = ui_settings.get(f"{LAYOUT}:{self._bot.get('path', '')}")
-            bot_layout = list(result.get("layout", []))
-            self._overview = {
-                **result,
-                "botLayout": bot_layout,
-                "layout": mine if isinstance(mine, list) else bot_layout,
-                "custom": isinstance(mine, list),
-            }
-            self.overviewChanged.emit()
-            self._tell_failing(result.get("data", {}).get("failing") if isinstance(result.get("data"), dict) else None)
+            self._take_overview(result)
         elif what == "library" and isinstance(result, list):
             self._library = result
             self._library_bot = str(self._bot.get("path", ""))

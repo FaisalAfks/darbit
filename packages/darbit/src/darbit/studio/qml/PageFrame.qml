@@ -1,27 +1,59 @@
-// One page in the stack, made the first time it's shown and kept from then on: a page never visited costs no memory.
-// It fades and slides a little into place each time it's shown. Only opacity and a move are animated, so changing
-// pages costs no layout work.
+// One page, made the first time it's shown and kept from then on: a page never visited costs no memory. Shown, it
+// fades in and slides up 10 px while its cards rise one after another; left, it fades out the same way under the next
+// one. With blur-through on (darbit settings) it also blurs out and in, the blur only while it moves. Only opacity, a
+// move and scale are animated, so changing pages costs no layout work.
 import QtQuick
-import QtQuick.Layouts
+import QtQuick.Effects
+import "motion.js" as Motion
 
 Item {
-    id: frame
+    id: pageFrame
     property url source
-    readonly property bool shown: StackLayout.isCurrentItem
+    property bool shown: false
     property bool visited: false
-    onShownChanged: if (shown) { visited = true; enter.restart() }
-    Component.onCompleted: if (shown) visited = true
+    readonly property var tokens: studio.motion
+    readonly property bool blurring: studio.blurThrough && tokens.on
+    visible: shown || leaving.running
+    enabled: shown  // the page leaving takes no clicks
+    onShownChanged: {
+        if (shown) {
+            visited = true
+            leaving.stop()
+            Motion.pageShown()
+            enter.restart()
+        } else if (tokens.on) {
+            enter.stop()
+            leaving.restart()
+        }
+    }
+    Component.onCompleted: if (shown) { visited = true; Motion.pageShown() }
 
     Item {
         id: holder
-        width: frame.width; height: frame.height
+        width: pageFrame.width; height: pageFrame.height
         opacity: 1
-        transform: Translate { id: shift; x: 0 }
-        Loader { anchors.fill: parent; active: frame.visited; source: frame.source }
+        property real blur: 0
+        transform: [
+            Translate { id: shift; y: 0 },
+            Scale { id: grow; origin.x: holder.width / 2; origin.y: holder.height / 2; xScale: 1; yScale: 1 }
+        ]
+        // the blur is drawn only while the page moves: a layer left on at rest would change how its text is drawn
+        layer.enabled: pageFrame.blurring && holder.blur > 0
+        layer.effect: MultiEffect { blurEnabled: true; blurMax: 32; blur: holder.blur }
+        Loader { anchors.fill: parent; active: pageFrame.visited; source: pageFrame.source }
     }
     ParallelAnimation {
         id: enter
-        NumberAnimation { target: holder; property: "opacity"; from: studio.effects ? 0 : 1; to: 1; duration: studio.effects ? 220 : 0; easing.type: Easing.OutCubic }
-        NumberAnimation { target: shift; property: "x"; from: studio.effects ? 18 : 0; to: 0; duration: studio.effects ? 280 : 0; easing.type: Easing.OutCubic }
+        NumberAnimation { target: holder; property: "opacity"; from: pageFrame.tokens.on ? 0 : 1; to: 1; duration: pageFrame.blurring ? pageFrame.tokens.blur : pageFrame.tokens.pageFade; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { target: shift; property: "y"; from: pageFrame.tokens.on && !pageFrame.blurring ? 10 : 0; to: 0; duration: pageFrame.tokens.pageMove; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { targets: [grow]; properties: "xScale,yScale"; from: pageFrame.blurring ? 0.96 : 1; to: 1; duration: pageFrame.tokens.blur; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { target: holder; property: "blur"; from: pageFrame.blurring ? 0.2 : 0; to: 0; duration: pageFrame.tokens.blur; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+    }
+    ParallelAnimation {
+        id: leaving
+        NumberAnimation { target: holder; property: "opacity"; to: 0; duration: pageFrame.blurring ? pageFrame.tokens.blur : pageFrame.tokens.pageFade; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { target: shift; property: "y"; to: pageFrame.blurring ? 0 : 10; duration: pageFrame.tokens.pageMove; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { targets: [grow]; properties: "xScale,yScale"; to: pageFrame.blurring ? 0.96 : 1; duration: pageFrame.tokens.blur; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
+        NumberAnimation { target: holder; property: "blur"; to: pageFrame.blurring ? 0.2 : 0; duration: pageFrame.tokens.blur; easing.type: Easing.BezierSpline; easing.bezierCurve: pageFrame.tokens.ease }
     }
 }

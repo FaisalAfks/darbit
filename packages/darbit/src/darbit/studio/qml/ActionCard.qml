@@ -11,14 +11,24 @@ Rectangle {
     height: 206
     radius: 16
     color: chosen ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.1) : studio.colors.glass
-    border.color: chosen ? studio.colors.accent : area.containsMouse ? Qt.tint(studio.colors.line, Qt.rgba(1, 1, 1, 0.12)) : studio.colors.line
+    border.color: chosen ? studio.colors.accent : area.containsMouse ? Qt.tint(studio.colors.line, Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.35)) : studio.colors.line
     border.width: chosen ? 2 : 1
-    opacity: dimmed ? 0.55 : 1
-    scale: area.containsMouse && !chosen ? 1.025 : 1
-    Behavior on scale { NumberAnimation { duration: studio.effects ? 140 : 0; easing.type: Easing.OutCubic } }
-    Behavior on opacity { NumberAnimation { duration: studio.effects ? 160 : 0 } }
+    Behavior on border.color { ColorAnimation { duration: studio.motion.hover } }
+    // it rises with its page; under the mouse it lifts, with a light that follows the mouse (CardMotion, MouseLight)
+    property real dim: dimmed ? 0.55 : 1
+    Behavior on dim { NumberAnimation { duration: studio.motion.fast } }
+    opacity: motion.fade * dim
+    transform: motion.moves
+    CardMotion { id: motion; hovered: area.containsMouse; lifts: !card.chosen; radius: card.radius }
+    MouseLight { id: light; hovered: area.containsMouse && !card.chosen; radius: card.radius }
 
-    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: card.clicked(); onDoubleClicked: window.openAction(card.action.name) }
+    MouseArea {
+        id: area
+        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+        onClicked: card.clicked()
+        onDoubleClicked: window.openAction(card.action.name)
+        onPositionChanged: function (mouse) { light.at = Qt.point(mouse.x, mouse.y) }
+    }
     Rectangle {  // the action as a strip of its steps
         x: 10; y: 10; width: card.width - 20; height: 112; radius: 11
         color: studio.colors.bg

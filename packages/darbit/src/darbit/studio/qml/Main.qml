@@ -14,11 +14,10 @@ ApplicationWindow {
     font.pixelSize: 14
 
     property string page: "overview"  // overview, library, results, settings, or studio (darbit's own settings)
-    readonly property var pages: ["overview", "library", "results", "settings", "studio", "action"]
     readonly property bool narrow: width < 1180
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
 
-    Timer { interval: 1000; running: window.running && window.visible; repeat: true; onTriggered: studio.tick() }
+    Timer { interval: 1000; running: window.running && studio.shown; repeat: true; onTriggered: studio.tick() }
     Component.onCompleted: studio.connect()
     Connections {
         target: studio
@@ -55,16 +54,16 @@ ApplicationWindow {
                 onOpenStudio: window.go("studio")
             }
 
-            StackLayout {
+            // the pages, one shown at a time; the one leaving fades out under the next (PageFrame)
+            Item {
                 id: stack
                 anchors { left: parent.left; right: parent.right; top: top.bottom; bottom: parent.bottom; topMargin: 16 }
-                currentIndex: window.pages.indexOf(window.page)
-                PageFrame { source: "OverviewPage.qml" }
-                PageFrame { source: "LibraryPage.qml" }
-                PageFrame { source: "ResultsPage.qml" }
-                PageFrame { source: "SettingsPage.qml" }
-                PageFrame { source: "StudioPage.qml" }
-                PageFrame { source: "ActionPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "overview"; source: "OverviewPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "library"; source: "LibraryPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "results"; source: "ResultsPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "settings"; source: "SettingsPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "studio"; source: "StudioPage.qml" }
+                PageFrame { anchors.fill: parent; shown: window.page === "action"; source: "ActionPage.qml" }
             }
         }
     }

@@ -55,6 +55,20 @@
   --curve-decelerate: cubic-bezier(0.1, 0.9, 0.2, 1);
   --curve-accelerate: cubic-bezier(0.9, 0.1, 1, 0.2);
   --curve-easy-ease: cubic-bezier(0.33, 0, 0.67, 1);
+  /* the Studio's lively motion (#441; theme.py DURATIONS and CURVES) */
+  --duration-page-fade: 220ms;
+  --duration-page-move: 320ms;
+  --duration-rise: 500ms;
+  --duration-stagger: 45ms;
+  --duration-hover: 250ms;
+  --duration-glide: 380ms;
+  --duration-count: 800ms;
+  --duration-sweep: 900ms;
+  --duration-grow: 700ms;
+  --duration-toast: 450ms;
+  --duration-pulse: 1800ms;
+  --curve-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --curve-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 
   /* widths */
   --width-tooltip: 320px;

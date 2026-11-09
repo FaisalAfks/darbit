@@ -1,5 +1,6 @@
 // A bot in the sidebar or the bot menu: its square, its name, what it's doing, and a dot for its state.
-// `folded` shows the square alone.
+// `folded` shows the square alone. `lights: false` leaves the chosen bot's light to the list, which springs it from bot
+// to bot (the sidebar).
 import QtQuick
 import QtQuick.Controls.Basic
 
@@ -7,16 +8,17 @@ Rectangle {
     id: row
     property var bot: ({})
     property bool folded: false
+    property bool lights: true
     readonly property bool chosen: bot.path === studio.bot.path
     readonly property string state: bot.status || "stopped"
     signal clicked()
     height: folded ? 48 : 52
     radius: 12
-    color: chosen ? studio.colors.raisedHover : area.containsMouse ? studio.colors.raised : "transparent"
-    Behavior on color { ColorAnimation { duration: studio.effects ? 120 : 0 } }
+    color: chosen ? (lights ? studio.colors.raisedHover : "transparent") : area.containsMouse ? studio.colors.raised : "transparent"
+    Behavior on color { ColorAnimation { duration: studio.motion.fast } }
 
     Rectangle {  // the chosen bot's edge
-        visible: row.chosen && !row.folded
+        visible: row.chosen && !row.folded && row.lights
         x: 0; y: 10; width: 3; height: row.height - 20; radius: 1.5
         color: studio.colors.accent
     }

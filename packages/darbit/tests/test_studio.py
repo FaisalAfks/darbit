@@ -2789,3 +2789,113 @@ def test_recording_refused_while_a_bot_runs_says_why_and_brings_the_studio_back(
     assert not window.shown  # the Studio steps aside first
     wait_until(lambda: said == ["ad-bot is running and uses the mouse and keys too: stop it to record dim_run"])
     assert window.shown
+
+
+def test_motion_is_instant_with_effects_off_or_the_window_out_of_sight(qt):
+    assert theme.motion(True)["rise"] == theme.DURATIONS["rise"]
+    assert theme.motion(False)["rise"] == 0
+    assert theme.motion(False)["spring"] == [0.34, 1.4, 0.64, 1, 1, 1]  # a curve stays a curve
+    studio = backend.Studio(FakeClient)  # effects off: the qt fixture's
+    assert not studio.motion["on"]
+    assert studio.motion["count"] == 0
+    studio.setEffects(True)
+    assert studio.motion["on"]
+    assert studio.motion["count"] == theme.DURATIONS["count"]
+    studio.setShown(False)  # hidden behind the run pill, or minimized
+    assert not studio.motion["on"]
+    assert studio.motion["count"] == 0
+    assert studio.pillMotion["on"]  # the pills show while the Studio is hidden
+
+
+def test_blur_through_and_the_aurora_are_off_until_turned_on_and_kept(qt):
+    studio = backend.Studio(FakeClient)
+    assert (studio.blurThrough, studio.aurora) == (False, False)
+    studio.setBlurThrough(True)
+    studio.setAurora(True)
+    assert (studio.blurThrough, studio.aurora) == (True, True)
+    assert (backend.Studio(FakeClient).blurThrough, backend.Studio(FakeClient).aurora) == (True, True)
+
+
+def test_the_battery_is_asked_about_only_while_the_aurora_could_show(qt, monkeypatch):
+    asked = []
+
+    def on_battery():
+        asked.append(True)
+        return True
+
+    monkeypatch.setattr(backend.system, "on_battery", on_battery)
+    studio = backend.Studio(FakeClient)
+    assert not studio.onBattery
+    assert asked == []  # the aurora is off: nobody asks
+    studio.setAurora(True)
+    assert studio.onBattery  # so the aurora rests
+    studio.setShown(False)
+    assert not studio._battery_check.isActive()
+    studio.setShown(True)
+    assert studio._battery_check.isActive()
+    studio.setAurora(False)
+    assert not studio._battery_check.isActive()
+
+
+def test_out_of_sight_the_overview_waits_but_the_run_pill_and_the_tray_still_hear(qt, monkeypatch):
+    client = FakeClient()
+    studio = backend.Studio(lambda: client)
+    told = []
+    studio.pictureFailing.connect(lambda title, text: told.append(title))
+    studio.connect()
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    assert studio.live["now"]["path"] == ["Speed Raid", "Sakura"]
+    studio.setShown(False)
+    answer = _overview_answer()
+    failing = {"target": "Team.Card", "since": "2026-11-06T01:15:08.977", "count": 2, "sentence": "AFK failed."}
+    answer["data"] = {**answer["data"], "now": {"path": ["AFK"], "since": None}, "failing": failing}
+    monkeypatch.setitem(ANSWERS, "bot.overview", answer)
+    client.listener("project.changed", {"path": "/bots/ad-bot"})
+    wait_until(lambda: studio.live["now"]["path"] == ["AFK"])  # the run pill's line
+    assert told == ["ad-bot: Team.Card may have stopped matching"]  # the tray's warning
+    assert studio.overview["data"]["now"]["path"] == ["Speed Raid", "Sakura"]  # the page waits
+    studio.setShown(True)
+    assert studio.overview["data"]["now"]["path"] == ["AFK"]
+
+
+def test_the_overview_keeps_its_blocks_when_new_numbers_come(qt):
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    def blocks():
+        return [item for item in walk(window.contentItem()) if item.metaObject().className().startswith("Block_")]
+
+    wait_until(lambda: len(blocks()) == 8)
+    before = set(blocks())
+    studio.loadOverview()
+    studio.loadOverview()
+    wait_until(lambda: not studio.busy)
+    QtCore.QCoreApplication.processEvents()
+    assert set(blocks()) == before  # the same blocks, given their new numbers: nothing is made again
+    del engine
+
+
+def test_the_pages_draw_with_blur_through_and_the_aurora_without_a_qml_warning(effects, tmp_path):
+    settings = {"studio.effects": True, "studio.blur_through": True, "studio.aurora": True, "studio.picker": "sidebar"}
+    (tmp_path / "config" / "ui.json").write_text(json.dumps(settings), encoding="utf-8")
+    warnings = []
+
+    def keep(kind, context, text):
+        if kind != QtCore.QtMsgType.QtDebugMsg and ".qml" in text:
+            warnings.append(text)
+
+    QtCore.qInstallMessageHandler(keep)
+    try:
+        for page in ("overview", "library"):
+            picture = tmp_path / f"{page}.png"
+            app.shot(picture, page, "glass-dark", (1200, 800), connect=FakeClient)
+            assert picture.stat().st_size > 10_000
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []

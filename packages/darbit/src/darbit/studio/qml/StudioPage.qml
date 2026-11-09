@@ -1,4 +1,5 @@
-// darbit settings: the Studio's own, on this PC: the theme, the bot sidebar, smooth effects, and the version.
+// darbit settings: the Studio's own, on this PC: the theme, the bot sidebar, smooth effects and their extras, and the
+// version.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -53,7 +54,6 @@ Flickable {
 
         Glass {
             title: "Window"
-            delay: 60
             Layout.fillWidth: true; Layout.preferredHeight: windowChoices.implicitHeight + 66  // grows with the help's lines
             content: Column {
                 id: windowChoices
@@ -71,6 +71,20 @@ Flickable {
                     help: "Glass, and pages and cards that slide into place. Turn off on a slower PC: everything shows at once."
                     checked: studio.effects
                     onToggled: function (on) { studio.setEffects(on) }
+                }
+                Choice {
+                    width: parent.width
+                    label: "Blur-through pages"
+                    help: "Pages blur out and in as they change, and cards tilt into place. Needs smooth effects."
+                    checked: studio.blurThrough
+                    onToggled: function (on) { studio.setBlurThrough(on) }
+                }
+                Choice {
+                    width: parent.width
+                    label: "Aurora"
+                    help: "A slow drift of colour behind the glass themes. Never on battery, and still while the Studio is out of sight."
+                    checked: studio.aurora
+                    onToggled: function (on) { studio.setAurora(on) }
                 }
                 Choice {
                     width: parent.width
@@ -99,7 +113,6 @@ Flickable {
         Glass {
             title: "Keys"
             note: "click one, then press the new keys"
-            delay: 120
             Layout.fillWidth: true; Layout.preferredHeight: keyRows.implicitHeight + 66
             content: Column {
                 id: keyRows

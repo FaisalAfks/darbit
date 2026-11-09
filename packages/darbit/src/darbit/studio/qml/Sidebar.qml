@@ -2,6 +2,7 @@
 // On a narrow window it folds to the bots' squares.
 import QtQuick
 import QtQuick.Controls.Basic
+import QtQuick.Effects
 
 Rectangle {
     id: side
@@ -47,7 +48,37 @@ Rectangle {
             width: list.width
             bot: modelData
             folded: side.folded
+            lights: false
             onClicked: studio.selectBot(modelData.path)
+        }
+        // the chosen bot's light: it springs to the bot chosen next, glowing while it moves
+        currentIndex: {
+            for (var index = 0; index < studio.bots.length; index++)
+                if (studio.bots[index].path === studio.bot.path) return index
+            return -1
+        }
+        highlightFollowsCurrentItem: false
+        highlight: Rectangle {
+            visible: list.currentItem !== null
+            width: list.width; height: list.currentItem ? list.currentItem.height : 0
+            y: list.currentItem ? list.currentItem.y : 0
+            radius: 12
+            color: studio.colors.raisedHover
+            Behavior on y { NumberAnimation { id: springing; duration: studio.motion.glide; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
+            RectangularShadow {
+                z: -1
+                anchors.fill: parent
+                radius: parent.radius; blur: 18
+                color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.3)
+                opacity: springing.running ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { NumberAnimation { duration: studio.motion.fast } }
+            }
+            Rectangle {  // the chosen bot's edge
+                visible: !side.folded
+                x: 0; y: 10; width: 3; height: parent.height - 20; radius: 1.5
+                color: studio.colors.accent
+            }
         }
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 200 : 0 } }
     }

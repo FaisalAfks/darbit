@@ -286,7 +286,7 @@ requires-dist = [
     { name = "onnxruntime", marker = "extra == 'ocr'", specifier = ">=1.20" },
     { name = "opencv-python-headless", specifier = ">=4.9" },
     { name = "platformdirs", specifier = ">=4.14.0" },
-    { name = "pyside6-essentials", marker = "extra == 'studio'", specifier = ">=6.8" },
+    { name = "pyside6-essentials", marker = "extra == 'studio'", specifier = ">=6.9" },
     { name = "rapidocr", marker = "extra == 'ocr'", specifier = ">=3.10,<4" },
 ]
 provides-extras = ["studio", "ocr"]

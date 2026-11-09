@@ -63,8 +63,8 @@ Flickable {
             var other = blocks.itemAt(at)
             if (!other) continue
             var corner = other.mapToItem(null, 0, 0)
-            if (sceneX >= corner.x && sceneX <= corner.x + other.width && sceneY >= corner.y && sceneY <= corner.y + other.height && other.index !== from)
-                target = other.index
+            if (sceneX >= corner.x && sceneX <= corner.x + other.width && sceneY >= corner.y && sceneY <= corner.y + other.height && other.place !== from)
+                target = other.place
         }
         var next = layout.slice()
         if (target >= 0) {
@@ -182,11 +182,14 @@ Flickable {
             text: page.editing ? "Add blocks from the gallery." : "No blocks: Customize to add some."
             color: studio.colors.muted; font.pixelSize: 14
         }
+        // by count, not by the rows themselves: a new Overview (every couple of seconds while a bot runs) keeps its
+        // blocks and gives them their new numbers, instead of making every block again
         Repeater {
-            model: page.rows
+            model: page.rows.length
             delegate: Row {
                 id: row
-                required property var modelData
+                required property int index
+                readonly property var cells: page.rows[index] || []
                 spacing: page.gap
                 // the row as tall as its tallest block, so the cards line up
                 readonly property real tallest: {
@@ -195,19 +198,20 @@ Flickable {
                     return most
                 }
                 Repeater {
-                    model: row.modelData
+                    model: row.cells.length
                     delegate: Block {
-                        required property var modelData
-                        readonly property int index: modelData.index
-                        width: page.widthOf(modelData.spec.width || 4); height: row.tallest
-                        spec: modelData.spec
-                        info: page.data[modelData.spec.shows] === undefined ? null : page.data[modelData.spec.shows]
+                        required property int index
+                        readonly property var cell: row.cells[index] || ({ spec: {}, index: -1 })
+                        readonly property int place: cell.index
+                        width: page.widthOf(cell.spec.width || 4); height: row.tallest
+                        spec: cell.spec
+                        info: page.data[cell.spec.shows] === undefined ? null : page.data[cell.spec.shows]
                         editing: page.editing
                         unit: page.unit; gap: page.gap
-                        delay: index * 30
-                        onMoved: function (x, y) { page.moveTo(index, x, y) }
-                        onResized: function (width) { page.resize(index, width) }
-                        onRemoved: page.remove(index)
+                        // the block is kept, so the row puts it back in its place after the drag
+                        onMoved: function (x, y) { page.moveTo(place, x, y); row.forceLayout() }
+                        onResized: function (width) { page.resize(place, width) }
+                        onRemoved: page.remove(place)
                         Component.onCompleted: blocks.add(this)
                         Component.onDestruction: blocks.drop(this)
                     }
