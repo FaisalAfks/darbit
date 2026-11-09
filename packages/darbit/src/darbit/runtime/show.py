@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from . import log
+from .only import wants
 
 SHOWN_KINDS = ("number", "ring", "list", "text")  # how a value of the bot's own is drawn (the Studio picks by default)
 
@@ -45,12 +46,14 @@ def next_up(label: str, at: datetime) -> None:
 
 
 def plan(steps: list[str]) -> None:
-    """Report the round's top-level steps in order, so the Studio can show the ones still to come."""
+    """Report the round's top-level steps in order, so the Studio can show the ones still to come. A run started
+    for one mode plans only that one."""
     names = []
     for name in steps:
         if not isinstance(name, str) or not name:
             raise ValueError(f"plan: every step is a name, not {name!r}")
-        names.append(name)
+        if wants(name):
+            names.append(name)
     log.record("plan", steps=names)
 
 

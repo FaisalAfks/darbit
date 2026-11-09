@@ -1,4 +1,5 @@
-// The run control: Play while stopped; while running, the state and its time with Pause and Stop. It changes shape
+// The run control: Play while stopped; while running, the state and its time (and "only <mode>" for a run of one
+// mode or step) with Pause and Stop. It changes shape
 // between the two instead of showing buttons that can't be used.
 import QtQuick
 import "format.js" as Format
@@ -47,6 +48,13 @@ Rectangle {
                 Text {
                     visible: control.active && !!studio.bot.since
                     text: Format.duration(studio.now - (studio.bot.since || studio.now))
+                    color: studio.colors.muted; font.pixelSize: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {  // a run for one mode or step, not the round
+                    objectName: "runOnlyLabel"
+                    visible: control.active && text !== ""
+                    text: Format.only(studio.bot.only)
                     color: studio.colors.muted; font.pixelSize: 14
                     anchors.verticalCenter: parent.verticalCenter
                 }

@@ -5,9 +5,10 @@ the Studio is its own process (its entry, in its environment), stopped and pause
 the bot's darbit watches (platform/safety.py), so held keys are always let go. While a bot runs, its run
 report is watched and every change goes to the windows as `project.changed`. One bot that sends input runs at a
 time (decision 0020): starting a second, or playing an action next to one, is refused unless it replaces the
-first. See docs/archive/tasks/T20-hub.md.
+first. A start can be for one of the bot's modes or steps only (decision 0022). See docs/archive/tasks/T20-hub.md.
 """
 
+import json
 import os
 import sqlite3
 import subprocess
@@ -22,6 +23,7 @@ from ..platform import system
 from ..project import bots
 from ..project.manifest import MANIFEST, Project, ProjectError, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
+from ..runtime.only import ONLY
 from . import dashboard, deleted, history, library, recording_mark, refusal, results, ui_settings
 from .events import publish
 from .refusal import InputBotRunning
@@ -29,6 +31,7 @@ from .refusal import InputBotRunning
 ADDED = "studio.projects"  # ui setting: project folders added by hand
 WATCH_EVERY = 2.0  # seconds between looks at a running bot's report
 STOP_WAIT = 10.0  # seconds a bot gets to stop before it's ended
+ONLY_FILE = "only.json"  # in the control folder: the mode or step a run was started for (decision 0022)
 
 
 @dataclass
@@ -40,6 +43,7 @@ class Run:
     started: float
     paused: bool = False
     stopping: bool = False  # the Studio asked it to stop, so its Stopped error is a normal end
+    only: dict | None = None  # the mode or step it was started for ({"mode", "step"}); None for a round
 
 
 _runs: dict[str, Run] = {}  # folder -> its run
@@ -81,7 +85,7 @@ def _adopt(folder: Path) -> Run | None:
     if not _alive(pid):
         pid_file.unlink(missing_ok=True)
         return None
-    run = Run(folder, Earlier(pid), pid_file.stat().st_mtime)
+    run = Run(folder, Earlier(pid), pid_file.stat().st_mtime, only=_only_file(folder))
     with _lock:
         _runs[str(folder)] = run
     threading.Thread(target=_watch, args=(run,), name=f"darbit-run-{folder.name}", daemon=True).start()
@@ -138,7 +142,17 @@ def describe(folder: Path) -> dict:
         "status": status(folder),
         "since": _started(folder),
         "input": project.input,
+        "modes": _modes(project),
+        "only": _only_running(folder),
     }
+
+
+def _modes(project: Project) -> list[dict]:
+    """The bot's modes from its [modes], each with its steps, in order."""
+    found = []
+    for name, steps in project.modes.items():
+        found.append({"name": name, "steps": steps})
+    return found
 
 
 def projects_list(data: dict) -> list[dict]:
@@ -182,6 +196,24 @@ def status(folder: Path) -> str:
     if run.paused:
         return "paused"
     return "running"
+
+
+def _only_running(folder: Path) -> dict | None:
+    """The mode or step the running bot was started for ({"mode", "step"}); None for a round or a stopped bot."""
+    with _lock:
+        run = _runs.get(str(folder))
+    if run is None or run.process.poll() is not None:
+        return None
+    return run.only
+
+
+def _only_file(folder: Path) -> dict | None:
+    """What a run an earlier service started was started for, from its control folder."""
+    try:
+        only = json.loads((control_dir(folder) / ONLY_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return only if isinstance(only, dict) else None
 
 
 def _started(folder: Path) -> float | None:
@@ -255,15 +287,34 @@ def stop_all() -> None:
 
 def project_run(data: dict) -> dict:
     """Start a bot as its own process, in its environment, with the Studio's control folder. A bot that sends input
-    is refused while another one runs (InputBotRunning), unless `replace` stops that one first."""
+    is refused while another one runs (InputBotRunning), unless `replace` stops that one first. `only`
+    ({"mode", "step"}) starts it for one of the modes or steps its darbit.toml declares instead of its round."""
     folder = _folder(data)
     with _start_lock:
         if status(folder) != "stopped":
             raise ValueError(f"{folder.name} is already running")
         project = load(folder)
+        only = _only_asked(project, data.get("only"))  # checked before replace stops anything
         if project.input:
             _make_room(f"start {project.name}", project.folder, bool(data.get("replace", False)))
-        return _start(folder, project)
+        return _start(folder, project, only)
+
+
+def _only_asked(project: Project, asked: object) -> dict | None:
+    """`only` checked against the bot's [modes]: {"mode"} or {"mode", "step"}, or None for the whole round."""
+    if not asked:
+        return None
+    if not isinstance(asked, dict) or not asked.get("mode"):
+        raise ValueError('only names a mode: {"mode": "...", "step": "..."}')
+    mode = str(asked["mode"])
+    step = str(asked.get("step") or "")
+    if mode not in project.modes:
+        raise ValueError(f"{project.name} has no mode called {mode}: its darbit.toml [modes] lists them")
+    if step and step not in project.modes[mode]:
+        raise ValueError(f"{project.name}'s {mode} has no step called {step}: its darbit.toml [modes] lists them")
+    if step:
+        return {"mode": mode, "step": step}
+    return {"mode": mode}
 
 
 def action_play(data: dict) -> dict:
@@ -301,13 +352,17 @@ def _stop_action() -> None:
         raise ValueError("the action playing didn't stop in time: stop it from the Studio first")
 
 
-def _start(folder: Path, project: Project) -> dict:
+def _start(folder: Path, project: Project, only: dict | None = None) -> dict:
     control = control_dir(folder)
     control.mkdir(parents=True, exist_ok=True)
-    for name in ("stop", "pause"):
+    for name in ("stop", "pause", ONLY_FILE):
         (control / name).unlink(missing_ok=True)
     environment = dict(os.environ)
     environment["DARBIT_CONTROL"] = str(control)
+    environment.pop(ONLY, None)  # never the service's own: a round unless this start asks for one mode
+    if only is not None:
+        environment[ONLY] = json.dumps(only)
+        (control / ONLY_FILE).write_text(json.dumps(only), encoding="utf-8")  # a later service still knows
     output = paths.project_dir(folder) / "logs" / "studio-output.log"
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("ab") as sink:
@@ -320,7 +375,7 @@ def _start(folder: Path, project: Project) -> dict:
             creationflags=system.no_window(),  # the service has no console: without this a bot would open one
         )
     (control / "pid").write_text(str(process.pid), encoding="utf-8")  # a later Studio can still stop it
-    run = Run(folder, process, time.time())
+    run = Run(folder, process, time.time(), only=only)
     with _lock:
         _runs[str(folder)] = run
     threading.Thread(target=_watch, args=(run,), name=f"darbit-run-{project.name}", daemon=True).start()
@@ -434,7 +489,11 @@ def _watch(run: Run) -> None:
     if code == 0 or run.stopping:
         ended = "stopped"
     told: dict = {"path": str(run.folder), "status": ended, "code": code}
-    if ended == "failed":
+    with _lock:
+        latest = _runs.get(str(run.folder)) is run
+    if latest:  # not a start that came since: it wrote its own
+        (control_dir(run.folder) / ONLY_FILE).unlink(missing_ok=True)
+    if ended == "failed" and run.only is None:  # one mode or step is a test: it isn't started again
         allowed = _restart_allowed(run.folder)
         if allowed:
             count = _restart_count(run.folder, allowed, time.time())

@@ -23,6 +23,7 @@ PillWindow {
     readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
     readonly property string where: state === "paused" ? "Paused" : steps.join(" › ")
     readonly property string time: studio.bot.since ? Format.duration(studio.now - studio.bot.since) : ""
+    readonly property string only: Format.only(studio.bot.only)  // a run of one mode or step: "only Daily quest"
     // the round: its steps, how many are over, and the last one that ended
     readonly property var round: info.round && info.round.steps ? info.round.steps : []
     readonly property var ended: round.filter(function (step) { return step.state !== "planned" && step.state !== "running" })
@@ -111,7 +112,7 @@ PillWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         Text {
-            text: [runWindow.where, runWindow.time].filter(function (part) { return part !== "" }).join(" · ")
+            text: [runWindow.only, runWindow.where, runWindow.time].filter(function (part) { return part !== "" }).join(" · ")
             width: Math.min(implicitWidth, 420); elide: Text.ElideLeft
             color: studio.colors.muted; font.pixelSize: 13
             anchors.verticalCenter: parent.verticalCenter
@@ -136,6 +137,11 @@ PillWindow {
             width: 132; wrapMode: Text.Wrap; maximumLineCount: 4; elide: Text.ElideRight
             text: runWindow.state === "paused" ? "Paused" : runWindow.steps.join("\n› ")
             color: studio.colors.muted; font.pixelSize: 13
+        }
+        Text {
+            visible: runWindow.only !== ""
+            width: 132; wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight
+            text: runWindow.only; color: studio.colors.muted; font.pixelSize: 12
         }
         Text { text: runWindow.time; color: studio.colors.faint; font.family: "monospace"; font.pixelSize: 12 }
         Chip { visible: runWindow.alongside(studio.bot); text: "alongside" }
@@ -186,6 +192,7 @@ PillWindow {
         Text { text: studio.bot.name || "darbit"; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold },
         Chip { text: runWindow.state; tone: runWindow.state === "running" ? "ok" : runWindow.state === "paused" ? "warn" : "plain" },
         Chip { visible: runWindow.alongside(studio.bot); text: "alongside" },
+        Chip { visible: runWindow.only !== ""; text: runWindow.only },
         Item { Layout.fillWidth: true },
         Text { text: runWindow.time; color: studio.colors.muted; font.family: "monospace"; font.pixelSize: 12 }
     ]

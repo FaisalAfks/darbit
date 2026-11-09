@@ -110,6 +110,7 @@ class Studio(QObject):
         self._overview: dict = {}  # the Overview as blocks: catalog, layout (the person's or the bot's), data
         self._checks: dict = {}  # darbit doctor's checks on a bot before Start: {bot, checks, problems}
         self._in_the_way: dict = {}  # a refused start or play, until Stop and start or Cancel
+        self._only: dict | None = None  # the mode or step Play was asked to run alone, through its checks
         self._told_failing: set[str] = set()  # images already said to be failing (bot, image, since)
         self._library: list[dict] = []
         self._screens: list[
@@ -350,6 +351,7 @@ class Studio(QObject):
         for found in self._bots:
             if found.get("path") == path:
                 self._bot = found
+                self._only = None  # a mode asked for on another bot isn't this one's
                 ui_settings.set_value(CHOSEN, path)
                 self.botChanged.emit()
                 self.libraryChanged.emit()  # another bot's library isn't this one's
@@ -360,8 +362,12 @@ class Studio(QObject):
 
     @Slot()
     def start(self) -> None:
-        """Start the shown bot. One refused because a bot that sends input runs asks first (`askedToReplace`)."""
-        self._ask_to_replace("started", "bot.start")
+        """Start the shown bot, for its round or the one mode or step Play was asked for. One refused because a bot
+        that sends input runs asks first (`askedToReplace`)."""
+        if self._only is None:
+            self._ask_to_replace("started", "bot.start")
+        else:
+            self._ask_to_replace("started", "bot.start", only=self._only)
 
     @Slot()
     def replaceAndStart(self) -> None:
@@ -406,6 +412,16 @@ class Studio(QObject):
     def play(self) -> None:
         """Start the shown bot after darbit doctor's checks: at once when they find nothing, else `checksFound`, for
         the Studio to show what's wrong with Start anyway. A service that can't check starts it as before."""
+        self._only = None
+        self._check_and_start()
+
+    @Slot(str, str)
+    def playOnly(self, mode: str, step: str) -> None:
+        """Play one of the bot's modes, or one step of it (`step` "" for the whole mode), instead of its round."""
+        self._only = {"mode": mode, "step": step} if step else {"mode": mode}
+        self._check_and_start()
+
+    def _check_and_start(self) -> None:
         if not self._bot or self._client is None:
             return
         client = self._client

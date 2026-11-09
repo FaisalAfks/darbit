@@ -114,7 +114,7 @@ METHODS: dict[str, Method] = {
     "bot.start": Method(
         hub.project_run,
         "start a bot in its own process; refused (input_bot_running) while another input bot or an action plays, "
-        "unless `replace`",
+        "unless `replace`; `only` ({mode, step}) runs one of its [modes] or steps instead of its round",
     ),
     "bot.pause": Method(hub.project_pause, "pause a running bot, or go on"),
     "bot.doctor": Method(hub.project_doctor, "darbit doctor's checks: is the bot ready to start"),

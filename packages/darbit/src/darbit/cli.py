@@ -221,9 +221,13 @@ def _bot(command: str, argv: list[str]) -> int:
         parser.add_argument(
             "--replace", action="store_true", help="stop the bot that's using the mouse and keys, then start this one"
         )
+        parser.add_argument("--only", metavar="MODE", help="run only this mode of the bot's [modes], then end")
+        parser.add_argument("--step", help="with --only: run only this step of the mode")
     args = parser.parse_args(argv)
     if command == "start":
-        result = _start(args.bot, args.replace)
+        if args.step and not args.only:
+            parser.error("--step needs --only MODE")
+        result = _start(args.bot, args.replace, _only(args.only, args.step))
     else:
         result = _ask(BOT_COMMANDS[command], bot=args.bot)
     if result is None:
@@ -232,21 +236,38 @@ def _bot(command: str, argv: list[str]) -> int:
     return 0
 
 
-def _start(bot: str, replace: bool) -> dict | None:
+def _only(mode: str | None, step: str | None) -> dict | None:
+    """bot.start's `only`: a mode, or a step of one; None for the whole round."""
+    if not mode:
+        return None
+    if step:
+        return {"mode": mode, "step": step}
+    return {"mode": mode}
+
+
+def _start(bot: str, replace: bool, only: dict | None = None) -> dict | None:
     """Start a bot through the service; None after saying why it didn't, naming the bot in the way."""
     from .service import client
 
+    asked: dict = {"bot": bot, "replace": replace}
+    if only is not None:
+        asked["only"] = only
     try:
         client.ensure_running()
         with client.Client("darbit cli") as service:
-            return service.call("bot.start", bot=bot, replace=replace)
+            return service.call("bot.start", **asked)
     except client.ServiceError as error:
         if error.code != "input_bot_running":
             print(error)
             return None
         names = ", ".join(running["name"] for running in error.detail.get("running", []))
         print(f"{names} is running and uses the mouse and keys: one such bot runs at a time.")
-        print(f"darbit start {bot} --replace stops it and starts {bot}.")
+        again = f"darbit start {bot}"
+        if only is not None:
+            again += f' --only "{only["mode"]}"'
+        if only is not None and "step" in only:
+            again += f' --step "{only["step"]}"'
+        print(f"{again} --replace stops it and starts {bot}.")
         return None
 
 

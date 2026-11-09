@@ -9,6 +9,7 @@ darbit bots                    # every bot it knows (starts the service in the b
 darbit bots --add ../my-bot    # add a project folder
 darbit start my-bot            # by name, or by folder
 darbit start my-bot --replace  # stop the bot using the mouse and keys first
+darbit start my-bot --only "Daily quest" --step "claim it"   # one mode, or one step of it, then it ends
 darbit pause my-bot            # pause; again to go on
 darbit stop my-bot             # it lets go of every key; ended if it doesn't stop within 10 s
 darbit status my-bot
@@ -53,6 +54,15 @@ A bot started without the service (`uv run my-bot`, `darbit run`) can't be refus
 it, and won't stop a bot started after it. As it starts, such a bot asks the service whether a bot that sends input
 is running and warns (in its log and on the terminal) when one is. Start bots through the service to have them kept
 apart.
+
+## One mode or one step
+
+`only` on `bot.start` (`{"mode": "Daily quest"}`, or with `"step"`) runs one of the modes or steps the bot's
+darbit.toml declares instead of its round (decision 0022, [Bot projects](projects.md#modes-and-steps)). One it
+doesn't declare is refused before anything is stopped. The bot gets it as `DARBIT_ONLY`; `bots.list` and
+`bot.status` say what a running bot was started for (`only`) and list its `modes`. A run of one mode or step that
+fails isn't started again by `[run] restart`. Everything else is as for a round: one bot that sends input at a time,
+Stop, the log and the results.
 
 ## Notifications
 

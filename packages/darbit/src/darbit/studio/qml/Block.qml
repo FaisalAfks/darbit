@@ -77,6 +77,14 @@ Glass {
         }
     }
 
+    // whether the bot's darbit.toml declares this mode, so it can run alone
+    function declares(mode) {
+        var modes = studio.bot.modes || []
+        for (var index = 0; index < modes.length; index++)
+            if (modes[index].name === mode) return true
+        return false
+    }
+
     // ---- the kinds
     Component { id: nothingYet; Text { width: parent ? parent.width : 0; text: "Nothing yet today."; color: studio.colors.faint; font.pixelSize: 13 } }
     Component {
@@ -118,21 +126,40 @@ Glass {
             width: parent ? parent.width : 0
             Repeater {
                 model: block.info.steps || []
-                delegate: RowLayout {
+                delegate: Item {
+                    id: roundRow
                     required property var modelData
-                    width: parent.width; height: 40; spacing: 12
-                    Rectangle {
-                        width: 10; height: 10; radius: 5
-                        color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
-                            : modelData.state === "failed" ? studio.colors.danger : studio.colors.faint
+                    // a mode the bot declares can run alone (#318): ▶ on hover while the bot is stopped
+                    readonly property bool runnable: !block.running && !block.editing && block.declares(modelData.name)
+                    width: parent.width; height: 40
+                    HoverHandler { id: rowHover; enabled: roundRow.runnable }
+                    Rectangle {  // the hover's light, a little wider than the row so its dot and text stay put
+                        x: -10; width: parent.width + 20; height: parent.height; radius: 10
+                        visible: roundRow.runnable && rowHover.hovered
+                        color: studio.colors.raised
                     }
-                    Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                    Text {
-                        text: modelData.state === "planned" ? "later" : modelData.state === "running" ? "running"
-                            : modelData.state === "failed" ? (modelData.reason || "failed")
-                            : Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : "")
-                        color: modelData.state === "running" ? studio.colors.accent : modelData.state === "failed" ? studio.colors.danger : studio.colors.muted
-                        font.pixelSize: 12
+                    RowLayout {
+                        anchors.fill: parent; spacing: 12
+                        Rectangle {
+                            width: 10; height: 10; radius: 5
+                            color: modelData.state === "ok" ? studio.colors.ok : modelData.state === "running" ? studio.colors.accent
+                                : modelData.state === "failed" ? studio.colors.danger : studio.colors.faint
+                        }
+                        Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
+                        Text {
+                            text: modelData.state === "planned" ? "later" : modelData.state === "running" ? "running"
+                                : modelData.state === "failed" ? (modelData.reason || "failed")
+                                : Format.clock(modelData.started) + (modelData.seconds ? " · " + Format.duration(modelData.seconds) : "")
+                            color: modelData.state === "running" ? studio.colors.accent : modelData.state === "failed" ? studio.colors.danger : studio.colors.muted
+                            font.pixelSize: 12
+                        }
+                        PillButton {
+                            objectName: "runOnly"
+                            visible: roundRow.runnable && rowHover.hovered
+                            kind: "primary"; small: true; icon: "▶"
+                            implicitWidth: 24; implicitHeight: 24
+                            onClicked: studio.playOnly(roundRow.modelData.name, "")
+                        }
                     }
                 }
             }

@@ -42,6 +42,48 @@ A bot's day starts at midnight on the PC's clock unless `day_starts` says otherw
 files, history, the Studio's Overview and Results, and the daily summary all go by it, so a night that runs past
 midnight stays in one day, and the Results timeline runs on past 24:00 (still read as 01:00, 02:00).
 
+## Modes and steps
+
+A bot that runs a round of modes can say which, so darbit Studio can run one of them, or one step of one, on its
+own: to test a fix without the whole round (decision 0022). Each mode is the name of a top-level `d.step`, with the
+names of the steps inside it:
+
+```toml
+[modes]
+"Daily quest" = ["pick a quest", "claim it"]
+Shop = []
+```
+
+The Studio's Today's round and its command palette (Ctrl+K) then offer **Run only Daily quest** and **Run step:
+Daily quest · claim it**; the CLI has `darbit start my-bot --only "Daily quest" --step "claim it"`. The bot honours it
+with `d.wants` and ends after one pass when `d.only()` says it was started for one:
+
+```python
+def main():
+    while True:
+        for mode in ["Daily quest", "Shop"]:
+            if d.wants(mode):
+                with d.step(mode):
+                    run(mode)
+        if d.only():
+            return  # one mode or step: done
+        d.sleep(60)
+
+
+def daily_quest():
+    if d.wants("Daily quest", "pick a quest"):
+        with d.step("pick a quest"):
+            ...
+    if d.wants("Daily quest", "claim it"):
+        with d.step("claim it"):
+            ...
+```
+
+`d.wants(mode)` is always true in a round. Started for a mode, it's true for that mode and every step of it; for a
+step, for that mode and that step only. A step that needs an earlier one's work (a list open) does that itself, or
+the bot checks for it. `d.plan` keeps only the mode asked for. darbit doesn't skip anything on its own: a bot that
+declares modes honours them. `[modes]` needs a darbit that knows it: an older one refuses the darbit.toml.
+
 ## What a bot shows in darbit Studio
 
 Most of a bot's Overview comes from what darbit already records: the open `d.step(...)` names (Now), its top-level steps (Today's round), `d.record(...)` (What happened), failed steps with their screenshots, and `d.observe(...)` (Watching). Two calls add the rest:
