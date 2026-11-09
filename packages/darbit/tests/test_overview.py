@@ -121,3 +121,16 @@ def test_the_data_counts_todays_recoveries(project, tmp_path):
 def test_without_recoveries_the_count_is_none(project, tmp_path):
     rows = overview.data(project, events(), "2026-11-02", datetime(2026, 11, 2, 11), tmp_path)["recoveries"]
     assert rows == {"count": 0, "reason": "", "reason_count": 0, "last": None, "hows": []}
+
+
+def test_the_week_of_gains_asks_history_for_gains_only(project, monkeypatch):
+    asked = []
+
+    def events_of(project, day, kinds=None):
+        asked.append(kinds)
+        return [{"event": "gain", "name": "Gold", "amount": 5}, {"event": "gain", "name": "Gold", "amount": "x"}]
+
+    monkeypatch.setattr(overview.history, "events", events_of)
+    week = overview._week_of_gains(project, "2026-11-09")
+    assert week == {"Gold": [5] * 7}
+    assert asked == [("gain",)] * 7  # every kind of a week's events is tens of MB of JSON on each refresh
