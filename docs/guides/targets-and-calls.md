@@ -103,7 +103,7 @@ d.drag("Bag.Slider", to=d.point("Bag.Slider.Top"))
 
 Loaded pictures stay in memory; their files are checked at most once a second, so a picture taken again is used from the next search on.
 
-Keys are sent by their position on the keyboard, so games get them and the keyboard language doesn't matter. The mouse glides to each spot, which some games need to register a click.
+Keys are sent by their position on the keyboard, so games get them and the keyboard language doesn't matter. The mouse glides to each spot, which some games need to register a click. Some games see a button's hover only when the mouse moves onto it: with the mouse already there from the click before, the click does nothing. `approach` (pixels, 0 is off) makes a click with the mouse that close step back that far first, staying on the screen, and glide in; a retry steps back again.
 
 ## Settings
 
@@ -111,6 +111,7 @@ Keys are sent by their position on the keyboard, so games get them and the keybo
 d.settings.timeout = 3  # how long actions wait for a target
 d.settings.similarity = 0.7  # default similarity
 d.settings.glide = 0.5  # seconds the mouse takes to move
+d.settings.approach = 40  # a click with the mouse already within 40 px steps back 40 px first, then glides in
 d.settings.scan_rate = 5  # searches per second while waiting
 d.settings.lag = 1.5  # a slow game or PC: every search's wait and every d.sleep 1.5 times longer
 d.settings.window = "Game"  # bring this window to the front before any input

@@ -33,6 +33,7 @@ class Settings:
     timeout: float = 3.0  # how long actions on a target wait for it, in seconds
     similarity: float = 0.7  # lowest score that counts as found, 0 to 1
     glide: float = 0.5  # seconds the mouse takes to move to a spot
+    approach: float = 0  # pixels: a click with the mouse closer than this steps back this far first; 0 is off
     scan_rate: float = 5.0  # searches per second while waiting
     lag: float = 1.0  # a slow game or PC: every search's wait and every d.sleep is this many times longer
     images: list[Path] = field(default_factory=_default_images)
