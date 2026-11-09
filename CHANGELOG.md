@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- `darbit.testing.FakeGame` fakes looking up the game's window too (`windows.matching`, `in_front`, `region`): with `window` set in a bot's settings, its tests on saved screens no longer reach the system's windows before every click and key. Looking up `settings.window` finds a fake window, always in front, with an empty area so window-space targets stay where they were taken; no other window is open
+
 ## 1.0.0-alpha.8 - 2026-11-09
 
 ### New
