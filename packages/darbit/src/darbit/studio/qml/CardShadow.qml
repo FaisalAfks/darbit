@@ -1,5 +1,6 @@
-// What a card has under the mouse (CardMotion, through a Loader): a soft drop shadow and an accent glow, both outside the card only, so
-// the glass doesn't darken. Loaded only while the mouse is on a card.
+// What a card has under the mouse (CardMotion, through a Loader): a soft drop shadow and an accent glow, both
+// outside the card only, so the glass doesn't darken. Loaded only while the mouse is on a card, and drawn at half
+// size: it's soft anyway, and a full-size one cost several MB while the mouse rests on a card.
 import QtQuick
 import QtQuick.Effects
 
@@ -12,6 +13,7 @@ Item {
         anchors.fill: parent
         visible: false
         layer.enabled: true
+        layer.textureSize: Qt.size(width / 2, height / 2)  // a shadow is soft: half the pixels is plenty
         RectangularShadow {
             x: shade.room; y: shade.room + 10; width: (shade.card ? shade.card.width : 0); height: (shade.card ? shade.card.height : 0)
             radius: (shade.card ? shade.card.radius : 0); blur: 28
@@ -28,6 +30,7 @@ Item {
         anchors.fill: parent
         visible: false
         layer.enabled: true
+        layer.textureSize: Qt.size(width / 2, height / 2)  // a shadow is soft: half the pixels is plenty
         Rectangle { x: shade.room; y: shade.room; width: (shade.card ? shade.card.width : 0); height: (shade.card ? shade.card.height : 0); radius: (shade.card ? shade.card.radius : 0); color: "black" }
     }
     MultiEffect {
