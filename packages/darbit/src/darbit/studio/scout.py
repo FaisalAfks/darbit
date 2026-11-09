@@ -21,9 +21,10 @@ from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
 from .. import paths
-from ..core import matching
+from ..core import matching, placement
 from ..core.geometry import Region
 from ..core.targets import Target, kind_of, load
+from ..core.targets import forget as forget_targets
 from ..platform import screen
 from ..platform.backend import NotSupported
 from ..project.manifest import ProjectError
@@ -67,6 +68,13 @@ def targets_of(folder: Path) -> list[Target]:
                 target = replace(target, similarity=bot_similarity)  # what the bot itself needs
             found.append(target)
     return found
+
+
+def forget_images() -> None:
+    """Let go of every image's pixels darbit keeps for the next search (about 70 MB for a bot of 200 images): Scout
+    is off, and the Studio doesn't search again until it's on."""
+    forget_targets()
+    placement.forget_resized()
 
 
 def options_of(folder: Path) -> matching.Options:
@@ -507,6 +515,13 @@ class Scout(QObject):
         self.recordChanged.emit()
 
     def _loop(self, targets: list[Target], options: matching.Options, grab: object) -> None:
+        try:
+            self._scan_while_on(targets, options, grab)
+        finally:
+            if not self._running.is_set():
+                forget_images()
+
+    def _scan_while_on(self, targets: list[Target], options: matching.Options, grab: object) -> None:
         while self._running.is_set():
             started = time.perf_counter()
             try:

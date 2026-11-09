@@ -777,6 +777,28 @@ def test_scout_finds_the_bots_images_on_screen(qt, tmp_path):
     wait_until(lambda: len(scout.boxes) == 2)  # every image still, landed on the one picked in the Library
     assert scout.landed == "Lobby.Play"
     scout.stop()
+    from darbit.core import targets
+
+    wait_until(lambda: not targets._images and not targets._loaded)  # its images' pixels let go once it's off
+
+
+def test_the_librarys_pictures_go_to_qml_as_files_with_the_same_bytes(tmp_path):
+    import base64
+
+    from darbit.studio.pictures import Pictures
+
+    png = base64.b64encode(b"PNG made up").decode("ascii")
+    pictures = Pictures(tmp_path)
+    taken = pictures.take(
+        [{"name": "A", "thumbnail": "data:image/png;base64," + png}, {"name": "B", "thumbnail": None}],
+        "thumbnail",
+        "thumbnail",
+    )
+    path = Path(QtCore.QUrl(taken[0]["thumbnail"]).toLocalFile())
+    assert taken[0]["thumbnail"].startswith("file:") and path.read_bytes() == b"PNG made up"
+    assert taken[1] == {"name": "B", "thumbnail": None}
+    pictures.take([], "thumbnail", "thumbnail")  # gone from the Library: its file goes too
+    assert not path.exists()
 
 
 def test_scout_keeps_a_record_of_each_image_with_the_latest_shot_of_each_screen(qt, tmp_path, monkeypatch):
