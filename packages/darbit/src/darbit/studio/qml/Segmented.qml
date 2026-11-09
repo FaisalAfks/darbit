@@ -2,7 +2,6 @@
 // stacks them (a pill on a side edge). model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
 // In a pill over the game it takes `tokens: studio.pillMotion` (the pills show while the Studio is hidden).
 import QtQuick
-import QtQuick.Effects
 
 Rectangle {
     id: seg
@@ -15,6 +14,8 @@ Rectangle {
     signal picked(string key)
     property var tokens: studio.motion
     readonly property int speed: tokens.glide
+    property bool picking: false  // the light moves because another choice was made (not the row settling)
+    onCurrentChanged: picking = tokens.on
 
     implicitWidth: row.implicitWidth + 8
     implicitHeight: vertical ? row.implicitHeight + 8 : itemHeight + 8
@@ -36,19 +37,16 @@ Rectangle {
             GradientStop { position: 0; color: seg.strong ? studio.colors.accent : studio.colors.raisedHover }
             GradientStop { position: 1; color: seg.strong ? Qt.tint(studio.colors.accent, Qt.rgba(0.65, 0.55, 0.98, 0.35)) : studio.colors.raisedHover }
         }
-        Behavior on x { NumberAnimation { id: movingX; duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
+        Behavior on x { NumberAnimation { id: movingX; onRunningChanged: if (!running) seg.picking = false; duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
         Behavior on y { NumberAnimation { id: movingY; duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
         Behavior on width { NumberAnimation { duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
 
-        // a soft glow round the light while it moves, gone once it lands
-        RectangularShadow {
+        // a soft glow round the light while it moves to a new choice, gone once it lands
+        Loader {
             z: -1
             anchors.fill: parent
-            radius: parent.radius; blur: 18
-            color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.3)
-            opacity: movingX.running || movingY.running ? 1 : 0
-            visible: opacity > 0
-            Behavior on opacity { NumberAnimation { duration: seg.tokens.fast } }
+            active: seg.picking && (movingX.running || movingY.running)
+            source: "Glow.qml"
         }
     }
 

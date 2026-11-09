@@ -2,7 +2,6 @@
 // On a narrow window it folds to the bots' squares.
 import QtQuick
 import QtQuick.Controls.Basic
-import QtQuick.Effects
 
 Rectangle {
     id: side
@@ -69,14 +68,11 @@ Rectangle {
             radius: 12
             color: studio.colors.raisedHover
             Behavior on y { NumberAnimation { id: springing; duration: studio.motion.glide; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
-            RectangularShadow {
+            Loader {
                 z: -1
                 anchors.fill: parent
-                radius: parent.radius; blur: 18
-                color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.3)
-                opacity: springing.running ? 1 : 0
-                visible: opacity > 0
-                Behavior on opacity { NumberAnimation { duration: studio.motion.fast } }
+                active: springing.running
+                source: "Glow.qml"
             }
             Rectangle {  // the chosen bot's edge
                 visible: !side.folded

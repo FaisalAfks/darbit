@@ -5,7 +5,6 @@
 // Nothing of it is drawn at rest: the shadow and glow are made only while the mouse is on the card. With effects off,
 // or the window out of sight, everything is at once in place.
 import QtQuick
-import QtQuick.Effects
 import "motion.js" as Motion
 
 Item {
@@ -74,37 +73,6 @@ Item {
         active: moving.glow > 0
         x: -48; y: -48; width: moving.width + 96; height: moving.height + 96
         opacity: moving.glow
-        sourceComponent: Item {
-            Item {
-                id: shadows
-                anchors.fill: parent
-                visible: false
-                layer.enabled: true
-                RectangularShadow {
-                    x: 48; y: 48 + 10; width: moving.width; height: moving.height
-                    radius: moving.radius; blur: 28
-                    color: studio.colors.shadow
-                }
-                RectangularShadow {
-                    x: 48; y: 48; width: moving.width; height: moving.height
-                    radius: moving.radius; blur: 18
-                    color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.28)
-                }
-            }
-            Item {
-                id: cardShape
-                anchors.fill: parent
-                visible: false
-                layer.enabled: true
-                Rectangle { x: 48; y: 48; width: moving.width; height: moving.height; radius: moving.radius; color: "black" }
-            }
-            MultiEffect {
-                anchors.fill: parent
-                source: shadows
-                maskEnabled: true
-                maskSource: cardShape
-                maskInverted: true
-            }
-        }
+        source: "CardShadow.qml"
     }
 }

@@ -3,7 +3,6 @@
 // one. With blur-through on (darbit settings) it also blurs out and in, the blur only while it moves. Only opacity, a
 // move and scale are animated, so changing pages costs no layout work.
 import QtQuick
-import QtQuick.Effects
 import "motion.js" as Motion
 
 Item {
@@ -13,6 +12,8 @@ Item {
     property bool visited: false
     readonly property var tokens: studio.motion
     readonly property bool blurring: studio.blurThrough && tokens.on
+    property Component blurLayer: null  // made the first time a page blurs: the effects module loads only then
+    onBlurringChanged: if (blurring && blurLayer === null) blurLayer = Qt.createComponent("BlurLayer.qml")
     visible: shown || leaving.running
     enabled: shown  // the page leaving takes no clicks
     onShownChanged: {
@@ -26,7 +27,10 @@ Item {
             leaving.restart()
         }
     }
-    Component.onCompleted: if (shown) { visited = true; Motion.pageShown() }
+    Component.onCompleted: {
+        if (shown) { visited = true; Motion.pageShown() }
+        if (blurring) blurLayer = Qt.createComponent("BlurLayer.qml")
+    }
 
     Item {
         id: holder
@@ -39,7 +43,7 @@ Item {
         ]
         // the blur is drawn only while the page moves: a layer left on at rest would change how its text is drawn
         layer.enabled: pageFrame.blurring && holder.blur > 0
-        layer.effect: MultiEffect { blurEnabled: true; blurMax: 32; blur: holder.blur }
+        layer.effect: pageFrame.blurLayer
         Loader { anchors.fill: parent; active: pageFrame.visited; source: pageFrame.source }
     }
     ParallelAnimation {
