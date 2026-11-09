@@ -1166,19 +1166,23 @@ def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_t
         studio = backend.Studio(FakeClient)
         engine = app.load(studio, run_pill=hiding, pill_places={"run": place})
         root = engine.rootObjects()[0]  # held, or Qt deletes it
+        studio.connect()
+        wait_until(lambda: studio.bot.get("name") == "ad-bot")
         hiding.open()
         window = root.findChild(QQuickWindow, "runPill")
         wait_until(window.isVisible)
         face = window.findChild(QObject, "pillFace")
+        row = _steady_width(face)  # laid out with the bot's line, done easing to its width
         place.begin(box.center().x(), 30)
         wait_until(lambda: window.property("roomy"))
         held = (window.width(), window.height())
-        assert held[0] == held[1] > face.property("width")  # a square around the pill, room for any form
+        assert held[0] > 2 * face.property("width") and held[1] > 2 * face.property("height")  # room for any form
         place.move(box.left() + 20, box.center().y())
         assert window.property("form") == "column"
         assert (window.width(), window.height()) == held  # a new form redraws inside it: the window only moves
         place.move(box.center().x() + 100, box.bottom() - 60)
-        _settle()  # held there a moment, as a hand does: the row lays itself out at its own size
+        # held there a moment, as a hand does: the row lays itself out at its own size
+        wait_until(lambda: place.sizeOf("row")["width"] == face.property("width") == row)
         place.end()
         wait_until(lambda: not window.property("roomy"))
         wait_until(lambda: window.height() < window.width())  # a row again, its own size
@@ -1194,11 +1198,16 @@ def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_t
     assert warnings == []
 
 
-def _settle(seconds=0.3):
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        QtCore.QCoreApplication.processEvents()
-        time.sleep(0.01)
+def _steady_width(item, checks=8):
+    """An item's width once it has stopped changing (an animation runs on its frames, 16 ms apart)."""
+    seen = []
+
+    def steady():
+        seen.append(item.property("width"))
+        return len(seen) >= checks and len(set(seen[-checks:])) == 1
+
+    wait_until(steady)
+    return seen[-1]
 
 
 def test_dragging_the_recorders_pill_keeps_the_drag_out_of_the_recording(qt):

@@ -327,6 +327,7 @@ class PillPlace(QObject):
         self._in_window = in_window  # a pill inside one window (Capture's): that window is its only screen
         self._area = Rect(0, 0, 1920, 1080)
         self._near = "top"
+        self._found: dict[str, Rect] | None = None  # the screens, read again when they change and at each drag
         found = self._all()
         self._place = read(ui_settings.get(KEY + name) if keep else None, found, next(iter(found)))
         self._dragging = False
@@ -367,6 +368,7 @@ class PillPlace(QObject):
 
         there = QGuiApplication.screens()
         self._watched = [watched for watched in self._watched if watched in there]
+        self._found = None
         found = self._all()
         self._place = read(asdict(self._place), found, next(iter(found)))
         self.changed.emit()
@@ -374,7 +376,9 @@ class PillPlace(QObject):
     def _all(self) -> dict[str, Rect]:
         if self._in_window:
             return {"": self._area}  # one window: points only, nothing beside it
-        return self._screens()
+        if self._found is None:
+            self._found = self._screens()  # asks the taskbar too: not on every move of a drag
+        return self._found
 
     def _screen(self, name: str) -> Rect:
         found = self._all()
@@ -499,6 +503,7 @@ class PillPlace(QObject):
 
     @Slot(float, float)
     def begin(self, x: float, y: float) -> None:
+        self._found = None  # a taskbar set to hide itself since, which Qt doesn't say
         self._dragging = True
         self.dragChanged.emit()
         self.move(x, y)

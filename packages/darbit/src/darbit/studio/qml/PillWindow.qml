@@ -6,7 +6,7 @@
 // it goes to, its corners and centre, and where it lands. The bot never sees either in a screen capture. Put the
 // pill's controls inside; its card's detail in `heading` and `card`; panels that open by the pill in `below`.
 //
-// While it's dragged, and while it lands, the window is a fixed square around the pill (`room`), so a change of form
+// While it's dragged, and while it lands, the window keeps one size around the pill (`room`), so a change of form
 // only redraws inside it and the window only moves; it takes the pill's own size again once the pill has landed.
 import QtQuick
 import QtQuick.Window
@@ -44,7 +44,7 @@ Window {
     property bool holding: false  // follows `dragging`, set here so the landing takes over in the same step
     property bool landing: false
     readonly property bool roomy: holding || landing
-    property real room: 0
+    property size room: Qt.size(0, 0)
     readonly property bool tuckedAway: hiding.tucked && !place.floating && !holding
     // where the pill sits when it shows, from its place on its edge (or floating spot)
     readonly property var spot: { place.screen; place.work; place.edge; return place.spotFor(body.face.width, body.face.height) }
@@ -74,12 +74,12 @@ Window {
     Behavior on shownFaceY { enabled: !pillWindow.roomy; NumberAnimation { duration: pillWindow.tokens.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: pillWindow.tokens.ease } }
 
     // the body in the window: held with the grab point in the middle of the room, or by the margin at rest
-    readonly property real bodyX: roomy ? room / 2 - grabX * body.face.width - body.faceX : margin
-    readonly property real bodyY: roomy ? room / 2 - grabY * body.face.height - body.faceY : margin
+    readonly property real bodyX: roomy ? room.width / 2 - grabX * body.face.width - body.faceX : margin
+    readonly property real bodyY: roomy ? room.height / 2 - grabY * body.face.height - body.faceY : margin
     readonly property real wantX: shownFaceX - body.faceX - bodyX
     readonly property real wantY: shownFaceY - body.faceY - bodyY
-    readonly property real wantWidth: roomy ? room : restWidth
-    readonly property real wantHeight: roomy ? room : restHeight
+    readonly property real wantWidth: roomy ? room.width : restWidth
+    readonly property real wantHeight: roomy ? room.height : restHeight
     onWantXChanged: settle()
     onWantYChanged: settle()
     onWantWidthChanged: settle()
@@ -91,11 +91,14 @@ Window {
 
     function roomFor() {
         // big enough for the pill in any form held anywhere, with its panels and its tilt
-        var widest = Math.max(body.width, body.height, pillWindow.cardWidth)
+        var widest = Math.max(body.width, pillWindow.cardWidth)
+        var tallest = body.height
         var sizes = [place.sizeOf("row"), place.sizeOf("column"), place.sizeOf("card")]
-        for (var index = 0; index < sizes.length; index++)
-            widest = Math.max(widest, sizes[index].width + body.belowWidth, sizes[index].height + body.belowHeight)
-        return 2 * (widest + tiltRoom)
+        for (var index = 0; index < sizes.length; index++) {
+            widest = Math.max(widest, sizes[index].width + body.belowWidth + 10)
+            tallest = Math.max(tallest, sizes[index].height + body.belowHeight + 10)
+        }
+        return Qt.size(2 * (widest + tiltRoom), 2 * (tallest + tiltRoom))
     }
     onDraggingChanged: {
         if (dragging) {
