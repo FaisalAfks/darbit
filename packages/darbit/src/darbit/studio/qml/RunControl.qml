@@ -27,10 +27,11 @@ Rectangle {
                 id: label
                 x: 12; anchors.verticalCenter: parent.verticalCenter
                 spacing: 8
-                Rectangle {
+                LiveDot {
                     width: 9; height: 9; radius: 4.5; color: control.dot
                     anchors.verticalCenter: parent.verticalCenter
-                    // a soft halo while running: drawn once, not animated, so an idle Studio doesn't redraw
+                    pulsing: control.state === "running"  // and only while the window is in sight (studio.motion)
+                    // a soft halo while running, still; the pulse spreads from under it
                     Rectangle {
                         visible: control.state === "running"
                         anchors.centerIn: parent; width: 19; height: 19; radius: 9.5

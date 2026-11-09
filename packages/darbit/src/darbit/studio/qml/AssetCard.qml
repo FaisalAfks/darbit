@@ -15,12 +15,16 @@ Rectangle {
     height: 206
     radius: 16
     color: chosen ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.1) : studio.colors.glass
-    border.color: chosen ? studio.colors.accent : area.containsMouse ? Qt.tint(studio.colors.line, Qt.rgba(1, 1, 1, 0.12)) : studio.colors.line
+    border.color: chosen ? studio.colors.accent : area.containsMouse ? Qt.tint(studio.colors.line, Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.35)) : studio.colors.line
     border.width: chosen ? 2 : 1
-    opacity: dimmed ? 0.55 : 1
-    scale: area.containsMouse && !chosen ? 1.025 : 1
-    Behavior on scale { NumberAnimation { duration: studio.effects ? 140 : 0; easing.type: Easing.OutCubic } }
-    Behavior on opacity { NumberAnimation { duration: studio.effects ? 160 : 0 } }
+    Behavior on border.color { ColorAnimation { duration: studio.motion.hover } }
+    // it rises with its page; under the mouse it lifts, with a light that follows the mouse (CardMotion, MouseLight)
+    property real dim: dimmed ? 0.55 : 1
+    Behavior on dim { NumberAnimation { duration: studio.motion.fast } }
+    opacity: motion.fade * dim
+    transform: motion.moves
+    CardMotion { id: motion; hovered: area.containsMouse; lifts: !card.chosen; radius: card.radius }
+    MouseLight { id: light; hovered: area.containsMouse && !card.chosen; radius: card.radius }
 
     Rectangle {
         id: frame
@@ -98,5 +102,10 @@ Rectangle {
         color: studio.colors.accent
         Text { anchors.centerIn: parent; text: "✓"; color: studio.colors.onAccent; font.pixelSize: 12; font.weight: Font.Bold }
     }
-    MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: card.clicked() }
+    MouseArea {
+        id: area
+        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+        onClicked: card.clicked()
+        onPositionChanged: function (mouse) { light.at = Qt.point(mouse.x, mouse.y) }
+    }
 }

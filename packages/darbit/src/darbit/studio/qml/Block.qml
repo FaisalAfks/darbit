@@ -3,6 +3,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "format.js" as Format
+import "motion.js" as Motion
 
 Glass {
     id: block
@@ -20,7 +21,8 @@ Glass {
     note: spec.origin && spec.origin !== "darbit" && !editing ? spec.origin : ""
     lift: !editing
     implicitHeight: (title !== "" ? 64 : 44) + (shown.item ? shown.item.implicitHeight : 0)
-    border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55) : studio.colors.line
+    border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55)
+        : hovered && lift ? hoverEdge : studio.colors.line
 
     content: Loader {
         id: shown
@@ -51,7 +53,7 @@ Glass {
         onActiveChanged: if (!active) { var at = block.mapToItem(null, block.width / 2, block.height / 2); block.moved(at.x, at.y) }
     }
     z: dragging.active ? 10 : 0
-    opacity: dragging.active ? 0.85 : 1
+    dim: dragging.active ? 0.85 : 1
     Rectangle {
         visible: block.editing
         anchors { right: parent.right; bottom: parent.bottom; margins: 5 }
@@ -151,9 +153,14 @@ Glass {
     Component {
         id: numberView
         Column {
+            id: numberColumn
             width: parent ? parent.width : 0; spacing: 4
+            readonly property bool gain: block.info.today !== undefined
             Text {
-                text: (block.info.today !== undefined ? "+" + Number(block.info.today).toLocaleString(Qt.locale(), "f", 0) : Format.setting(block.info.value)) + (block.info.unit ? " " + block.info.unit : "")
+                // inside the text, not the column: the column would leave room for it
+                CountUp { id: counted; to: numberColumn.gain ? Number(block.info.today) : typeof block.info.value === "number" ? block.info.value : NaN }
+                text: (counted.counting ? (numberColumn.gain ? "+" + Number(counted.value).toLocaleString(Qt.locale(), "f", 0) : Format.setting(Math.round(counted.value)))
+                    : numberColumn.gain ? "+" + Number(block.info.today).toLocaleString(Qt.locale(), "f", 0) : Format.setting(block.info.value)) + (block.info.unit ? " " + block.info.unit : "")
                 color: block.info.today !== undefined ? studio.colors.ok : studio.colors.text; font.pixelSize: 30; font.weight: Font.Bold
             }
             Text {
@@ -175,6 +182,7 @@ Glass {
                 Repeater {
                     model: parent.parent.week
                     delegate: Rectangle {
+                        id: bar
                         required property var modelData
                         required property int index
                         anchors.bottom: parent.bottom
@@ -182,6 +190,23 @@ Glass {
                         height: Math.max(3, 76 * modelData / parent.parent.most)
                         color: index === 6 ? studio.colors.accent : studio.colors.accent2
                         opacity: index === 6 ? 1 : 0.55
+                        // each bar grows from the bottom when the page shows, one after another
+                        property real grown: 1
+                        transform: Scale { origin.y: bar.height; yScale: bar.grown }
+                        function grow() {
+                            if (!studio.motion.on) { growing.stop(); grown = 1; return }
+                            grown = 0
+                            growing.wait = studio.motion.growDelay + index * studio.motion.growStagger
+                            growing.restart()
+                        }
+                        onVisibleChanged: if (visible) grow(); else { growing.stop(); grown = 1 }
+                        Component.onCompleted: if (Motion.fresh()) grow()
+                        SequentialAnimation {
+                            id: growing
+                            property int wait: 0
+                            PauseAnimation { duration: growing.wait }
+                            NumberAnimation { target: bar; property: "grown"; to: 1; duration: studio.motion.grow; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring }
+                        }
                     }
                 }
             }
@@ -244,7 +269,8 @@ Glass {
                 spacing: 8
                 Text {
                     id: recoveredCount
-                    text: recovered.count > 0 ? String(recovered.count) : "None"
+                    CountUp { id: recoveredCounting; to: recovered.count }
+                    text: recoveredCounting.counting ? String(Math.round(recoveredCounting.value)) : recovered.count > 0 ? String(recovered.count) : "None"
                     color: recovered.count > 0 ? studio.colors.warn : studio.colors.ok
                     font.pixelSize: 30; font.weight: Font.Bold
                 }

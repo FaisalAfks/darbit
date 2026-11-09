@@ -17,7 +17,8 @@ PillWindow {
     readonly property bool column: form === "column"
     readonly property string state: studio.bot.status || "stopped"
     readonly property color dot: state === "running" ? studio.colors.ok : state === "paused" ? studio.colors.warn : studio.colors.faint
-    readonly property var info: studio.overview && studio.overview.data ? studio.overview.data : ({})
+    readonly property var info: studio.live  // where the bot is and its round, kept even while the Studio is hidden
+    readonly property bool pulsing: state === "running" && visible && !tuckedAway
     readonly property var now: info.now || null
     readonly property var steps: now && now.path ? now.path.map(function (step) { return String(step).split(" > ").pop() }) : []
     readonly property string where: state === "paused" ? "Paused" : steps.join(" › ")
@@ -103,7 +104,7 @@ PillWindow {
         visible: !runWindow.column
         Layout.leftMargin: 4; Layout.rightMargin: 12
         spacing: 9
-        Rectangle { width: 11; height: 11; radius: 5.5; color: runWindow.dot; anchors.verticalCenter: parent.verticalCenter }
+        LiveDot { width: 11; height: 11; color: runWindow.dot; anchors.verticalCenter: parent.verticalCenter; pulsing: runWindow.pulsing; tokens: studio.pillMotion }
         Text {
             text: studio.bot.name || "darbit"
             color: studio.colors.text; font.pixelSize: 14; font.weight: Font.Bold
@@ -124,7 +125,7 @@ PillWindow {
         spacing: 3
         Row {
             spacing: 8
-            Rectangle { width: 10; height: 10; radius: 5; color: runWindow.dot; anchors.verticalCenter: parent.verticalCenter }
+            LiveDot { width: 10; height: 10; color: runWindow.dot; anchors.verticalCenter: parent.verticalCenter; pulsing: runWindow.pulsing; tokens: studio.pillMotion }
             Text {
                 text: studio.bot.name || "darbit"; width: 112; elide: Text.ElideRight
                 color: studio.colors.text; font.pixelSize: 14; font.weight: Font.Bold
@@ -181,7 +182,7 @@ PillWindow {
 
     // floating: the bot and its state, then where it is, the round and the last step
     heading: [
-        Rectangle { width: 11; height: 11; radius: 5.5; color: runWindow.dot },
+        LiveDot { width: 11; height: 11; color: runWindow.dot; pulsing: runWindow.pulsing; tokens: studio.pillMotion },
         Text { text: studio.bot.name || "darbit"; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.Bold },
         Chip { text: runWindow.state; tone: runWindow.state === "running" ? "ok" : runWindow.state === "paused" ? "warn" : "plain" },
         Chip { visible: runWindow.alongside(studio.bot); text: "alongside" },

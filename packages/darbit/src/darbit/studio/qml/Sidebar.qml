@@ -47,7 +47,38 @@ Rectangle {
             width: list.width
             bot: modelData
             folded: side.folded
+            lights: false
             onClicked: studio.selectBot(modelData.path)
+        }
+        // the chosen bot's light: it springs to the bot chosen next, glowing while it moves. Placed from the chosen
+        // bot's place in the list (each row is as tall as the next), not the list's current item, which a new list
+        // of bots would reset
+        readonly property int chosen: {
+            for (var index = 0; index < studio.bots.length; index++)
+                if (studio.bots[index].path === studio.bot.path) return index
+            return -1
+        }
+        readonly property real rowHeight: side.folded ? 48 : 52
+        Rectangle {
+            parent: list.contentItem
+            z: -1  // under the rows
+            visible: list.chosen >= 0
+            width: list.width; height: list.rowHeight
+            y: Math.max(0, list.chosen) * (list.rowHeight + list.spacing)
+            radius: 12
+            color: studio.colors.raisedHover
+            Behavior on y { NumberAnimation { id: springing; duration: studio.motion.glide; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring } }
+            Loader {
+                z: -1
+                anchors.fill: parent
+                active: springing.running
+                source: "Glow.qml"
+            }
+            Rectangle {  // the chosen bot's edge
+                visible: !side.folded
+                x: 0; y: 10; width: 3; height: parent.height - 20; radius: 1.5
+                color: studio.colors.accent
+            }
         }
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: studio.effects ? 200 : 0 } }
     }

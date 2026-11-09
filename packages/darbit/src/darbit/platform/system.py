@@ -49,6 +49,14 @@ def screen_usable() -> bool:
         return True
 
 
+def on_battery() -> bool:
+    """Whether the PC runs on its battery now; False when plugged in, without a battery, or where it can't be told."""
+    try:
+        return backend.system().on_battery()
+    except backend.NotSupported:
+        return False
+
+
 def process_alive(pid: int) -> bool:
     return backend.system().process_alive(pid)
 

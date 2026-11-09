@@ -2,12 +2,18 @@
 
 ## Unreleased
 
+### New
+
+- The Studio moves (#441): a page fades in and slides up 10 px while its cards rise one after another with a little spring, and the page left fades out under it; the page and sidebar lights spring to the new choice, glowing while they move; cards and tiles lift 3 px under the mouse with a soft shadow, an accent edge and a light that follows the mouse; numbers count up, rings sweep and the week's bars grow from the bottom; the live dot pulses while a bot runs; toasts spring in and fade out. Nothing changes at rest, nothing moves while the window is hidden or minimized, and only the live dot moves on its own. **Smooth effects** off turns all of it off. Timings and curves are motion tokens in `theme.py` (`studio.motion`); `CardMotion`, `MouseLight`, `CountUp` and `LiveDot` are the shared pieces
+- **Blur-through pages** and **Aurora** in darbit settings, both off at first: pages blur out and in and cards tilt into place; a slow drift of the glass themes' background light, never on battery (`system.on_battery()`)
+
 ### Changed
 
 - Run reports, daily logs and history are kept for 14 days by default, set with `keep_days` in `[settings]` (`[run] keep_days` still works). The bot deletes its own old reports and logs when it starts writing and each new day; the service deletes old history when it starts, when it starts a bot and every six hours. Days go by the bot's `day_starts`, and today's and yesterday's are never deleted. History leaves out image looks (`exists`, `wait`, `vanish`, `find`): the Results page's problems read them from the day's report instead. An existing history loses its looks once and shrinks; on two weeks of a real bot, history.db went from 95.5 MB to 4.1 MB (decision 0021)
 
 ### Fixed
 
+- While the Studio is hidden or minimized, a new Overview no longer redraws its page: the page shows the latest one when the window is back. The run pill's line and the tray's "may have stopped matching" still come at once (`studio.live`). The Overview also keeps its blocks when new numbers come, instead of making every block again every couple of seconds while a bot runs
 - The service spent about a third of a core while a bot ran: every Overview refresh read the last 7 days of every event from the history to total the gains. It now reads only the gains (0.57 s down to 0.004 s per refresh on a week of a real bot's history)
 
 ## 1.0.0-alpha.7 - 2026-11-08

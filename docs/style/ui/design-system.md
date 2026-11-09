@@ -11,8 +11,10 @@ rounds are in [docs/ui/redesign/](../../ui/redesign/README.md).
 1. **Small.** A tool covers as little of the screen as it can. The game is the main thing on screen; darbit sits at its edges.
 2. **Little to read.** One line of text per thing, short labels, numbers in a monospace font. Longer help lives behind a hover.
 3. **Every key is a button, every button has a key.** The command palette names each command's keys. Nothing is keyboard-only.
-4. **Light motion.** Only opacity, a short move and scale animate, which the scene graph does without laying anything
-   out again. **Smooth effects** off (darbit settings) makes every animation instant, for slower PCs.
+4. **Lively, light motion.** Only opacity, a short move and scale animate, which the scene graph does without laying
+   anything out again. Motion never changes how anything looks at rest, nothing moves while the window is hidden or
+   minimized, and only the live dot moves on its own. **Smooth effects** off (darbit settings) makes every animation
+   instant, for slower PCs.
 5. **Themeable.** Colours come only from the theme. A theme is a set of token values; components never hard-code a colour.
 
 ## Themes
@@ -52,8 +54,14 @@ are the mockups' CSS names in camelCase (`--glass-strong` is `glassStrong`); a c
 `solid` and the kinds' colours are made from the others, so a custom theme gets them too. `glassStrong` is only what
 `solid` is made from: panels use `solid`.
 
-Sizes, type and motion aren't tokens in QML: the shared components hold them, so a page gets them by using the
-component. The mockups' [tokens.css](tokens/tokens.css) lists the Fluent 2 ramps they come from.
+Motion is tokens too, the same in every theme: `studio.motion.<name>` is a duration in milliseconds (`pageFade`, `rise`,
+`stagger`, `hover`, `glide`, `count`, `sweep`, `grow`, `toast`, `pulse`...) or a curve for `easing.bezierCurve`
+(`ease`, `spring`, `decelerate`...), from `DURATIONS` and `CURVES` in `theme.py`. Every duration is 0 while smooth
+effects are off or the Studio's window is out of sight, so nothing in it animates then; the pills over the game use
+`studio.pillMotion`, which only effects turn off.
+
+Sizes and type aren't tokens in QML: the shared components hold them, so a page gets them by using the component. The
+mockups' [tokens.css](tokens/tokens.css) lists the Fluent 2 ramps they come from.
 
 ## Components
 
@@ -77,6 +85,7 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | `Sheet` | every sheet over the Studio (New bot, Record, Play's checks, Stop and start): one solid frame over the dimmed window |
 | `Banner`, `Toast` | a line that needs you; what just happened |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
+| `CardMotion`, `MouseLight`, `CountUp`, `LiveDot` | how cards move (the rise, the lift and its shadow), the light following the mouse over a card, a number counting up, a state's dot that pulses while a bot runs |
 | `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
 
 ## Surfaces and how much screen they take
@@ -101,15 +110,23 @@ Everything over a game is `solid`, never see-through. The bot never sees the run
 
 ## Motion
 
+The Studio's motion is style B "Lively" of design round 2026-11-09, with C's mouse light and glowing edges (#441).
+
 | What | How |
 |---|---|
-| A card appears | opacity and a 14 px rise, eased out, about 300 ms; `delay` staggers a page's cards |
-| A page is shown | opacity and an 18 px slide, about 250 ms |
+| A page is shown | fades in (220 ms) and slides up 10 px (320 ms), eased out; the page left fades out and down under it. The page the Studio opens on shows at once: frames drawn at the start stay in its memory for a while |
+| A page's cards | fade in and rise 14 px, one after another 45 ms apart, with a little spring (500 ms); again each time the page shows. No scale or turn: Qt draws text a little differently after it has been scaled |
+| The selection light | the page light and the sidebar's chosen bot spring to the new choice (380 ms), glowing while they move |
+| A card under the mouse | lifts 3 px with a soft shadow, an accent glow and edge (spring, 250 ms); a soft accent light follows the mouse over it |
+| A number | counts up from 0 when its page shows, and from the old value to a new one (800 ms, eased out) |
+| Progress | a ring sweeps from empty (900 ms); a chart's bars grow from the bottom one after another; a bar grows to its share |
+| The live dot | pulses while a bot runs and its window is in sight (1.8 s), stepped 30 times a second |
+| A toast | springs up from the bottom and fades where it is when it goes |
 | A menu opens | a 150 ms fade |
-| A toast | slides up from the bottom and fades |
 | A button is pressed | scales to 96% |
 | A pill is grabbed | tilts a little and shakes once, sways with each move, grows to 103%; it takes the shape of the edge it nears; let go, it glides to its place |
-| Progress | a ring sweeps and a bar grows to its share; no counting animations |
+| Blur-through pages (a setting, off at first) | pages blur out and in from 96%, cards tilt in 70 ms apart; the scale and turn leave text drawn a little differently |
+| Aurora (a setting, off at first) | the glass themes' background light drifts slowly back and forth (18 s each way, stepped 10 times a second); never on battery |
 
 ## Rules
 

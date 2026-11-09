@@ -1,4 +1,5 @@
-"""darbit Studio's themes: the design system's tokens (docs/style/ui/design-system.md), as QML colours.
+"""darbit Studio's themes: the design system's tokens (docs/style/ui/design-system.md), as QML colours, and its
+motion tokens (durations and curves), the same in every theme.
 
 The values are the ones in docs/ui/mockups.html, written the CSS way (`rgb(22 25 33 / .74)`, `#5ac8fa`) and turned
 into Qt's `#AARRGGBB`. A custom theme (theme.toml in darbit's settings folder) overrides any of them on top of a
@@ -105,6 +106,39 @@ CSS_NAMES = {
     "on-accent": "onAccent",
 }
 
+# motion (docs/style/ui/tokens/tokens.css): how long things take, in milliseconds, and their curves as cubic-bezier
+# points. Fluent 2's durations and curves, and the Studio's own for its lively motion (design round 2026-11-09, #441)
+DURATIONS = {
+    "faster": 100,
+    "fast": 150,
+    "normal": 200,
+    "slow": 300,
+    "pageFade": 220,  # a page fades in or out
+    "pageMove": 320,  # and slides 10 px
+    "rise": 500,  # a card rises into place
+    "stagger": 45,  # between one card's rise and the next
+    "hover": 250,  # a card lifts under the mouse
+    "glide": 380,  # the selection light springs to the new choice
+    "count": 800,  # a number counts up to its value
+    "sweep": 900,  # a ring sweeps to its share
+    "sweepDelay": 150,
+    "grow": 700,  # a chart's bar grows from the bottom
+    "growDelay": 200,
+    "growStagger": 50,
+    "toast": 450,  # a toast drops in
+    "pulse": 1800,  # the live dot's pulse, while a bot runs
+    "blur": 500,  # a page blurring through (a setting)
+    "tilt": 700,  # a card tilting in (with it)
+    "tiltStagger": 70,
+}
+CURVES = {
+    "decelerate": (0.1, 0.9, 0.2, 1),
+    "accelerate": (0.9, 0.1, 1, 0.2),
+    "easyEase": (0.33, 0, 0.67, 1),
+    "ease": (0.2, 0.8, 0.2, 1),
+    "spring": (0.34, 1.4, 0.64, 1),  # past the end and back: a little spring
+}
+
 _RGB = re.compile(r"rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)\s*(?:[/,]\s*([\d.]+)\s*)?\)")
 _HEX = re.compile(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})")
 
@@ -156,6 +190,18 @@ def colors(name: str = DEFAULT, custom: Path | None = None) -> dict[str, str]:
     found["kindImage"] = found["accent"]
     found["kindRegion"] = found["accent2"]
     found["kindLocation"] = found["ok"]
+    return found
+
+
+def motion(moving: bool = True) -> dict[str, object]:
+    """The motion tokens for QML: each duration (0 when nothing may move, so every animation lands at once), and each
+    curve as the points QML's `easing.bezierCurve` takes."""
+    found: dict[str, object] = {}
+    for name, milliseconds in DURATIONS.items():
+        found[name] = milliseconds if moving else 0
+    for name, (x1, y1, x2, y2) in CURVES.items():
+        found[name] = [x1, y1, x2, y2, 1, 1]
+    found["on"] = moving
     return found
 
 

@@ -1,5 +1,6 @@
-// A row of choices in a pill, with one highlight that glides to the chosen one; `vertical` stacks them (a pill on a
-// side edge). model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
+// A row of choices in a pill, with one highlight that springs to the chosen one, glowing while it moves; `vertical`
+// stacks them (a pill on a side edge). model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
+// In a pill over the game it takes `tokens: studio.pillMotion` (the pills show while the Studio is hidden).
 import QtQuick
 
 Rectangle {
@@ -11,7 +12,10 @@ Rectangle {
     property bool vertical: false
     property int columnWidth: 140  // each choice's width when stacked
     signal picked(string key)
-    readonly property int speed: studio.effects ? 220 : 0
+    property var tokens: studio.motion
+    readonly property int speed: tokens.glide
+    property bool picking: false  // the light moves because another choice was made (not the row settling)
+    onCurrentChanged: picking = tokens.on
 
     implicitWidth: row.implicitWidth + 8
     implicitHeight: vertical ? row.implicitHeight + 8 : itemHeight + 8
@@ -33,9 +37,17 @@ Rectangle {
             GradientStop { position: 0; color: seg.strong ? studio.colors.accent : studio.colors.raisedHover }
             GradientStop { position: 1; color: seg.strong ? Qt.tint(studio.colors.accent, Qt.rgba(0.65, 0.55, 0.98, 0.35)) : studio.colors.raisedHover }
         }
-        Behavior on x { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: seg.speed; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { id: movingX; onRunningChanged: if (!running) seg.picking = false; duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
+        Behavior on y { NumberAnimation { id: movingY; duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
+        Behavior on width { NumberAnimation { duration: seg.speed; easing.type: Easing.BezierSpline; easing.bezierCurve: seg.tokens.spring } }
+
+        // a soft glow round the light while it moves to a new choice, gone once it lands
+        Loader {
+            z: -1
+            anchors.fill: parent
+            active: seg.picking && (movingX.running || movingY.running)
+            source: "Glow.qml"
+        }
     }
 
     Grid {
@@ -76,7 +88,7 @@ Rectangle {
                             : item.on ? studio.colors.text : hover.containsMouse ? studio.colors.text : studio.colors.muted
                         font.pixelSize: 14; font.weight: Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
-                        Behavior on color { ColorAnimation { duration: seg.speed / 2 } }
+                        Behavior on color { ColorAnimation { duration: seg.tokens.normal } }
                     }
                     Text {
                         visible: item.modelData.count !== undefined

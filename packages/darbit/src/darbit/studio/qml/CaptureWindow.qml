@@ -1266,6 +1266,7 @@ Window {
                 Segmented {
                     itemHeight: 32
                     vertical: shotWindow.stacked; columnWidth: 182
+                    tokens: studio.pillMotion
                     current: shotWindow.tool
                     model: [
                         { key: "image", label: "Image", icon: "▣", count: shotWindow.image ? "✓" : undefined },
@@ -1279,6 +1280,7 @@ Window {
                     visible: shotWindow.tool === "region" && !!shotWindow.image
                     itemHeight: 32; strong: false
                     vertical: shotWindow.stacked; columnWidth: 182
+                    tokens: studio.pillMotion
                     current: shotWindow.searchIn
                     model: [
                         { key: "screen", label: "Whole screen" },

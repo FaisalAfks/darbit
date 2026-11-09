@@ -130,7 +130,6 @@ Item {
             Glass {
                 title: "What it got"
                 note: "today · the week · total"
-                delay: 60
                 visible: page.gains.length > 0 || (page.day.progress || []).length > 0
                 Layout.fillWidth: true
                 Layout.preferredHeight: 72 + (page.gains.length + (page.day.progress || []).length) * 46
@@ -181,7 +180,6 @@ Item {
             }
             Glass {
                 title: "Timeline"
-                delay: 120
                 visible: page.lanes.length > 0 && page.span > 0
                 Layout.fillWidth: true
                 Layout.preferredHeight: 92 + page.lanes.length * 34

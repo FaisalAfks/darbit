@@ -79,7 +79,6 @@ Item {
                     readonly property int sectionIndex: index
                     width: sections.width
                     height: steps.height + 76
-                    delay: index * 40
                     Row {
                         x: 20; y: 16; spacing: 10
                         Rectangle { width: 4; height: 22; radius: 2; color: studio.colors.accent2; anchors.verticalCenter: parent.verticalCenter }

@@ -33,7 +33,7 @@ HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
 ICON = HERE / "darbit.ico"  # every size Windows asks for: taskbar, tray, Alt+Tab, shortcuts
 APP_ID = "darbit.studio"  # Windows' name for the Studio: its taskbar button is its own, not python.exe's
-SHOT_WAIT_MS = 1500  # time for the pages to get their data and draw before a shot
+SHOT_WAIT_MS = 3000  # time for the pages to get their data, draw and settle (cards rise, numbers count) before a shot
 HIDE_WAIT_MS = 250  # time for the Studio to leave the screen before Capture grabs it
 PILLS = ("run", "recorder", "scout", "capture")  # every pill over the game: each keeps its own place (#384)
 
@@ -122,6 +122,7 @@ def load(
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
     window = engine.rootObjects()[0]
     _release_when_hidden(window)
+    _follow_sight(studio, window)
     where, maximized = place
     if where is not None:
         window.setGeometry(where)
@@ -138,6 +139,16 @@ def _release_when_hidden(root: QQuickWindow) -> None:
     for window in [root, *root.findChildren(QQuickWindow)]:
         window.setPersistentGraphics(False)
         window.setPersistentSceneGraph(False)
+
+
+def _follow_sight(studio: Studio, window: QWindow) -> None:
+    """Tell the Studio when its window comes into sight or leaves it (hidden to the tray, behind the run pill, or
+    minimized): nothing in it moves while it's out of sight."""
+
+    def follow(shown: QWindow.Visibility) -> None:
+        studio.setShown(shown not in (QWindow.Hidden, QWindow.Minimized))
+
+    window.visibilityChanged.connect(follow)
 
 
 def main(argv: list[str] | None = None, connect: Callable[[], Client] = _client) -> int:

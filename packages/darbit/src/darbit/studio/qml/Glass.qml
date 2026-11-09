@@ -1,5 +1,6 @@
 // A glass card: the panel fill, a hairline edge that brightens under the mouse, an optional small caps title with a
-// note on its right, and a short rise into place when it first shows (`delay` staggers a page's cards).
+// note on its right. It rises into place when its page shows, one card after another; under the mouse it lifts with
+// a soft shadow, and a light follows the mouse over it (CardMotion, MouseLight). `lift: false` keeps it still.
 import QtQuick
 
 Rectangle {
@@ -8,27 +9,22 @@ Rectangle {
     property string note: ""
     property alias content: body.data
     property int padding: 20
-    property int delay: 0
     property bool lift: true
+    property real dim: 1  // how see-through it is at rest (a block being dragged)
+    readonly property bool hovered: hover.hovered
+    readonly property color hoverEdge: Qt.tint(studio.colors.line, Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.35))
     radius: 18
     color: studio.colors.glass
-    border.color: hover.hovered && lift ? Qt.tint(studio.colors.line, Qt.rgba(0.35, 0.78, 0.98, 0.25)) : studio.colors.line
+    border.color: hover.hovered && lift ? hoverEdge : studio.colors.line
     border.width: 1
-    Behavior on border.color { ColorAnimation { duration: studio.effects ? 160 : 0 } }
+    Behavior on border.color { ColorAnimation { duration: studio.motion.hover } }
 
-    // the rise: opacity and a small move only, which the scene graph does without redrawing the card's contents
-    opacity: 0
-    transform: Translate { id: shift; y: studio.effects ? 14 : 0 }
-    Component.onCompleted: rise.start()
-    SequentialAnimation {
-        id: rise
-        PauseAnimation { duration: studio.effects ? card.delay : 0 }
-        ParallelAnimation {
-            NumberAnimation { target: card; property: "opacity"; to: 1; duration: studio.effects ? 260 : 0; easing.type: Easing.OutCubic }
-            NumberAnimation { target: shift; property: "y"; to: 0; duration: studio.effects ? 320 : 0; easing.type: Easing.OutCubic }
-        }
-    }
-    HoverHandler { id: hover }
+    // the rise and the lift: opacity and a small move only, which the scene graph does without redrawing the card
+    opacity: motion.fade * dim
+    transform: motion.moves
+    CardMotion { id: motion; hovered: hover.hovered; lifts: card.lift; radius: card.radius }
+    HoverHandler { id: hover; onPointChanged: if (hovered) light.at = point.position }
+    MouseLight { id: light; visible: card.lift; hovered: hover.hovered; radius: card.radius }
 
     // a faint sheen along the top edge: the glass catching light
     Rectangle {

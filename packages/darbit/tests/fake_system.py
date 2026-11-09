@@ -127,6 +127,10 @@ def screen_usable() -> bool:
     return True
 
 
+def on_battery() -> bool:
+    return False
+
+
 def process_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
