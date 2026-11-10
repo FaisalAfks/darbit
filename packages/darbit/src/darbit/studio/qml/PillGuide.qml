@@ -1,7 +1,7 @@
 // Where a dragged pill can go (#384, #449, #467), drawn over the screen it's on, inside its work area (never under the
-// taskbar): the part of the nearest edge by the mouse glows and follows it, a circle marks the edge's corners and
-// centre (a drop very close to one lands on it), a dashed ghost of the pill shows where it lands if let go now, in its
-// size and the form it takes on that edge, and a dashed line shows how far into the middle it has to go to float.
+// taskbar): the part of the nearest edge by the mouse glows and follows it, a dashed ghost of the pill shows where it
+// lands if let go now (on the edge's centre or a corner when it's dropped very close to one), in its size and the
+// form it takes on that edge, and a dashed line shows how far into the middle it has to go to float.
 // Each glides to its new place with the pill motion tokens rather than jumping. `origin` is where this item's
 // top-left is, in the place's points. Clicks go through.
 import QtQuick
@@ -120,32 +120,6 @@ Item {
                 color: guide.floating ? guide.ink : studio.colors.muted
                 font.pixelSize: 12; font.weight: Font.DemiBold
             }
-        }
-    }
-
-    // the edge's corners and centre: always three, so they glide to another edge instead of being drawn again
-    Repeater {
-        model: 3
-        delegate: Rectangle {
-            required property int index
-            readonly property var at: guide.place.snaps.length > index ? guide.place.snaps[index] : ({ x: 0, y: 0, on: false })
-            readonly property bool on: at.on
-            readonly property bool shows: guide.place.snaps.length > index
-            // shown again: it starts where it is, and glides only from there
-            property bool fresh: true
-            property real cx: 0
-            property real cy: 0
-            onAtChanged: { if (!shows) { fresh = true; return } cx = at.x - guide.origin.x; cy = at.y - guide.origin.y; fresh = false }
-            x: cx - width / 2
-            y: cy - height / 2
-            visible: shows
-            width: on ? 26 : 18; height: width; radius: width / 2
-            color: on ? Qt.rgba(guide.ink.r, guide.ink.g, guide.ink.b, 0.35) : Qt.rgba(guide.ink.r, guide.ink.g, guide.ink.b, 0.08)
-            border.color: guide.ink; border.width: on ? 2.5 : 1.5
-            opacity: guide.floating ? 0.4 : 1
-            Behavior on cx { enabled: !fresh; NumberAnimation { duration: guide.tokens.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: guide.tokens.ease } }
-            Behavior on cy { enabled: !fresh; NumberAnimation { duration: guide.tokens.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: guide.tokens.ease } }
-            Behavior on width { NumberAnimation { duration: studio.effects ? 120 : 0; easing.type: Easing.OutBack } }
         }
     }
 
