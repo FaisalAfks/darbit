@@ -12,7 +12,7 @@ Item {
     property bool hovered: false
     property bool lifts: true          // false: it rises, but stays put under the mouse
     property real radius: 16
-    readonly property var tokens: studio.motion
+    property var tokens: studio.motion  // a pill's own: studio.pillMotion
     readonly property bool tilting: studio.blurThrough  // the setting: cards tilt in instead of rising
 
     // what the card takes

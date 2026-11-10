@@ -146,6 +146,16 @@ def test_the_overviews_data_counts_recoveries_from_the_report(bot):
     assert rows["last"] == {"at": 10 * 3600 + 300, "how": "restart", "why": "Loop: timed out"}
 
 
+def test_the_overview_says_whether_the_bot_has_ever_run(bot):
+    assert hub.overview_blocks({"path": str(bot)})["ran"] is False
+    logs = bot / ".darbit" / "logs"
+    logs.mkdir(parents=True)
+    today = time.strftime("%Y-%m-%d")
+    line = {"time": f"{today}T10:00:00", "event": "step", "step": "Loop", "state": "started"}
+    (logs / f"report-{today}.jsonl").write_text(json.dumps(line), encoding="utf-8")
+    assert hub.overview_blocks({"path": str(bot)})["ran"] is True
+
+
 def test_settings_are_read_and_saved(bot):
     form = hub.settings_get({"path": str(bot)})
     assert form["error"] is None

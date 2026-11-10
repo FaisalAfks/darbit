@@ -21,11 +21,13 @@ Item {
     readonly property real fit: screen ? Math.min(shot.parent.width / screen.w, shot.parent.height / screen.h) : 1
     function inkOf(kind) { return kind === "region" ? studio.colors.kindRegion : kind === "location" ? studio.colors.kindLocation : studio.colors.kindImage }
 
-    Column {
+    EmptyState {
         visible: view.screens.length === 0
-        anchors.centerIn: parent; spacing: 8
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "No screens yet"; color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Capture keeps the screen each target was taken on, and shows it here."; color: studio.colors.muted; font.pixelSize: 14 }
+        anchors.centerIn: parent
+        glyph: "▢"; title: "No screens yet"
+        line: "Capture keeps the screen each target was taken on, and shows it here."
+        action: "Capture"; actionIcon: "▣"; keyName: "capture.freeze"
+        onActed: studio.openCapture("any")
     }
 
     ColumnLayout {

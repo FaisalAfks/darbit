@@ -558,6 +558,78 @@ def test_the_first_overview_welcomes_without_a_qml_warning(effects, tmp_path):
     assert warnings == []
 
 
+class Empty(FakeClient):
+    """A bot that has nothing yet: no Images, Regions, Locations or Actions, and no run ever."""
+
+    def call(self, method: str, **params: object) -> object:
+        if method in ("bot.library", "bot.actions", "bot.days"):
+            return []
+        if method == "bot.overview":
+            return {**ANSWERS["bot.overview"], "ran": False}
+        return super().call(method, **params)
+
+
+def test_every_empty_page_says_why_and_offers_the_main_action_with_its_key(qt):
+    from PySide6.QtQuick import QQuickItem
+
+    client = Empty()
+    studio = backend.Studio(lambda: client)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]  # held, or Qt deletes it
+    window.resize(1400, 880)
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    studio.selectBot("/bots/other")  # stopped: Start is offered
+    wait_until(lambda: studio.bot.get("name") == "other")
+
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "overview"))
+    wait_until(lambda: _named(window, "overviewEmpty") is not None and _named(window, "overviewEmpty").isVisible())
+    empty = _named(window, "overviewEmpty")
+    assert (empty.property("title"), empty.property("action"), empty.property("keys")) == ("No runs yet", "Start", "F5")
+
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "library"))
+    wait_until(lambda: studio.libraryReady)
+    page = next(item for item in window.findChildren(QQuickItem) if item.property("roomForInspector") is not None)
+    empty = _named(window, "libraryEmpty")
+    said = {}
+    for tab in ("all", "image", "region", "location", "action"):
+        page.setProperty("kind", tab)
+        said[tab] = (empty.property("title"), empty.property("action"), empty.property("keys"))
+    assert said == {
+        "all": ("Nothing in the Library yet", "Capture", "Ctrl+Alt+C"),
+        "image": ("No Images yet", "Capture", "Ctrl+Alt+C"),
+        "region": ("No Regions yet", "Capture", "Ctrl+Alt+C"),
+        "location": ("No Locations yet", "Capture", "Ctrl+Alt+C"),
+        "action": ("No Actions yet", "Record", ""),  # the record key only finishes a recording
+    }
+    wanted = []
+    studio.captureWanted.connect(lambda *args: wanted.append(args))
+    page.setProperty("kind", "image")
+    QMetaObject.invokeMethod(empty, "acted")
+    assert wanted == [("/bots/other", "any", "", "image")]
+
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+    wait_until(lambda: _named(window, "resultsEmpty") is not None and _named(window, "resultsEmpty").isVisible())
+    assert _named(window, "resultsEmpty").property("title") == "No runs yet"
+    del engine
+
+
+def test_results_with_no_run_today_link_to_the_last_day_with_runs(qt):
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    wait_until(lambda: studio.bot.get("name") == "ad-bot")
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+    wait_until(lambda: _named(window, "todayEmpty") is not None and _named(window, "todayEmpty").isVisible())
+    today = _named(window, "todayEmpty")
+    assert today.property("title") == "No runs today"
+    assert today.property("link") and today.property("action").startswith("See ")
+    assert today.property("action") != "See yesterday"  # the only day with runs is long ago: its date
+    QMetaObject.invokeMethod(today, "acted")
+    wait_until(lambda: studio.day.get("day") == "2026-10-31")
+    wait_until(lambda: not today.isVisible())
+    del engine
+
+
 def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     import cv2
     import numpy as np
@@ -1014,6 +1086,18 @@ def test_scouts_pill_docked_on_top_steps_through_tiles_and_retakes_the_one_lande
     scout.setGroup("not")  # one never seen: only the screen now
     wait_until(lambda: scout.landed == "Daily.Claim")
     wait_until(lambda: not _named(pill, "stripRetakeOnShot").isVisible())
+    scout.stop()
+    del engine
+
+
+def test_scouts_pill_before_anything_is_seen_says_so(qt, tmp_path):
+    scout, _studio, engine, pill = _scout_pill(tmp_path, (800, 3))
+    scout.reset()
+    scout.setGroup("seen")
+    empty = _named(pill, "scoutEmpty")
+    wait_until(empty.isVisible)
+    assert empty.property("title") == "Nothing seen yet"
+    assert empty.property("action") == ""
     scout.stop()
     del engine
 
@@ -2164,6 +2248,9 @@ def _results_page(monkeypatch, problem):
                 return item
         return None
 
+    # it opens on today, with no run yet: the link goes to the last day that has runs
+    wait_until(lambda: find("todayEmpty") is not None and find("todayEmpty").isVisible())
+    QMetaObject.invokeMethod(find("todayEmpty"), "acted")
     wait_until(lambda: find("retakeNow") is not None and find("retakeNow").isVisible())
     return studio, engine, find
 
@@ -2205,6 +2292,8 @@ def test_a_failure_with_no_image_waited_for_has_no_retake(qt, tmp_path, monkeypa
     window = engine.rootObjects()[0]
     wait_until(lambda: studio.bot.get("name") == "ad-bot")
     QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+    wait_until(lambda: _named(window, "todayEmpty") is not None and _named(window, "todayEmpty").isVisible())
+    QMetaObject.invokeMethod(_named(window, "todayEmpty"), "acted")  # no run today: the last day with runs
     wait_until(lambda: studio.day.get("problems"))
     QtCore.QCoreApplication.processEvents()
 
