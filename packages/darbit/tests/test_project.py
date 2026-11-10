@@ -84,7 +84,7 @@ def test_load_reads_every_table(tmp_path):
         ('[bot]\nname = "x"\nicon = 3', "icon is a picture in the bot's folder"),
         ('[bot]\nname = "x"\nicon = "icon.jpg"', "icon is a .png or .svg file"),
         ('[bot]\nname = "x"\nicon = "../icon.png"', "icon is a path in the bot's folder"),
-        ('[bot]\nname = "x"\nicon = "C:/icons/icon.png"', "icon is a path in the bot's folder"),
+        ('[bot]\nname = "x"\nicon = "/icons/icon.png"', "icon is a path in the bot's folder"),
     ],
 )
 def test_load_errors_name_the_key(tmp_path, text, message):
