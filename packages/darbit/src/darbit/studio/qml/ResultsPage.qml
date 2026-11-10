@@ -8,14 +8,23 @@ import "format.js" as Format
 Item {
     id: page
     property string chosen: ""
+    // it opens on today: with no run yet today, on an empty today with the way to the last day that has runs
     Connections {
         target: studio
-        function onDaysChanged() {
-            var known = studio.days.some(function (row) { return row.day === page.chosen })
-            if (studio.days.length > 0 && !known) page.pick(studio.days[0].day)
-        }
+        function onDaysChanged() { page.openDay() }
     }
+    Component.onCompleted: openDay()
+    function openDay() {
+        var known = studio.days.some(function (row) { return row.day === page.chosen })
+        if (known && studio.day.day !== page.chosen) page.pick(page.chosen)  // another bot's day was showing
+        if (studio.days.length === 0 || known) return
+        if (studio.days[0].day === page.today()) page.pick(studio.days[0].day)
+        else page.chosen = page.today()
+    }
+    function today() { return Qt.formatDate(new Date(), "yyyy-MM-dd") }
     function pick(day) { chosen = day; studio.loadDay(day) }
+    readonly property bool emptyToday: studio.days.length > 0 && chosen === today() && studio.days[0].day !== chosen
+    readonly property string lastDay: studio.days.length > 0 ? studio.days[0].day : ""
     readonly property var day: studio.day
     readonly property var gains: day.gains || []
     readonly property var problems: day.problems || []
@@ -24,11 +33,14 @@ Item {
     readonly property var lanes: day.lanes || []
     readonly property real span: day.start !== undefined && day.start !== null ? Math.max(60, day.end - day.start) : 0
 
-    Text {
+    EmptyState {
+        objectName: "resultsEmpty"
         visible: studio.days.length === 0
         anchors.centerIn: parent
-        text: "No runs yet: what the bot does shows here once it has run."
-        color: studio.colors.muted; font.pixelSize: 15
+        glyph: "▤"; title: "No runs yet"
+        line: "Each run's steps, problems and gains show here once the bot has run."
+        action: window.running ? "" : "Start"; actionIcon: "▶"; keyName: "run.toggle"
+        onActed: studio.play()
     }
 
     // ---- the days
@@ -68,10 +80,21 @@ Item {
     }
 
     // ---- the chosen day
+    EmptyState {
+        objectName: "todayEmpty"
+        visible: page.emptyToday
+        anchors { horizontalCenter: scroller.horizontalCenter; verticalCenter: parent.verticalCenter }
+        glyph: "▤"; title: "No runs today"
+        line: "Each run's steps, problems and gains show here."
+        readonly property string name: Format.dayName(page.lastDay)
+        action: name === "Yesterday" ? "See yesterday" : "See " + name
+        link: true
+        onActed: page.pick(page.lastDay)
+    }
     Flickable {
         id: scroller
         SmoothWheel { view: scroller }
-        visible: studio.days.length > 0
+        visible: studio.days.length > 0 && !page.emptyToday
         anchors { left: days.right; leftMargin: 16; right: parent.right; rightMargin: 24; top: parent.top; bottom: parent.bottom }
         contentHeight: column.height + 40
         clip: true

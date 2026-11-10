@@ -25,6 +25,9 @@ Flickable {
     readonly property var setup: data.setup || null
     readonly property var failures: data.failures || null
     readonly property bool empty: studio.bots.length === 0
+    // the bot has never run: its blocks would all be empty, so the page says what fills them (an older service
+    // doesn't say, and shows the blocks)
+    readonly property bool neverRan: !empty && board.ran === false && !running && !editing
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     // the latest problem today, explained as on the Results page (server/problems.py)
     readonly property var lastProblem: {
@@ -176,16 +179,32 @@ Flickable {
             onActed: window.go("results")
         }
 
+        // ---- before the first run
+        Item {
+            visible: page.neverRan
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(firstRun.height + 80, page.height - 160)
+            EmptyState {
+                id: firstRun
+                objectName: "overviewEmpty"
+                anchors.centerIn: parent
+                glyph: "▶"; title: "No runs yet"
+                line: "What the bot is doing, what it got and what stopped it show here once it has run."
+                action: "Start"; actionIcon: "▶"; keyName: "run.toggle"
+                onActed: studio.play()
+            }
+        }
+
         // ---- the blocks, row by row
         Text {
-            visible: !page.empty && page.layout.length === 0
+            visible: !page.empty && !page.neverRan && page.layout.length === 0
             text: page.editing ? "Add blocks from the gallery." : "No blocks: Customize to add some."
             color: studio.colors.muted; font.pixelSize: 14
         }
         // by count, not by the rows themselves: a new Overview (every couple of seconds while a bot runs) keeps its
         // blocks and gives them their new numbers, instead of making every block again
         Repeater {
-            model: page.rows.length
+            model: page.neverRan ? 0 : page.rows.length
             delegate: Row {
                 id: row
                 required property int index

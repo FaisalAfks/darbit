@@ -101,6 +101,25 @@ Item {
         return found
     }
 
+    // what the cards' place says with none to show: per tab, or when the search and filters leave none
+    readonly property bool tabEmpty: actionsTab ? page.actions.length === 0
+        : kind === "all" ? page.library.length === 0 && page.actions.length === 0
+        : page.count(function (asset) { return page.tagged(asset, page.kind) }) === 0
+    function emptyText() {
+        if (!page.actionsTab && !studio.libraryReady) return { glyph: "◌", title: "Loading the Library…", line: "" }
+        if (!page.tabEmpty) return { glyph: "⌕", title: "Nothing matches", line: "Clear the search or the filters." }
+        var capture = { action: "Capture", icon: "▣", key: "capture.freeze" }
+        if (page.kind === "image")
+            return Object.assign({ glyph: "◎", title: "No Images yet", line: "Images are what the bot looks for on screen. Take one from the game." }, capture)
+        if (page.kind === "region")
+            return Object.assign({ glyph: "⬚", title: "No Regions yet", line: "A Region is the part of the screen an Image is searched in: quicker, and no look-alikes elsewhere." }, capture)
+        if (page.kind === "location")
+            return Object.assign({ glyph: "✛", title: "No Locations yet", line: "A Location is a spot the bot clicks without looking for an Image there." }, capture)
+        if (page.actionsTab)
+            return { glyph: "●", title: "No Actions yet", line: "Record one: every key, click and mouse move, played back the same.", action: "Record", icon: "●" }
+        return Object.assign({ glyph: "◎", title: "Nothing in the Library yet", line: "Images, Regions and Locations are what the bot finds and clicks. Take them from the game." }, capture)
+    }
+
     // ---- the toolbar
     RowLayout {
         id: tools
@@ -237,30 +256,14 @@ Item {
                 }
             }
         }
-        Column {
+        EmptyState {
+            objectName: "libraryEmpty"
             visible: page.shown.length === 0
             anchors.centerIn: parent
-            spacing: 14
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: page.actionsTab ? (page.actions.length === 0 ? "No actions yet" : "Nothing matches")
-                    : !studio.libraryReady ? "Loading the pictures…"
-                    : page.library.length === 0 ? "No images yet" : "Nothing matches"
-                color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: page.actionsTab || studio.libraryReady
-                text: page.actionsTab ? (page.actions.length === 0 ? "Record one: every key, click and mouse move, played back the same." : "Clear the search.")
-                    : page.library.length === 0 ? "Capture one from the game's screen, or put PNGs in the bot's images folder." : "Clear the search or the filters."
-                color: studio.colors.muted; font.pixelSize: 14
-            }
-            PillButton {
-                visible: page.actionsTab ? page.actions.length === 0 : studio.libraryReady && page.library.length === 0
-                anchors.horizontalCenter: parent.horizontalCenter; kind: "primary"
-                icon: page.actionsTab ? "●" : "▣"; text: page.actionsTab ? "Record" : "Capture"
-                onClicked: page.actionsTab ? window.recordAction("") : studio.openCapture("any")
-            }
+            readonly property var says: page.emptyText()
+            glyph: says.glyph; title: says.title; line: says.line
+            action: says.action || ""; actionIcon: says.icon || ""; keyName: says.key || ""
+            onActed: page.actionsTab ? window.recordAction("") : studio.openCapture("any")
         }
     }
 

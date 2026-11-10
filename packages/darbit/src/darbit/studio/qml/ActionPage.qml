@@ -57,6 +57,16 @@ Item {
         }
     }
 
+    EmptyState {
+        objectName: "actionEmpty"
+        visible: page.name !== "" && page.draft.length === 0
+        anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter; verticalCenterOffset: head.height / 2 }
+        glyph: "●"; title: "No steps yet"
+        line: "Record it again, or write its steps in its file."
+        action: "Record again"; actionIcon: "●"
+        onActed: window.recordAction(page.name)
+    }
+
     // ---- the sections
     Flickable {
         id: scroller

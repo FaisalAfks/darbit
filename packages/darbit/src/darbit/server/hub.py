@@ -582,6 +582,7 @@ def overview_blocks(data: dict) -> dict:
         "layout": layout,
         "problem": problem,
         "data": overview.data(project, events, day, datetime.now(), report.parent, actions),
+        "ran": bool(history.days(project)),  # any run ever: before the first, the Overview says what fills it
     }
 
 

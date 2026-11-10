@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- An empty state on every page that can be empty (#319): `EmptyState`, a soft glyph in a glass circle, a title, one line of why and the main action with its key, rising in with the cards. On the Library and each of its tabs (Images, Regions, Locations, Actions, and when the search leaves nothing), its Screen view, Results, the Overview before a bot's first run (`ran` in `bot.overview`), an action with no steps, Settings with nothing to set, and Scout's pill. Results opens on today: with no run yet today, it says so, with a link to the last day that has runs
+
 ### Changed
 
 - Card thumbnails are decoded at the size they're drawn, in the screen's pixels (#230): the Library's cards, Scout's tiles and lines, and the pictures in Results' search rows (`Thumbnail.qml`). Qt decoded a picture given both sides of `sourceSize` to cover that size at the screen's scale, a 160 px thumbnail at up to 1344×336 px. They look a little softer. The Library's inspector shows the image's whole file instead of its thumbnail (`file` in `bot.library`). On a real GPU at 150% with a 175-image bot, the Studio on the Library went from about 276 MB to 225 MB (private working set)

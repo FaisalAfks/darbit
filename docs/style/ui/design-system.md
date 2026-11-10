@@ -84,6 +84,7 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | `MenuPanel`, `MenuLine` | a menu that drops down (and the tray panel), and its lines, with their keys on the right |
 | `Sheet` | every sheet over the Studio (New bot, Record, Play's checks, Stop and start): one solid frame over the dimmed window |
 | `Banner`, `Toast` | a line that needs you; what just happened |
+| `EmptyState` | what a page or list shows with nothing in it: a soft glyph in a glass circle, a title, one line of why, and the main action (a button, or a link such as "See yesterday →") with its key from `keymap.toml` under it. It rises in with the cards (`CardMotion`); `compact` is its size in a pill |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
 | `CardMotion`, `MouseLight`, `CountUp`, `LiveDot` | how cards move (the rise, the lift and its shadow), the light following the mouse over a card, a number counting up, a state's dot that pulses while a bot runs |
 | `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
@@ -136,7 +137,10 @@ The Studio's motion is style B "Lively" of design round 2026-11-09, with C's mou
   samples (a theme's swatch in darbit settings) use their own.
 - **Panels over the game and menus are `solid`.** Cards on a page are `glass`.
 - **One line per thing:** long names and paths are cut with "…" (`elide`) instead of widening the window.
-- **States:** every list and view has its empty, loading and error states, not only the full one.
+- **States:** every list and view has its empty, loading and error states, not only the full one. Empty is an
+  `EmptyState` (#319): the Library and each of its tabs, its Screen view, Results (no runs yet, or none today with
+  the way to the last day that has some), the Overview before a bot's first run, an action with no steps, a bot with
+  nothing to set, and Scout's pill with nothing in its list.
 - **Names:** Image, Region and Location everywhere; never picture, area or point.
 - **The capture overlay:** the shot outside the selection is dimmed, so the inside keeps the game's exact colours; the
   guide, the hint and the pill never overlap.

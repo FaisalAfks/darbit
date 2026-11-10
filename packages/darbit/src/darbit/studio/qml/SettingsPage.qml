@@ -71,11 +71,12 @@ Item {
     }
     function save() { studio.saveSettings(Object.assign({}, studio.settings.values || {}, page.edits)) }
 
-    Column {
+    EmptyState {
         visible: page.sections.length === 0
-        anchors.centerIn: parent; spacing: 8
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: studio.settings.error ? "Its settings.toml has a problem" : "Nothing to set"; color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: studio.settings.error || "This bot has no settings.toml."; color: studio.colors.muted; font.pixelSize: 14 }
+        anchors.centerIn: parent
+        glyph: studio.settings.error ? "!" : "⚙"
+        title: studio.settings.error ? "Its settings.toml has a problem" : "Nothing to set"
+        line: studio.settings.error || "This bot has no settings.toml."
     }
 
     // ---- the sections, with search

@@ -45,6 +45,14 @@ PillWindow {
     function retakeOnShot(image) { if (image && image.shot) studio.retakeOn(image.name, "image", image.shot) }
     function retakeNow(image) { if (image) studio.retake(image.name, "image") }
     function open(name) { scout.setGroup("all"); scout.landOn(name); opened = true }
+    // what a list with nothing in it says: no Images at all, or none in the group picked
+    function emptyText() {
+        if (scout.total === 0)
+            return { glyph: "◎", title: "No Images yet", line: "Scout looks for the bot's Images on screen. Take some first.", action: "Capture" }
+        if (scout.group === "weak") return { glyph: "✓", title: "Nothing weak", line: "Every Image seen is found as well as it needs." }
+        if (scout.group === "not") return { glyph: "✓", title: "Every Image has been seen", line: "" }
+        return { glyph: "◎", title: "Nothing seen yet", line: "Go through the game's screens: each Image found is ticked off here." }
+    }
     Timer { interval: 1000; repeat: true; running: scoutPill.visible; onTriggered: scoutPill.now = Date.now() / 1000 }
 
     // ---- docked on the top or bottom: the row
@@ -95,6 +103,14 @@ PillWindow {
             PillAction { glyph: "⤢"; tip: "Open darbit Studio"; onClicked: studio.toggleScout() }
         }
         Rectangle { width: parent.width; height: 1; color: studio.colors.line }
+        EmptyState {
+            visible: scout.total === 0
+            width: parent.width
+            compact: true; tokens: studio.pillMotion
+            glyph: "◎"; title: "No Images yet"; line: "Scout looks for the bot's Images on screen. Take some first."
+            action: "Capture"; actionIcon: "▣"; keyName: "capture.freeze"
+            onActed: studio.openCapture("any")
+        }
         ListView {
             id: lines
             objectName: "scoutLines"
@@ -200,13 +216,19 @@ PillWindow {
                     onPicked: scout.landOn(modelData.name)
                 }
             }
-            Text {
+            Item {
                 visible: tiles.count === 0
-                width: parent.width; height: 40; verticalAlignment: Text.AlignVCenter; leftPadding: 6
-                text: scout.group === "weak" ? "Nothing weak: every image seen is found as well as it needs"
-                    : scout.group === "not" ? "Every image has been seen"
-                    : scout.group === "seen" ? "None seen yet: go through the game's screens" : "The bot has no images yet"
-                color: studio.colors.muted; font.pixelSize: 13
+                width: parent.width; height: stripEmpty.height + 16
+                EmptyState {
+                    id: stripEmpty
+                    objectName: "scoutEmpty"
+                    anchors.centerIn: parent
+                    compact: true; tokens: studio.pillMotion
+                    readonly property var says: scoutPill.emptyText()
+                    glyph: says.glyph; title: says.title; line: says.line
+                    action: says.action || ""; actionIcon: "▣"; keyName: says.action ? "capture.freeze" : ""
+                    onActed: studio.openCapture("any")
+                }
             }
             Rectangle { visible: scoutPill.landedImage !== null; width: parent.width; height: 1; color: studio.colors.line }
             // the one landed on: what it is, what's wrong, and its retakes
@@ -267,6 +289,14 @@ PillWindow {
         Item { Layout.fillWidth: true }
     ]
     card: [
+        EmptyState {
+            visible: !scoutPill.opened && scout.total === 0
+            width: parent.width
+            compact: true; tokens: studio.pillMotion
+            glyph: "◎"; title: "No Images yet"; line: "Scout looks for the bot's Images on screen. Take some first."
+            action: "Capture"; actionIcon: "▣"; keyName: "capture.freeze"
+            onActed: studio.openCapture("any")
+        },
         Item {
             objectName: "scoutGrid"
             visible: !scoutPill.opened
