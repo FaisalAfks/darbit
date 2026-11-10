@@ -39,18 +39,22 @@ Item {
             width: empty.ring; height: empty.ring
             Rectangle { anchors.fill: parent; radius: width / 2; color: studio.colors.glass }
             // the light in the glass: the accent from the top left into the second accent, fading out
-            Shape {
+            Loader {
                 anchors.fill: parent
-                ShapePath {
-                    strokeColor: "transparent"
-                    fillGradient: RadialGradient {
-                        centerX: empty.ring * 0.35; centerY: empty.ring * 0.3; centerRadius: empty.ring * 0.95
-                        focalX: centerX; focalY: centerY
-                        GradientStop { position: 0; color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.22) }
-                        GradientStop { position: 0.6; color: Qt.rgba(studio.colors.accent2.r, studio.colors.accent2.g, studio.colors.accent2.b, 0.12) }
-                        GradientStop { position: 0.7; color: "transparent" }
+                active: empty.visible  // drawn only while it shows
+                sourceComponent: Shape {
+                    anchors.fill: parent
+                    ShapePath {
+                        strokeColor: "transparent"
+                        fillGradient: RadialGradient {
+                            centerX: empty.ring * 0.35; centerY: empty.ring * 0.3; centerRadius: empty.ring * 0.95
+                            focalX: centerX; focalY: centerY
+                            GradientStop { position: 0; color: Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.22) }
+                            GradientStop { position: 0.6; color: Qt.rgba(studio.colors.accent2.r, studio.colors.accent2.g, studio.colors.accent2.b, 0.12) }
+                            GradientStop { position: 0.7; color: "transparent" }
+                        }
+                        PathRectangle { width: empty.ring; height: empty.ring; radius: empty.ring / 2 }
                     }
-                    PathRectangle { width: empty.ring; height: empty.ring; radius: empty.ring / 2 }
                 }
             }
             Rectangle { anchors.fill: parent; radius: width / 2; color: "transparent"; border.color: studio.colors.line }
