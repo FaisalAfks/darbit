@@ -37,7 +37,7 @@
 "box.next"         = "n"                  # taking new targets: the next one on this shot becomes the active one
 "box.previous"     = "shift+n"            # the one before
 "box.new"          = "a"                  # a new target on this shot (then click or drag it)
-"kind.cycle"       = "tab"                # image -> region -> point -> image (in the name: on through the pill's buttons)
+"kind.cycle"       = "tab"                # image -> region -> point -> image (in the name: on through the pill's choices and buttons)
 "refreeze"         = "space"              # take a new shot
 "snap.hold_off"    = "alt"                # held: no snapping
 "snap.toggle"      = "s"                  # snapping on or off

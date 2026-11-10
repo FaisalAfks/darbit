@@ -630,6 +630,39 @@ def test_results_with_no_run_today_link_to_the_last_day_with_runs(qt):
     del engine
 
 
+class LongNames(FakeClient):
+    """The service, with a bot and a gain whose names are too long for their places."""
+
+    bot = "the-weekend-raid-and-daily-farming-bot-with-a-long-name"
+    gain = "Gems from the weekend raids and the daily login rewards together"
+
+    def call(self, method, **params):
+        answer = super().call(method, **params)
+        if method == "bots.list":
+            return [{**answer[0], "name": self.bot}] + answer[1:]
+        if method == "bot.day":
+            return {**answer, "gains": [{**answer["gains"][0], "name": self.gain}]}
+        return answer
+
+
+@pytest.mark.parametrize("sidebar", [True, False])
+def test_a_name_too_long_for_the_bar_or_a_gain_row_ends_in_an_ellipsis_and_shows_whole_on_hover(qt, sidebar):
+    studio = backend.Studio(LongNames)
+    studio.setSidebar(sidebar)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1100, 700)
+    wait_until(lambda: studio.bot.get("name") == LongNames.bot)
+    QMetaObject.invokeMethod(window, "go", Q_ARG("QVariant", "results"))
+    studio.loadDay("2026-10-31")
+    wait_until(lambda: _named(window, "gainName") is not None)
+    bot = _named(window, "barName" if sidebar else "pickerName")
+    gain = _named(window, "gainName")
+    wait_until(lambda: bot.property("truncated") and gain.property("truncated"))  # drawn with "…"
+    assert (bot.property("text"), gain.property("text")) == (LongNames.bot, LongNames.gain)  # whole in the tooltip
+    del engine
+
+
 def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
     import cv2
     import numpy as np
@@ -739,6 +772,55 @@ def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
         QTest.keyClick(window, Qt.Key_Tab)
     QTest.keyClick(window, Qt.Key_Return)  # Enter on Save saves
     wait_until(lambda: (tmp_path / "images" / "Menu.Play.png").is_file())
+    capture.close()
+    QtCore.QCoreApplication.processEvents()
+    del engine
+
+
+def test_captures_kinds_and_where_an_image_is_searched_are_tab_stops(qt, tmp_path):
+    import numpy as np
+    from PySide6.QtCore import Qt
+    from PySide6.QtQuick import QQuickItem, QQuickWindow
+    from PySide6.QtTest import QTest
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8), several=False)
+    root = engine.rootObjects()[0]
+    window = root.findChild(QQuickWindow, "captureWindow")
+
+    def call(name, *values):
+        QMetaObject.invokeMethod(window, name, *[Q_ARG("QVariant", value) for value in values])
+
+    def focused():
+        return window.activeFocusItem().property("key")
+
+    def press(key):
+        QTest.keyClick(window, key)
+        return focused()
+
+    call("setPart", "image", [50, 50, 40, 20])
+    call("setPart", "region", [10, 10, 300, 200])
+    call("choose", "image")
+    name = window.findChild(QQuickItem, "nameField")
+    name.forceActiveFocus()
+    assert [press(Qt.Key_Tab), press(Qt.Key_Tab), press(Qt.Key_Tab)] == ["image", "region", "location"]
+    assert window.activeFocusItem().property("lit")  # with the focus it looks as it does hovered
+    assert press(Qt.Key_Backtab) == "region"
+    assert press(Qt.Key_Space) == "region"  # picked, and the focus stays for the next Tab
+    assert window.property("tool") == "region"
+    assert window.property("searchIn") == "own"
+    # where the image is searched shows with Region picked, and comes next
+    assert [press(Qt.Key_Tab), press(Qt.Key_Tab), press(Qt.Key_Tab)] == ["location", "screen", "shared"]
+    assert press(Qt.Key_Backtab) == "screen"
+    assert press(Qt.Key_Return) == "screen"
+    assert window.property("searchIn") == "screen"  # searched on the whole screen now
+    assert window.property("tool") == "region"
+    QTest.keyClick(window, Qt.Key_Escape)  # back to the shot
+    assert window.activeFocusItem().objectName() == "stage"
     capture.close()
     QtCore.QCoreApplication.processEvents()
     del engine

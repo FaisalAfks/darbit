@@ -2,6 +2,7 @@
 // seen with its box, its best score against what it needs, what's wrong, and its retakes (on that shot, or on the
 // screen now; only now for one never seen).
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import "scout.js" as Scout
 
@@ -85,12 +86,21 @@ Column {
     Row {
         spacing: 8
         Text {
+            id: nameText
+            width: Math.min(implicitWidth, detail.width - kindChip.width - stateChip.width - 16)
+            elide: Text.ElideRight
             text: detail.image ? detail.image.name : ""
             color: studio.colors.text; font.family: "monospace"; font.pixelSize: 15; font.weight: Font.Bold
             anchors.verticalCenter: parent.verticalCenter
+            // a name too long for the card: whole on hover
+            HoverHandler { id: nameHover }
+            ToolTip.visible: nameHover.hovered && truncated
+            ToolTip.text: text
+            ToolTip.delay: 400
         }
-        Chip { height: 22; tone: "accent"; text: "▣ Image"; anchors.verticalCenter: parent.verticalCenter }
+        Chip { id: kindChip; height: 22; tone: "accent"; text: "▣ Image"; anchors.verticalCenter: parent.verticalCenter }
         Chip {
+            id: stateChip
             height: 22; anchors.verticalCenter: parent.verticalCenter
             tone: !detail.image || detail.image.state === "not" ? "plain" : detail.image.state === "weak" ? "warn" : "ok"
             text: !detail.image || detail.image.state === "not" ? "not seen yet" : detail.image.state

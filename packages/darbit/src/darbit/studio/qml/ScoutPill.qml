@@ -8,6 +8,7 @@
 // Docked, it slides out of sight a few seconds after the mouse leaves it; the mouse at its edge brings it back. The
 // boxes on the game (ScoutWindow) still let every click through.
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import "format.js" as Format
 import "scout.js" as Scout
@@ -260,8 +261,15 @@ PillWindow {
                 }
                 Column {
                     Text {
+                        width: Math.min(implicitWidth, 300)
+                        elide: Text.ElideRight
                         text: scoutPill.landedImage ? scoutPill.landedImage.name : ""
                         color: studio.colors.text; font.family: "monospace"; font.pixelSize: 12; font.weight: Font.Bold
+                        // a name too long for the strip: whole on hover
+                        HoverHandler { id: landedHover }
+                        ToolTip.visible: landedHover.hovered && truncated
+                        ToolTip.text: text
+                        ToolTip.delay: 400
                     }
                     Text {
                         objectName: "scoutLandedLine"

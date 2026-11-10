@@ -1288,6 +1288,7 @@ Window {
                     vertical: shotWindow.stacked; columnWidth: 182
                     tokens: studio.pillMotion
                     current: shotWindow.tool
+                    tabStops: true
                     model: [
                         { key: "image", label: "Image", icon: "▣", count: shotWindow.image ? "✓" : undefined },
                         { key: "region", label: "Region", icon: "⬚", count: shotWindow.region ? "✓" : undefined },
@@ -1302,6 +1303,7 @@ Window {
                     vertical: shotWindow.stacked; columnWidth: 182
                     tokens: studio.pillMotion
                     current: shotWindow.searchIn
+                    tabStops: true
                     model: [
                         { key: "screen", label: "Whole screen" },
                         { key: "shared", label: "Shared ▾" },

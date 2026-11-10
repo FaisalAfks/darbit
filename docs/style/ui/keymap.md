@@ -48,8 +48,9 @@ them while Scout is on)
 | `Delete` | remove the selected box |
 | `PgUp` / `PgDn` | previous / next guide item |
 
-In the target's name, `Tab` / `Shift+Tab` go on through the pill's buttons instead of to the next kind; on a button,
-`Enter` or `Space` presses it and `Esc` goes back to the shot.
+In the target's name, `Tab` / `Shift+Tab` go on through the pill's choices (the kind, and with Region where the image
+is searched) and buttons instead of to the next kind; on one, `Enter` or `Space` presses it and `Esc` goes back to the
+shot.
 
 ## Run panel
 

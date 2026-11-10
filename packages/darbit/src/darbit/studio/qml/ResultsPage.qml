@@ -166,7 +166,16 @@ Item {
                             readonly property real most: Math.max.apply(null, (modelData.week || []).concat([1]))
                             width: parent.width; height: 46; spacing: 16
                             Rectangle { width: 10; height: 10; rotation: 45; radius: 2; color: studio.colors.accent2 }
-                            Text { text: modelData.name; color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                            Text {
+                                objectName: "gainName"
+                                text: modelData.name; elide: Text.ElideRight
+                                color: studio.colors.text; font.pixelSize: 15; font.weight: Font.DemiBold; Layout.fillWidth: true
+                                // a name too long for the row: whole on hover
+                                HoverHandler { id: gainHover }
+                                ToolTip.visible: gainHover.hovered && truncated
+                                ToolTip.text: text
+                                ToolTip.delay: 400
+                            }
                             Text { text: "+" + modelData.today; color: studio.colors.ok; font.pixelSize: 15; font.weight: Font.Bold; Layout.preferredWidth: 70; horizontalAlignment: Text.AlignRight }
                             Row {  // the week, a bar a day
                                 spacing: 3
