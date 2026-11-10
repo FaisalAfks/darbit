@@ -80,7 +80,7 @@ Each feature below has to fit the architecture from the start, even if it's buil
 | `darbit new`, `install` (from a git link), `run`; bots pinned to a darbit release | Have |
 | A settings schema that becomes a form in the Studio | Have |
 | Setup guides: an ordered list of pictures to take for new users | Have |
-| `d.step`, `d.record`, `d.record.gain`, `d.progress`, `d.plan`, `d.next` for what a bot shows | Have |
+| `d.step`, `d.record`, `d.record.gain`, `d.record.balance`, `d.progress`, `d.plan`, `d.next` for what a bot shows | Have |
 | State that survives restarts (`d.State`) | Have |
 | A screen map: each screen's recognizer and the moves between screens, so a bot asks to get somewhere and darbit routes and recovers | Planned (ad-bot's `screens/` leans this way) |
 | A dry run: the schedule against the clock with no input sent | Planned |

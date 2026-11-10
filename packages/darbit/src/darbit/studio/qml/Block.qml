@@ -20,7 +20,8 @@ Glass {
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     title: kind === "now" ? "" : (spec.title || spec.shows || "")
     note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin
-        : kind === "wallet" && info && info.read ? "read " + Format.clockOf(info.read.at) + (info.read.where ? " in " + info.read.where : "") : ""
+        : kind === "wallet" && info && info.read && !editing ? "read " + (info.read.day ? Format.dayName(info.read.day) + " " : "")
+            + Format.clockOf(info.read.at) + (info.read.where ? " in " + info.read.where : "") : ""
     lift: !editing
     implicitHeight: (title !== "" ? 64 : 44) + (shown.item ? shown.item.implicitHeight : 0)
     border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55)
@@ -45,10 +46,11 @@ Glass {
 
     // Gains by source: which currency, picked here and kept in the layout
     Row {
-        visible: block.kind === "sources" && !block.editing && !!block.info && (block.info.names || []).length > 1
+        visible: block.kind === "sources" && !block.editing && !!block.info
         anchors { right: parent.right; rightMargin: block.padding; top: parent.top; topMargin: block.padding - 9 }
-        spacing: 8
+        height: 28; spacing: 8
         Dropdown {
+            visible: !!block.info && (block.info.names || []).length > 1
             objectName: "sourcesCurrency"
             implicitWidth: 120; implicitHeight: 28
             choices: block.info && block.info.names ? block.info.names : []

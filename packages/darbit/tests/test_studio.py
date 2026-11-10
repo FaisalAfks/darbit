@@ -274,7 +274,7 @@ def _overview_answer() -> dict:
             {"name": "Gems", "icon": "◆", "value": 4_990_000, "at": 34860, "where": "Lobby", "today": 12480},
             {"name": "Gold", "icon": None, "value": 127_310_000_000, "at": 34860, "where": "Lobby", "today": -50},
         ],
-        "read": {"at": 34860, "where": "Lobby"},
+        "read": {"at": 34860, "day": "", "where": "Lobby"},
     }
     data["sources:Gems"] = {
         "name": "Gems",

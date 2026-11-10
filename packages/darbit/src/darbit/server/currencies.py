@@ -73,25 +73,44 @@ def _path_of(event: dict) -> list[str]:
 def wallet(earlier: list[dict], today: list[dict], day: str) -> dict:
     """Each currency's balance now (its last `d.record.balance`, or a gain's total if newer) with when it was read,
     and today's change: what it gained today, or for a currency with no gains today the change since its first read
-    today. `earlier` is the days before's gains and balances, oldest first. {"items": [...], "read": {...} or None}."""
+    today. `earlier` is the days before's gains and balances, oldest first. {"items": [...], "read": {...} or None}:
+    the last read's time of day (`at`, seconds), its `day` when it was before today ("" today) and its step."""
     rows: dict[str, dict] = {}
+    reads: dict[str, dict] = {}
     for event in earlier + today:
         value = _balance_in(event)
         if value is None:
             continue
-        row = rows.setdefault(str(event["name"]), {"name": str(event["name"]), "icon": None, "value": value})
+        name = str(event["name"])
+        row = rows.setdefault(name, {"name": name, "icon": None, "value": value})
         row["value"] = value
-        row["at"] = results.seconds_of(event.get("time"), day)
-        row["where"] = _path_of(event)[0] if _path_of(event) else ""
         if event.get("icon"):
             row["icon"] = event["icon"]
+        reads[name] = _read_of(event, day)
     for name, row in rows.items():
         row["today"] = _change_today(name, today)
     last = None
-    for row in rows.values():
-        if row.get("at") is not None and (last is None or row["at"] >= last["at"]):
-            last = {"at": row["at"], "where": row["where"]}
+    for read in reads.values():
+        if read["since"] is not None and (last is None or read["since"] >= last["since"]):
+            last = read
+    if last is not None:
+        last = {"at": last["at"], "day": last["day"], "where": last["where"]}
     return {"items": list(rows.values()), "read": last}
+
+
+def _read_of(event: dict, day: str) -> dict:
+    """When and where a balance was read: `since` the day began (less than 0 before it), its time of day, and its
+    own day when that was before `day`."""
+    time = event.get("time")
+    since = results.seconds_of(time, day)
+    read = {"since": since, "at": since, "day": "", "where": ""}
+    path = _path_of(event)
+    if path:
+        read["where"] = path[0]
+    if since is not None and since < 0 and isinstance(time, str):
+        read["day"] = time.split("T")[0]
+        read["at"] = results.seconds_of(time, read["day"])
+    return read
 
 
 def _balance_in(event: dict) -> float | None:

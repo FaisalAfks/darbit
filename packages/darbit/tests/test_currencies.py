@@ -87,7 +87,14 @@ def test_the_wallet_has_each_balance_now_and_todays_change():
     assert (rows["Gems"]["value"], rows["Gems"]["today"], rows["Gems"]["icon"]) == (1200, 200, "◆")  # its gains
     assert rows["Gold"]["today"] == -50  # no gains: since the first read today
     assert (rows["Tokens"]["value"], rows["Tokens"]["today"]) == (50, 0)  # read yesterday
-    assert found["read"] == {"at": 9 * 3600 + 41 * 60, "where": "Lobby"}
+    assert found["read"] == {"at": 9 * 3600 + 41 * 60, "day": "", "where": "Lobby"}
+
+
+def test_a_balance_read_on_an_earlier_day_says_which_day():
+    earlier = [{"time": "2026-11-09T20:00:00", "event": "balance", "name": "Gems", "value": 50, "step": "Lobby"}]
+    found = currencies.wallet(earlier, [], DAY)
+    assert found["items"][0]["value"] == 50
+    assert found["read"] == {"at": 20 * 3600, "day": "2026-11-09", "where": "Lobby"}
 
 
 def test_gains_by_source_keep_one_order_for_today_and_the_week():
