@@ -17,7 +17,7 @@ Rectangle {
         id: row
         x: 8; anchors.verticalCenter: parent.verticalCenter
         spacing: 10
-        Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; size: 32; radius: 16 }
+        Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; icon: studio.bot.icon || ""; size: 32; radius: 16 }
         Text {
             id: nameText
             objectName: "pickerName"

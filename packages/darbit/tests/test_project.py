@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from darbit.project.manifest import SETTING_KINDS, ProjectError, find, load, setup, version_matches
+from darbit.project.manifest import SETTING_KINDS, ProjectError, find, icon_path, load, setup, version_matches
 from darbit.runtime import log
 from darbit.settings import Settings, settings
 
@@ -81,11 +81,24 @@ def test_load_reads_every_table(tmp_path):
         ('[bot]\nname = "x"\n[settings]\nlog = 1', "log should be a true or false"),
         ('[bot]\nname = "x"\n[images]\nfolders = "images"', "folders is a list"),
         ("[bot\n", "darbit.toml"),
+        ('[bot]\nname = "x"\nicon = 3', "icon is a picture in the bot's folder"),
+        ('[bot]\nname = "x"\nicon = "icon.jpg"', "icon is a .png or .svg file"),
+        ('[bot]\nname = "x"\nicon = "../icon.png"', "icon is a path in the bot's folder"),
+        ('[bot]\nname = "x"\nicon = "C:/icons/icon.png"', "icon is a path in the bot's folder"),
     ],
 )
 def test_load_errors_name_the_key(tmp_path, text, message):
     with pytest.raises(ProjectError, match=message):
         load(make(tmp_path / "bot", text))
+
+
+@pytest.mark.parametrize("icon", ["icon.png", "art/Icon.SVG"])
+def test_an_icon_is_a_png_or_svg_in_the_bots_folder_there_or_not(tmp_path, icon):
+    folder = make(tmp_path / "bot", f'[bot]\nname = "x"\nicon = "{icon}"\n')
+    project = load(folder)  # not there yet: doctor says so, the Studio shows the initials
+    assert project.icon == icon
+    assert icon_path(project) == folder / icon
+    assert icon_path(load(make(tmp_path / "plain", '[bot]\nname = "x"\n'))) is None
 
 
 def test_every_setting_but_images_can_be_set_in_the_manifest():

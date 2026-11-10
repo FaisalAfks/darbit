@@ -2,19 +2,24 @@
 
 Its darbit.toml reads, every target in its setup guide (Image, Region, Location) is taken, this display's scaling is
 the one its images were taken at, its game window is open (when darbit.toml names one), and the screen isn't locked.
+A bot icon darbit.toml names that can't be read adds a note: the Studio shows the bot's initials instead.
 Each check says ok, a problem, or a note it couldn't look, what it found and how to fix it. See the rebuild plan.
 """
 
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from xml.etree import ElementTree
+
+import cv2
+import numpy as np
 
 from .capture.guide import GuideError, progress, steps
 from .capture.guide import load as load_guide
 from .platform import screen as display
 from .platform import system, windows
 from .platform.backend import NotSupported
-from .project.manifest import ProjectError, load
+from .project.manifest import Project, ProjectError, icon_path, load
 
 GUIDE = "guide.toml"
 MOST_SHOWN = 8  # targets not taken named in `found`; the rest are counted (`missing` has them all)
@@ -42,7 +47,37 @@ def run(folder: Path) -> list[Check]:
     found.append(_scaling(images))
     found.append(_window(project.window))
     found.append(_screen())
+    icon = _icon(project)
+    if icon is not None:
+        found.append(icon)
     return found
+
+
+def _icon(project: Project) -> Check | None:
+    """A note when the icon darbit.toml names can't be shown; None when it can, or when there's none."""
+    path = icon_path(project)
+    if path is None or _readable(path):
+        return None
+    if not path.is_file():
+        return Check("icon", None, f"no {project.icon}: the Studio shows the bot's initials")
+    return Check("icon", None, f"{project.icon} can't be read: the Studio shows the bot's initials")
+
+
+def _readable(path: Path) -> bool:
+    """Whether a .png or .svg file opens as one."""
+    if not path.is_file():
+        return False
+    if path.suffix.lower() == ".svg":
+        try:
+            root = ElementTree.parse(path).getroot()
+        except (ElementTree.ParseError, OSError):
+            return False
+        return root.tag.endswith("svg")  # "{http://www.w3.org/2000/svg}svg" with its namespace
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)  # imread can't open every Windows path
+    except OSError:
+        return False
+    return cv2.imdecode(data, cv2.IMREAD_UNCHANGED) is not None
 
 
 def _targets(folder: Path, images: list[Path]) -> Check:

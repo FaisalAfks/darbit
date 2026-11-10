@@ -26,7 +26,7 @@ Rectangle {
         id: square
         x: row.folded ? (row.width - width) / 2 : 12
         anchors.verticalCenter: parent.verticalCenter
-        name: row.bot.name || ""; accent: row.bot.accent || ""; size: 32
+        name: row.bot.name || ""; accent: row.bot.accent || ""; icon: row.bot.icon || ""; size: 32
         Rectangle {  // the state, on the square's corner when folded
             visible: row.folded && row.state !== "stopped"
             anchors { right: parent.right; bottom: parent.bottom; margins: -3 }

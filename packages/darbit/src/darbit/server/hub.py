@@ -21,7 +21,7 @@ from pathlib import Path
 from .. import paths
 from ..platform import system
 from ..project import bots
-from ..project.manifest import MANIFEST, Project, ProjectError, load
+from ..project.manifest import MANIFEST, Project, ProjectError, icon_path, load
 from ..project.settings_schema import SettingsError, as_json, load_schema, load_values, write_values
 from ..runtime.only import ONLY
 from . import dashboard, deleted, history, library, recording_mark, refusal, results, ui_settings
@@ -126,7 +126,7 @@ def _folder(data: dict) -> Path:
 
 
 def describe(folder: Path) -> dict:
-    """A bot for the Studio's switcher: name, version, accent, summary, where it is and whether it runs."""
+    """A bot for the Studio's switcher: name, version, accent, icon, summary, where it is and whether it runs."""
     try:
         project = load(folder)
     except ProjectError as error:
@@ -137,6 +137,7 @@ def describe(folder: Path) -> dict:
         "name": project.name,
         "version": project.version,
         "accent": project.accent,
+        "icon": _icon(project),
         "summary": project.summary,
         "installed": installed,
         "status": status(folder),
@@ -145,6 +146,15 @@ def describe(folder: Path) -> dict:
         "modes": _modes(project),
         "only": _only_running(folder),
     }
+
+
+def _icon(project: Project) -> str | None:
+    """The bot's icon as a file URL for the Studio, or None without one: a missing file shows the initials."""
+    path = icon_path(project)
+    if path is None or not path.is_file():
+        return None
+    version = path.stat().st_mtime_ns
+    return f"{path.as_uri()}?v={version}"  # a new version is a new URL to Qt, so a replaced icon shows
 
 
 def _modes(project: Project) -> list[dict]:

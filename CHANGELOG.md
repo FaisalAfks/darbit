@@ -4,6 +4,7 @@
 
 ### New
 
+- A bot's own icon (#488): `[bot] icon = "icon.png"` (or .svg) in darbit.toml, a path in the bot's folder. The Studio shows it in the bot's square wherever the square shows (the top bar, the bot menu, bot rows, the tray panel, Stop and start), cut to the same rounded square and decoded at the size it's drawn (`icon` in `bots.list`). A bot without one keeps its initials on its accent; a missing or unreadable file falls back the same way, with one line in `darbit doctor`. hello-bot has one
 - `d.screenshot(label, folder=, keep=)` (#466): a screenshot into a folder of its own in logs with its own limit, e.g. `d.screenshot("raid", folder="rewards", keep=300)`, so a bot's own shots never push the failure screenshots out. The default stays logs/screenshots, the newest 200. The name returned has the folder in front when it isn't the default (`rewards/...jpg`), and the Overview's problems find such a shot there. A folder outside logs, or `keep` under 1, raises ValueError
 
 ### Changed

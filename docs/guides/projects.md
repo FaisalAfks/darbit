@@ -10,6 +10,7 @@ darbit = ">=0.3,<0.4"            # the darbit it needs; another version gives a 
 entry = "my_bot.main:main"       # a function, a module ("my_bot"), or a script ("bot.py")
 window = "Game"                  # the app it plays: brought to the front before any input
 accent = "#ff7ab6"               # its colour in Studio and on its texts
+icon = "icon.png"                # its square in Studio: a .png or .svg in the bot's folder
 captured_at = { size = [2560, 1600], scale = 1.5 }
 
 [settings]                       # darbit's settings for this bot
@@ -23,6 +24,14 @@ folders = ["assets/images"]      # searched first, relative to the project
 [keys]                           # keymap overrides (later, with the keymap)
 "run.stop" = "ctrl+alt+x"
 ```
+
+## The bot's icon
+
+`icon` names a picture in the bot's folder, a `.png` or an `.svg`. The Studio shows it wherever the bot's square
+shows: the top bar, the bot menu, the bot's row, the tray panel and the Stop and start sheet. It's cut to the same
+rounded square, so a square picture shows whole; a longer one loses its ends. A bot without one shows its initials on
+its accent. So does one whose file is missing or can't be read, and `darbit doctor` says so in one line. A file
+replaced under the same name shows the next time the Studio lists the bots.
 
 ## Settings come in layers
 

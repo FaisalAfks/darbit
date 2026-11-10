@@ -63,7 +63,7 @@ Sheet {
                     readonly property var known: sheet.known(modelData.path)
                     readonly property string state: modelData.status || "running"
                     width: parent.width; spacing: 12
-                    Avatar { size: 32; name: line.modelData.name || ""; accent: line.known.accent || "" }
+                    Avatar { size: 32; name: line.modelData.name || ""; accent: line.known.accent || ""; icon: line.known.icon || "" }
                     Column {
                         Layout.fillWidth: true; spacing: 2
                         Text {
