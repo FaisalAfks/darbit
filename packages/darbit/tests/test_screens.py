@@ -158,3 +158,24 @@ def test_keep_trying_waits_back_timeout_for_the_way_back(game, world, monkeypatc
 
     assert lost_for(0.05) < 0.5
     assert lost_for(None) >= 1.0  # control: without it the way back waits the whole settings.timeout
+
+
+def test_approach_steps_back_on_the_fake_games_desktop(game, monkeypatch):
+    from darbit.platform import backend
+
+    def no_input():
+        raise backend.NotSupported("no input in this test: FakeGame fakes the mouse")
+
+    monkeypatch.setattr(backend, "input", no_input)  # as on a system darbit has no input for
+    monkeypatch.setattr(d.settings, "approach", 30)
+    with FakeGame(game, start="Lobby") as fake:
+        assert fake.mouse == (799, 499)  # the bottom right corner, away from the buttons
+        assert d.click("Lobby.Bag")
+        assert fake.clicks == [(380, 430)] and fake.moves == [] and fake.mouse == (380, 430)
+        assert d.click("Lobby.Bag")  # the mouse is already there: it steps back up first
+        assert fake.moves == [(380, 400)] and fake.clicks[-1] == (380, 430)
+        fake.showing = "Ad"
+        monkeypatch.setattr(d.settings, "approach", 60)
+        fake.mouse = (680, 50)
+        assert d.click("Ad.Close")  # up would leave the desktop: it steps back left
+        assert fake.moves[-1] == (620, 50) and fake.mouse == (680, 50)
