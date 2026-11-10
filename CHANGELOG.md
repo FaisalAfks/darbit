@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### New
+
+- `d.screenshot(label, folder=, keep=)` (#466): a screenshot into a folder of its own in logs with its own limit, e.g. `d.screenshot("raid", folder="rewards", keep=300)`, so a bot's own shots never push the failure screenshots out. The default stays logs/screenshots, the newest 200. The name returned has the folder in front when it isn't the default (`rewards/...jpg`), and the Overview's problems find such a shot there. A folder outside logs, or `keep` under 1, raises ValueError
+
 ### Changed
 
 - The Studio starts without its sheets, the command palette and its tools' windows (Capture, Scout and its pill, the recorder and run pills, the ghost cursor, the tray panel): each is made from its file the first time it's wanted and kept from then on (`OnFirstUse`, #479), so the idle Studio holds about 18 MB less (199-200 MB to 182 MB in the live check). Nothing shown changes

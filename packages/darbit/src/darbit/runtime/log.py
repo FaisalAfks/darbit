@@ -10,7 +10,7 @@ import logging
 import threading
 import time
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import cv2
 
@@ -22,7 +22,8 @@ from ..settings import settings
 logger = logging.getLogger("darbit")
 _day = ""
 _tidied: tuple[Path, str] | None = None  # the folder and day old logs and reports were last deleted for
-_KEEP_SHOTS = 200
+SHOTS = "screenshots"  # the folder in logs a screenshot goes into by default: the failure shots the Overview links to
+KEEP_SHOTS = 200  # the newest kept there
 REPORT_PREFIX = "report-"
 REPORT_SUFFIX = ".jsonl"
 _waiting: list[str] = []  # lines kept by `later` until the run writes something of its own
@@ -145,27 +146,46 @@ def day_of_file(path: Path) -> str:
     return path.stem
 
 
-def screenshot(label: str) -> str | None:
-    """Save the screen into logs/screenshots, keeping the newest few hundred. Returns the file's name."""
+def screenshot(label: str, folder: str = SHOTS, keep: int = KEEP_SHOTS) -> str | None:
+    """Save the screen into logs/<folder>, keeping the newest `keep` there. Returns the file's name, with the folder
+    in front when it isn't logs/screenshots ("rewards/...jpg"), so a record's shot points at the file.
+
+    A bot keeps shots of its own apart from the failure shots this way: `screenshot("raid", folder="rewards",
+    keep=300)`. `folder` is a folder inside logs (ValueError otherwise), and `keep` at least 1."""
+    place = _shots_folder(folder)
+    if keep < 1:
+        raise ValueError(f"keep={keep}: a screenshot keeps at least the one just taken")
     if not settings.log:
         return None
     try:
-        folder = settings.logs / "screenshots"
-        folder.mkdir(parents=True, exist_ok=True)
+        folder_path = settings.logs / place
+        folder_path.mkdir(parents=True, exist_ok=True)
         pixels, _ = screen.grab()
         safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in label)[:60]
-        path = folder / f"{datetime.now():%Y-%m-%d_%H-%M-%S}_{safe}.jpg"
+        path = folder_path / f"{datetime.now():%Y-%m-%d_%H-%M-%S}_{safe}.jpg"
         ok, data = cv2.imencode(".jpg", pixels, [cv2.IMWRITE_JPEG_QUALITY, 85])  # about 10x smaller than PNG
+        name = path.name if place == SHOTS else f"{place}/{path.name}"
         if ok:
             data.tofile(str(path))
-            log(f"screenshot {path.name}")
-        shots = [*folder.glob("*.png"), *folder.glob("*.jpg")]  # older ones were PNG
+            log(f"screenshot {name}")
+        shots = [*folder_path.glob("*.png"), *folder_path.glob("*.jpg")]  # older ones were PNG
         shots.sort(key=_modified_time)
-        for old in shots[:-_KEEP_SHOTS]:
+        for old in shots[:-keep]:
             old.unlink(missing_ok=True)
-        return path.name if ok else None
+        return name if ok else None
     except OSError:
         return None
+
+
+def _shots_folder(folder: str) -> str:
+    """`folder` as a path inside logs ("rewards", "rewards/raid"); ValueError for one outside it or empty."""
+    parts = PurePosixPath(folder.replace("\\", "/")).parts
+    outside = not parts or parts[0].startswith("/")  # from the root, or a share (//server)
+    on_a_drive = any(":" in part for part in parts)  # C:/shots
+    climbs = ".." in parts
+    if outside or on_a_drive or climbs:
+        raise ValueError(f'folder={folder!r}: a folder inside logs, such as "rewards"')
+    return "/".join(parts)
 
 
 def since(started: float) -> str:

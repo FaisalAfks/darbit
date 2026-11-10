@@ -72,7 +72,7 @@ The capture tool also saves `scale` (the display scaling) and, with `--window Ga
 | `write("hello")` | types text in any keyboard language | |
 | `sleep(seconds)` | waits, but stops at once on the stop hotkey | |
 | `apps.open(path_or_url)`, `apps.close(app)`, `apps.running(app)`, `apps.focus(app)`, `apps.window(app)` | an app by window title (`"Game"`) or program (`"chrome.exe"`) | |
-| `log(text)`, `screenshot(label)` | a line or a screenshot in today's log | |
+| `log(text)`, `screenshot(label, folder="screenshots", keep=200)` | a line in today's log, or a screenshot in `logs/<folder>` keeping the newest `keep` there ([Logs](logs-and-reports.md)) | the screenshot's name |
 
 `Location(x, y)` is a fixed point. A target can be a name, a `Target`, or a `Pattern`: a name with settings changed in code, on top of its `.json`:
 

@@ -276,7 +276,9 @@ def _search_row(project: Project, search: Search, screenshots: Path) -> dict:
 
 
 def _url(folder: Path, name: str) -> str | None:
-    path = folder / name
+    """A screenshot's file URL: a bare name is in logs/screenshots (`folder`), "rewards/x.jpg" in logs/rewards (one
+    saved with `screenshot(folder=...)`). None if it's gone."""
+    path = folder.parent / name if "/" in name else folder / name
     return path.as_uri() if path.is_file() else None
 
 
