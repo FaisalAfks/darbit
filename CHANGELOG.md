@@ -4,7 +4,7 @@
 
 ### Changed
 
-- The Studio starts without its sheets, the command palette and its tools' windows (Capture, Scout and its pill, the recorder and run pills, the ghost cursor, the tray panel): each is made from its file the first time it's wanted and kept from then on (`OnFirstUse`, #479), so the idle Studio holds about 12 MB less. Nothing shown changes
+- The Studio starts without its sheets, the command palette and its tools' windows (Capture, Scout and its pill, the recorder and run pills, the ghost cursor, the tray panel): each is made from its file the first time it's wanted and kept from then on (`OnFirstUse`, #479), so the idle Studio holds about 18 MB less (199-200 MB to 182 MB in the live check). Nothing shown changes
 
 ### Fixed
 
