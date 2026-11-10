@@ -81,6 +81,12 @@ Flickable {
         next[index] = Object.assign({}, next[index], { width: width })
         save(next)
     }
+    function show(index, shows) {
+        // gains by source of another currency: "sources:Gold", "Gold by source"
+        var next = layout.slice()
+        next[index] = Object.assign({}, next[index], { shows: shows, title: shows.replace("sources:", "") + " by source" })
+        save(next)
+    }
     function remove(index) { var next = layout.slice(); next.splice(index, 1); save(next) }
     function add(spec) { save(layout.concat([{ kind: spec.kind, shows: spec.shows, title: spec.title, width: spec.width, origin: spec.origin }])) }
 
@@ -231,6 +237,7 @@ Flickable {
                         onMoved: function (x, y) { page.moveTo(place, x, y); row.forceLayout() }
                         onResized: function (width) { page.resize(place, width) }
                         onRemoved: page.remove(place)
+                        onPicked: function (shows) { page.show(place, shows) }
                         Component.onCompleted: blocks.add(this)
                         Component.onDestruction: blocks.drop(this)
                     }
@@ -272,7 +279,8 @@ Flickable {
                         required property var modelData
                         width: choices.width
                         icon: modelData.kind === "ring" ? "◔" : modelData.kind === "chart" ? "▁▃▅" : modelData.kind === "list" ? "≡" : modelData.kind === "button" ? "▶"
-                            : modelData.kind === "screen" || modelData.kind === "sees" ? "▢" : modelData.kind === "number" ? "#" : modelData.kind === "recoveries" ? "↻" : "◆"
+                            : modelData.kind === "screen" || modelData.kind === "sees" ? "▢" : modelData.kind === "number" ? "#" : modelData.kind === "recoveries" ? "↻"
+                            : modelData.kind === "wallet" ? "◈" : modelData.kind === "sources" ? "▤" : "◆"
                         iconColor: modelData.origin && modelData.origin !== "darbit" ? studio.colors.slotBot : studio.colors.accent
                         text: modelData.title
                         detail: modelData.kind + (modelData.origin && modelData.origin !== "darbit" ? " · from " + modelData.origin : "")

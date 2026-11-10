@@ -3,15 +3,16 @@
 `days(project)` lists the days with a run report, newest first, each with its lead gain and run time.
 `day(project, "2026-10-26")` is one day in full: when it ran, its gains (today, each of the last 7 days, the
 last total), progress, how many top-level steps finished, the time lost to failures, the problems grouped by
-cause, and the timeline lanes. All of it comes from the run report (`d.record.gain`, `d.progress` and steps), through the run history in SQLite
-(history.py); the problems' image looks, which history leaves out, come from the day's report itself.
+cause, the timeline lanes and each run's gains (currencies.py). All of it comes from the run report
+(`d.record.gain`, `d.progress` and steps), through the run history in SQLite (history.py); the problems' image
+looks, which history leaves out, come from the day's report itself.
 """
 
 from datetime import date, timedelta
 from pathlib import Path
 
 from ..project.manifest import Project
-from . import dashboard, history, problems
+from . import currencies, dashboard, history, problems
 
 WEEK = 7  # days in the gains' small bar charts
 DAYS_LISTED = 60  # days in the day list
@@ -207,6 +208,7 @@ def day(project: Project, day_name: str) -> dict:
         "problems": problems.explain(project, _with_looks(report, events), report.parent),
         "recoveries": recoveries_of(events),
         "lanes": lane_list,
+        "runs": currencies.runs(events, day_name),
     }
 
 

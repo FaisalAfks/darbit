@@ -51,6 +51,9 @@ are the mockups' CSS names in camelCase (`--glass-strong` is `glassStrong`); a c
 | Kinds of target | `kindImage` (the accent), `kindRegion` (`accent2`), `kindLocation` (`ok`) |
 | Bot text | `slotBot` (words a bot writes, so it's clear who is talking) |
 
+Things told apart by colour (currencies in the Wallet, sources in Gains by source) take the theme's colours in turn:
+`accent`, `accent2`, `ok`, `warn`, `slotBot`, `info` (`Block.tone`).
+
 `solid` and the kinds' colours are made from the others, so a custom theme gets them too. `glassStrong` is only what
 `solid` is made from: panels use `solid`.
 
@@ -78,7 +81,7 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | `Segmented`, `Toggle`, `Chip` | a choice of a few, a filter that's on or off, a small label |
 | `Choice` | a setting that's on or off, with its label and help |
 | `Glass` | a card on a page, with an optional small caps title |
-| `Ring`, `Bar` | progress: a ring with its number, a thin bar |
+| `Ring`, `Bar` | progress: a ring with its number, a thin bar; with `shares` and `tints`, a stacked bar of parts (gains by source) |
 | `FloatingPill`, `PillWindow`, `PillBody`, `PillAction`, `PillGuide` | every tool over the game (Capture, the recorder, the run pill, Scout's pill): the pill in its forms (a row, a labelled column, a floating card), its buttons, and the guide shown while it's dragged |
 | `ShotTargets` | the targets taken on one shot, as tiles in Capture's pill: a row that scrolls sideways, or two columns that scroll up and down |
 | `MenuPanel`, `MenuLine` | a menu that drops down (and the tray panel), and its lines, with their keys on the right |
@@ -87,7 +90,8 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | `EmptyState` | what a page or list shows with nothing in it: a soft glyph in a glass circle, a title, one line of why, and the main action (a button, or a link such as "See yesterday →") with its key from `keymap.toml` under it. It rises in with the cards (`CardMotion`); `compact` is its size in a pill |
 | `PageFrame`, `Backdrop`, `SmoothWheel` | a page in the stack, the background behind every page, the mouse wheel on a list |
 | `CardMotion`, `MouseLight`, `CountUp`, `LiveDot` | how cards move (the rise, the lift and its shadow), the light following the mouse over a card, a number counting up, a state's dot that pulses while a bot runs |
-| `Setting`, `Block`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
+| `Block` | one Overview block, drawn by its kind: now, round, list, number, ring, chart, text, screen, sees, button, recoveries, wallet (each currency's balance and today's change) or sources (a currency's gains by source, today as a stacked bar and rows, the week as stacked bars that grow in as a chart's). Those two are drawn from their own files (`WalletView`, `SourcesView`, `SourcesPicker`), loaded only when such a block is shown, so an Overview without them costs nothing more |
+| `Setting`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
 
 ## Surfaces and how much screen they take
 

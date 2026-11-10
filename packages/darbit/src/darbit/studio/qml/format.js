@@ -123,3 +123,20 @@ function only(asked) {
     if (!asked || !asked.mode) return ""
     return "only " + asked.mode + (asked.step ? " › " + asked.step : "")
 }
+
+function compact(value) {
+    // an amount short enough to read at a glance: 8,240 as it is, 4,990,000 as 4.99M, 127,310,000,000 as 127.31B
+    var number = Number(value) || 0
+    var size = Math.abs(number)
+    var steps = [[1e12, "T"], [1e9, "B"], [1e6, "M"]]
+    for (var index = 0; index < steps.length; index++)
+        if (size >= steps[index][0]) return String(Number((number / steps[index][0]).toFixed(2))) + steps[index][1]
+    return Number(Math.round(number)).toLocaleString(Qt.locale(), "f", 0)
+}
+
+function signed(value) {
+    // a change: +12,480, −50, ±0
+    var number = Number(value) || 0
+    if (number === 0) return "±0"
+    return (number > 0 ? "+" : "−") + compact(Math.abs(number))
+}

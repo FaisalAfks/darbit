@@ -30,6 +30,11 @@ def _path() -> list[str]:
     return _stack.names
 
 
+def current() -> str:
+    """The open step's path on this thread ("Daily quest > pick a quest"), or "" outside every step."""
+    return " > ".join(_path())
+
+
 @contextmanager
 def step(name: str) -> Iterator[None]:
     """A named part of a run; see the module's description."""

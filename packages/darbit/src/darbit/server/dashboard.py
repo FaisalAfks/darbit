@@ -24,6 +24,7 @@ DETAIL = {
     "progress",
     "next",
     "gain",
+    "balance",
     "plan",
     "observer",
     "exists",

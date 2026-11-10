@@ -2,8 +2,8 @@
 their own (`d.show`, `@d.block`); the person using it arranges them in darbit Studio, which keeps their layout.
 
 A block is {"kind", "shows", "title", "width"}: `kind` is how it's drawn, `shows` what it shows ("now", "round",
-"next", "failures", "watching", "activity", "screen", "sees", "recoveries", "progress:<label>", "gain:<name>",
-"block:<name>", "action:<name>") and `width` its share of a row of 12. `catalog` is every block a bot can have today,
+"next", "failures", "watching", "activity", "screen", "sees", "recoveries", "wallet", "progress:<label>",
+"gain:<name>", "sources:<name>", "block:<name>", "action:<name>") and `width` its share of a row of 12. `catalog` is every block a bot can have today,
 `data` what each `shows` holds now, `default_layout` the author's layout (or one made from the old `[studio] tiles`).
 """
 
@@ -13,10 +13,24 @@ from pathlib import Path
 
 from ..project.manifest import Project
 from ..runtime import sees
-from . import dashboard, history, problems, results
+from . import currencies, dashboard, history, problems, results
 
 OVERVIEW = "overview.toml"
-KINDS = ("now", "round", "list", "number", "ring", "chart", "text", "screen", "sees", "button", "recoveries")
+KINDS = (
+    "now",
+    "round",
+    "list",
+    "number",
+    "ring",
+    "chart",
+    "text",
+    "screen",
+    "sees",
+    "button",
+    "recoveries",
+    "wallet",
+    "sources",
+)
 WIDTHS = (3, 4, 6, 8, 12)
 WEEK = 7
 
@@ -44,9 +58,12 @@ def catalog(project: Project, events: list[dict], actions: list[str]) -> list[di
     ]
     for label in _named(events, "progress", "label"):
         found.append(_block("ring", f"progress:{label}", label, 4))
+    if currencies.has_balances(events):
+        found.append(_block("wallet", "wallet", "Wallet", 6))  # off until added, like the gains by source
     for name in _named(events, "gain", "name"):
         found.append(_block("number", f"gain:{name}", f"{name} today", 4))
         found.append(_block("chart", f"gain:{name}", f"{name} this week", 6))
+        found.append(_block("sources", f"sources:{name}", f"{name} by source", 6))
     for name, kind in _shown(events).items():
         found.append(_block(kind, f"block:{name}", name, 4, project.name))
     for name in actions:
@@ -161,9 +178,16 @@ def data(project: Project, events: list[dict], day: str, now: datetime, logs: Pa
     for item in progress.get("items", []):
         found[f"progress:{item['label']}"] = item
     gains = _tile_data(dashboard.gains_tile(events)) or {"items": []}
-    week = _week_of_gains(project, day)
+    days = _week_of_events(project, day)
+    week = _week_of_gains(days)
     for item in gains.get("items", []):
         found[f"gain:{item['name']}"] = {**item, "week": week.get(item["name"], [0] * WEEK)}
+    found["wallet"] = currencies.wallet(_all_of(days[:-1]), events, day)
+    week_gains = [currencies.gains_with_sources(one) for one in days[:-1]]
+    week_gains.append(currencies.gains_with_sources(events))  # today's with its steps, for gains that don't say one
+    names = _named(events + _all_of(days), "gain", "name")  # today's first, then the week's: a block placed stays
+    for name in names:
+        found[f"sources:{name}"] = {**currencies.by_source(name, week_gains), "names": names}  # names: to pick one
     for name in actions:
         found[f"action:{name}"] = {"name": name}
     for event in events:
@@ -217,18 +241,33 @@ def _last_screen(logs: Path) -> str | None:
     return newest.as_uri() if newest is not None else None
 
 
-def _week_of_gains(project: Project, day: str) -> dict[str, list[float]]:
-    """Each gain's amount on each of the week's days, the day itself last."""
+def _week_of_events(project: Project, day: str) -> list[list[dict]]:
+    """The gains and balances of each of the week's days, the day itself last."""
     last = datetime.fromisoformat(day)
     days = [(last - timedelta(days=back)).strftime("%Y-%m-%d") for back in range(WEEK - 1, -1, -1)]
-    found: dict[str, list[float]] = {}
-    for index, name in enumerate(days):
+    found: list[list[dict]] = []
+    for name in days:
         try:
-            events = history.events(project, name, kinds=("gain",))  # a week of every event is tens of MB of JSON
+            # only these kinds: a week of every event is tens of MB of JSON
+            found.append(history.events(project, name, kinds=("gain", "balance")))
         except (OSError, ValueError):
-            continue
+            found.append([])
+    return found
+
+
+def _all_of(days: list[list[dict]]) -> list[dict]:
+    found = []
+    for events in days:
+        found.extend(events)
+    return found
+
+
+def _week_of_gains(days: list[list[dict]]) -> dict[str, list[float]]:
+    """Each gain's amount on each of the week's days, the day itself last."""
+    found: dict[str, list[float]] = {}
+    for index, events in enumerate(days):
         for event in events:
-            if not isinstance(event.get("amount"), (int, float)):
+            if event.get("event") != "gain" or not isinstance(event.get("amount"), (int, float)):
                 continue
             row = found.setdefault(str(event.get("name")), [0] * WEEK)
             row[index] += event["amount"]

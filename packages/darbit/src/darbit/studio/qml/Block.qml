@@ -15,10 +15,13 @@ Glass {
     signal moved(real sceneX, real sceneY)
     signal resized(int width)
     signal removed()
+    signal picked(string shows)    // another currency for gains by source
     readonly property string kind: spec.kind || "text"
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     title: kind === "now" ? "" : (spec.title || spec.shows || "")
-    note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin : ""
+    note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin
+        : kind === "wallet" && info && info.read && !editing ? "read " + (info.read.day ? Format.dayName(info.read.day) + " " : "")
+            + Format.clockOf(info.read.at) + (info.read.where ? " in " + info.read.where : "") : ""
     lift: !editing
     implicitHeight: (title !== "" ? 64 : 44) + (shown.item ? shown.item.implicitHeight : 0)
     border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55)
@@ -31,7 +34,22 @@ Glass {
             : block.kind === "now" ? nowView : block.kind === "round" ? roundView : block.kind === "ring" ? ringView
             : block.kind === "number" ? numberView : block.kind === "chart" ? chartView : block.kind === "list" ? listView
             : block.kind === "screen" ? screenView : block.kind === "button" ? buttonView
-            : block.kind === "recoveries" ? recoveriesView : block.kind === "sees" ? seesView : textView
+            : block.kind === "recoveries" ? recoveriesView : block.kind === "sees" ? seesView
+            : block.kind === "wallet" ? walletView : block.kind === "sources" ? sourcesView : textView
+    }
+
+    // the colours a block tells things apart by (currencies, sources): the theme's, in turn
+    function tone(index) {
+        var tones = [studio.colors.accent, studio.colors.accent2, studio.colors.ok, studio.colors.warn, studio.colors.slotBot, studio.colors.info]
+        return tones[index % tones.length]
+    }
+
+    // Gains by source: which currency, picked here and kept in the layout; from its own file, made only for that block
+    Loader {
+        active: block.kind === "sources"
+        visible: !block.editing && !!block.info
+        anchors { right: parent.right; rightMargin: block.padding; top: parent.top; topMargin: block.padding - 9 }
+        Component.onCompleted: setSource("SourcesPicker.qml", { block: block })
     }
 
     // What the bot sees: live while the bot runs, with the time of its last look
@@ -341,6 +359,9 @@ Glass {
         }
     }
     Component { id: seesView; SeesView { info: block.info } }
+    // drawn from their own files, loaded only when a block of their kind is on the Overview
+    Component { id: walletView; Loader { width: parent ? parent.width : 0; Component.onCompleted: setSource("WalletView.qml", { block: block }) } }
+    Component { id: sourcesView; Loader { width: parent ? parent.width : 0; Component.onCompleted: setSource("SourcesView.qml", { block: block }) } }
     Component {
         id: buttonView
         Row {

@@ -4,6 +4,7 @@
 
 ### New
 
+- Currencies (#475, decision 0023): `d.record.gain` takes `source=` (by default the top-level step it was recorded in) and records its step; `d.record.balance(name, value, icon=)` records a balance read off the screen. Two Overview blocks, off until added in Customize or placed in overview.toml: **Wallet** (`wallet`), each currency's balance now with when it was read and today's change, and **Gains by source** (`sources:<name>`), a currency's gains today as a stacked bar and rows, and the week as stacked bars, the currency picked in the block. Results has **Each run**: what each run gave by currency, and the day's total per source (`runs` in `bot.day`). Old bots and history count a gain under the step open when it was recorded, or "other"
 - An empty state on every page that can be empty (#319): `EmptyState`, a soft glyph in a glass circle, a title, one line of why and the main action with its key, rising in with the cards. On the Library and each of its tabs (Images, Regions, Locations, Actions, and when the search leaves nothing), its Screen view, Results, the Overview before a bot's first run (`ran` in `bot.overview`), an action with no steps, Settings with nothing to set, and Scout's pill. Results opens on today: with no run yet today, it says so, with a link to the last day that has runs
 
 ### Changed
