@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.10 - 2026-11-10
+
 ### New
 
 - Currencies (#475, decision 0023): `d.record.gain` takes `source=` (by default the top-level step it was recorded in) and records its step; `d.record.balance(name, value, icon=)` records a balance read off the screen. Two Overview blocks, off until added in Customize or placed in overview.toml: **Wallet** (`wallet`), each currency's balance now with when it was read and today's change, and **Gains by source** (`sources:<name>`), a currency's gains today as a stacked bar and rows, and the week as stacked bars, the currency picked in the block. Results has **Each run**: what each run gave by currency, and the day's total per source (`runs` in `bot.day`). Old bots and history count a gain under the step open when it was recorded, or "other"
