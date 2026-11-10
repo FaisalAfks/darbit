@@ -179,7 +179,6 @@ def test_scout_finds_the_image_and_lets_clicks_through(target, pictures, tmp_pat
     scout = Scout()
     engine = load(studio, scout=scout)
     root = engine.rootObjects()[0]  # held, or Qt deletes it under findChild
-    overlay = root.findChild(QQuickWindow, "scoutWindow")
     root.hide()
     scout.start(folder)
 
@@ -196,7 +195,8 @@ def test_scout_finds_the_image_and_lets_clicks_through(target, pictures, tmp_pat
         boxes = [box for box in scout.boxes if box["name"] == PICTURE]
         assert boxes and boxes[0]["found"], f"Scout didn't find the image: {scout.boxes}"
         assert (boxes[0]["x"], boxes[0]["y"], boxes[0]["w"], boxes[0]["h"]) == picture_box(target)
-        assert overlay.isVisible()
+        overlay = root.findChild(QQuickWindow, "scoutWindow")  # made as Scout came on
+        assert overlay is not None and overlay.isVisible()
         spin(0.5)
         SHOTS.mkdir(parents=True, exist_ok=True)
         pixels, _ = screen.grab()
@@ -293,13 +293,13 @@ def test_the_recorder_pill_shows_while_the_studio_is_hidden(tmp_path):
     recorder = Recorder()
     engine = load(Studio(lambda: Client("live"), "glass-dark", ""), recorder=recorder)
     root = engine.rootObjects()[0]  # held, or Qt deletes it
-    pill = root.findChild(QQuickWindow, "recorderPill")
     root.hide()
     try:
         assert recorder.start(folder, "walk") == ""
         spin(1.5)
         assert recorder.active
-        assert pill.isVisible(), "the recorder pill didn't show"
+        pill = root.findChild(QQuickWindow, "recorderPill")  # made as the recording started
+        assert pill is not None and pill.isVisible(), "the recorder pill didn't show"
         SHOTS.mkdir(parents=True, exist_ok=True)
         pill.grabWindow().save(str(SHOTS / "recorder-pill-on-windows.png"))
     finally:
@@ -333,7 +333,6 @@ def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
     ghost = Ghost()
     engine = load(Studio(lambda: Client("live"), "glass-dark", ""), ghost=ghost)
     root = engine.rootObjects()[0]  # held, or Qt deletes it
-    overlay = root.findChild(QQuickWindow, "ghostWindow")
     root.hide()
     ghost.start()
     told.forget()
@@ -348,7 +347,8 @@ def test_the_ghost_cursor_shows_the_bots_click_and_key(target):
         click = next(mark for mark in ghost.marks if mark["kind"] == "click")
         x, y, w, h = picture_box(target)
         assert (click["x"], click["y"]) == (x + w // 2, y + h // 2)
-        assert overlay.isVisible()
+        overlay = root.findChild(QQuickWindow, "ghostWindow")  # made with its first mark
+        assert overlay is not None and overlay.isVisible()
         seen = d.exists(PICTURE)  # the ring is on the picture now: screen grabs must not see it
         assert seen is not None and seen.score > 0.99, f"the ghost cursor got into the screen grab: {seen}"
         target.settle()
@@ -412,7 +412,7 @@ def test_the_studio_meets_its_speed_goals_on_windows():
         time.sleep(10)
         cpu_after, memory = _cpu_and_memory(pid)
         share = (cpu_after - cpu_before) / 10
-        print(f"Studio idle on Windows: {share:.2%} of one core, {memory / 2**20:.0f} MB")
+        print(f"Studio idle on Windows: {share:.2%} of one core, {memory / 2**20:.1f} MB")
         assert share < 0.02
         assert memory < 200 * 2**20
     finally:

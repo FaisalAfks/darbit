@@ -15,6 +15,7 @@ import "scout.js" as Scout
 
 PillWindow {
     id: scoutPill
+    objectName: "scoutPill"
     hiding: scoutHiding
     place: scoutPlace
     title: "darbit Scout pill"

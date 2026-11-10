@@ -22,6 +22,7 @@ from ..server import ui_settings
 from ..service.client import Client, ServiceError
 from . import shortcuts, theme
 from .pictures import Pictures
+from .window import release_when_hidden
 
 CHOSEN = "studio.bot"  # ui setting: the bot shown last
 THEME = "theme"  # ui setting: the theme, shared with the old Studio
@@ -709,6 +710,11 @@ class Studio(QObject):
         ui_settings.set_value(AURORA, self._aurora)
         self.lookChanged.emit()
         self._follow_battery()
+
+    @Slot(QObject)
+    def releaseWhenHidden(self, made: QObject) -> None:
+        """A window made after the Studio opened (OnFirstUse.qml) gives back its graphics memory while hidden too."""
+        release_when_hidden(made)
 
     @Slot(bool)
     def setShown(self, shown: bool) -> None:

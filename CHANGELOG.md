@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- The Studio starts without its sheets, the command palette and its tools' windows (Capture, Scout and its pill, the recorder and run pills, the ghost cursor, the tray panel): each is made from its file the first time it's wanted and kept from then on (`OnFirstUse`, #479), so the idle Studio holds about 18 MB less (199-200 MB to 182 MB in the live check). Nothing shown changes
+
 ### Fixed
 
 - With real input off (`DARBIT_NO_REAL_INPUT`) and no `FakeGame`, the mouse's position and the desktop that `approach` reads are a fixed fake, the mouse in the bottom right corner of a 1920x1080 desktop (#482): a click is refused as `input.click` on every system, instead of reading the real cursor on Windows or failing with NotSupported elsewhere

@@ -10,6 +10,7 @@ import "format.js" as Format
 
 PillWindow {
     id: recorderWindow
+    objectName: "recorderPill"
     hiding: recorderHiding
     place: recorderPlace
     title: "darbit recorder"

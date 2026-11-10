@@ -8,6 +8,7 @@ import "format.js" as Format
 
 MenuPanel {
     id: palette
+    objectName: "commandPalette"
     parent: Overlay.overlay
     modal: true
     x: (parent.width - width) / 2

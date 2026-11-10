@@ -28,7 +28,7 @@ from .recorder import Recorder
 from .scout import Scout, ShotsProvider
 from .sees import Sees
 from .tray import TrayPanel, as_qrect, flyout_taken, icon_in_points, panel_place, screen_with
-from .window import PLACE, Door, fit, kept, screens
+from .window import PLACE, Door, fit, kept, release_when_hidden, screens
 
 HERE = Path(__file__).parent
 MAIN = HERE / "qml" / "Main.qml"
@@ -125,7 +125,7 @@ def load(
     if not engine.rootObjects():
         raise RuntimeError("darbit Studio's window didn't load: see the QML errors above")
     window = engine.rootObjects()[0]
-    _release_when_hidden(window)
+    release_when_hidden(window)  # and each window made later, as it's made (OnFirstUse.qml)
     _follow_sight(studio, window)
     where, maximized = place
     if where is not None:
@@ -135,14 +135,6 @@ def load(
     else:
         window.show()
     return engine
-
-
-def _release_when_hidden(root: QQuickWindow) -> None:
-    """Every window gives back its graphics memory while it's hidden: the Studio is hidden for as long as a bot runs,
-    and Capture and Scout most of the time."""
-    for window in [root, *root.findChildren(QQuickWindow)]:
-        window.setPersistentGraphics(False)
-        window.setPersistentSceneGraph(False)
 
 
 def _follow_sight(studio: Studio, window: QWindow) -> None:
@@ -515,12 +507,25 @@ def _tray(
     Studio and Quit), a double click the Studio."""
     tray = QSystemTrayIcon(QIcon(str(ICON)), app)
     tray.setToolTip("darbit Studio")
-    shown = window.findChild(QQuickWindow, "trayPanel")
+    made: list[QQuickWindow] = []  # the panel's window, made the first time it opens (OnFirstUse.qml)
     hidden_at = [0.0]  # when the panel last went away: a click on the icon that closed it doesn't open it again
     # the hidden-icons flyout as the panel opened: it may close once the panel takes the focus, and the panel stays put
     flyout: list[QRect | None] = [None]
 
+    def panel_window() -> QQuickWindow:
+        """The panel's window, made the first time it's asked for."""
+        if made:
+            return made[0]
+        window.setProperty("trayWanted", True)
+        shown = window.findChild(QQuickWindow, "trayPanel")
+        shown.visibleChanged.connect(visible)
+        shown.heightChanged.connect(lambda height: place() if shown.isVisible() else None)  # grows from the taskbar
+        shown.widthChanged.connect(lambda width: place() if shown.isVisible() else None)
+        made.append(shown)
+        return shown
+
     def place() -> None:
+        shown = panel_window()
         icon = tray.geometry()
         if not icon.isValid() or icon.isEmpty():
             icon = QRect(QCursor.pos(), QSize(1, 1))
@@ -533,6 +538,7 @@ def _tray(
         shown.setPosition(panel_place(icon, as_qrect(screen), as_qrect(work_of(screen)), size, taken))
 
     def open_panel() -> None:
+        shown = panel_window()
         if shown.isVisible() or time.monotonic() - hidden_at[0] < REOPEN_S:
             return
         box = system.tray_flyout()
@@ -558,9 +564,6 @@ def _tray(
         elif reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.Context):
             open_panel()
 
-    shown.visibleChanged.connect(visible)
-    shown.heightChanged.connect(lambda height: place() if shown.isVisible() else None)  # grows from the taskbar
-    shown.widthChanged.connect(lambda width: place() if shown.isVisible() else None)
     panel.studioWanted.connect(open_studio)
     panel.recordWanted.connect(record)
     panel.quitWanted.connect(app.quit)

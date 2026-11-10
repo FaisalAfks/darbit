@@ -394,6 +394,12 @@ def wait_until(check, seconds=5.0):
     assert check()
 
 
+def made(root, name):
+    """A window, sheet or panel the Studio makes the first time it's wanted (OnFirstUse.qml), once it's made."""
+    wait_until(lambda: root.findChild(QtCore.QObject, name) is not None)
+    return root.findChild(QtCore.QObject, name)
+
+
 def test_css_colours_become_qt_colours():
     assert theme.qml_color("#5ac8fa") == "#ff5ac8fa"
     assert theme.qml_color("#fff") == "#ffffffff"
@@ -520,8 +526,50 @@ def test_every_page_draws_without_a_qml_warning(effects, tmp_path, page, theme_n
     assert warnings == []
 
 
-def test_the_ghost_cursor_draws_without_a_qml_warning(effects, tmp_path):
+MADE_ON_FIRST_USE = [
+    "commandPalette",
+    "newBotSheet",
+    "recordSheet",
+    "checksSheet",
+    "stopAndStartSheet",
+    "captureWindow",
+    "recorderPill",
+    "scoutWindow",
+    "scoutPill",
+    "ghostWindow",
+    "runPill",
+    "trayPanel",
+]
+
+
+def test_the_studio_starts_without_its_sheets_and_tools_windows_and_makes_each_when_wanted(qt, tmp_path):
+    """Each is made the first time it's wanted and kept (OnFirstUse.qml), so the idle Studio holds none (#479); a
+    window made then gives back its graphics memory while hidden, like the rest."""
+    import numpy as np
     from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.capture import Capture, ShotProvider
+
+    (tmp_path / "darbit.toml").write_text('[bot]\nname = "cap-bot"\n', encoding="utf-8")
+    capture = Capture(ShotProvider())
+    engine = app.load(backend.Studio(FakeClient), capture)
+    root = engine.rootObjects()[0]
+    assert [name for name in MADE_ON_FIRST_USE if root.findChild(QtCore.QObject, name) is not None] == []
+    QMetaObject.invokeMethod(root, "newBot", Q_ARG("QVariant", "add"))
+    sheet = made(root, "newBotSheet")
+    wait_until(lambda: sheet.property("opened"))
+    assert sheet.property("way") == "add"
+    capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8), several=False)
+    window = made(root, "captureWindow")
+    wait_until(window.isVisible)
+    assert not window.isPersistentGraphics() and not window.isPersistentSceneGraph()
+    capture.close()
+    wait_until(lambda: not window.isVisible())
+    assert root.findChild(QQuickWindow, "captureWindow") is window  # kept for next time
+    del engine
+
+
+def test_the_ghost_cursor_draws_without_a_qml_warning(effects, tmp_path):
 
     from darbit.studio.ghost import Ghost
 
@@ -535,7 +583,7 @@ def test_the_ghost_cursor_draws_without_a_qml_warning(effects, tmp_path):
         ghost.take({"kind": "click", "x": 500, "y": 200, "button": "right"})
         ghost.take({"kind": "key", "x": 300, "y": 200, "name": "e"})
         ghost.take({"kind": "key", "x": 300, "y": 200, "name": "shift"})
-        window = root.findChild(QQuickWindow, "ghostWindow")
+        window = made(root, "ghostWindow")
         wait_until(lambda: window.isVisible() and len(ghost.marks) == 4)
         # only around the marks, not the whole screen
         assert window.width() < window.screen().size().width() / 2
@@ -717,7 +765,6 @@ def test_capture_boxes_tests_and_saves_on_a_saved_screen(qt, tmp_path):
 def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(effects, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.capture import Capture, ShotProvider
 
@@ -731,7 +778,7 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(effect
         engine = app.load(backend.Studio(FakeClient), capture)
         capture.start(tmp_path, shot=screen, several=False)  # one target: Test checks just it
         root = engine.rootObjects()[0]  # held: a temporary root lets PySide drop its child windows
-        window = root.findChild(QQuickWindow, "captureWindow")
+        window = made(root, "captureWindow")
         scale = window.property("scale")
         QMetaObject.invokeMethod(
             window, "clicked", Q_ARG("QVariant", 350 * scale), Q_ARG("QVariant", 220 * scale), Q_ARG("QVariant", True)
@@ -751,7 +798,7 @@ def test_the_capture_window_draws_a_box_and_matches_without_a_qml_warning(effect
 def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Qt
-    from PySide6.QtQuick import QQuickItem, QQuickWindow
+    from PySide6.QtQuick import QQuickItem
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -763,7 +810,7 @@ def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
     engine = app.load(backend.Studio(FakeClient), capture)
     capture.start(tmp_path, shot=screen, several=False)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
+    window = made(root, "captureWindow")
     scale = window.property("scale")
     QMetaObject.invokeMethod(
         window, "clicked", Q_ARG("QVariant", 350 * scale), Q_ARG("QVariant", 220 * scale), Q_ARG("QVariant", True)
@@ -804,7 +851,7 @@ def test_captures_pill_works_by_keyboard_from_the_name(qt, tmp_path):
 def test_captures_kinds_and_where_an_image_is_searched_are_tab_stops(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Qt
-    from PySide6.QtQuick import QQuickItem, QQuickWindow
+    from PySide6.QtQuick import QQuickItem
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -814,7 +861,7 @@ def test_captures_kinds_and_where_an_image_is_searched_are_tab_stops(qt, tmp_pat
     engine = app.load(backend.Studio(FakeClient), capture)
     capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8), several=False)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
+    window = made(root, "captureWindow")
 
     def call(name, *values):
         QMetaObject.invokeMethod(window, name, *[Q_ARG("QVariant", value) for value in values])
@@ -1142,7 +1189,6 @@ def test_scouts_lists_are_built_again_only_when_what_they_show_changes(qt, tmp_p
 
 def _scout_pill(tmp_path, where):
     """Scout's pill dragged to `where` on a 1600 x 900 screen, with its engine."""
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.docking import PillPlace, Rect
     from darbit.studio.hiding import HidingPill
@@ -1153,8 +1199,8 @@ def _scout_pill(tmp_path, where):
     studio = backend.Studio(FakeClient)
     engine = app.load(studio, scout=scout, scout_hiding=hiding, pill_places={"scout": place})
     root = engine.rootObjects()[0]
-    pill = root.findChild(QQuickWindow, "scoutPill")
     wait_until(lambda: hiding.isOpen)
+    pill = made(root, "scoutPill")
     place.begin(800, 30)
     place.move(*where)
     place.end()
@@ -1256,10 +1302,10 @@ def test_scout_shows_the_shared_pill_while_it_is_on(qt, tmp_path):
     scout, hiding = Scout(), HidingPill(watch=lambda moved: None)
     engine = app.load(backend.Studio(FakeClient), scout=scout, scout_hiding=hiding)
     root = engine.rootObjects()[0]
-    pill = root.findChild(QQuickWindow, "scoutPill")
-    assert not hiding.isOpen and not pill.isVisible()
+    assert not hiding.isOpen and root.findChild(QQuickWindow, "scoutPill") is None  # made the first time it shows
     scout.start(tmp_path, grab=lambda: (screen, Region(0, 0, 900, 600)))
     wait_until(lambda: scout.found == 1)
+    pill = made(root, "scoutPill")
     assert hiding.isOpen and pill.isVisible()
     wait_until(lambda: pill.findChild(QObject, "scoutSeen").property("text") == "Scout: 1 of 1 seen")
     scout.stop()
@@ -1412,7 +1458,6 @@ def test_play_hides_the_studio_behind_the_run_pill_until_the_bot_stops(qt):
 
 
 def test_the_run_pill_draws_without_a_qml_warning(qt):
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.hiding import HidingPill
 
@@ -1428,9 +1473,11 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
         studio.loadOverview()
         wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
         pill.open()
-        window = root.findChild(QQuickWindow, "runPill")
+        window = made(root, "runPill")
         wait_until(window.isVisible)
-        assert window.width() < window.screen().size().width() / 2
+        # only around the pill, at its own size, not the whole screen
+        assert window.width() == pytest.approx(window.property("restWidth"))
+        assert window.height() < window.screen().size().height() / 2
         pill.close()
         wait_until(lambda: not window.isVisible())
         del engine
@@ -1441,7 +1488,6 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
 
 def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_again(qt):
     from PySide6.QtCore import QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.docking import GAP, PillPlace
     from darbit.studio.hiding import HidingPill
@@ -1457,7 +1503,7 @@ def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_aga
         studio.connect()
         wait_until(lambda: studio.bot.get("name") == "ad-bot")
         hiding.open()
-        window = root.findChild(QQuickWindow, "runPill")
+        window = made(root, "runPill")
         wait_until(window.isVisible)
         screen = window.screen().geometry()
         wait_until(lambda: window.y() < 40)  # docked at the top centre, a row
@@ -1487,7 +1533,6 @@ def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_aga
 
 
 def test_a_dragged_pills_guide_shows_its_ghost_where_it_lands_and_a_glow_by_the_mouse(qt):
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.docking import GAP, PillPlace
     from darbit.studio.hiding import HidingPill
@@ -1503,7 +1548,7 @@ def test_a_dragged_pills_guide_shows_its_ghost_where_it_lands_and_a_glow_by_the_
         studio.connect()
         wait_until(lambda: studio.bot.get("name") == "ad-bot")
         hiding.open()
-        window = root.findChild(QQuickWindow, "runPill")
+        window = made(root, "runPill")
         wait_until(window.isVisible)
         work = place.work
         bottom = work["y"] + work["height"]
@@ -1535,7 +1580,6 @@ def test_a_dragged_pills_guide_shows_its_ghost_where_it_lands_and_a_glow_by_the_
 @pytest.mark.parametrize("moving", [False, True])
 def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_the_taskbar(qt, tmp_path, moving):
     from PySide6.QtCore import QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.docking import GAP, PillPlace, Rect
     from darbit.studio.hiding import HidingPill
@@ -1555,7 +1599,7 @@ def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_t
         studio.connect()
         wait_until(lambda: studio.bot.get("name") == "ad-bot")
         hiding.open()
-        window = root.findChild(QQuickWindow, "runPill")
+        window = made(root, "runPill")
         wait_until(window.isVisible)
         face = window.findChild(QObject, "pillFace")
         row = _steady_width(face)  # laid out with the bot's line, done easing to its width
@@ -1714,7 +1758,6 @@ def test_capture_makes_an_image_its_region_and_its_location_together(qt, tmp_pat
 
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.capture import Capture, ShotProvider
 
@@ -1728,7 +1771,7 @@ def test_capture_makes_an_image_its_region_and_its_location_together(qt, tmp_pat
         engine = app.load(backend.Studio(FakeClient), capture)
         capture.start(tmp_path, shot=screen)
         root = engine.rootObjects()[0]
-        window = root.findChild(QQuickWindow, "captureWindow")
+        window = made(root, "captureWindow")
 
         def part(name, value):
             QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", name), Q_ARG("QVariant", value))
@@ -1893,7 +1936,6 @@ def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
     import cv2
     import numpy as np
     from PySide6.QtCore import QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.capture import Capture, ShotProvider
 
@@ -1904,11 +1946,14 @@ def test_a_retake_opens_capture_named_and_on_its_kind(qt, tmp_path):
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
+
+    def named() -> str:
+        return made(root, "captureWindow").findChild(QObject, "nameField").property("text")
+
     for kind in ("image", "region", "location"):
         capture.start(tmp_path, "one", "Lobby.Play", kind, shot=np.zeros((300, 400, 3), np.uint8))
-        wait_until(lambda: window.findChild(QObject, "nameField").property("text") == "Lobby.Play")
-        assert window.property("tool") == kind
+        wait_until(lambda: named() == "Lobby.Play")
+        assert made(root, "captureWindow").property("tool") == kind
         capture.close()
         QtCore.QCoreApplication.processEvents()
     del engine
@@ -2059,7 +2104,6 @@ def test_typing_a_known_name_after_boxing_brings_its_region_and_location_back(qt
 
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.capture import Capture, ShotProvider
 
@@ -2072,8 +2116,8 @@ def test_typing_a_known_name_after_boxing_brings_its_region_and_location_back(qt
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8))
+    window = made(root, "captureWindow")
     QMetaObject.invokeMethod(window, "setPart", Q_ARG("QVariant", "image"), Q_ARG("QVariant", [50, 50, 40, 20]))
     QMetaObject.invokeMethod(window, "takeSaved", Q_ARG("QVariant", "Bag.Equip"))  # the name, typed afterwards
 
@@ -2092,7 +2136,6 @@ def test_an_image_is_searched_on_the_screen_in_a_shared_region_or_its_own_and_sa
 
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.capture import Capture, ShotProvider
 
@@ -2100,8 +2143,8 @@ def test_an_image_is_searched_on_the_screen_in_a_shared_region_or_its_own_and_sa
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((300, 400, 3), np.uint8))
+    window = made(root, "captureWindow")
 
     def call(name, *values):
         QMetaObject.invokeMethod(window, name, *[Q_ARG("QVariant", value) for value in values])
@@ -2259,8 +2302,8 @@ def test_the_command_palette_finds_and_runs_commands(qt):
     window = engine.rootObjects()[0]
     window.resize(1400, 880)
     wait_until(lambda: studio.bot.get("name") == "ad-bot")
-    palette = window.findChild(QObject, "commandPalette")
-    QMetaObject.invokeMethod(palette, "open")
+    QMetaObject.invokeMethod(window, "openPalette")
+    palette = made(window, "commandPalette")
     wait_until(lambda: palette.property("visible"))
     search = window.findChild(QObject, "paletteSearch")
     search.setProperty("text", "results")
@@ -2532,7 +2575,6 @@ def test_play_starts_at_once_when_the_checks_find_nothing(qt, problems):
 
 
 def test_play_shows_the_checks_when_they_find_a_problem_with_start_anyway(qt):
-    from PySide6.QtCore import QObject
 
     client = Checking(1)
     studio = backend.Studio(lambda: client)
@@ -2540,7 +2582,7 @@ def test_play_shows_the_checks_when_they_find_a_problem_with_start_anyway(qt):
     root = engine.rootObjects()[0]
     wait_until(lambda: studio.bot.get("name") == "ad-bot")
     studio.play()
-    sheet = root.findChild(QObject, "checksSheet")
+    sheet = made(root, "checksSheet")
     wait_until(lambda: sheet.property("opened"))
     assert not any(method == "bot.start" for method, _ in client.asked)
 
@@ -2568,7 +2610,6 @@ def test_the_magnifier_follows_the_mouse_after_a_click_and_ctrl_wheel_zooms_it(q
     import numpy as np
     from PySide6.QtCore import QObject, QPoint, QPointF, Qt
     from PySide6.QtGui import QWheelEvent
-    from PySide6.QtQuick import QQuickWindow
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -2577,8 +2618,8 @@ def test_the_magnifier_follows_the_mouse_after_a_click_and_ctrl_wheel_zooms_it(q
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    window = made(root, "captureWindow")
     wait_until(window.isVisible)
     window.resize(800, 600)
     QtCore.QCoreApplication.processEvents()
@@ -2613,7 +2654,6 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
 
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
-    from PySide6.QtQuick import QQuickWindow
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -2626,8 +2666,6 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
-    name = window.findChild(QObject, "nameField")
 
     def value(key):
         found = window.property(key)
@@ -2642,6 +2680,8 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
 
     capture.start(tmp_path, shot=screen)
     assert capture.several
+    window = made(root, "captureWindow")
+    name = window.findChild(QObject, "nameField")
     wait_until(window.isVisible)
     window.resize(800, 600)
     QtCore.QCoreApplication.processEvents()
@@ -2691,7 +2731,6 @@ def test_capture_takes_several_targets_on_one_shot_and_a_retake_takes_one(qt, tm
 def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path, monkeypatch):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QSize, Qt
-    from PySide6.QtQuick import QQuickWindow
     from PySide6.QtTest import QTest
 
     from darbit import paths
@@ -2706,8 +2745,8 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture, pill_places={"capture": place})
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    window = made(root, "captureWindow")
     wait_until(window.isVisible)
     row = window.findChild(QObject, "tilesRow")
     column = window.findChild(QObject, "tilesColumn")
@@ -2772,7 +2811,6 @@ def test_capture_lists_the_targets_on_the_shot_as_tiles_in_its_pill(qt, tmp_path
 def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
-    from PySide6.QtQuick import QQuickWindow
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -2781,8 +2819,8 @@ def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path)
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    window = made(root, "captureWindow")
     wait_until(window.isVisible)
     window.resize(800, 600)
     QtCore.QCoreApplication.processEvents()
@@ -2831,7 +2869,6 @@ def test_capture_resizes_the_box_by_dragging_its_edges_and_corners(qt, tmp_path)
 def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_path):
     import numpy as np
     from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, Qt
-    from PySide6.QtQuick import QQuickWindow
     from PySide6.QtTest import QTest
 
     from darbit.studio.capture import Capture, ShotProvider
@@ -2840,8 +2877,8 @@ def test_capture_arrows_move_one_pixel_a_tap_and_speed_up_while_held(qt, tmp_pat
     capture = Capture(ShotProvider())
     engine = app.load(backend.Studio(FakeClient), capture)
     root = engine.rootObjects()[0]
-    window = root.findChild(QQuickWindow, "captureWindow")
     capture.start(tmp_path, shot=np.zeros((600, 800, 3), np.uint8))
+    window = made(root, "captureWindow")
     wait_until(window.isVisible)
     window.resize(800, 600)
     QtCore.QCoreApplication.processEvents()
@@ -3073,7 +3110,9 @@ def test_the_tray_panel_lists_the_running_bots_and_says_what_quit_does(qt):
     root = engine.rootObjects()[0]
     studio.connect()
     wait_until(lambda: studio.bots)
-    panel = root.findChild(QQuickWindow, "trayPanel")
+    assert root.findChild(QQuickWindow, "trayPanel") is None  # made the first time the tray icon is clicked
+    root.setProperty("trayWanted", True)  # what app.py does then
+    panel = made(root, "trayPanel")
     assert [bot["name"] for bot in panel.property("running")] == ["ad-bot"]  # the stopped one isn't listed
     assert studio.quitLabel == "Quit and stop ad-bot"
     studio.setKeepBots(True)
@@ -3209,14 +3248,13 @@ def _studio_showing(client, bot):
 
 
 def test_play_while_another_input_bot_runs_asks_to_stop_it_and_start_this_one(qt):
-    from PySide6.QtCore import QObject
 
     client = OneAtATime()
     studio, engine, root = _studio_showing(client, "/bots/other")
     started = []
     studio.started.connect(lambda: started.append(True))
-    sheet = root.findChild(QObject, "stopAndStartSheet")
     studio.start()
+    sheet = made(root, "stopAndStartSheet")
     wait_until(lambda: sheet.property("opened"))
     question = next(item for item in _walk(sheet.property("contentItem")) if item.objectName() == "question")
     assert question.property("text") == "ad-bot is running and uses the mouse and keys. Stop it and start other?"
@@ -3231,12 +3269,11 @@ def test_play_while_another_input_bot_runs_asks_to_stop_it_and_start_this_one(qt
 
 
 def test_cancel_leaves_the_running_bot_and_starts_nothing(qt):
-    from PySide6.QtCore import QObject
 
     client = OneAtATime()
     studio, engine, root = _studio_showing(client, "/bots/other")
-    sheet = root.findChild(QObject, "stopAndStartSheet")
     studio.start()
+    sheet = made(root, "stopAndStartSheet")
     wait_until(lambda: sheet.property("opened"))
     QMetaObject.invokeMethod(_sheet_button(sheet, "keepRunning"), "clicked")
     wait_until(lambda: not sheet.property("visible"))
@@ -3250,15 +3287,14 @@ def test_cancel_leaves_the_running_bot_and_starts_nothing(qt):
 
 
 def test_start_anyway_after_the_checks_asks_too(qt):
-    from PySide6.QtCore import QObject
 
     client = OneAtATime()
     studio, engine, root = _studio_showing(client, "/bots/other")
-    checks = root.findChild(QObject, "checksSheet")
-    question = root.findChild(QObject, "stopAndStartSheet")
     studio.play()
+    checks = made(root, "checksSheet")
     wait_until(lambda: checks.property("opened"))
     QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    question = made(root, "stopAndStartSheet")
     wait_until(lambda: question.property("opened"))
     assert not checks.property("visible")
     del engine
@@ -3269,7 +3305,6 @@ def test_a_bot_that_sends_no_input_starts_alongside_without_asking(qt):
 
     client = OneAtATime()
     studio, engine, root = _studio_showing(client, "/bots/watcher")
-    sheet = root.findChild(QObject, "stopAndStartSheet")
     asked = []
     studio.askedToReplace.connect(lambda: asked.append(True))
     started = []
@@ -3277,14 +3312,13 @@ def test_a_bot_that_sends_no_input_starts_alongside_without_asking(qt):
     studio.start()
     wait_until(lambda: started == [True])
     wait_until(lambda: len(studio.running) == 2)
-    assert asked == [] and not sheet.property("visible")
+    assert asked == [] and root.findChild(QObject, "stopAndStartSheet") is None  # never asked, never made
     assert [bot["name"] for bot in studio.running] == ["ad-bot", "watcher"]  # both run
     del engine
 
 
 def test_the_run_pill_has_a_line_for_each_running_bot_with_its_own_controls(qt):
     from PySide6.QtCore import QObject
-    from PySide6.QtQuick import QQuickWindow
 
     from darbit.studio.hiding import HidingPill
 
@@ -3299,7 +3333,7 @@ def test_the_run_pill_has_a_line_for_each_running_bot_with_its_own_controls(qt):
         root = engine.rootObjects()[0]
         wait_until(lambda: len(studio.running) == 2)
         hiding.open()
-        window = root.findChild(QQuickWindow, "runPill")
+        window = made(root, "runPill")
         wait_until(window.isVisible)
         assert [bot["name"] for bot in window.property("others").toVariant()] == ["ad-bot"]
         lines = window.findChild(QObject, "otherLines")
@@ -3321,14 +3355,13 @@ def test_the_run_pill_has_a_line_for_each_running_bot_with_its_own_controls(qt):
 
 
 def test_playing_an_action_while_a_bot_runs_asks_to_stop_it_and_play(qt):
-    from PySide6.QtCore import QObject
 
     client = OneAtATime()
     studio, engine, root = _studio_showing(client, "/bots/other")
-    sheet = root.findChild(QObject, "stopAndStartSheet")
     said = []
     studio.said.connect(said.append)
     studio.playAction("go_to_boss")
+    sheet = made(root, "stopAndStartSheet")
     wait_until(lambda: sheet.property("opened"))
     question = next(item for item in _walk(sheet.property("contentItem")) if item.objectName() == "question")
     assert question.property("text") == "ad-bot is running and uses the mouse and keys. Stop it and play go_to_boss?"
@@ -3503,8 +3536,8 @@ def test_the_palette_lists_each_mode_and_step_the_bot_declares_to_run_alone(qt):
 
     client = WithModes()
     studio, engine, root = _studio_showing(client, "/bots/other")
-    palette = root.findChild(QObject, "commandPalette")
-    QMetaObject.invokeMethod(palette, "open")
+    QMetaObject.invokeMethod(root, "openPalette")
+    palette = made(root, "commandPalette")
     wait_until(lambda: palette.property("visible"))
     search = root.findChild(QObject, "paletteSearch")
     search.setProperty("text", "run")
@@ -3522,7 +3555,7 @@ def test_the_palette_lists_each_mode_and_step_the_bot_declares_to_run_alone(qt):
     search.setProperty("text", "run step pick")
     wait_until(lambda: _palette_labels(palette) == ["Run step: Speed Raid · pick a character"])
     QMetaObject.invokeMethod(palette, "runAt", Q_ARG("QVariant", 0))
-    checks = root.findChild(QObject, "checksSheet")
+    checks = made(root, "checksSheet")
     wait_until(lambda: checks.property("opened"))  # Play's checks first, as for a round
     QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
     only = {"mode": "Speed Raid", "step": "pick a character"}
@@ -3540,12 +3573,12 @@ def test_one_mode_asks_to_stop_the_bot_in_the_way_and_shows_only_while_it_runs(q
 
     client = WithModes()
     studio, engine, root = _studio_showing(client, "/bots/other")
-    checks = root.findChild(QObject, "checksSheet")
-    question = root.findChild(QObject, "stopAndStartSheet")
     label = root.findChild(QObject, "runOnlyLabel")
     studio.playOnly("Speed Raid", "")
+    checks = made(root, "checksSheet")
     wait_until(lambda: checks.property("opened"))
     QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
+    question = made(root, "stopAndStartSheet")
     wait_until(lambda: question.property("opened"))  # ad-bot runs and sends input (decision 0020)
     QMetaObject.invokeMethod(_sheet_button(question, "stopAndStart"), "clicked")
     only = {"mode": "Speed Raid"}
@@ -3558,7 +3591,6 @@ def test_one_mode_asks_to_stop_the_bot_in_the_way_and_shows_only_while_it_runs(q
 
 
 def test_a_round_rows_play_runs_that_mode_alone_while_the_bot_is_stopped(qt):
-    from PySide6.QtCore import QObject
 
     client = WithModes()
     studio, engine, root = _studio_showing(client, "/bots/other")
@@ -3587,7 +3619,7 @@ def test_a_round_rows_play_runs_that_mode_alone_while_the_bot_is_stopped(qt):
     assert not any(button.property("visible") for button in buttons())
     speed_raid = next(button for button in buttons() if button.parentItem().parentItem() == rows()["Speed Raid"])
     QMetaObject.invokeMethod(speed_raid, "clicked")
-    checks = root.findChild(QObject, "checksSheet")
+    checks = made(root, "checksSheet")
     wait_until(lambda: checks.property("opened"))  # Play's checks first, as for a round
     QMetaObject.invokeMethod(_sheet_button(checks, "startAnyway"), "clicked")
     wait_until(lambda: any(params.get("only") == {"mode": "Speed Raid"} for _, params in client.asked))

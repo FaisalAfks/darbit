@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 
 Sheet {
     id: sheet
+    objectName: "newBotSheet"
     property string way: "new"  // new, link, folder
     width: 520
     onOpened: { field.text = ""; field.forceActiveFocus() }

@@ -9,6 +9,7 @@ import "scout.js" as Scout
 
 Window {
     id: overlay
+    objectName: "scoutWindow"
     visibility: scout.isOn ? Window.FullScreen : Window.Hidden
     transientParent: null  // its own window: it shows while the Studio is hidden (Windows hides a hidden window's tool windows too)
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput | Qt.Tool
