@@ -2,13 +2,13 @@
 
 A small thread watches the keyboard. When the stop hotkey is pressed, every held key
 and button is let go, and every darbit call from then on raises Stopped, including
-a sleep that's already running.
+a sleep that's already running. With real input off (the tests) no thread watches the keyboard.
 
 An observer that fires posts an interrupt: held keys are let go and the next darbit
 call in the script's main thread raises Interrupted, once.
 
-darbit Studio stops or pauses a bot it started through a control folder (DARBIT_CONTROL):
-a `stop` file is the stop hotkey; while a `pause` file is there, held keys are let go and
+darbit Studio stops or pauses a bot it started through a control folder (DARBIT_CONTROL), which
+a thread of its own looks at: a `stop` file is the stop hotkey; while a `pause` file is there, held keys are let go and
 the next darbit call waits.
 """
 
@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ..errors import Interrupted, Stopped
 from ..events import publish
-from . import system
+from . import backend, real, system
 from .backend import NotSupported
 from .keys import key
 
@@ -269,28 +269,42 @@ def watch(combo: str) -> None:
     first = _watching is None
     vks = tuple(key(part).vk for part in combo.split("+"))
     _watching = combo
-    if not first:
-        _watch_keys[0] = vks
-        return
     _watch_keys[0] = vks
+    if not first:
+        return
+    keyboard = _keyboard()
+    if keyboard is not None:
+        threading.Thread(target=_watch_keyboard, args=(keyboard,), name="darbit-stop-key", daemon=True).start()
     folder = control_folder()
+    if folder is not None:
+        threading.Thread(target=_watch_control, args=(folder,), name="darbit-control", daemon=True).start()
 
-    def run() -> None:
-        last_look = 0.0
-        hotkey = True  # off on a system without a keyboard piece: the Studio's stop and pause still work
-        while True:
-            if hotkey:
-                try:
-                    if system.keys_down(_watch_keys[0]):
-                        stop()
-                except NotSupported:
-                    hotkey = False
-            if folder is not None and time.monotonic() - last_look >= CONTROL_EVERY:
-                _look_at_control(folder)
-                last_look = time.monotonic()
-            time.sleep(0.05)
 
-    threading.Thread(target=run, name="darbit-stop-key", daemon=True).start()
+def _watch_keyboard(keyboard: backend.System) -> None:
+    while True:
+        try:
+            if keyboard.keys_down(_watch_keys[0]):
+                stop()
+        except NotSupported:
+            return  # no keyboard piece after all: the Studio's stop and pause still work
+        time.sleep(0.05)
+
+
+def _watch_control(folder: Path) -> None:
+    while True:
+        _look_at_control(folder)
+        time.sleep(CONTROL_EVERY)
+
+
+def _keyboard() -> backend.System | None:
+    """The System piece the stop hotkey reads keys through, picked once in the thread that starts it, so the
+    watching thread never picks one itself. None with real input off, or on a system without one."""
+    if real.off():
+        return None
+    try:
+        return backend.system()
+    except NotSupported:
+        return None
 
 
 _watch_keys: list[tuple[int, ...]] = [()]
