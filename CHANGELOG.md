@@ -17,6 +17,7 @@
 ### Fixed
 
 - `FakeGame` fakes the mouse's position and the desktop that `approach` reads (#464): the desktop is the screen showing, the mouse starts in its bottom right corner and goes where a click or move puts it (`mouse`, and every move in `moves`). A bot's tests with `approach` on read the real cursor on Windows and failed with NotSupported on Linux
+- The stop hotkey no longer reads the keyboard with real input off (`DARBIT_NO_REAL_INPUT`, the tests), and reads it through the system it started on (#471). Its thread looked the system up on every look, so a test that set `sys.platform` to `win32` on Linux sent it into Windows calls, a failure in whichever test ran next. The control folder the Studio stops and pauses a bot through has a thread of its own (`darbit-control`), so it still works with real input off. `system.keys_down()` is gone: the thread reads the keys from the System piece it was given
 
 ## 1.0.0-alpha.9 - 2026-11-10
 

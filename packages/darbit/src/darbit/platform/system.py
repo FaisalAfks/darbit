@@ -38,11 +38,6 @@ def keep_awake() -> None:
         pass
 
 
-def keys_down(codes: tuple[int, ...]) -> bool:
-    """Whether every one of these key codes is held down right now."""
-    return backend.system().keys_down(codes)
-
-
 def screen_usable() -> bool:
     """Whether screen grabs and input reach the person's desktop: False while it's locked."""
     try:
