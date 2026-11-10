@@ -93,7 +93,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   left and right a column with its buttons labelled; it stays where it's let go along its edge, and lands on an edge's
   centre or a corner only when let go very close to one. Pills stay above the taskbar, on whichever side it is (one
   that hides itself too). While it's dragged it tilts and sways a little, eases into the shape it will have, and the
-  part of the nearest edge by the mouse glows and follows it, with a circle at the edge's corners and centre and a
+  part of the nearest edge by the mouse glows and follows it, with a
   dashed ghost of the pill where it lands, in the shape it takes there. Dragged past the dashed line into the middle, it floats: a small card with more detail, always shown, exactly
   where it's let go, with **Dock** to put it back on its edge (dragging it to an edge docks it too). Each pill keeps its place for next time. With several screens it can go on any of them, but not on an edge one
   screen shares with another, where it couldn't hide.

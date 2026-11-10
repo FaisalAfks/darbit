@@ -208,7 +208,7 @@ def test_a_pills_place_is_kept_in_the_ui_settings_and_read_back(tmp_path, monkey
     place.setSize("column", 150, 200)
     place.holdAt(0.5, 0.25)
     place.begin(800, 30)
-    place.move(30, 600)  # by the left edge: already a column, its corners and centre shown, its ghost where it lands
+    place.move(30, 600)  # by the left edge: already a column, its ghost where it lands
     assert place.dragging and place.form == "column" and place.near == "left"
     assert [spot["on"] for spot in place.snaps] == [False, False, False]
     # held a quarter down: its top 50 above the mouse, as a column in its own size
