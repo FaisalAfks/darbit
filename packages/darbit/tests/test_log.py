@@ -3,29 +3,83 @@
 import os
 
 import numpy as np
+import pytest
 
+import darbit as d
 from darbit.core.geometry import Region
 from darbit.runtime import log
 from darbit.settings import settings
 
 
-def test_screenshots_are_jpeg_and_the_newest_are_kept(tmp_path, monkeypatch):
+@pytest.fixture
+def shots(tmp_path, monkeypatch):
+    """Screenshots on: saved into tmp_path, of a small black screen."""
     monkeypatch.setattr(settings, "logs", tmp_path)
     monkeypatch.setattr(settings, "log", True)
-    monkeypatch.setattr(log, "_KEEP_SHOTS", 2)
     monkeypatch.setattr(log.screen, "grab", lambda region=None: (np.zeros((20, 30, 3), np.uint8), Region(0, 0, 30, 20)))
-    folder = tmp_path / "screenshots"
+    return tmp_path
+
+
+def test_screenshots_are_jpeg_and_the_newest_are_kept(shots):
+    folder = shots / "screenshots"
     folder.mkdir()
     old = folder / "2026-01-01_00-00-00_old.png"
     old.write_bytes(b"png")
     os.utime(old, (1, 1))  # the oldest file
 
-    first = log.screenshot("first")
-    second = log.screenshot("second")
+    first = log.screenshot("first", keep=2)
+    second = log.screenshot("second", keep=2)
 
-    assert first.endswith(".jpg") and second.endswith(".jpg")
+    assert first.endswith(".jpg") and second.endswith(".jpg") and "/" not in first
     assert not old.exists()  # trimmed with the JPEGs
     assert sorted(p.suffix for p in folder.iterdir()) == [".jpg", ".jpg"]
+    assert log.KEEP_SHOTS == 200  # by default, in logs/screenshots
+
+
+def test_a_screenshot_goes_into_its_own_folder_with_its_own_limit(shots):
+    failures = shots / "screenshots"
+    failures.mkdir()
+    failure = failures / "2026-01-01_00-00-00_failed.jpg"
+    failure.write_bytes(b"jpg")
+    os.utime(failure, (1, 1))  # older than everything here
+    rewards = shots / "rewards"
+    rewards.mkdir()
+    old = rewards / "2026-01-01_00-00-00_old.jpg"
+    old.write_bytes(b"jpg")
+    os.utime(old, (1, 1))
+
+    name = d.screenshot("raid", folder="rewards", keep=1)
+
+    assert name.startswith("rewards/") and name.endswith("_raid.jpg")  # a record's shot names the file in logs
+    assert (shots / name).is_file() and not old.exists()  # the newest one kept there
+    assert failure.exists()  # the failure shots are another folder's
+    assert d.screenshot("deeper", folder="rewards/raid").startswith("rewards/raid/")
+
+
+@pytest.mark.parametrize(
+    "folder",
+    [
+        "",
+        ".",
+        "..",
+        "../elsewhere",
+        "rewards/../..",
+        "/tmp",
+        "//server/share",
+        r"\\server\share",
+        "C:/shots",
+        "C:shots",
+    ],
+)
+def test_a_folder_outside_logs_is_a_mistake(shots, folder):
+    with pytest.raises(ValueError, match="a folder inside logs"):
+        log.screenshot("x", folder=folder)
+    assert list(shots.iterdir()) == []
+
+
+def test_keeping_none_is_a_mistake(shots):
+    with pytest.raises(ValueError, match="keeps at least the one just taken"):
+        log.screenshot("x", folder="rewards", keep=0)
 
 
 def test_old_logs_and_reports_go_when_the_bot_starts_writing(tmp_path, monkeypatch):

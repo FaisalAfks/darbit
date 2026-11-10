@@ -4,7 +4,16 @@ What a script leaves behind, and how healthy its pictures are.
 
 ## Logs
 
-Each day gets a log file in `.darbit/logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot (JPEG) in `.darbit/logs/screenshots/`; the newest 200 are kept.
+Each day gets a log file in `.darbit/logs/` next to the script: what was looked for, found, clicked and pressed. A wait of 20 seconds or more that runs out also saves a screenshot (JPEG) in `.darbit/logs/screenshots/`; the newest 200 are kept. These are the failure screenshots the Overview links to, and `d.screenshot(label)` saves there too.
+
+A script's own screenshots go into a folder of their own in `.darbit/logs/`, with their own limit, so they never push the failure screenshots out:
+
+```python
+shot = d.screenshot("raid", folder="rewards", keep=300)  # .darbit/logs/rewards, the newest 300 kept
+d.record("rewards", shot=shot)  # "rewards/2026-11-10_12-00-00_raid.jpg": the file in .darbit/logs
+```
+
+`folder` is a folder inside `.darbit/logs/` (`"rewards"`, `"rewards/raid"`); one outside it, or `keep` under 1, raises `ValueError`. The name returned has the folder in front, except for `screenshots`.
 
 ## Run report
 

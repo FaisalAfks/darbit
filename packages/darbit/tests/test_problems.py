@@ -73,6 +73,18 @@ def test_an_image_seen_today_then_far_off_was_likely_covered(project, tmp_path):
     assert "Gui.Rod for 2 minutes" in found[0]["sentence"]
 
 
+def test_a_failures_screenshot_in_a_folder_of_its_own_is_found_there(project, tmp_path):
+    logs = tmp_path / "logs"
+    (logs / "screenshots").mkdir(parents=True)
+    (logs / "rewards").mkdir()
+    (logs / "screenshots" / "x.jpg").write_bytes(b"jpg")
+    (logs / "rewards" / "y.jpg").write_bytes(b"jpg")
+    events = [*run("10:00:00", "10:01:00"), *run("11:00:00", "11:01:00")]
+    events[-1]["screenshot"] = "rewards/y.jpg"  # saved with screenshot(folder="rewards")
+    found = problems.explain(project, events, logs)
+    assert found[0]["screenshots"] == [(logs / "screenshots" / "x.jpg").as_uri(), (logs / "rewards" / "y.jpg").as_uri()]
+
+
 def test_close_but_under_the_line_looks_different_and_far_never_seen_is_missing(project, tmp_path):
     changed = problems.explain(project, run("10:00:00", "10:01:00", search("10:00:50", "Rod.Cast", 45, 0.52)), tmp_path)
     assert changed[0]["cause"] == problems.CHANGED and changed[0]["act"]  # 0.52 of the 0.60 Rod.Cast needs
