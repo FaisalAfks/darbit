@@ -36,7 +36,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   its centre), **Retake**, **Rename** (every line of code naming it changes too, and its box on the screens kept for the Screen view), **Delete**, **Scout on screen**
   for an image, and where it's used; an action has **Play**, **Open**, **Record again** and **Rename**. After a
   Delete or a Rename, **Undo** in the message at the bottom takes it back (only the last delete is kept, in the bot's
-  `.darbit/deleted`). A name too long for its card shows whole on hover.
+  `.darbit/deleted`). A name too long for its card shows whole on hover; so does a bot's name in the top bar and the
+  bot menu, and a gain's on Results.
 
   **Screen** in place of **Grid** shows each screen's last shot from Capture with the targets taken on that shot in
   place (a new shot of a screen starts it over); click one for the side panel, where **Retake on this shot** opens
@@ -61,7 +62,7 @@ sight. A phone gets it too when `notify.toml` has a channel.
   in its region: a line sweeps it, then it says whether the image was found once, more than once or not at all, and
   how many look-alikes score under the line, with each match's score and a slider for the similarity it needs.
   **Enter** saves; **Esc** removes what's picked, then closes. From the name, **Tab** and **Shift+Tab** go through the
-  pill's buttons, **Enter** or **Space** presses one and **Esc** goes back to the shot. With a setup guide, the next one
+  pill's choices and buttons, **Enter** or **Space** presses one and **Esc** goes back to the shot. With a setup guide, the next one
   to take is shown.
   A retake can also open on a saved screenshot (a failure's on Results, a screen's last shot in the Library): the
   image is cut from it at its own pixels, and Capture says so; saved shots are JPEG, so it's a little softer than one
@@ -119,6 +120,8 @@ sight. A phone gets it too when `notify.toml` has a channel.
   - **Floating:** every image in a grid, coloured by its state; one clicked opens in full: the image large beside the
     saved shot where it was seen with its box, its best score against what it needs, why it's weak and its retakes;
     ‹ › step on, **Every image** goes back to the grid.
+
+  A name too long for its line ends in "…" and shows whole on hover.
 
   ✕ hides Scout, ⤢ goes back to the Studio, **Reset the session** starts the record over. A retake hides Scout while
   Capture is open and brings it back after, with that image's record started over. The record stays while Scout is

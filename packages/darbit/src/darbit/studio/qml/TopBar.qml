@@ -1,5 +1,6 @@
 // The top bar: the chosen bot (or the bot menu, without the sidebar), its pages, and its run control.
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
 Item {
@@ -25,7 +26,17 @@ Item {
             Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; size: 40; anchors.verticalCenter: parent.verticalCenter }
             Column {
                 anchors.verticalCenter: parent.verticalCenter
-                Text { text: studio.bot.name || "No bots yet"; color: studio.colors.text; font.pixelSize: 17; font.weight: Font.Bold }
+                Text {
+                    objectName: "barName"
+                    width: Math.min(implicitWidth, 280)
+                    elide: Text.ElideRight
+                    text: studio.bot.name || "No bots yet"; color: studio.colors.text; font.pixelSize: 17; font.weight: Font.Bold
+                    // a name too long for the bar: whole on hover
+                    HoverHandler { id: nameHover }
+                    ToolTip.visible: nameHover.hovered && truncated
+                    ToolTip.text: text
+                    ToolTip.delay: 400
+                }
                 Text { text: studio.bot.version ? "v" + studio.bot.version : ""; visible: text !== ""; color: studio.colors.faint; font.pixelSize: 12 }
             }
         }

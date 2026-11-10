@@ -8,6 +8,8 @@
 
 ### Changed
 
+- A name too long for its place ends in "…" and shows whole on hover (#319): Scout's lines, its detail and the one landed on in its pill, gains on Results, and the bot's name in the top bar and the bot menu. They ran on past their box
+- Capture's kind (Image, Region, Location) and where an image is searched are Tab stops, after the name and before the pill's buttons (#319): **Enter** or **Space** picks one and keeps the focus there, **Esc** goes back to the shot. One with the focus looks as it does hovered (`tabStops` on `Segmented`)
 - Dragging a pill no longer shows circles at the edge's corners and centre: the ghost outline and the glow by the pointer show where it lands (#472)
 - A pill dragged toward an edge shows a dashed ghost of itself where it lands, in its size and the form it takes on that edge, in place of the filled circle (#467). Only the part of the edge by the mouse glows, and follows it, in place of the whole edge lit (`PillGuide`; `ghost` and `pointer` on `PillPlace`, `landing` gone)
 - Card thumbnails are decoded at the size they're drawn, in the screen's pixels (#230): the Library's cards, Scout's tiles and lines, and the pictures in Results' search rows (`Thumbnail.qml`). Qt decoded a picture given both sides of `sourceSize` to cover that size at the screen's scale, a 160 px thumbnail at up to 1344×336 px. They look a little softer. The Library's inspector shows the image's whole file instead of its thumbnail (`file` in `bot.library`). On a real GPU at 150% with a 175-image bot, the Studio on the Library went from about 276 MB to 225 MB (private working set)

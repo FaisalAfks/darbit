@@ -1,6 +1,8 @@
 // A row of choices in a pill, with one highlight that springs to the chosen one, glowing while it moves; `vertical`
 // stacks them (a pill on a side edge). model: [{ key, label, icon?, count?, tone? }]; `current` is the chosen key.
 // In a pill over the game it takes `tokens: studio.pillMotion` (the pills show while the Studio is hidden).
+// `tabStops` makes each choice a Tab stop: Enter or Space picks it and keeps the focus there (a click may send it
+// elsewhere), and one with the focus looks as it does hovered.
 import QtQuick
 
 Rectangle {
@@ -11,6 +13,7 @@ Rectangle {
     property bool strong: true  // the accent highlight; off: a quieter raised one
     property bool vertical: false
     property int columnWidth: 140  // each choice's width when stacked
+    property bool tabStops: false
     signal picked(string key)
     property var tokens: studio.motion
     readonly property int speed: tokens.glide
@@ -66,6 +69,12 @@ Rectangle {
                 required property var modelData
                 readonly property string key: modelData.key
                 readonly property bool on: key === seg.current
+                readonly property bool lit: hover.containsMouse || activeFocus
+                activeFocusOnTab: seg.tabStops
+                function pickByKey() { seg.picked(key); forceActiveFocus(Qt.TabFocusReason) }
+                Keys.onReturnPressed: pickByKey()
+                Keys.onEnterPressed: pickByKey()
+                Keys.onSpacePressed: pickByKey()
                 width: seg.vertical ? seg.columnWidth : label.implicitWidth + 30
                 height: seg.itemHeight
                 Row {
@@ -85,7 +94,7 @@ Rectangle {
                         color: item.on && seg.strong ? studio.colors.onAccent
                             : item.modelData.tone === "danger" ? studio.colors.danger
                             : item.modelData.tone === "warn" ? studio.colors.warn
-                            : item.on ? studio.colors.text : hover.containsMouse ? studio.colors.text : studio.colors.muted
+                            : item.on ? studio.colors.text : item.lit ? studio.colors.text : studio.colors.muted
                         font.pixelSize: 14; font.weight: Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
                         Behavior on color { ColorAnimation { duration: seg.tokens.normal } }

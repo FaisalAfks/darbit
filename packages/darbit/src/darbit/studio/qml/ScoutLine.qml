@@ -2,6 +2,7 @@
 // weak, and its screen or score. Hovered, its retakes: on the shot where it was last seen, and on the screen now
 // (only now for one never seen). A click lands on it.
 import QtQuick
+import QtQuick.Controls.Basic
 import "scout.js" as Scout
 
 Rectangle {
@@ -38,14 +39,19 @@ Rectangle {
         }
     }
     Column {
+        id: texts
         anchors { left: thumb.right; leftMargin: 10; right: side.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
         Row {
             spacing: 6
             Text {
+                id: nameText
+                width: Math.min(implicitWidth, texts.width - (score.visible ? score.implicitWidth + 6 : 0))
+                elide: Text.ElideRight
                 text: line.image.name
                 color: studio.colors.text; font.family: "monospace"; font.pixelSize: 12
             }
             Text {
+                id: score
                 visible: line.image.state === "weak"
                 text: line.image.best.toFixed(2)
                 color: studio.colors.warn; font.family: "monospace"; font.pixelSize: 12
@@ -89,4 +95,8 @@ Rectangle {
             PillButton { small: true; icon: "⟲"; text: "now"; onClicked: line.retakeNow() }
         }
     }
+    // a name too long for the line: whole on hover
+    ToolTip.visible: area.containsMouse && nameText.truncated
+    ToolTip.text: nameText.text
+    ToolTip.delay: 400
 }

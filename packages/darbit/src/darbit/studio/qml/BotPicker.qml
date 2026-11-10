@@ -19,7 +19,11 @@ Rectangle {
         spacing: 10
         Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; size: 32; radius: 16 }
         Text {
+            id: nameText
+            objectName: "pickerName"
             anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(implicitWidth, 240)
+            elide: Text.ElideRight
             text: studio.bot.name || "No bots yet"
             color: studio.colors.text
             font.pixelSize: 15; font.weight: Font.Bold
@@ -32,6 +36,10 @@ Rectangle {
         }
     }
     MouseArea { id: area; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: menu.open() }
+    // a name too long for the button: whole on hover
+    ToolTip.visible: area.containsMouse && nameText.truncated && !menu.opened
+    ToolTip.text: nameText.text
+    ToolTip.delay: 400
 
     MenuPanel {
         id: menu
