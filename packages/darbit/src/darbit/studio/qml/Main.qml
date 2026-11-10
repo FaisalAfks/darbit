@@ -23,8 +23,8 @@ ApplicationWindow {
         target: studio
         function onMadeBot(name) { toast.show(name + " is ready") }
         function onSaid(text) { toast.show(text) }
-        function onChecksFound() { checksSheet.open() }
-        function onAskedToReplace() { stopAndStartSheet.open() }
+        function onChecksFound() { checksSheet.make().open() }
+        function onAskedToReplace() { stopAndStartSheet.make().open() }
     }
 
     Backdrop { anchors.fill: parent }
@@ -38,7 +38,7 @@ ApplicationWindow {
             visible: studio.sidebar
             folded: window.narrow
             Layout.fillHeight: true
-            onAddBot: sheet.open()
+            onAddBot: newBotSheet.make().open()
             onOpenStudio: window.go("studio")
         }
 
@@ -50,7 +50,7 @@ ApplicationWindow {
                 x: 24; y: 16; width: parent.width - 48
                 page: window.page
                 onPicked: function (name) { window.go(name) }
-                onAddBot: sheet.open()
+                onAddBot: newBotSheet.make().open()
                 onOpenStudio: window.go("studio")
             }
 
@@ -69,18 +69,21 @@ ApplicationWindow {
     }
 
     Toast { id: toast }
-    CommandPalette { id: palette; objectName: "commandPalette" }
-    NewBotSheet { id: sheet }
-    RecordSheet { id: recordSheet }
-    ChecksSheet { id: checksSheet }
-    StopAndStartSheet { id: stopAndStartSheet }
-    CaptureWindow { objectName: "captureWindow" }
-    RecorderPill { objectName: "recorderPill" }
-    ScoutWindow { objectName: "scoutWindow" }
-    ScoutPill { objectName: "scoutPill" }
-    GhostWindow { objectName: "ghostWindow" }
-    RunPill { objectName: "runPill" }
-    TrayPanel { objectName: "trayPanel" }
+    // the sheets, the palette and the tools' windows are made the first time they're wanted (OnFirstUse): the Studio
+    // starts with none of them
+    OnFirstUse { id: palette; source: "CommandPalette.qml" }
+    OnFirstUse { id: newBotSheet; source: "NewBotSheet.qml" }
+    OnFirstUse { id: recordSheet; source: "RecordSheet.qml" }
+    OnFirstUse { id: checksSheet; source: "ChecksSheet.qml" }
+    OnFirstUse { id: stopAndStartSheet; source: "StopAndStartSheet.qml" }
+    OnFirstUse { source: "CaptureWindow.qml"; wanted: capture.isOpen }
+    OnFirstUse { source: "RecorderPill.qml"; wanted: recorderHiding.isOpen }
+    OnFirstUse { source: "ScoutWindow.qml"; wanted: scout.isOn }
+    OnFirstUse { source: "ScoutPill.qml"; wanted: scoutHiding.isOpen }
+    OnFirstUse { source: "GhostWindow.qml"; wanted: studio.ghost && ghost.marks.length > 0 }
+    OnFirstUse { source: "RunPill.qml"; wanted: runPill.isOpen }
+    OnFirstUse { source: "TrayPanel.qml"; wanted: window.trayWanted }
+    property bool trayWanted: false  // app.py, the first time the tray icon is clicked
 
     function go(name) {
         page = name
@@ -96,10 +99,11 @@ ApplicationWindow {
     Shortcut { sequence: window.keyOf("page.results"); onActivated: window.go("results") }
     Shortcut { sequence: window.keyOf("page.settings"); onActivated: window.go("settings") }
     Shortcut { sequence: window.keyOf("page.darbit"); onActivated: window.go("studio") }
-    Shortcut { sequence: window.keyOf("bot.new"); onActivated: sheet.open() }
-    Shortcut { sequence: window.keyOf("palette.open"); onActivated: palette.open() }
-    function newBot(way) { sheet.way = way || "new"; sheet.open() }
-    function recordAction(name) { recordSheet.openFor(name || "") }
+    Shortcut { sequence: window.keyOf("bot.new"); onActivated: newBotSheet.make().open() }
+    Shortcut { sequence: window.keyOf("palette.open"); onActivated: window.openPalette() }
+    function openPalette() { palette.make().open() }
+    function newBot(way) { var sheet = newBotSheet.make(); sheet.way = way || "new"; sheet.open() }
+    function recordAction(name) { recordSheet.make().openFor(name || "") }
     function openAction(name) { studio.openAction(name); page = "action" }
     Shortcut { sequence: window.keyOf("run.toggle"); onActivated: window.running ? null : studio.play() }
 }

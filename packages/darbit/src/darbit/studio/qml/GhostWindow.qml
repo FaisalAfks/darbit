@@ -5,6 +5,7 @@ import QtQuick.Window
 
 Window {
     id: ghostWindow
+    objectName: "ghostWindow"
     // only around its marks: a window the size of the screen redrew every pixel each frame while a bot pressed keys
     // (shown and hidden as it is: FullScreen would ask for the focus every time)
     visible: studio.ghost && ghost.marks.length > 0

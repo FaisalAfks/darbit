@@ -7,6 +7,7 @@ import getpass
 from PySide6.QtCore import QObject, QRect, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
+from PySide6.QtQuick import QQuickWindow
 
 PLACE = "studio.window"  # ui setting: {x, y, width, height, maximized}
 SIZE = (1400, 880)  # the first start's size
@@ -50,6 +51,17 @@ def kept(window: object, before: object) -> dict:
         place["maximized"] = True
         return place
     return {"x": window.x(), "y": window.y(), "width": window.width(), "height": window.height(), "maximized": False}
+
+
+def release_when_hidden(made: QObject) -> None:
+    """Every window in `made` (and `made`, if it's one) gives back its graphics memory while it's hidden: the Studio
+    is hidden for as long as a bot runs, and Capture and Scout most of the time."""
+    found = made.findChildren(QQuickWindow)
+    if isinstance(made, QQuickWindow):
+        found.insert(0, made)
+    for window in found:
+        window.setPersistentGraphics(False)
+        window.setPersistentSceneGraph(False)
 
 
 def door_name() -> str:

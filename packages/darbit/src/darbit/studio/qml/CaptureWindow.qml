@@ -14,6 +14,7 @@ import QtQuick.Window
 
 Window {
     id: shotWindow
+    objectName: "captureWindow"
     visibility: capture.isOpen ? Window.FullScreen : Window.Hidden
     transientParent: null  // its own window: it shows while the Studio is hidden (Windows hides a hidden window's tool windows too)
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint

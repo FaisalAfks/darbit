@@ -9,6 +9,7 @@ import "format.js" as Format
 
 Window {
     id: panel
+    objectName: "trayPanel"
     readonly property var running: studio.running
     transientParent: null  // its own window: it shows while the Studio is hidden
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool

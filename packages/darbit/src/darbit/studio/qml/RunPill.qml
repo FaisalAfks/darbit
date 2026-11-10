@@ -10,6 +10,7 @@ import "format.js" as Format
 
 PillWindow {
     id: runWindow
+    objectName: "runPill"
     hiding: runPill
     place: runPlace
     title: "darbit run pill"

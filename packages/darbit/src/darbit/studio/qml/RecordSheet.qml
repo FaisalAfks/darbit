@@ -4,6 +4,7 @@ import QtQuick.Controls.Basic
 
 Sheet {
     id: sheet
+    objectName: "recordSheet"
     property bool again: false
     width: 480
     function openFor(name) { again = name !== ""; field.text = name; open() }
