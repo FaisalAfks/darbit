@@ -2,6 +2,7 @@
 
 import threading
 import time
+import types
 
 import pytest
 from test_hub import bot  # noqa: F401 - the fixture: a small bot in a temporary bots folder
@@ -212,13 +213,19 @@ class _Started:
         return object()
 
 
+def _on(platform: str) -> types.SimpleNamespace:
+    """sys as platform/system.py sees it, on `platform`. Not sys itself: darbit's threads still running from
+    earlier tests would load that system's pieces too (#471)."""
+    return types.SimpleNamespace(platform=platform)
+
+
 def test_on_windows_the_service_leaves_the_job_of_what_started_it(monkeypatch):
     import subprocess
 
     from darbit.platform import system
 
     started = _Started()
-    monkeypatch.setattr(system.sys, "platform", "win32")
+    monkeypatch.setattr(system, "sys", _on("win32"))
     monkeypatch.setattr(subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
     monkeypatch.setattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000, raising=False)
     monkeypatch.setattr(subprocess, "Popen", started)
@@ -232,7 +239,7 @@ def test_a_job_that_wont_let_go_still_gets_the_service(monkeypatch):
     from darbit.platform import system
 
     started = _Started(refuse=0x01000000)
-    monkeypatch.setattr(system.sys, "platform", "win32")
+    monkeypatch.setattr(system, "sys", _on("win32"))
     monkeypatch.setattr(subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
     monkeypatch.setattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000, raising=False)
     monkeypatch.setattr(subprocess, "Popen", started)
@@ -246,7 +253,7 @@ def test_elsewhere_the_service_starts_its_own_session(monkeypatch):
     from darbit.platform import system
 
     started = _Started()
-    monkeypatch.setattr(system.sys, "platform", "linux")
+    monkeypatch.setattr(system, "sys", _on("linux"))
     monkeypatch.setattr(subprocess, "Popen", started)
     system.start_on_its_own(["darbit", "serve"], stdin=subprocess.DEVNULL)
     assert started.starts == [{"start_new_session": True, "stdin": subprocess.DEVNULL}]
