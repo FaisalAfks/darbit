@@ -1380,6 +1380,52 @@ def test_the_run_pill_moves_to_a_side_as_a_column_floats_as_a_card_and_docks_aga
     assert warnings == []
 
 
+def test_a_dragged_pills_guide_shows_its_ghost_where_it_lands_and_a_glow_by_the_mouse(qt):
+    from PySide6.QtQuick import QQuickWindow
+
+    from darbit.studio.docking import GAP, PillPlace
+    from darbit.studio.hiding import HidingPill
+
+    warnings = []
+    QtCore.qInstallMessageHandler(lambda kind, context, text: warnings.append(text) if ".qml" in text else None)
+    try:
+        hiding = HidingPill(watch=lambda on_move: lambda: None)
+        place = PillPlace("run", keep=False)
+        studio = backend.Studio(FakeClient)
+        engine = app.load(studio, run_pill=hiding, pill_places={"run": place})
+        root = engine.rootObjects()[0]  # held, or Qt deletes it
+        studio.connect()
+        wait_until(lambda: studio.bot.get("name") == "ad-bot")
+        hiding.open()
+        window = root.findChild(QQuickWindow, "runPill")
+        wait_until(window.isVisible)
+        work = place.work
+        bottom = work["y"] + work["height"]
+        place.begin(work["x"] + work["width"] / 2, work["y"] + 30)
+        place.move(work["x"] + 400, bottom - 60)  # toward the bottom edge: a row there
+        windows = QtCore.QCoreApplication.instance().topLevelWindows()
+        guide = next(item for item in windows if item.title() == window.title() + " guide")
+        wait_until(guide.isVisible)
+        ghost = _named(guide, "pillGhost")
+        size = place.sizeOf("row")
+        wait_until(lambda: ghost.opacity() == 1)
+        assert (ghost.width(), ghost.height()) == pytest.approx((size["width"], size["height"]))  # the pill, as a row
+        assert ghost.y() + ghost.height() == pytest.approx(bottom - GAP - guide.y())  # on the bottom edge
+        before = ghost.x()
+        place.move(work["x"] + 700, bottom - 60)
+        wait_until(lambda: ghost.x() > before)  # it follows the mouse along the edge
+        assert place.pointer == {"x": work["x"] + 700, "y": bottom - 60}  # the glow's place
+        place.move(work["x"] + work["width"] / 2, work["y"] + work["height"] / 2)  # into the middle: it would float
+        wait_until(lambda: ghost.opacity() == 0)
+        place.cancel()
+        wait_until(lambda: not guide.isVisible())
+        hiding.close()
+        del engine
+    finally:
+        QtCore.qInstallMessageHandler(None)
+    assert warnings == []
+
+
 @pytest.mark.parametrize("moving", [False, True])
 def test_a_dragged_pill_keeps_its_window_while_it_changes_form_and_lands_above_the_taskbar(qt, tmp_path, moving):
     from PySide6.QtCore import QObject
