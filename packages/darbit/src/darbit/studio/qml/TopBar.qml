@@ -23,7 +23,7 @@ Item {
         Row {
             visible: studio.sidebar && bar.page !== "studio"
             spacing: 12
-            Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; size: 40; anchors.verticalCenter: parent.verticalCenter }
+            Avatar { name: studio.bot.name || ""; accent: studio.bot.accent || ""; icon: studio.bot.icon || ""; size: 40; anchors.verticalCenter: parent.verticalCenter }
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 Text {

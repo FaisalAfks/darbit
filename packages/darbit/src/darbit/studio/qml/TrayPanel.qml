@@ -39,7 +39,7 @@ Window {
         property bool playing: true  // running or paused; false: the shown bot, stopped, with Play
         readonly property string state: bot.status || "stopped"
         width: parent.width; height: 50
-        Avatar { id: square; x: 10; anchors.verticalCenter: parent.verticalCenter; size: 28; name: line.bot.name || ""; accent: line.bot.accent || "" }
+        Avatar { id: square; x: 10; anchors.verticalCenter: parent.verticalCenter; size: 28; name: line.bot.name || ""; accent: line.bot.accent || ""; icon: line.bot.icon || "" }
         Column {
             anchors { left: square.right; leftMargin: 10; right: controls.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
             Text { width: parent.width; text: line.bot.name || ""; color: studio.colors.text; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }

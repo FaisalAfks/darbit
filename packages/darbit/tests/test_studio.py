@@ -1356,6 +1356,85 @@ def test_a_thumbnail_is_decoded_at_the_size_it_is_drawn(qt, tmp_path, known, sha
     assert max(abs(a - b) for a, b in zip(drawn, decoded)) <= 1
 
 
+BACKGROUND = "#203040"
+FRAME = (0, 0, 255)  # BGR: red, round the icon's edge
+FILL = (255, 0, 0)  # blue
+
+
+def _draw_avatar(tmp_path, icon: str, size: int = 40):
+    """An Avatar on a plain square, drawn offscreen: the window's picture and the Avatar."""
+    from PySide6.QtQuick import QQuickView
+
+    folder = (Path(app.__file__).parent / "qml").as_uri()
+    page = tmp_path / "avatar.qml"
+    page.write_text(
+        f'import QtQuick\nimport "{folder}"\nRectangle {{ width: {size + 20}; height: {size + 20}; color: "{BACKGROUND}"\n'
+        f'  Avatar {{ objectName: "avatar"; x: 10; y: 10; size: {size}; name: "test bot"; accent: "#ff7ab6"; '
+        f'icon: "{icon}" }} }}\n',
+        encoding="utf-8",
+    )
+    view = QQuickView()
+    view.setSource(QtCore.QUrl.fromLocalFile(str(page)))
+    assert view.errors() == []
+    view.show()
+    avatar = view.rootObject().findChild(QtCore.QObject, "avatar")
+    return view, avatar
+
+
+def _framed_icon(path, height, width):
+    import cv2
+    import numpy as np
+
+    pixels = np.full((height, width, 3), FILL, np.uint8)
+    pixels[:8, :] = FRAME
+    pixels[-8:, :] = FRAME
+    pixels[:, :8] = FRAME
+    pixels[:, -8:] = FRAME
+    cv2.imwrite(str(path), pixels)
+    return path.as_uri() + "?v=1"
+
+
+def _colour(picture, x, y):
+    from PySide6.QtGui import QColor
+
+    found = QColor(picture.pixel(x, y))
+    return found.red(), found.green(), found.blue()
+
+
+def test_a_bots_icon_fills_its_rounded_square_decoded_at_the_size_it_is_drawn(qt, tmp_path):
+    view, avatar = _draw_avatar(tmp_path, _framed_icon(tmp_path / "icon.png", 160, 160))
+    wait_until(lambda: avatar.property("showsIcon"))
+    picture = view.grabWindow()
+    assert _colour(picture, 30, 30) == (0, 0, 255)  # the icon's middle
+    assert _colour(picture, 10, 30) == (255, 0, 0)  # its frame at the square's edge: drawn whole, at its size
+    assert _colour(picture, 10, 10) == (0x20, 0x30, 0x40)  # a rounded corner: the background
+    shape = next(item for item in _walk(avatar) if item.metaObject().className() == "QQuickImage")
+    assert (shape.property("implicitWidth"), shape.property("implicitHeight")) == (40, 40)  # 160 px decoded at 40
+
+
+def test_an_icon_not_square_is_cut_to_the_square_not_squeezed(qt, tmp_path):
+    view, avatar = _draw_avatar(tmp_path, _framed_icon(tmp_path / "wide.png", 160, 640))
+    wait_until(lambda: avatar.property("showsIcon"))
+    picture = view.grabWindow()
+    assert _colour(picture, 30, 10) == (255, 0, 0)  # the top of its frame
+    assert _colour(picture, 10, 30) == (0, 0, 255)  # its sides are cut off
+
+
+@pytest.mark.parametrize("broken", [False, True])
+def test_an_icon_missing_or_unreadable_leaves_the_initials_on_the_accent(qt, tmp_path, broken):
+    path = tmp_path / "icon.png"
+    if broken:
+        path.write_bytes(b"not a picture")
+    view, avatar = _draw_avatar(tmp_path, path.as_uri())
+    from PySide6.QtQml import QQmlEngine, QQmlExpression
+
+    shape = next(item for item in _walk(avatar) if item.metaObject().className() == "QQuickImage")
+    failed = QQmlExpression(QQmlEngine.contextForObject(shape), shape, "status === Image.Error")
+    wait_until(lambda: failed.evaluate()[0])
+    assert not avatar.property("showsIcon")
+    assert _colour(view.grabWindow(), 30, 12) == (255, 122, 182)  # the accent
+
+
 def test_the_library_keeps_its_columns_when_the_inspector_opens(qt):
     from PySide6.QtQuick import QQuickItem
 

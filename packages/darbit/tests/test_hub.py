@@ -58,6 +58,7 @@ def test_installed_bots_are_listed(bot):
             "name": "tick-bot",
             "version": "1.0.0",
             "accent": None,
+            "icon": None,
             "summary": "",
             "installed": True,
             "status": "stopped",
@@ -67,6 +68,15 @@ def test_installed_bots_are_listed(bot):
             "only": None,
         }
     ]
+
+
+def test_a_bots_icon_reaches_the_studio_as_a_file_url_while_the_file_is_there(bot):
+    manifest = bot / "darbit.toml"
+    manifest.write_text(manifest.read_text(encoding="utf-8") + 'icon = "icon.png"\n', encoding="utf-8")
+    assert hub.describe(bot)["icon"] is None  # named, not there: the initials
+    cv2.imwrite(str(bot / "icon.png"), np.full((64, 64, 3), 90, np.uint8))
+    icon = hub.describe(bot)["icon"]
+    assert icon.startswith((bot / "icon.png").as_uri() + "?v=")  # a new version is a new URL
 
 
 def test_a_project_folder_can_be_added(bot, tmp_path):

@@ -92,7 +92,8 @@ dropdown, slider, menu or sheet (QML's `TextField`, `Switch`, `ComboBox`, `Slide
 | `OnFirstUse` | a sheet, the palette or a tool's window (Capture, Scout, the pills, the ghost cursor, the tray panel), made from its file the first time it's wanted and kept from then on, like `PageFrame`'s pages: the idle Studio holds none of them |
 | `CardMotion`, `MouseLight`, `CountUp`, `LiveDot` | how cards move (the rise, the lift and its shadow), the light following the mouse over a card, a number counting up, a state's dot that pulses while a bot runs |
 | `Block` | one Overview block, drawn by its kind: now, round, list, number, ring, chart, text, screen, sees, button, recoveries, wallet (each currency's balance and today's change) or sources (a currency's gains by source, today as a stacked bar and rows, the week as stacked bars that grow in as a chart's). Those two are drawn from their own files (`WalletView`, `SourcesView`, `SourcesPicker`), loaded only when such a block is shown, so an Overview without them costs nothing more |
-| `Setting`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `Avatar`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
+| `Avatar` | a bot's square wherever the bot shows (the top bar, the bot menu, its row, the tray panel, Stop and start): the bot's own `icon` from darbit.toml, cut to the rounded square and decoded at the size it's drawn, or its initials on its accent while there's none, it loads, or it can't be read. The icon is drawn on a `Canvas` clipped to the square's radius, so it draws on every renderer, and only for a bot that has one |
+| `Setting`, `ProblemGroup`, `AssetCard`, `ActionCard`, `StepRow`, `BotRow`, `ScoutTile`, `ScoutLine`, `ScoutDetail` | a page's own rows and cards, built from the above |
 
 ## Surfaces and how much screen they take
 

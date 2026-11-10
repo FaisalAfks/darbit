@@ -5,7 +5,8 @@ The smallest darbit bot, laid out the way every bot is.
 ```
 hello-bot/
   pyproject.toml     darbit pinned to a release; the bot as a package
-  darbit.toml        its name, entry, the darbit it needs, and darbit settings for it
+  darbit.toml        its name, entry, icon, the darbit it needs, and darbit settings for it
+  icon.svg           its square in darbit Studio
   guide.toml         what to capture, screen by screen
   src/hello_bot/     the bot's code
   assets/images/     its targets (.png + .json), made with the capture tool

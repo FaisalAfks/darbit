@@ -1,4 +1,4 @@
-"""darbit.toml: a bot's name, version, entry, game window, accent, its modes and steps, and its darbit settings.
+"""darbit.toml: a bot's name, version, entry, game window, accent, icon, its modes and steps, and its darbit settings.
 See docs/archive/tasks/T17-projects.md.
 
 `find` walks up from a folder to the nearest darbit.toml, `load` reads and checks it, and `apply` puts its
@@ -17,7 +17,8 @@ from ..settings import Settings, script_folder
 
 MANIFEST = "darbit.toml"
 TABLES = {"bot", "settings", "images", "keys", "studio", "run", "modes"}
-BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "captured_at"}
+BOT_KEYS = {"name", "version", "darbit", "entry", "window", "accent", "icon", "captured_at"}
+ICON_TYPES = (".png", ".svg")  # what the Studio draws a bot's icon from
 IMAGE_KEYS = {"folders"}
 STUDIO_KEYS = {"summary", "tiles"}
 RUN_KEYS = {"restart", "keep_days", "input"}
@@ -70,6 +71,7 @@ class Project:
     entry: str = "bot.py"
     window: str | None = None
     accent: str | None = None
+    icon: str | None = None  # a picture in the bot's folder, e.g. "icon.png"; the Studio shows it for the bot
     captured_at: dict | None = None  # the screen its targets were taken on: {size = [w, h], scale = 1.5}
     settings: dict = field(default_factory=dict)  # layer 2 of darbit's settings
     images: list[str] = field(default_factory=_default_images)  # image folders, relative to the project
@@ -106,6 +108,9 @@ def load(folder: Path) -> Project:
     _check_keys(bot, BOT_KEYS, "[bot]")
     if not bot.get("name"):
         raise ProjectError(f"{path}: [bot] needs a name")
+    icon = bot.get("icon")
+    if icon is not None:
+        _check_icon(folder, icon)
     settings = data.get("settings", {})
     _check_keys(settings, set(SETTING_KINDS), "[settings]")
     for key, value in settings.items():
@@ -142,6 +147,7 @@ def load(folder: Path) -> Project:
         entry=bot.get("entry", "bot.py"),
         window=bot.get("window"),
         accent=bot.get("accent"),
+        icon=icon,
         captured_at=bot.get("captured_at"),
         settings=settings,
         images=folders,
@@ -153,6 +159,26 @@ def load(folder: Path) -> Project:
         input=sends_input,
         modes=modes,
     )
+
+
+def _check_icon(folder: Path, icon: object) -> None:
+    """[bot] icon: a .png or .svg in the bot's folder. Whether the file is there is doctor's to say, not a mistake."""
+    example = 'e.g. icon = "icon.png"'
+    if not isinstance(icon, str) or not icon:
+        raise ProjectError(f"{MANIFEST} [bot]: icon is a picture in the bot's folder, {example}")
+    if Path(icon).suffix.lower() not in ICON_TYPES:
+        raise ProjectError(f"{MANIFEST} [bot]: icon is a .png or .svg file, not {icon!r}")
+    home = folder.resolve()
+    inside = home in (home / icon).resolve().parents  # "../icon.png" leaves the folder
+    if Path(icon).is_absolute() or not inside:
+        raise ProjectError(f"{MANIFEST} [bot]: icon is a path in the bot's folder, not {icon!r}")
+
+
+def icon_path(project: Project) -> Path | None:
+    """The bot's icon file, when darbit.toml names one."""
+    if project.icon is None:
+        return None
+    return project.folder / project.icon
 
 
 def _check_modes(modes: dict) -> dict[str, list[str]]:

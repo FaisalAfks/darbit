@@ -2,6 +2,9 @@
 
 import json
 
+import cv2
+import numpy as np
+
 from darbit import cli, doctor
 from darbit.platform.backend import NotSupported
 
@@ -128,3 +131,33 @@ def test_every_problem_has_a_fix_and_every_ok_has_none(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.system, "screen_usable", lambda: False)
     for check in doctor.run(folder):
         assert bool(check.fix) == (check.ok is False), check.name
+
+
+def with_icon(tmp_path, name):
+    folder = bot(tmp_path)
+    manifest = folder / "darbit.toml"
+    manifest.write_text(manifest.read_text(encoding="utf-8") + f'icon = "{name}"\n', encoding="utf-8")
+    return folder
+
+
+def test_an_icon_that_cant_be_shown_is_one_note_and_never_stops_a_start(tmp_path, capsys):
+    folder = with_icon(tmp_path, "icon.png")
+    icon = checks_of(folder)["icon"]
+    assert (icon.ok, icon.found, icon.fix) == (None, "no icon.png: the Studio shows the bot's initials", "")
+    (folder / "icon.png").write_bytes(b"not a picture")
+    assert checks_of(folder)["icon"].found == "icon.png can't be read: the Studio shows the bot's initials"
+    cli.main(["doctor", str(folder)])
+    out = capsys.readouterr().out
+    assert "--  icon: icon.png can't be read: the Studio shows the bot's initials\n" in out  # one line, no fix
+
+
+def test_an_icon_that_reads_or_none_at_all_adds_no_line(tmp_path):
+    assert "icon" not in checks_of(bot(tmp_path / "plain"))
+    folder = with_icon(tmp_path / "png", "icon.png")
+    cv2.imwrite(str(folder / "icon.png"), np.full((64, 64, 4), 90, np.uint8))
+    assert "icon" not in checks_of(folder)
+    folder = with_icon(tmp_path / "svg", "icon.svg")
+    (folder / "icon.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"/>', encoding="utf-8")
+    assert "icon" not in checks_of(folder)
+    (folder / "icon.svg").write_text("<html>not one</html>", encoding="utf-8")
+    assert checks_of(folder)["icon"].ok is None
