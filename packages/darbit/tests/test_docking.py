@@ -208,13 +208,20 @@ def test_a_pills_place_is_kept_in_the_ui_settings_and_read_back(tmp_path, monkey
     place.setSize("column", 150, 200)
     place.holdAt(0.5, 0.25)
     place.begin(800, 30)
-    place.move(30, 600)  # by the left edge: already a column, its corners and centre shown, where it lands marked
+    place.move(30, 600)  # by the left edge: already a column, its corners and centre shown, its ghost where it lands
     assert place.dragging and place.form == "column" and place.near == "left"
     assert [spot["on"] for spot in place.snaps] == [False, False, False]
-    assert place.landing == pytest.approx({"x": GAP + 75, "y": 650})  # held a quarter down: its middle 50 lower
+    # held a quarter down: its top 50 above the mouse, as a column in its own size
+    assert place.ghost == pytest.approx({"x": GAP, "y": 550, "width": 150, "height": 200, "form": "column"})
+    assert place.pointer == {"x": 30, "y": 600}  # where the edge glows
     place.move(30, 400 + 10)  # very close to the centre: pulled onto it
     assert [spot["on"] for spot in place.snaps] == [False, True, False]
-    assert place.landing == {"x": GAP + 75, "y": 450}
+    assert place.ghost == {"x": GAP, "y": 350, "width": 150, "height": 200, "form": "column"}
+    told = []
+    place.ghostChanged.connect(lambda: told.append(1))
+    place.setSize("column", 160, 210)  # the pill eased into its column with the mouse still: the ghost follows
+    assert told and place.ghost["width"] == 160
+    place.setSize("column", 150, 200)
     place.move(30, 600)
     place.end()
     assert (place.edge, place.form) == ("left", "column")
@@ -225,7 +232,7 @@ def test_a_pills_place_is_kept_in_the_ui_settings_and_read_back(tmp_path, monkey
     assert other.edge == "top"  # each pill keeps its own
     again.begin(30, 600)
     again.move(800, 450)
-    assert again.landing == {}  # nothing marked on the edge while it would float
+    assert again.ghost == {}  # no ghost on the edge while it would float
     again.end()
     assert again.floating and again.form == "card"
     again.dock()
@@ -234,6 +241,7 @@ def test_a_pills_place_is_kept_in_the_ui_settings_and_read_back(tmp_path, monkey
     again.begin(30, 600)
     again.cancel()
     assert again.edge == "left"
+    assert again.ghost == {} and again.pointer == {}  # nothing shows once it isn't dragged
 
 
 def test_a_pill_in_one_window_uses_that_window_as_its_screen(tmp_path, monkeypatch):

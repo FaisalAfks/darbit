@@ -105,7 +105,9 @@ Every pill moves the same way (#384, #449): dragged to any edge it stays where i
 edge's centre or a corner only within 24 points of one), a row on the top and bottom and a labelled column on the
 sides, always inside the screen's work area (never under the taskbar); dragged past the dashed line into the middle it
 floats as a card with more detail and Dock where it's let go, and never hides. It lands with the pill motion tokens'
-spring and eases into a new form while dragged. Each keeps its place per pill. An edge
+spring and eases into a new form while dragged. While it's dragged toward an edge (#467), a dashed ghost of the
+pill shows where it lands, in its size and the form it takes there, and only the part of the edge by the mouse glows,
+following it. Each keeps its place per pill. An edge
 one screen shares with another isn't used: the pill would slide onto the other screen and couldn't come back.
 | Ghost cursor | over the game, click-through | a ripple where the bot clicks and the keys it presses, for a moment each |
 

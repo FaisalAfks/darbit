@@ -312,6 +312,7 @@ class PillPlace(QObject):
 
     changed = Signal()
     dragChanged = Signal()
+    ghostChanged = Signal()  # with every change, and when the pill's size changes mid-drag (only the ghost minds)
 
     def __init__(
         self,
@@ -337,6 +338,7 @@ class PillPlace(QObject):
         self._grab = (0.5, 0.5)
         self._last = (0.0, 0.0)
         self._watched: list[object] = []
+        self.changed.connect(self.ghostChanged)
         self._follow_screens()
 
     def _follow_screens(self) -> None:
@@ -443,15 +445,23 @@ class PillPlace(QObject):
             )
         return spots
 
-    def _get_landing(self) -> dict:
-        """While dragging to an edge: the middle of where the pill lands if let go now; empty while it would float."""
+    def _get_ghost(self) -> dict:
+        """While dragging to an edge: the pill where it lands if let go now, in that edge's form and its size there
+        ({x, y, width, height, form}); empty while it would float."""
         if not self._dragging or self._preview.floating:
             return {}
         area = work_of(self._preview_screen)
         edge = self._preview.edge
-        width, height = self._sizes[form_of(edge)]
+        form = form_of(edge)
+        width, height = self._sizes[form]
         box = spot(area, edge, self._preview.along, width, height)
-        return {"x": box.x + box.width / 2, "y": box.y + box.height / 2}
+        return {**box_of(box), "form": form}
+
+    def _get_pointer(self) -> dict:
+        """While dragging: the mouse, where the edge's glow is; empty otherwise."""
+        if not self._dragging:
+            return {}
+        return {"x": self._last[0], "y": self._last[1]}
 
     def _get_near(self) -> str:
         return self._near if self._dragging else ""
@@ -466,7 +476,8 @@ class PillPlace(QObject):
     screen = Property("QVariantMap", _get_screen, notify=changed)  # all of it: where a pill tucks away past
     work = Property("QVariantMap", _get_work, notify=changed)  # its work area: where pills sit
     snaps = Property(list, _get_snaps, notify=changed)
-    landing = Property("QVariantMap", _get_landing, notify=changed)
+    ghost = Property("QVariantMap", _get_ghost, notify=ghostChanged)
+    pointer = Property("QVariantMap", _get_pointer, notify=changed)
     near = Property(str, _get_near, notify=changed)
     line = Property(float, _get_line, notify=changed)
 
@@ -481,7 +492,10 @@ class PillPlace(QObject):
     @Slot(str, float, float)
     def setSize(self, form: str, width: float, height: float) -> None:
         """The pill's size in a form, for where it lands and the spots shown while it's dragged."""
+        changed = self._sizes.get(form) != (width, height)
         self._sizes[form] = (width, height)
+        if changed and self._dragging:
+            self.ghostChanged.emit()  # the ghost takes the size the pill eased into, even with the mouse still
 
     @Slot(str, result="QVariantMap")
     def sizeOf(self, form: str) -> dict:
