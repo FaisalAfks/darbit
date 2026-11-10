@@ -51,7 +51,7 @@ A layer only imports from the layers above it in this list. `import darbit` load
 
 `DARBIT_HOME` puts darbit's own folders (`config`, `data`, `cache`, `logs`) under one folder instead, for a portable install. The tests set it to a temporary folder for the whole run, so they never touch the real ones; services and bots a test starts inherit it.
 
-`DARBIT_NO_REAL_INPUT=1` turns real input off: every click, key, mouse move, app open, close or focus and screen grab raises `RealInputOff` naming the call, in the platform wrappers (`platform/input.py`, `screen.py`, `windows.py`, through `platform/real.py`), so every route to the system is covered; read-only calls still work. darbit's tests set it for the whole run except the live tests, and a bot's tests turn it on with `darbit.testing.no_real_input`.
+`DARBIT_NO_REAL_INPUT=1` turns real input off: every click, key, mouse move, app open, close or focus and screen grab raises `RealInputOff` naming the call, in the platform wrappers (`platform/input.py`, `screen.py`, `windows.py`, through `platform/real.py`), so every route to the system is covered. The mouse's position and the desktop are a fixed fake (the bottom right corner of a 1920x1080 desktop), so a click with `approach` on is refused as `input.click` on every system; other read-only calls still work. darbit's tests set it for the whole run except the live tests, and a bot's tests turn it on with `darbit.testing.no_real_input`.
 
 ## Background threads
 

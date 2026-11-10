@@ -9,11 +9,16 @@ from . import backend, ghost, real
 
 
 def position() -> tuple[int, int]:
+    """Where the cursor is; a fixed fake with real input off (platform/real.py)."""
+    if real.off():
+        return real.FAKE_MOUSE
     return backend.input().position()
 
 
 def desktop() -> tuple[int, int, int, int]:
-    """Every screen together: x, y, width, height."""
+    """Every screen together: x, y, width, height; a fixed fake with real input off."""
+    if real.off():
+        return real.FAKE_DESKTOP
     return backend.input().desktop()
 
 
