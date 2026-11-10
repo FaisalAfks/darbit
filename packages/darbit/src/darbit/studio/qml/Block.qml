@@ -15,10 +15,12 @@ Glass {
     signal moved(real sceneX, real sceneY)
     signal resized(int width)
     signal removed()
+    signal picked(string shows)    // another currency for gains by source
     readonly property string kind: spec.kind || "text"
     readonly property bool running: studio.bot.status === "running" || studio.bot.status === "paused"
     title: kind === "now" ? "" : (spec.title || spec.shows || "")
-    note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin : ""
+    note: spec.origin && spec.origin !== "darbit" && !editing && kind !== "sees" ? spec.origin
+        : kind === "wallet" && info && info.read ? "read " + Format.clockOf(info.read.at) + (info.read.where ? " in " + info.read.where : "") : ""
     lift: !editing
     implicitHeight: (title !== "" ? 64 : 44) + (shown.item ? shown.item.implicitHeight : 0)
     border.color: editing ? Qt.rgba(studio.colors.accent.r, studio.colors.accent.g, studio.colors.accent.b, 0.55)
@@ -31,7 +33,29 @@ Glass {
             : block.kind === "now" ? nowView : block.kind === "round" ? roundView : block.kind === "ring" ? ringView
             : block.kind === "number" ? numberView : block.kind === "chart" ? chartView : block.kind === "list" ? listView
             : block.kind === "screen" ? screenView : block.kind === "button" ? buttonView
-            : block.kind === "recoveries" ? recoveriesView : block.kind === "sees" ? seesView : textView
+            : block.kind === "recoveries" ? recoveriesView : block.kind === "sees" ? seesView
+            : block.kind === "wallet" ? walletView : block.kind === "sources" ? sourcesView : textView
+    }
+
+    // the colours a block tells things apart by (currencies, sources): the theme's, in turn
+    function tone(index) {
+        var tones = [studio.colors.accent, studio.colors.accent2, studio.colors.ok, studio.colors.warn, studio.colors.slotBot, studio.colors.info]
+        return tones[index % tones.length]
+    }
+
+    // Gains by source: which currency, picked here and kept in the layout
+    Row {
+        visible: block.kind === "sources" && !block.editing && !!block.info && (block.info.names || []).length > 1
+        anchors { right: parent.right; rightMargin: block.padding; top: parent.top; topMargin: block.padding - 9 }
+        spacing: 8
+        Dropdown {
+            objectName: "sourcesCurrency"
+            implicitWidth: 120; implicitHeight: 28
+            choices: block.info && block.info.names ? block.info.names : []
+            chosen: block.info ? block.info.name : ""
+            onPicked: function (value) { if (value !== block.info.name) block.picked("sources:" + value) }
+        }
+        Text { text: "today"; color: studio.colors.faint; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
     }
 
     // What the bot sees: live while the bot runs, with the time of its last look
@@ -341,6 +365,158 @@ Glass {
         }
     }
     Component { id: seesView; SeesView { info: block.info } }
+    Component {
+        // the Wallet: each currency's balance now and today's change (d.record.balance, d.record.gain)
+        id: walletView
+        Column {
+            id: wallet
+            width: parent ? parent.width : 0
+            readonly property var items: block.info.items || []
+            Text { visible: wallet.items.length === 0; text: "No balance read yet."; color: studio.colors.faint; font.pixelSize: 13 }
+            Repeater {
+                model: wallet.items
+                delegate: Item {
+                    required property var modelData
+                    required property int index
+                    width: wallet.width; height: 56
+                    Rectangle { visible: index > 0; width: parent.width; height: 1; color: studio.colors.line }
+                    Rectangle {
+                        id: coin
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 24; height: 24; radius: 7
+                        color: block.tone(index)
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.icon || String(modelData.name).charAt(0).toUpperCase()
+                            color: studio.colors.onAccent; font.pixelSize: 12; font.weight: Font.Bold
+                        }
+                    }
+                    Column {
+                        anchors { left: coin.right; leftMargin: 12; right: change.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                        Text {
+                            CountUp { id: balance; to: Number(modelData.value) || 0 }
+                            text: Format.compact(balance.counting ? balance.value : modelData.value)
+                            color: studio.colors.text; font.pixelSize: 20; font.weight: Font.Bold
+                        }
+                        Text { width: parent.width; elide: Text.ElideRight; text: modelData.name; color: studio.colors.muted; font.pixelSize: 12 }
+                    }
+                    Column {
+                        id: change
+                        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                        Text {
+                            anchors.right: parent.right
+                            text: Format.signed(modelData.today)
+                            color: modelData.today > 0 ? studio.colors.ok : modelData.today < 0 ? studio.colors.danger : studio.colors.muted
+                            font.pixelSize: 13; font.weight: Font.DemiBold
+                        }
+                        Text { anchors.right: parent.right; text: "today"; color: studio.colors.faint; font.pixelSize: 11 }
+                    }
+                }
+            }
+        }
+    }
+    Component {
+        // Gains by source: one currency's gains today split by where they came from, then the week as stacked bars
+        id: sourcesView
+        Column {
+            id: split
+            width: parent ? parent.width : 0; spacing: 6
+            readonly property var sources: block.info.sources || []
+            readonly property var today: block.info.today || []
+            readonly property real todayTotal: today.reduce(function (sum, one) { return sum + one }, 0)
+            readonly property real most: Math.max.apply(null, today.concat([1]))
+            readonly property var week: block.info.week || []
+            readonly property var weekTotals: week.map(function (amounts) { return amounts.reduce(function (sum, one) { return sum + one }, 0) })
+            readonly property real weekMost: Math.max.apply(null, weekTotals.concat([1]))
+            Text { visible: split.todayTotal === 0; text: "Nothing gained yet today."; color: studio.colors.faint; font.pixelSize: 13 }
+            Bar {
+                visible: split.todayTotal > 0
+                width: split.width; height: 14; radius: 5
+                shares: split.today.map(function (one) { return one / Math.max(1, split.todayTotal) })
+                tints: split.sources.map(function (one, index) { return block.tone(index) })
+            }
+            Item { width: 1; height: 2 }
+            Repeater {
+                model: split.sources.length
+                delegate: RowLayout {
+                    required property int index
+                    visible: split.today[index] > 0
+                    width: split.width; height: 24; spacing: 12
+                    Text {
+                        Layout.preferredWidth: Math.min(120, split.width * 0.3); elide: Text.ElideRight
+                        text: split.sources[index]; color: studio.colors.text; font.pixelSize: 13
+                    }
+                    Bar { Layout.fillWidth: true; height: 8; radius: 4; share: split.today[index] / split.most; tint: block.tone(index) }
+                    Text {
+                        Layout.preferredWidth: 72; horizontalAlignment: Text.AlignRight
+                        text: "+" + Format.compact(split.today[index]); color: studio.colors.muted; font.pixelSize: 13
+                    }
+                }
+            }
+            Text {
+                topPadding: 10
+                text: "THIS WEEK"; color: studio.colors.muted
+                font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.3
+            }
+            Row {
+                id: days
+                width: split.width; height: 64; spacing: 6
+                Repeater {
+                    model: split.week.length
+                    delegate: Item {
+                        id: day
+                        required property int index
+                        readonly property var amounts: split.week[index] || []
+                        readonly property real total: split.weekTotals[index] || 0
+                        // the top part with something in it, rounded at its top
+                        readonly property int topPart: {
+                            for (var at = amounts.length - 1; at >= 0; at--) if (amounts[at] > 0) return at
+                            return -1
+                        }
+                        anchors.bottom: parent.bottom
+                        width: (days.width - 6 * 6) / 7
+                        height: Math.max(3, 60 * total / split.weekMost)
+                        // the day's bar grows from the bottom when the page shows, one after another, as a chart's
+                        property real grown: 1
+                        transform: Scale { origin.y: day.height; yScale: day.grown }
+                        function grow() {
+                            if (!studio.motion.on) { growing.stop(); grown = 1; return }
+                            grown = 0
+                            growing.wait = studio.motion.growDelay + index * studio.motion.growStagger
+                            growing.restart()
+                        }
+                        onVisibleChanged: if (visible) grow(); else { growing.stop(); grown = 1 }
+                        Component.onCompleted: if (Motion.fresh()) grow()
+                        SequentialAnimation {
+                            id: growing
+                            property int wait: 0
+                            PauseAnimation { duration: growing.wait }
+                            NumberAnimation { target: day; property: "grown"; to: 1; duration: studio.motion.grow; easing.type: Easing.BezierSpline; easing.bezierCurve: studio.motion.spring }
+                        }
+                        Rectangle {  // a day with nothing: a stub, as on a chart
+                            visible: day.total === 0
+                            anchors.bottom: parent.bottom; width: parent.width; height: 3; radius: 1.5; color: studio.colors.raised
+                        }
+                        Column {  // the first source at the bottom, as in the bar above read from the left
+                            anchors.bottom: parent.bottom; width: parent.width
+                            Repeater {
+                                model: day.amounts.length
+                                delegate: Rectangle {
+                                    required property int index
+                                    readonly property int part: day.amounts.length - 1 - index
+                                    width: day.width
+                                    height: day.total > 0 ? day.height * day.amounts[part] / day.total : 0
+                                    color: block.tone(part)
+                                    opacity: day.index === split.week.length - 1 ? 1 : 0.85  // today the brightest
+                                    topLeftRadius: part === day.topPart ? 4 : 0; topRightRadius: topLeftRadius
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     Component {
         id: buttonView
         Row {

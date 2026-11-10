@@ -26,5 +26,6 @@ Architecture decision records: one short file per decision, with its context, th
 | [0020](0020-one-input-bot-at-a-time.md) | One bot that sends input at a time | 2026-11-08 |
 | [0021](0021-keeping-history-small.md) | 14 days of reports, logs and history; no image looks in history | 2026-11-09 |
 | [0022](0022-one-mode-or-step.md) | Running one mode or one step: `[modes]`, `only` and `d.wants` | 2026-11-09 |
+| [0023](0023-currencies.md) | Currencies: a gain's source, balances, and gains per run | 2026-11-10 |
 
 0001 to 0014 came from the [2026-10-25 plan](../archive/plan-2026-10-25.md); 0015 and later from the [rebuild plan](../plan-rebuild.md).

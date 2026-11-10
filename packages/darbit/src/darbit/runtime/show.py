@@ -3,6 +3,8 @@
     d.progress("Quests this week", state.quests_done, 70)   # a ring; call again with new numbers to update it
     d.next("Weekly reset", reset_time)                        # a datetime; the Studio shows "in 2 d 4 h"
     d.record.gain("Coins", 120, total=48210, icon="◆")         # a row on the Results page: today, the week, total
+    d.record.gain("Coins", 40, source="Quests")               # where it came from (the open step's name by default)
+    d.record.balance("Coins", 48250)                          # how many it has, read off the screen: the Wallet block
     d.plan(["Quests", "Shop", "Idle"])                     # the round's order, so steps still to come show too
     d.show("Boat", 7, sub="next upgrade at 2 000 gold")      # a value of the bot's own: a block on the Overview
 
@@ -21,6 +23,7 @@ from datetime import datetime
 
 from . import log
 from .only import wants
+from .steps import current
 
 SHOWN_KINDS = ("number", "ring", "list", "text")  # how a value of the bot's own is drawn (the Studio picks by default)
 
@@ -58,13 +61,17 @@ def plan(steps: list[str]) -> None:
 
 
 class Record:
-    """`d.record`: add an event to the run report. `d.record.gain` adds a gain for the Results page."""
+    """`d.record`: add an event to the run report. `d.record.gain` adds a gain for the Results page, and
+    `d.record.balance` how much of something the bot has (decision 0023)."""
 
     def __call__(self, event: str, **fields: object) -> None:
         log.record(event, **fields)
 
-    def gain(self, name: str, amount: float, total: float | None = None, icon: str | None = None) -> None:
-        """Report that the bot got `amount` more of `name` (coins, wood, fish), and the new total if known."""
+    def gain(
+        self, name: str, amount: float, total: float | None = None, icon: str | None = None, source: str = ""
+    ) -> None:
+        """Report that the bot got `amount` more of `name` (coins, wood, fish), and the new total if known.
+        `source` is where it came from; without it, the open top-level step's name."""
         if not name:
             raise ValueError("gain needs a name")
         if not isinstance(amount, (int, float)) or isinstance(amount, bool):
@@ -74,12 +81,34 @@ class Record:
             fields["total"] = total
         if icon:
             fields["icon"] = icon
+        if source:
+            fields["source"] = source
+        _add_step(fields)
         log.record("gain", **fields)
+
+    def balance(self, name: str, value: float, icon: str | None = None) -> None:
+        """Report how much of `name` the bot has now, as read off the screen (a currency in the lobby)."""
+        if not name:
+            raise ValueError("balance needs a name")
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            raise TypeError(f"balance {name!r}: value is a number, not {type(value).__name__}")
+        fields: dict[str, object] = {"name": name, "value": value}
+        if icon:
+            fields["icon"] = icon
+        _add_step(fields)
+        log.record("balance", **fields)
 
     def recovered(self, how: str, why: str) -> None:
         """The bot got itself going again: `how` ("rejoin", "back to the menu") and `why` ("disconnected").
         Each day's results count them, the health of a bot that runs all day."""
         log.record("recovered", how=how, why=why)
+
+
+def _add_step(fields: dict[str, object]) -> None:
+    """The step it was recorded in, so its run and source are known without reading the day's steps."""
+    where = current()
+    if where:
+        fields["step"] = where
 
 
 def show(

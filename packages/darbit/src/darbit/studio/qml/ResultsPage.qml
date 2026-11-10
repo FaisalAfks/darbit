@@ -1,5 +1,5 @@
-// Results: a bot's days, newest first; the chosen day as one sentence, its problems, what it got (today and the week)
-// and a timeline of its modes. From the run history (SQLite), so a day of any size opens at once.
+// Results: a bot's days, newest first; the chosen day as one sentence, its problems, what it got (today and the week),
+// what each run gave and a timeline of its modes. From the run history (SQLite), so a day of any size opens at once.
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
@@ -31,6 +31,9 @@ Item {
     property var hidden: []  // problems marked "not a problem", for this visit
     readonly property var shownProblems: problems.filter(function (one) { return page.hidden.indexOf(one.step + "|" + one.reason + "|" + one.target) < 0 })
     readonly property var lanes: day.lanes || []
+    readonly property var runRows: day.runs ? day.runs.runs || [] : []
+    readonly property var bySource: day.runs ? day.runs.by_source || [] : []
+    readonly property var currencies: day.runs ? day.runs.currencies || [] : []
     readonly property real span: day.start !== undefined && day.start !== null ? Math.max(60, day.end - day.start) : 0
 
     EmptyState {
@@ -206,6 +209,100 @@ Item {
                             Text { text: modelData.label; color: studio.colors.text; font.pixelSize: 15; Layout.fillWidth: true }
                             Bar { Layout.preferredWidth: 200; share: modelData.total > 0 ? modelData.done / modelData.total : 0; gradientFill: true }
                             Text { text: modelData.done + " / " + modelData.total; color: studio.colors.faint; font.pixelSize: 13; Layout.preferredWidth: 80; horizontalAlignment: Text.AlignRight }
+                        }
+                    }
+                }
+            }
+            // what each run gave, by currency, and the day's total per source (server/currencies.py)
+            Glass {
+                id: eachRun
+                objectName: "eachRun"
+                title: "Each run"
+                note: page.runRows.length + (page.runRows.length === 1 ? " run gave something" : " runs gave something")
+                visible: page.runRows.length > 0
+                Layout.fillWidth: true
+                Layout.preferredHeight: runTable.implicitHeight + 70
+                readonly property real column: 96
+                content: Column {
+                    id: runTable
+                    width: parent.width
+                    RowLayout {  // the heading
+                        width: parent.width; height: 32; spacing: 12
+                        Text { text: "Time"; color: studio.colors.muted; font.pixelSize: 13; Layout.preferredWidth: 56 }
+                        Text { text: "Run"; color: studio.colors.muted; font.pixelSize: 13; Layout.fillWidth: true }
+                        Repeater {
+                            model: page.currencies
+                            delegate: Text {
+                                required property var modelData
+                                text: modelData; elide: Text.ElideRight
+                                color: studio.colors.muted; font.pixelSize: 13
+                                Layout.preferredWidth: eachRun.column; horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+                    Repeater {
+                        model: page.runRows
+                        delegate: Item {
+                            id: runRow
+                            required property var modelData
+                            width: runTable.width; height: 34
+                            Rectangle { width: parent.width; height: 1; color: studio.colors.line }
+                            RowLayout {
+                                anchors.fill: parent; spacing: 12
+                                Text { text: Format.clockOf(runRow.modelData.start); color: studio.colors.text; font.pixelSize: 13; Layout.preferredWidth: 56 }
+                                Text {
+                                    text: runRow.modelData.label; elide: Text.ElideRight
+                                    color: studio.colors.text; font.pixelSize: 13; font.weight: Font.DemiBold; Layout.fillWidth: true
+                                    HoverHandler { id: runHover }
+                                    ToolTip.visible: runHover.hovered && truncated
+                                    ToolTip.text: text
+                                    ToolTip.delay: 400
+                                }
+                                Repeater {
+                                    model: page.currencies
+                                    delegate: Text {
+                                        required property var modelData
+                                        readonly property var amount: runRow.modelData.gains[modelData]
+                                        text: amount === undefined ? "—" : "+" + Number(amount).toLocaleString(Qt.locale(), "f", 0)
+                                        color: amount === undefined ? studio.colors.faint : studio.colors.ok
+                                        font.pixelSize: 13; font.weight: Font.DemiBold
+                                        Layout.preferredWidth: eachRun.column; horizontalAlignment: Text.AlignRight
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Item {  // the day by source
+                        width: parent.width; height: 40
+                        Rectangle { width: parent.width; height: 1; color: studio.colors.line }
+                        Text { anchors.bottom: parent.bottom; bottomPadding: 8; text: "Today by source"; color: studio.colors.muted; font.pixelSize: 13 }
+                    }
+                    Repeater {
+                        model: page.bySource
+                        delegate: Item {
+                            id: sourceRow
+                            required property var modelData
+                            width: runTable.width; height: 34
+                            Rectangle { width: parent.width; height: 1; color: studio.colors.line }
+                            RowLayout {
+                                anchors.fill: parent; spacing: 12
+                                Text {
+                                    text: sourceRow.modelData.source + " · " + sourceRow.modelData.runs + (sourceRow.modelData.runs === 1 ? " run" : " runs")
+                                    elide: Text.ElideRight
+                                    color: studio.colors.text; font.pixelSize: 13; Layout.fillWidth: true
+                                }
+                                Repeater {
+                                    model: page.currencies
+                                    delegate: Text {
+                                        required property var modelData
+                                        readonly property var amount: sourceRow.modelData.gains[modelData]
+                                        text: amount === undefined ? "—" : "+" + Number(amount).toLocaleString(Qt.locale(), "f", 0)
+                                        color: amount === undefined ? studio.colors.faint : studio.colors.text
+                                        font.pixelSize: 13; font.weight: Font.DemiBold
+                                        Layout.preferredWidth: eachRun.column; horizontalAlignment: Text.AlignRight
+                                    }
+                                }
+                            }
                         }
                     }
                 }

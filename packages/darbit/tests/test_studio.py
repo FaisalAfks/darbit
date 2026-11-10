@@ -212,6 +212,14 @@ ANSWERS = {
             {"name": "Raid", "blocks": [{"start": 36000, "end": 38460, "state": "ok"}]},
             {"name": "Speed Raid", "blocks": [{"start": 40000, "end": None, "state": "running"}]},
         ],
+        "runs": {
+            "currencies": ["Gems", "Tokens"],
+            "runs": [
+                {"start": 36000, "label": "Raid", "gains": {"Gems": 100, "Tokens": 60}},
+                {"start": 40000, "label": "Speed Raid · Sakura", "gains": {"Gems": 20}},
+            ],
+            "by_source": [{"source": "Raid", "runs": 1, "gains": {"Gems": 100, "Tokens": 60}}],
+        },
     },
     "bot.settings": {
         "sections": [
@@ -261,6 +269,20 @@ def _overview_answer() -> dict:
     data["gain:Gems"] = {**tiles["gains"]["items"][0], "week": [10, 40, 0, 70, 30, 90, 120]}
     data["block:Boat"] = {"name": "Boat", "value": 7, "sub": "next upgrade at 2 000"}
     data["action:dim_run"] = {"name": "dim_run"}
+    data["wallet"] = {
+        "items": [
+            {"name": "Gems", "icon": "◆", "value": 4_990_000, "at": 34860, "where": "Lobby", "today": 12480},
+            {"name": "Gold", "icon": None, "value": 127_310_000_000, "at": 34860, "where": "Lobby", "today": -50},
+        ],
+        "read": {"at": 34860, "where": "Lobby"},
+    }
+    data["sources:Gems"] = {
+        "name": "Gems",
+        "names": ["Gems", "Gold"],
+        "sources": ["Raid", "Speed Raid", "other"],
+        "today": [5490, 3240, 0],
+        "week": [[10, 4, 0], [0, 0, 0], [7, 2, 1], [5, 5, 5], [9, 1, 0], [3, 3, 3], [5490, 3240, 0]],
+    }
     data["recoveries"] = {
         "count": 3,
         "reason": "disconnected",
@@ -283,6 +305,8 @@ def _overview_answer() -> dict:
         {"kind": "chart", "shows": "gain:Gems", "title": "Gems this week", "width": 4, "origin": "darbit"},
         {"kind": "number", "shows": "block:Boat", "title": "Boat", "width": 4, "origin": "ad-bot"},
         {"kind": "recoveries", "shows": "recoveries", "title": "Recoveries", "width": 4, "origin": "darbit"},
+        {"kind": "wallet", "shows": "wallet", "title": "Wallet", "width": 6, "origin": "darbit"},
+        {"kind": "sources", "shows": "sources:Gems", "title": "Gems by source", "width": 6, "origin": "darbit"},
     ]
     extra = [
         {"kind": "list", "shows": "failures", "title": "Problems", "width": 6, "origin": "darbit"},
@@ -395,7 +419,7 @@ def test_the_pages_get_the_services_answers(qt):
     studio.connect()
     wait_until(lambda: studio.bot.get("name") == "other")  # the bot asked for, not the first
     studio.selectBot("/bots/ad-bot")
-    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
     assert not studio.libraryReady  # the Library says it's loading, not that there are no pictures
     studio.loadLibrary()
     studio.loadDays()
@@ -1402,7 +1426,7 @@ def test_the_run_pill_draws_without_a_qml_warning(qt):
         studio.connect()
         wait_until(lambda: studio.bot.get("name") == "ad-bot")
         studio.loadOverview()
-        wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+        wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
         pill.open()
         window = root.findChild(QQuickWindow, "runPill")
         wait_until(window.isVisible)
@@ -1803,7 +1827,7 @@ def test_your_overview_layout_is_kept_per_bot_and_can_go_back(qt):
     studio.connect()
     wait_until(lambda: studio.bot.get("name") == "ad-bot")
     studio.loadOverview()
-    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
     mine = studio.overview["layout"][:2]
     studio.saveLayout(mine)
     assert studio.overview["custom"] and len(studio.overview["layout"]) == 2
@@ -1813,7 +1837,27 @@ def test_your_overview_layout_is_kept_per_bot_and_can_go_back(qt):
     again.loadOverview()
     wait_until(lambda: len(again.overview.get("layout", [])) == 2)  # kept for next time
     again.resetLayout()
-    assert not again.overview["custom"] and len(again.overview["layout"]) == 8
+    assert not again.overview["custom"] and len(again.overview["layout"]) == 10
+
+
+def test_gains_by_source_shows_the_currency_picked_and_keeps_it(qt):
+    studio = backend.Studio(FakeClient)
+    engine = app.load(studio)
+    window = engine.rootObjects()[0]
+    window.resize(1720, 1000)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
+
+    def walk(item):
+        yield item
+        for child in item.childItems():
+            yield from walk(child)
+
+    wait_until(lambda: any(item.objectName() == "sourcesCurrency" for item in walk(window.contentItem())))
+    block = next(item for item in walk(window.contentItem()) if item.property("kind") == "sources")
+    QMetaObject.invokeMethod(block, "picked", Q_ARG("QString", "sources:Gold"))
+    wait_until(lambda: studio.overview["layout"][-1]["shows"] == "sources:Gold")
+    assert studio.overview["layout"][-1]["title"] == "Gold by source" and studio.overview["custom"]
+    del engine
 
 
 def test_customizing_moves_resizes_and_takes_blocks_off(qt):
@@ -1823,7 +1867,7 @@ def test_customizing_moves_resizes_and_takes_blocks_off(qt):
     engine = app.load(studio)
     window = engine.rootObjects()[0]
     window.resize(1720, 1000)
-    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
 
     def walk(item):
         yield item
@@ -1834,7 +1878,7 @@ def test_customizing_moves_resizes_and_takes_blocks_off(qt):
     QMetaObject.invokeMethod(page, "resize", Q_ARG("QVariant", 0), Q_ARG("QVariant", 12))
     assert studio.overview["layout"][0]["width"] == 12
     QMetaObject.invokeMethod(page, "remove", Q_ARG("QVariant", 1))
-    assert len(studio.overview["layout"]) == 7
+    assert len(studio.overview["layout"]) == 9
     shows = [block["shows"] for block in studio.overview["catalog"] if block["kind"] == "button"]
     QMetaObject.invokeMethod(
         page,
@@ -2295,7 +2339,7 @@ def test_the_recoveries_block_says_how_often_and_why(qt, monkeypatch, recoveries
     studio = backend.Studio(FakeClient)
     engine = app.load(studio)
     window = engine.rootObjects()[0]
-    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
 
     def walk(item):
         yield item
@@ -3374,7 +3418,7 @@ def test_out_of_sight_the_overview_waits_but_the_run_pill_and_the_tray_still_hea
     told = []
     studio.pictureFailing.connect(lambda title, text: told.append(title))
     studio.connect()
-    wait_until(lambda: len(studio.overview.get("layout", [])) == 8)
+    wait_until(lambda: len(studio.overview.get("layout", [])) == 10)
     assert studio.live["now"]["path"] == ["Speed Raid", "Sakura"]
     studio.setShown(False)
     answer = _overview_answer()
@@ -3402,7 +3446,7 @@ def test_the_overview_keeps_its_blocks_when_new_numbers_come(qt):
     def blocks():
         return [item for item in walk(window.contentItem()) if item.metaObject().className().startswith("Block_")]
 
-    wait_until(lambda: len(blocks()) == 8)
+    wait_until(lambda: len(blocks()) == 10)
     before = set(blocks())
     studio.loadOverview()
     studio.loadOverview()

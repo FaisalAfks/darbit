@@ -102,18 +102,39 @@ def bait():
     return state.bait  # a value, or a dict of d.show's arguments
 ```
 
+### Currencies
+
+A bot that earns something (coins, gems, tokens) records each gain, where it came from, and the balance when it
+reads one off the screen (decision 0023):
+
+```python
+with d.step("Raid"):
+    d.record.gain("Gems", 520)  # its source is the step: "Raid"
+    d.record.gain("Gems", 300, source="Quests")  # or says where it came from
+with d.step("Lobby"):
+    d.record.balance("Gems", 4_990_000, icon="◆")  # how many it has now, as read
+```
+
+A gain's name is its currency. Without `source=`, a gain counts under the top-level step it was recorded in, or
+"other" outside every step (or from an `@d.block` or observer's thread): record rewards inside the step that earned
+them. Results shows each run's gains by currency and the day's total per source. Two Overview blocks are off until
+added in Customize or placed in `overview.toml`: **Wallet** (`kind = "wallet"`), each balance now with today's
+change, and **Gains by source** (`kind = "sources"`, `shows = "sources:Gems"`), a currency's gains split by source,
+today and the week, with the currency picked in the block.
+
 Blocks of the bot's own, and its actions as buttons, show in the Overview's gallery under the bot's name. The bot's
 default layout is `overview.toml` beside `darbit.toml`, read from top to bottom into rows of 12:
 
 ```toml
 [[block]]
-kind = "now"           # now, round, list, number, ring, chart, text, screen, sees, button or recoveries
+kind = "now"           # now, round, list, number, ring, chart, text, screen, sees, button, recoveries, wallet or sources
 width = 8              # 3, 4, 6, 8 or 12
 
 [[block]]
 kind = "ring"
 shows = "progress:Quests this week"   # now, round, next, failures, watching, activity, screen, sees, recoveries,
-width = 4                                 # progress:<label>, gain:<name>, block:<name>, action:<name>
+width = 4                                 # wallet, progress:<label>, gain:<name>, sources:<name>, block:<name>,
+                                          # action:<name>
 
 [[block]]
 kind = "sees"          # What the bot sees: its last look, with what it looked for boxed
