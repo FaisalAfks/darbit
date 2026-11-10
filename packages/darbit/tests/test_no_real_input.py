@@ -108,9 +108,30 @@ def test_empty_or_zero_leaves_real_input_on(monkeypatch, value):
     real.refuse("input.click")
 
 
-def test_read_only_calls_still_work(pieces):
+def test_the_mouse_and_desktop_are_a_fixed_fake(pieces):
+    assert device.position() == real.FAKE_MOUSE == (1919, 1079)
+    assert device.desktop() == real.FAKE_DESKTOP == (0, 0, 1920, 1080)
+    assert pieces == []
+
+
+def test_with_the_switch_off_the_mouse_and_desktop_are_the_systems(pieces, real_input):
     assert device.position() == (5, 6)
     assert device.desktop() == (0, 0, 800, 600)
+    assert pieces == ["position", "desktop"]
+
+
+def test_a_click_with_approach_on_is_refused_as_a_click(monkeypatch):
+    def no_system():
+        raise AssertionError("the system's input was asked")
+
+    monkeypatch.setattr(backend, "input", no_system)  # off Windows, there is no input piece at all
+    monkeypatch.setattr(d.settings, "log", False)
+    monkeypatch.setattr(d.settings, "approach", 40)
+    with pytest.raises(real.RealInputOff, match=r"^input\.click: real input is off"):
+        d.click(d.Location(10, 10))
+
+
+def test_read_only_calls_still_work(pieces):
     assert screen.monitors() == [Region(0, 0, 800, 600)] and screen.scale_at(1, 1) == 1.0
     assert windows.windows() == [GAME] and windows.matching("Game") == [GAME]
     assert windows.in_front(7) and windows.region(7) == Region(0, 0, 800, 600)
@@ -197,6 +218,17 @@ def run_bot_tests(folder, conftest: str) -> subprocess.CompletedProcess:
                     raise AssertionError("a key went to the PC")
 
 
+            def test_a_click_with_approach_on(monkeypatch):
+                monkeypatch.setattr(d.settings, "log", False)
+                monkeypatch.setattr(d.settings, "approach", 40)
+                try:
+                    d.click(d.Location(10, 10))
+                except RealInputOff as error:
+                    assert str(error).startswith("input.click: real input is off"), error
+                else:
+                    raise AssertionError("a click went to the PC")
+
+
             def test_back_on_for_one_test(real_input):
                 assert "DARBIT_NO_REAL_INPUT" not in os.environ
             """
@@ -221,7 +253,7 @@ def run_bot_tests(folder, conftest: str) -> subprocess.CompletedProcess:
 def test_one_line_in_a_bots_conftest_turns_it_on(tmp_path):
     done = run_bot_tests(tmp_path, 'pytest_plugins = ["darbit.testing.no_real_input"]\n')
     assert done.returncode == 0, done.stdout + done.stderr
-    assert "2 passed" in done.stdout
+    assert "3 passed" in done.stdout
 
 
 def test_without_the_line_a_bots_tests_have_it_off(tmp_path):

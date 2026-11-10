@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- With real input off (`DARBIT_NO_REAL_INPUT`) and no `FakeGame`, the mouse's position and the desktop that `approach` reads are a fixed fake, the mouse in the bottom right corner of a 1920x1080 desktop (#482): a click is refused as `input.click` on every system, instead of reading the real cursor on Windows or failing with NotSupported elsewhere
+
 ## 1.0.0-alpha.10 - 2026-11-10
 
 ### New
