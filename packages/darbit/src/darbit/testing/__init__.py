@@ -6,8 +6,10 @@
         assert my_map.go("Bag") and game.showing == "Bag"
 
 darbit's screen grabs come from the screen showing, its clicks and key presses go to the fake game instead of
-the PC, and the game's window (settings.window) is a fake one, always in front: nothing real is touched. Bots' saved screens (.darbit/screens) make good stand-ins. See the rebuild plan,
-section 8 (offline tests).
+the PC, and the game's window (settings.window) is a fake one, always in front: nothing real is touched. The
+desktop is the screen showing, and the mouse on it starts in its bottom right corner and goes where a click or move
+puts it, so `approach` works as on the PC. Bots' saved screens (.darbit/screens) make good stand-ins. See the
+rebuild plan, section 8 (offline tests).
 
 A call a test forgot to fake would still reach the real PC. One line in a bot's conftest.py turns real input off
 for every test, so such a call raises instead (darbit.testing.no_real_input):
@@ -53,6 +55,8 @@ class FakeGame:
     showing: str = ""
     clicks: list[tuple[int, int]] = field(default_factory=list)  # every click, where it landed
     keys: list[str] = field(default_factory=list)  # every key pressed
+    moves: list[tuple[int, int]] = field(default_factory=list)  # every mouse move, where it went
+    mouse: tuple[int, int] | None = None  # where the mouse is; the start screen's bottom right corner at first
     _pixels: dict[str, np.ndarray] = field(default_factory=dict)
     _leads: dict[str, list[_Lead]] = field(default_factory=dict)
     _real: dict[str, object] = field(default_factory=dict)
@@ -66,6 +70,12 @@ class FakeGame:
         if self.start not in self._pixels:
             raise ValueError(f"no screen called {self.start}")
         self.showing = self.start
+        if self.mouse is None:
+            height, width = self._pixels[self.start].shape[:2]
+            self.mouse = (
+                width - 1,
+                height - 1,
+            )  # away from the buttons, so a first click glides in without a step back
 
     def leads(self, screen_name: str, picture: str, to: str, key: bool = False, once: bool = False) -> Self:
         """On `screen_name`, clicking `picture` (or pressing the key `picture`, with `key`) shows `to`. A lead
@@ -82,6 +92,8 @@ class FakeGame:
             "click": device.click,
             "tap": device.tap,
             "move": device.move,
+            "position": device.position,
+            "desktop": device.desktop,
             "bring_to_front": windows.bring_to_front,
             "matching": windows.matching,
             "in_front": windows.in_front,
@@ -91,6 +103,8 @@ class FakeGame:
         device.click = self._click
         device.tap = self._tap
         device.move = self._move
+        device.position = self._position
+        device.desktop = self._desktop
         windows.bring_to_front = self._bring_to_front
         windows.matching = self._matching
         windows.in_front = self._in_front
@@ -102,6 +116,8 @@ class FakeGame:
         device.click = self._real["click"]
         device.tap = self._real["tap"]
         device.move = self._real["move"]
+        device.position = self._real["position"]
+        device.desktop = self._real["desktop"]
         windows.bring_to_front = self._real["bring_to_front"]
         windows.matching = self._real["matching"]
         windows.in_front = self._real["in_front"]
@@ -116,6 +132,7 @@ class FakeGame:
 
     def _click(self, x: int, y: int, glide: float = 0, button: str = "left", times: int = 1) -> None:
         self.clicks.append((x, y))
+        self.mouse = (x, y)
         for lead in self._leads.get(self.showing, []):
             if not lead.key and self._inside(lead.picture, x, y):
                 self._follow(lead)
@@ -135,7 +152,16 @@ class FakeGame:
         self.showing = lead.to
 
     def _move(self, x: int, y: int, glide: float = 0) -> None:
-        return None
+        self.moves.append((x, y))
+        self.mouse = (x, y)
+
+    def _position(self) -> tuple[int, int]:
+        return self.mouse
+
+    def _desktop(self) -> tuple[int, int, int, int]:
+        """The screen showing fills the desktop: x, y, width, height."""
+        height, width = self._pixels[self.showing].shape[:2]
+        return (0, 0, width, height)
 
     def _bring_to_front(self, handle: int) -> bool:
         return True  # the fake game is always in front
