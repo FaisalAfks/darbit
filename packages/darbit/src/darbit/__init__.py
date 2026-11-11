@@ -68,7 +68,7 @@ from .settings import settings
 next = next_up  # d.next("Weekly reset", when): shown in darbit Studio (decision 0011)
 record = Record()  # d.record("event", ...) and d.record.gain("Coins", 120): the run report (decision 0013)
 
-__version__ = "1.0.0a10"
+__version__ = "1.0.0a11"
 
 
 def stop_key(combo: str) -> None:
