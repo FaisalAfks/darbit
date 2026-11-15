@@ -14,6 +14,7 @@ from pathlib import Path
 from ..project.manifest import Project
 from ..runtime import sees
 from . import currencies, dashboard, history, problems, results
+from .file_cache import FileCache
 
 OVERVIEW = "overview.toml"
 KINDS = (
@@ -230,8 +231,15 @@ def _tile_data(tile: object) -> dict | None:
     return tile.data if tile is not None else None
 
 
+_screens = FileCache()  # the newest screenshot, by folder: worked out again when a screenshot is added or removed
+
+
 def _last_screen(logs: Path) -> str | None:
     folder = logs / "screenshots"
+    return _screens.get(folder, [folder], lambda: _newest_screenshot(folder))
+
+
+def _newest_screenshot(folder: Path) -> str | None:
     if not folder.is_dir():
         return None
     newest = None
