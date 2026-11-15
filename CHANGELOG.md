@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- `keep_trying` with `back_to`: a move that raises on the way back (a bug in one move, say a picture saved without an area) no longer ends the bot. It's logged with its traceback and counts as a lost way back, so the bot recovers and tries again. Stopping still stops. In a bot on 2026-11-10 one such `TargetError` kept the bot down for 7 hours (#484)
+
 ## 1.0.0-alpha.11 - 2026-11-11
 
 ### New

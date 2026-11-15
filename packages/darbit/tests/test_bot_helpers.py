@@ -120,6 +120,33 @@ def test_lost_on_the_way_back_rejoins(monkeypatch):
     assert events == [("rejoin", "Quest: try 1")]
 
 
+class BrokenMap(FakeMap):
+    """A screen map whose way back raises, as a move with a bug does."""
+
+    def __init__(self, error):
+        super().__init__()
+        self.error = error
+
+    def go(self, end, timeout=None):
+        self.gone.append(end)
+        raise self.error
+
+
+def test_an_error_on_the_way_back_recovers_instead_of_ending_the_bot(monkeypatch):
+    lines = []
+    monkeypatch.setattr(retry, "log", lines.append)
+    world = BrokenMap(d.TargetError("Window.Close has no area"))
+    events, recovered = keep_trying_with(monkeypatch, 1, world)
+    assert world.gone == ["Menu"] and recovered == [1]  # the way back broke: recovered, then tried again
+    assert events == [("rejoin", "Quest: try 1")]
+    assert any("the way back to Menu broke: TargetError: Window.Close has no area" in line for line in lines)
+
+
+def test_stopping_on_the_way_back_still_stops(monkeypatch):
+    with pytest.raises(d.Stopped):
+        keep_trying_with(monkeypatch, 1, BrokenMap(d.Stopped()))
+
+
 def test_a_success_lets_the_next_failure_go_back_again(monkeypatch):
     world = FakeMap(True, True)
     keep_trying_with(monkeypatch, 1, world)
