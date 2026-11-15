@@ -10,9 +10,10 @@ With `back_to`, a failure first goes back to that screen of the map and tries ag
 doesn't help. Every try is a step in the run report; every recovery shows on the Results page.
 """
 
+import traceback
 from collections.abc import Callable
 
-from ..errors import Failed, Interrupted
+from ..errors import Failed, Interrupted, Stopped
 from ..platform.safety import no_interrupts
 from . import screens as screen_map
 from .log import log
@@ -66,10 +67,19 @@ def keep_trying(
 
 
 def _go_back(screen: str, screens: screen_map.Map | None, timeout: float | None, why: str) -> bool:
-    """Go to `screen` with observers muted and record it as a recovery; False when the way there is lost."""
+    """Go to `screen` with observers muted and record it as a recovery; False when the way there is lost. A move
+    that raises (a bug in one move, say a picture saved without an area) is a way back that didn't work: it's logged
+    with its traceback and counts as lost, so the bot recovers instead of ending. Stopping still stops."""
     world = screen_map.default if screens is None else screens
-    with no_interrupts():
-        arrived = world.go(screen, timeout)
+    try:
+        with no_interrupts():
+            arrived = world.go(screen, timeout)
+    except Stopped:
+        raise
+    except Exception as error:  # noqa: BLE001 - one broken move must not end the bot (#484)
+        log(f"{why}; the way back to {screen} broke: {type(error).__name__}: {error}")
+        log(traceback.format_exc().rstrip())
+        return False
     if not arrived:
         log(f"{why}; can't get back to {screen}")
         return False
