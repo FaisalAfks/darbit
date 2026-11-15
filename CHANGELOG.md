@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- `apps.open` no longer writes a link's secret parts to the log, the run report and the history. A link is logged up to its first `?`, `#` or `&` (a private invite's code or a token sits after them), without a `user:password@`, and a path as the program's name only (`apps.shown`). The link is still opened as given (#495)
 - `keep_trying` with `back_to`: a move that raises on the way back (a bug in one move, say a picture saved without an area) no longer ends the bot. It's logged with its traceback and counts as a lost way back, so the bot recovers and tries again. Stopping still stops. In a bot on 2026-11-10 one such `TargetError` kept the bot down for 7 hours (#484)
 
 ## 1.0.0-alpha.11 - 2026-11-11
