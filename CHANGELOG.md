@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0-alpha.12 - 2026-11-15
+
 ### Changed
 
 - The Overview keeps what it works out from folders until they change: the newest screenshot and how many of the setup guide's pictures are taken (`server/file_cache.py`, at most a minute). The run history makes sure of its tables once per file, not on every query. On a bot with 200 screenshots those parts went from about 21 ms to under 1 ms per refresh, and the whole Overview from 106 to 90 ms; the rest is walking the day's events, a separate issue (#498)
