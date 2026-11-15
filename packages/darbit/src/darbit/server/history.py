@@ -47,11 +47,19 @@ def database(project: Project) -> Path:
     return paths.project_dir(project.folder) / DATABASE
 
 
+_ready: set[Path] = set()  # history files whose tables this process has made sure of
+
+
 def _open(project: Project) -> sqlite3.Connection:
+    """The bot's history. Its tables are made sure of once per file and process (and when the file is new), not on
+    every query: the Overview asks several times every couple of seconds."""
     path = database(project)
     path.parent.mkdir(parents=True, exist_ok=True)
+    new = not path.is_file()
     connection = sqlite3.connect(path, timeout=10)
-    connection.executescript(SCHEMA)
+    if new or path not in _ready:
+        connection.executescript(SCHEMA)
+        _ready.add(path)
     return connection
 
 

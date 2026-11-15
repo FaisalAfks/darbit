@@ -15,6 +15,7 @@ from .. import days, paths
 from ..platform import system
 from ..platform.backend import NotSupported
 from ..project.manifest import Project
+from .file_cache import FileCache
 
 DEFAULT_TILES = ["now", "round", "progress", "gains", "next", "activity", "failures", "watching", "setup"]
 ACTIVITY_SHOWN = 50  # newest events in the Activity tile
@@ -394,8 +395,18 @@ def watching_tile(events: list[dict]) -> Tile | None:
     return Tile("watching", "Watching", {"items": list(rows.values())})
 
 
+_setup = FileCache()  # the setup tile by bot folder
+
+
 def setup_tile(project: Project) -> Tile | None:
-    """How many of the setup guide's pictures are taken, when the bot has a guide.toml."""
+    """How many of the setup guide's pictures are taken, when the bot has a guide.toml. Kept until the guide or the
+    pictures' folder changes: counting looks at every picture."""
+    guide_file = project.folder / "guide.toml"
+    folder = project.folder / (project.images[0] if project.images else "images")
+    return _setup.get(project.folder, [guide_file, folder], lambda: _setup_tile(project))
+
+
+def _setup_tile(project: Project) -> Tile | None:
     guide_file = project.folder / "guide.toml"
     if not guide_file.is_file():
         return None
