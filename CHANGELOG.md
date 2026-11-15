@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- `apps.open` no longer writes a link's secret parts to the log, the run report and the history. A link is logged up to its first `?`, `#` or `&` (a private invite's code or a token sits after them), without a `user:password@`, and a path as the program's name only (`apps.shown`). The link is still opened as given (#495)
+
 ## 1.0.0-alpha.11 - 2026-11-11
 
 ### New

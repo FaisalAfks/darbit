@@ -2,7 +2,13 @@
 
 An app is named by its window title ("Game") or by its program ("chrome.exe",
 or a full path to it). `App("Game")` keeps the name: `App("Game").window` is its window as a Region.
+
+What `open` opens is logged without the parts that can hold a secret (`shown`): a link stops at its first ?, # or &,
+and a path shows only the program's name.
 """
+
+import re
+from pathlib import PureWindowsPath
 
 from ..platform import windows
 from .log import log
@@ -38,7 +44,25 @@ class App:
 def open(path_or_url: str) -> None:
     """Open a program, file or link the way double-clicking it would."""
     windows.launch(path_or_url)
-    log(f"open {path_or_url}")
+    log(f"open {shown(path_or_url)}")
+
+
+_LINK = re.compile(r"^(?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*)://(?P<rest>.*)$", re.DOTALL)
+
+
+def shown(path_or_url: str) -> str:
+    """What the log and report say was opened. A link keeps its scheme, host and path up to the first ?, # or &
+    (a private invite's code or a token sits after them), without a user:password@, and says "…" for what it left
+    out. A path shows the program's or file's name only."""
+    link = _LINK.match(path_or_url)
+    if link is None:
+        return PureWindowsPath(path_or_url).name or path_or_url
+    rest = link["rest"]
+    kept = re.split(r"[?#&]", rest, maxsplit=1)[0]
+    host, slash, path = kept.partition("/")
+    host = host.rpartition("@")[2]  # never a user:password@
+    cut = "…" if len(kept) < len(rest) or "@" in kept.partition("/")[0] else ""
+    return f"{link['scheme']}://{host}{slash}{path}{cut}"
 
 
 def close(app: str) -> bool:
